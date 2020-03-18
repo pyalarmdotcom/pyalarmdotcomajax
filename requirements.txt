@@ -1,0 +1,3 @@
+# Dev/Deployment
+bs4
+aiohttp
