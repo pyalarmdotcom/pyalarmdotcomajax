@@ -27,6 +27,7 @@ class Alarmdotcom(object):
     SYSTEM_URL_BASE = "https://www.alarm.com/web/api/systems/systems/"
     PARTITION_URL_BASE = "https://www.alarm.com/web/api/devices/partitions/"
     TROUBLECONDITIONS_URL = "https://www.alarm.com/web/api/troubleConditions/troubleConditions?forceRefresh=false"
+    SENSOR_STATUS_URL = "https://www.alarm.com/web/api/devices/sensors"
     STATEMAP = (
         "",
         "disarmed",
@@ -189,12 +190,30 @@ class Alarmdotcom(object):
             await self.async_update()
         try:
             async with self._websession.get(
+                url=self.SENSOR_STATUS_URL, headers=self._ajax_headers
+            ) as resp:
+                json = await (resp.json())
+            for sensor in json["data"]:
+                self.sensor_status += (
+                    ", "
+                    + sensor["attributes"]["description"]
+                    + " is "
+                    + sensor["attributes"]["stateText"]
+                )
+        except (asyncio.TimeoutError, aiohttp.ClientError):
+            _LOGGER.error("Can not load sensor status from Alarm.com")
+            return False
+        except KeyError:
+            _LOGGER.error("Unable to extract sensor status from Alarm.com")
+            raise
+        try:
+            async with self._websession.get(
                 url=self.TROUBLECONDITIONS_URL, headers=self._ajax_headers
             ) as resp:
                 json = await (resp.json())
             for troublecondition in json["data"]:
                 self.sensor_status += (
-                    "\n" + troublecondition["attributes"]["description"]
+                    ", " + troublecondition["attributes"]["description"]
                 )
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load trouble conditions from Alarm.com")
