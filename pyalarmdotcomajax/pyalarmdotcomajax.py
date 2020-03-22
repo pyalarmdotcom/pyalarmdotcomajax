@@ -1,12 +1,13 @@
-import aiohttp
-from bs4 import BeautifulSoup
+"""pyalarmdotcomajax module."""
 import asyncio
 import logging
+import aiohttp
+from bs4 import BeautifulSoup
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Alarmdotcom(object):
+class Alarmdotcom:
     """
     Access to alarm.com partners and accounts.
 
@@ -45,9 +46,9 @@ class Alarmdotcom(object):
         username,
         password,
         websession,
-        loop,
         forcebypass=False,
         noentrydelay=False,
+        silentarming=False,
     ):
         """
         Use aiohttp to make a request to alarm.com
@@ -60,7 +61,7 @@ class Alarmdotcom(object):
         self._username = username
         self._password = password
         self._websession = websession
-        self.state = ""  # empty string instead of None so lower() in alarm_control_panel doesn't complain
+        self.state = ""  # empty string instead of None
         self.sensor_status = None
         self._ajax_headers = {
             "Accept": "application/vnd.api+json",
@@ -68,8 +69,9 @@ class Alarmdotcom(object):
         }
         self._systemid = None
         self._partitionid = None
-        self._forcebypass = forcebypass
-        self._noentrydelay = noentrydelay
+        self._forcebypass = forcebypass  # "stay","away","true","false"
+        self._noentrydelay = noentrydelay  # "stay","away","true","false"
+        self._silentarming = silentarming  # "stay","away","true","false"
 
     async def async_login(self):
         """Login to Alarm.com."""
@@ -223,19 +225,20 @@ class Alarmdotcom(object):
             raise
         return True
 
-    async def _send(self, event):
+    async def _send(self, event, forcebypass, noentrydelay, silentarming):
         """Generic function for sending commands to Alarm.com
 
         :param event: Event command to send to alarm.com
         """
         _LOGGER.debug("Sending %s to Alarm.com", event)
         if event == "Disarm":
-            json = {"statePollOnly": "false"}
+            json = {"statePollOnly": False}
         else:
             json = {
-                "forceBypass": self._forcebypass,
-                "noEntryDelay": self._noentrydelay,
-                "statePollOnly": "false",
+                "forceBypass": forcebypass,
+                "noEntryDelay": noentrydelay,
+                "silentArming": silentarming,
+                "statePollOnly": False,
             }
         try:
             async with self._websession.post(
@@ -259,19 +262,25 @@ class Alarmdotcom(object):
             if event == "Disarm":
                 await self.async_alarm_disarm()
             elif event == "Arm+Stay":
-                await self.async_alarm_arm_home()
+                await self.async_alarm_arm_stay()
             elif event == "Arm+Away":
                 await self.async_alarm_arm_away()
         return True
 
     async def async_alarm_disarm(self):
         """Send disarm command."""
-        await self._send("Disarm")
+        await self._send("Disarm", False, False, False)
 
-    async def async_alarm_arm_home(self):
-        """Send arm home command."""
-        await self._send("Arm+Stay")
+    async def async_alarm_arm_stay(self):
+        """Send arm stay command."""
+        forcebypass = self._forcebypass in ["stay", "true"]
+        noentrydelay = self._noentrydelay in ["stay", "true"]
+        silentarming = self._silentarming in ["stay", "true"]
+        await self._send("Arm+Stay", forcebypass, noentrydelay, silentarming)
 
     async def async_alarm_arm_away(self):
         """Send arm away command."""
-        await self._send("Arm+Away")
+        forcebypass = self._forcebypass in ["away", "true"]
+        noentrydelay = self._noentrydelay in ["away", "true"]
+        silentarming = self._silentarming in ["away", "true"]
+        await self._send("Arm+Away", forcebypass, noentrydelay, silentarming)

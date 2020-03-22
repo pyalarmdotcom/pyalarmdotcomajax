@@ -1,2 +1,3 @@
-__version__ = "0.1.1"
+"""pyalarmdotcomajax module."""
+__version__ = "0.1.2"
 from .pyalarmdotcomajax import Alarmdotcom

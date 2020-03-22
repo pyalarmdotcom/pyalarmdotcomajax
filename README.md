@@ -1,7 +1,7 @@
 Alarm.com Python Library
 ===============================
 
-version number: 0.1.1
+version number: 0.1.2
 author: Justin Wong
 
 Overview
@@ -33,7 +33,3 @@ Example
 
 TBD
 
-Changelog
----------
-### 0.1.0
-* First version, forked from Xorso/pyalarmdotcom
