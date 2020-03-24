@@ -46,9 +46,9 @@ class Alarmdotcom:
         username,
         password,
         websession,
-        forcebypass=False,
-        noentrydelay=False,
-        silentarming=False,
+        forcebypass,
+        noentrydelay,
+        silentarming,
     ):
         """
         Use aiohttp to make a request to alarm.com
