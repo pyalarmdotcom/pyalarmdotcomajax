@@ -1,8 +1,9 @@
 """pyalarmdotcomajax module."""
 import asyncio
 import logging
+import re
+
 import aiohttp
-from bs4 import BeautifulSoup
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +41,20 @@ class Alarmdotcom:
         "Arm+Stay": {"command": "armStay"},
         "Arm+Away": {"command": "armAway"},
     }
+
+    # REGEX's for parsing Alarm.com form values used for login
+    VIEWSTATE_REGEX = re.compile(
+        f'<input\\s+type="hidden"\\s+name="{VIEWSTATE_FIELD}"\\s+id="{VIEWSTATE_FIELD}"\\s+value="(.*?)"\\s+/>'
+    )
+    VIEWSTATEGENERATOR_REGEX = re.compile(
+        f'<input\\s+type="hidden"\\s+name="{VIEWSTATEGENERATOR_FIELD}"\\s+id="{VIEWSTATEGENERATOR_FIELD}"\\s+value="(.*?)"\\s+/>'
+    )
+    PREVIOUSPAGE_REGEX = re.compile(
+        f'<input\\s+type="hidden"\\s+name="{PREVIOUSPAGE_FIELD}"\\s+id="{PREVIOUSPAGE_FIELD}"\\s+value="(.*?)"\\s+/>'
+    )
+    EVENTVALIDATION_REGEX = re.compile(
+        f'<input\\s+type="hidden"\\s+name="{EVENTVALIDATION_FIELD}"\\s+id="{EVENTVALIDATION_FIELD}"\\s+value="(.*?)"\\s+/>'
+    )
 
     def __init__(
         self,
@@ -81,21 +96,8 @@ class Alarmdotcom:
             async with self._websession.get(url=self.LOGIN_URL) as resp:
                 text = await resp.text()
                 _LOGGER.debug("Response status from Alarm.com: %s", resp.status)
-                tree = BeautifulSoup(text, "html.parser")
-                login_info = {
-                    self.VIEWSTATE_FIELD: tree.select(
-                        "#{}".format(self.VIEWSTATE_FIELD)
-                    )[0].attrs.get("value"),
-                    self.VIEWSTATEGENERATOR_FIELD: tree.select(
-                        "#{}".format(self.VIEWSTATEGENERATOR_FIELD)
-                    )[0].attrs.get("value"),
-                    self.EVENTVALIDATION_FIELD: tree.select(
-                        "#{}".format(self.EVENTVALIDATION_FIELD)
-                    )[0].attrs.get("value"),
-                    self.PREVIOUSPAGE_FIELD: tree.select(
-                        "#{}".format(self.PREVIOUSPAGE_FIELD)
-                    )[0].attrs.get("value"),
-                }
+                login_info = self.get_login_info(text)
+                _LOGGER.info("Attempting to parse login info from Alarm.com")
                 _LOGGER.debug(login_info)
                 _LOGGER.info("Attempting login to Alarm.com")
         except (asyncio.TimeoutError, aiohttp.ClientError):
@@ -284,3 +286,21 @@ class Alarmdotcom:
         noentrydelay = self._noentrydelay in ["away", "true"]
         silentarming = self._silentarming in ["away", "true"]
         await self._send("Arm+Away", forcebypass, noentrydelay, silentarming)
+    
+    def get_login_info(self, response_text):
+        """Parse Alarm.com form data values from response text."""
+        try:
+            eventvalidation_search = re.search(self.EVENTVALIDATION_REGEX, response_text)
+            previouspage_search = re.search(self.PREVIOUSPAGE_REGEX, response_text)
+            viewstate_search = re.search(self.VIEWSTATE_REGEX, response_text)
+            viewstategenerator_search = re.search(self.VIEWSTATEGENERATOR_REGEX, response_text)
+            login_info = {
+                self.EVENTVALIDATION_FIELD: eventvalidation_search.group(1),
+                self.PREVIOUSPAGE_FIELD: previouspage_search.group(1),
+                self.VIEWSTATEGENERATOR_FIELD: viewstategenerator_search.group(1),
+                self.VIEWSTATE_FIELD: viewstate_search.group(1),
+            }
+            return login_info
+        except:
+            _LOGGER.error("Unable to parse form values from Alarm.com")
+            return None
