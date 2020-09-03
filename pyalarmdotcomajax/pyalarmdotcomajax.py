@@ -42,13 +42,7 @@ class Alarmdotcom:
     }
 
     def __init__(
-        self,
-        username,
-        password,
-        websession,
-        forcebypass,
-        noentrydelay,
-        silentarming,
+        self, username, password, websession, forcebypass, noentrydelay, silentarming,
     ):
         """
         Use aiohttp to make a request to alarm.com
@@ -235,36 +229,47 @@ class Alarmdotcom:
             json = {"statePollOnly": False}
         else:
             json = {
-                "forceBypass": forcebypass,
-                "noEntryDelay": noentrydelay,
-                "silentArming": silentarming,
                 "statePollOnly": False,
+                **{
+                    key: value
+                    for key, value in {
+                        "forceBypass": forcebypass,
+                        "noEntryDelay": noentrydelay,
+                        "silentArming": silentarming,
+                    }.items()
+                    if value is True
+                },
             }
-        try:
-            async with self._websession.post(
-                url=self.PARTITION_URL_BASE
-                + self._partitionid
-                + "/"
-                + self.COMMAND_LIST[event]["command"],
-                json=json,
-                headers=self._ajax_headers,
-            ) as resp:
-                _LOGGER.debug("Response from Alarm.com %s", resp.status)
-                if resp.status == 200:
-                    # Update alarm.com status after calling state change.
-                    await self.async_update()
-                elif resp.status >= 400:
-                    raise aiohttp.ClientError
-        except aiohttp.ClientError:
-            # May have been logged out, try again
-            _LOGGER.error("Error executing %s, logging in and trying again...", event)
-            await self.async_login()
-            if event == "Disarm":
-                await self.async_alarm_disarm()
-            elif event == "Arm+Stay":
-                await self.async_alarm_arm_stay()
-            elif event == "Arm+Away":
-                await self.async_alarm_arm_away()
+        async with self._websession.post(
+            url=self.PARTITION_URL_BASE
+            + self._partitionid
+            + "/"
+            + self.COMMAND_LIST[event]["command"],
+            json=json,
+            headers=self._ajax_headers,
+        ) as resp:
+            _LOGGER.debug("Response from Alarm.com %s", resp.status)
+            if resp.status == 200:
+                # Update alarm.com status after calling state change.
+                await self.async_update()
+            if resp.status == 403:
+                # May have been logged out, try again
+                _LOGGER.warning("Error executing %s, logging in and trying again...", event)
+                await self.async_login()
+                if event == "Disarm":
+                    await self.async_alarm_disarm()
+                elif event == "Arm+Stay":
+                    await self.async_alarm_arm_stay()
+                elif event == "Arm+Away":
+                    await self.async_alarm_arm_away()
+            elif resp.status >= 400:
+                _LOGGER.error("%s failed with HTTP code %s", event, resp.status)
+                _LOGGER.error(
+                    "Arming parameters: force_bypass = %s, no_entry_delay = %s, silent_arming = %s",
+                    forcebypass,
+                    noentrydelay,
+                    silentarming,
+                )
         return True
 
     async def async_alarm_disarm(self):
