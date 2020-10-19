@@ -29,6 +29,7 @@ class Alarmdotcom:
     PARTITION_URL_BASE = "https://www.alarm.com/web/api/devices/partitions/"
     TROUBLECONDITIONS_URL = "https://www.alarm.com/web/api/troubleConditions/troubleConditions?forceRefresh=false"
     SENSOR_STATUS_URL = "https://www.alarm.com/web/api/devices/sensors"
+    THERMOSTAT_STATUS_URL = "https://www.alarm.com/web/api/devices/thermostats"
     STATEMAP = (
         "",
         "disarmed",
@@ -40,6 +41,14 @@ class Alarmdotcom:
         "Arm+Stay": {"command": "armStay"},
         "Arm+Away": {"command": "armAway"},
     }
+    THERMOSTAT_ATTRIBUTES = (
+        "ambientTemp",
+        "coolSetpoint",
+        "fanMode",
+        "heatSetpoint",
+        "humidityLevel",
+        "state"
+    )
 
     def __init__(
         self, username, password, websession, forcebypass, noentrydelay, silentarming,
@@ -66,6 +75,7 @@ class Alarmdotcom:
         self._forcebypass = forcebypass  # "stay","away","true","false"
         self._noentrydelay = noentrydelay  # "stay","away","true","false"
         self._silentarming = silentarming  # "stay","away","true","false"
+        self._thermostat_detected = False
 
     async def async_login(self):
         """Login to Alarm.com."""
@@ -143,6 +153,8 @@ class Alarmdotcom:
             self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
                 "id"
             ]
+            thermostats = json["data"]["relationships"].get("thermostats", {}).get("data", [])
+            self._thermostat_detected = len(thermostats) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load partition data from Alarm.com")
             return False
@@ -202,6 +214,29 @@ class Alarmdotcom:
         except KeyError:
             _LOGGER.error("Unable to extract sensor status from Alarm.com")
             raise
+        if self._thermostat_detected:
+            try:
+                async with self._websession.get(
+                    url=self.THERMOSTAT_STATUS_URL, headers=self._ajax_headers
+                ) as resp:
+                    json = await (resp.json())
+                for sensor in json["data"]:
+                    for attribute in self.THERMOSTAT_ATTRIBUTES:
+                        if attribute not in sensor["attributes"]:
+                            continue
+                        self.sensor_status += (
+                            ", "
+                            + sensor["attributes"]["description"]
+                            + "_" + attribute
+                            + " is "
+                            + str(sensor["attributes"][attribute])
+                        )
+            except (asyncio.TimeoutError, aiohttp.ClientError):
+                _LOGGER.error("Can not load thermostat status from Alarm.com")
+                return False
+            except KeyError:
+                _LOGGER.error("Unable to extract thermostat status from Alarm.com")
+                raise
         try:
             async with self._websession.get(
                 url=self.TROUBLECONDITIONS_URL, headers=self._ajax_headers
