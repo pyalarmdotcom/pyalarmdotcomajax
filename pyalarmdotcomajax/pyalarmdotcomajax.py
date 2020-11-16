@@ -16,6 +16,7 @@ class Alarmdotcom:
     and disarming the system are possible.
     """
 
+    URL_BASE = "https://www.alarm.com/"
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
     LOGIN_PASSWORD_FIELD = "txtPassword"
@@ -25,11 +26,13 @@ class Alarmdotcom:
     EVENTVALIDATION_FIELD = "__EVENTVALIDATION"
     PREVIOUSPAGE_FIELD = "__PREVIOUSPAGE"
     SYSTEMITEMS_URL = "https://www.alarm.com/web/api/systems/availableSystemItems"
-    SYSTEM_URL_BASE = "https://www.alarm.com/web/api/systems/systems/"
-    PARTITION_URL_BASE = "https://www.alarm.com/web/api/devices/partitions/"
-    TROUBLECONDITIONS_URL = "https://www.alarm.com/web/api/troubleConditions/troubleConditions?forceRefresh=false"
-    SENSOR_STATUS_URL = "https://www.alarm.com/web/api/devices/sensors"
-    THERMOSTAT_STATUS_URL = "https://www.alarm.com/web/api/devices/thermostats"
+    SYSTEM_URL_TEMPLATE = "{}web/api/systems/systems/{}"
+    PARTITION_URL_TEMPLATE = "{}web/api/devices/partitions/{}"
+    TROUBLECONDITIONS_URL_TEMPLATE = (
+        "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
+    )
+    SENSOR_STATUS_URL_TEMPLATE = "{}web/api/devices/sensors"
+    THERMOSTAT_STATUS_URL_TEMPLATE = "{}web/api/devices/thermostats"
     STATEMAP = (
         "",
         "disarmed",
@@ -51,7 +54,7 @@ class Alarmdotcom:
     )
 
     def __init__(
-        self, username, password, websession, forcebypass, noentrydelay, silentarming,
+        self, username, password, websession, forcebypass, noentrydelay, silentarming
     ):
         """
         Use aiohttp to make a request to alarm.com
@@ -147,7 +150,8 @@ class Alarmdotcom:
         try:
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_BASE + self._systemid, headers=self._ajax_headers
+                url=self.SYSTEM_URL_TEMPLATE.format(self.URL_BASE, self._systemid),
+                headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
             self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
@@ -171,7 +175,9 @@ class Alarmdotcom:
         try:
             # grab partition status
             async with self._websession.get(
-                url=self.PARTITION_URL_BASE + self._partitionid,
+                url=self.PARTITION_URL_TEMPLATE.format(
+                    self.URL_BASE, self._partitionid
+                ),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -198,7 +204,8 @@ class Alarmdotcom:
             await self.async_update()
         try:
             async with self._websession.get(
-                url=self.SENSOR_STATUS_URL, headers=self._ajax_headers
+                url=self.SENSOR_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
             for sensor in json["data"]:
@@ -217,7 +224,8 @@ class Alarmdotcom:
         if self._thermostat_detected:
             try:
                 async with self._websession.get(
-                    url=self.THERMOSTAT_STATUS_URL, headers=self._ajax_headers
+                    url=self.THERMOSTAT_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                    headers=self._ajax_headers
                 ) as resp:
                     json = await (resp.json())
                 for sensor in json["data"]:
@@ -239,7 +247,8 @@ class Alarmdotcom:
                 raise
         try:
             async with self._websession.get(
-                url=self.TROUBLECONDITIONS_URL, headers=self._ajax_headers
+                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self.URL_BASE),
+                headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
             for troublecondition in json["data"]:
@@ -276,8 +285,7 @@ class Alarmdotcom:
                 },
             }
         async with self._websession.post(
-            url=self.PARTITION_URL_BASE
-            + self._partitionid
+            url=self.PARTITION_URL_TEMPLATE.format(self.URL_BASE, self._partitionid)
             + "/"
             + self.COMMAND_LIST[event]["command"],
             json=json,
@@ -289,7 +297,9 @@ class Alarmdotcom:
                 await self.async_update()
             if resp.status == 403:
                 # May have been logged out, try again
-                _LOGGER.warning("Error executing %s, logging in and trying again...", event)
+                _LOGGER.warning(
+                    "Error executing %s, logging in and trying again...", event
+                )
                 await self.async_login()
                 if event == "Disarm":
                     await self.async_alarm_disarm()
@@ -324,3 +334,80 @@ class Alarmdotcom:
         noentrydelay = self._noentrydelay in ["away", "true"]
         silentarming = self._silentarming in ["away", "true"]
         await self._send("Arm+Away", forcebypass, noentrydelay, silentarming)
+
+
+class AlarmdotcomADT(Alarmdotcom):
+    """
+    Access to control.adt.com portal.
+
+    This class logs in via the control.adt.com portal instead of the alarm.com portal.
+    """
+
+    URL_BASE = "https://control.adt.com/"  # this overrides the URL_BASE in the Alarmdotcom class
+    LOGIN_POST_URL = "https://control.adt.com/login.asp"  # this overrides the LOGIN_POST_URL in the Alarmdotcom class
+    IDENTITY_URL = "https://control.adt.com/system-install/api/identity"
+    SKIP_2FA_URL = "https://control.adt.com/system-install/api/engines/twoFactorAuthentication/twoFactorSettings/{}/skipTwoFactorSetup"
+    DOTNETLOGIN_URL = "https://control.adt.com/system-install/api/installmanager/getCustomerDotNetLoginUrl"
+    WRAPUPJOURNEY_URL = (
+        "https://control.adt.com/system-install/api/installmanager/wrapupJourney"
+    )
+
+    async def async_login(self):
+        """Login to control.adt.com."""
+        _LOGGER.debug("Attempting to log into control.adt.com...")
+        try:
+            # login and grab ajax key
+            async with self._websession.post(
+                url=self.LOGIN_POST_URL,
+                data={
+                    "JavaScriptTest": 1,
+                    "cookieTest": 1,
+                    "login": self._username,
+                    "password": self._password,
+                    "submit_banner_form": "Login",
+                },
+            ) as resp:
+                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
+        except (asyncio.TimeoutError, aiohttp.ClientError):
+            _LOGGER.error("Can not login to Alarm.com")
+            return False
+        except KeyError:
+            _LOGGER.error("Unable to extract ajax key from Alarm.com")
+            raise
+        try:
+            # grab system id
+            async with self._websession.get(
+                url=self.IDENTITY_URL, headers=self._ajax_headers
+            ) as resp:
+                json = await resp.json()
+            adt_id = json["value"]["id"]
+            self._systemid = json["value"]["customerId"]
+            await self._websession.post(
+                url=self.SKIP_2FA_URL.format(adt_id), headers=self._ajax_headers
+            )
+            async with self._websession.post(
+                url=self.DOTNETLOGIN_URL, headers=self._ajax_headers,
+            ) as resp:
+                json = await resp.json()
+            dotnet_url = json["value"]["url"]
+            await self._websession.post(
+                url=self.WRAPUPJOURNEY_URL, headers=self._ajax_headers,
+            )
+            async with self._websession.get(url=dotnet_url) as resp:
+                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
+            # grab partition id
+            async with self._websession.get(
+                url=self.SYSTEM_URL_TEMPLATE.format(self.URL_BASE, self._systemid),
+                headers=self._ajax_headers,
+            ) as resp:
+                json = await (resp.json())
+            self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
+                "id"
+            ]
+        except (asyncio.TimeoutError, aiohttp.ClientError):
+            _LOGGER.error("Unable to log in to adt.com")
+            return False
+        except (KeyError, IndexError):
+            _LOGGER.error("Unable to extract data from adt.com")
+            raise
+        return True
