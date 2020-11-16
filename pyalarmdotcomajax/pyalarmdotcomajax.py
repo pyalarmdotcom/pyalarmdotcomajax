@@ -50,7 +50,7 @@ class Alarmdotcom:
         "fanMode",
         "heatSetpoint",
         "humidityLevel",
-        "state"
+        "state",
     )
 
     def __init__(
@@ -157,7 +157,9 @@ class Alarmdotcom:
             self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
                 "id"
             ]
-            thermostats = json["data"]["relationships"].get("thermostats", {}).get("data", [])
+            thermostats = (
+                json["data"]["relationships"].get("thermostats", {}).get("data", [])
+            )
             self._thermostat_detected = len(thermostats) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load partition data from Alarm.com")
@@ -225,7 +227,7 @@ class Alarmdotcom:
             try:
                 async with self._websession.get(
                     url=self.THERMOSTAT_STATUS_URL_TEMPLATE.format(self.URL_BASE),
-                    headers=self._ajax_headers
+                    headers=self._ajax_headers,
                 ) as resp:
                     json = await (resp.json())
                 for sensor in json["data"]:
@@ -235,7 +237,8 @@ class Alarmdotcom:
                         self.sensor_status += (
                             ", "
                             + sensor["attributes"]["description"]
-                            + "_" + attribute
+                            + "_"
+                            + attribute
                             + " is "
                             + str(sensor["attributes"][attribute])
                         )
@@ -404,6 +407,10 @@ class AlarmdotcomADT(Alarmdotcom):
             self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
                 "id"
             ]
+            thermostats = (
+                json["data"]["relationships"].get("thermostats", {}).get("data", [])
+            )
+            self._thermostat_detected = len(thermostats) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Unable to log in to adt.com")
             return False

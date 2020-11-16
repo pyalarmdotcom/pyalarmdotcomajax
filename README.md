@@ -1,7 +1,7 @@
 Alarm.com Python Library
 ===============================
 
-version number: 0.1.4
+version number: 0.1.6
 author: Justin Wong
 
 Overview

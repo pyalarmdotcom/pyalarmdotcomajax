@@ -1,3 +1,5 @@
+v0.1.6, 2020-11-16 -- Add thermostat status for ADT
+v0.1.5, 2020-11-16 -- Add thermostat status
 v0.1.4, 2020-11-14 -- Add AlarmdotcomADT for ADT portal login
 v0.1.3, 2020-09-02 -- Omit sending arming parameters if False. Only attempt relogin on HTTP 403 error.
 v0.1.2, 2020-03-22 -- Added option for silent arming
