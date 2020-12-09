@@ -271,16 +271,17 @@ class Alarmdotcom:
                 ) as resp:
                     json = await (resp.json())
                 for sensor in json["data"]:
-                    self.state = sensor["attributes"]["state"]
-                    self.state = self.GARAGE_DOOR_STATEMAP[self.state]
+                    self.garageState = sensor["attributes"]["state"]
+                    self.garageState = self.GARAGE_DOOR_STATEMAP[self.garageState]
                     self.sensor_status += (
-                        ", " + sensor["attributes"]["description"] + " is " + self.state
+                        ", " + sensor["attributes"]["description"] + " is " + self.garageState
                     )
             except (asyncio.TimeoutError, aiohttp.ClientError):
                 _LOGGER.error("Can not load garage door status from Alarm.com")
                 return False
             except KeyError:
                 _LOGGER.error("Unable to extract garage door status from Alarm.com")
+                self.garageState = None
                 raise
         try:
             async with self._websession.get(
