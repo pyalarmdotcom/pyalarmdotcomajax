@@ -85,6 +85,7 @@ class Alarmdotcom:
         self._noentrydelay = noentrydelay  # "stay","away","true","false"
         self._silentarming = silentarming  # "stay","away","true","false"
         self._thermostat_detected = False
+        self._garage_door_detected = False
 
     async def async_login(self):
         """Login to Alarm.com."""
