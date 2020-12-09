@@ -41,7 +41,7 @@ class Alarmdotcom:
         "armed away",
     )  # index is ADC's json status, value is integration's status
     GARAGE_DOOR_STATEMAP = (
-        "",  # Alarm.com returns 1,2.  Double quotes is here to align zero based index with Alarm.com
+        "Transitioning",  # 0
         "Open",  # 1
         "Closed",  # 2
     )
