@@ -86,10 +86,9 @@ class Alarmdotcom:
         self._silentarming = silentarming  # "stay","away","true","false"
         self._thermostat_detected = False
         self._garage_door_detected = False
+        self._url_base = self.URL_BASE
 
-    async def async_login(self):
-        """Login to Alarm.com."""
-        _LOGGER.debug("Attempting to log into Alarm.com...")
+    async def _async_get_ajax_key(self):
         try:
             # load login page once and grab VIEWSTATE/cookies
             async with self._websession.get(url=self.LOGIN_URL) as resp:
@@ -141,6 +140,8 @@ class Alarmdotcom:
         except KeyError:
             _LOGGER.error("Unable to extract ajax key from Alarm.com")
             raise
+
+    async def _async_get_system_info(self):
         try:
             # grab system id
             async with self._websession.get(
@@ -157,7 +158,7 @@ class Alarmdotcom:
         try:
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self.URL_BASE, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -168,18 +169,24 @@ class Alarmdotcom:
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
             )
             self._thermostat_detected = len(thermostats) > 0
-            
+
             # CHECK IF GARAGE DOORS EXIST ON SYSTEM
-            garageDoors = (
+            garage_doors = (
                 json["data"]["relationships"].get("garageDoors", {}).get("data", [])
             )
-            self._garage_door_detected = len(garageDoors) > 0
+            self._garage_door_detected = len(garage_doors) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load partition data from Alarm.com")
             return False
         except (KeyError, IndexError):
             _LOGGER.error("Unable to extract partition id from Alarm.com")
             raise
+
+    async def async_login(self):
+        """Login to Alarm.com."""
+        _LOGGER.debug("Attempting to log in to Alarm.com")
+        await self._async_get_ajax_key()
+        await self._async_get_system_info()
         return True
 
     async def async_update(self):
@@ -191,7 +198,7 @@ class Alarmdotcom:
             # grab partition status
             async with self._websession.get(
                 url=self.PARTITION_URL_TEMPLATE.format(
-                    self.URL_BASE, self._partitionid
+                    self._url_base, self._partitionid
                 ),
                 headers=self._ajax_headers,
             ) as resp:
@@ -219,7 +226,7 @@ class Alarmdotcom:
             await self.async_update()
         try:
             async with self._websession.get(
-                url=self.SENSOR_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                url=self.SENSOR_STATUS_URL_TEMPLATE.format(self._url_base),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -239,7 +246,7 @@ class Alarmdotcom:
         if self._thermostat_detected:
             try:
                 async with self._websession.get(
-                    url=self.THERMOSTAT_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                    url=self.THERMOSTAT_STATUS_URL_TEMPLATE.format(self._url_base),
                     headers=self._ajax_headers,
                 ) as resp:
                     json = await (resp.json())
@@ -266,26 +273,28 @@ class Alarmdotcom:
         if self._garage_door_detected:
             try:
                 async with self._websession.get(
-                    url=self.GARAGE_DOOR_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                    url=self.GARAGE_DOOR_STATUS_URL_TEMPLATE.format(self._url_base),
                     headers=self._ajax_headers,
                 ) as resp:
                     json = await (resp.json())
                 for sensor in json["data"]:
-                    self.garageState = sensor["attributes"]["state"]
-                    self.garageState = self.GARAGE_DOOR_STATEMAP[self.garageState]
+                    garage_state = sensor["attributes"]["state"]
+                    garage_state = self.GARAGE_DOOR_STATEMAP[garage_state]
                     self.sensor_status += (
-                        ", " + sensor["attributes"]["description"] + " is " + self.garageState
+                        ", "
+                        + sensor["attributes"]["description"]
+                        + " is "
+                        + garage_state
                     )
             except (asyncio.TimeoutError, aiohttp.ClientError):
                 _LOGGER.error("Can not load garage door status from Alarm.com")
                 return False
             except KeyError:
                 _LOGGER.error("Unable to extract garage door status from Alarm.com")
-                self.garageState = None
                 raise
         try:
             async with self._websession.get(
-                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self.URL_BASE),
+                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self._url_base),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -323,7 +332,7 @@ class Alarmdotcom:
                 },
             }
         async with self._websession.post(
-            url=self.PARTITION_URL_TEMPLATE.format(self.URL_BASE, self._partitionid)
+            url=self.PARTITION_URL_TEMPLATE.format(self._url_base, self._partitionid)
             + "/"
             + self.COMMAND_LIST[event]["command"],
             json=json,
@@ -381,22 +390,20 @@ class AlarmdotcomADT(Alarmdotcom):
     This class logs in via the control.adt.com portal instead of the alarm.com portal.
     """
 
-    URL_BASE = "https://control.adt.com/"  # this overrides the URL_BASE in the Alarmdotcom class
-    LOGIN_POST_URL = "https://control.adt.com/login.asp"  # this overrides the LOGIN_POST_URL in the Alarmdotcom class
-    IDENTITY_URL = "https://control.adt.com/system-install/api/identity"
-    SKIP_2FA_URL = "https://control.adt.com/system-install/api/engines/twoFactorAuthentication/twoFactorSettings/{}/skipTwoFactorSetup"
-    DOTNETLOGIN_URL = "https://control.adt.com/system-install/api/installmanager/getCustomerDotNetLoginUrl"
-    WRAPUPJOURNEY_URL = (
-        "https://control.adt.com/system-install/api/installmanager/wrapupJourney"
+    URL_BASE_ADT = "https://control.adt.com/"  # this overrides the URL_BASE in the Alarmdotcom class
+    LOGIN_POST_URL_ADT = "https://control.adt.com/login.asp"  # this overrides the LOGIN_POST_URL in the Alarmdotcom class
+    IDENTITY_URL_TEMPLATE = "{}system-install/api/identity"
+    SKIP_2FA_URL_TEMPLATE = "{}system-install/api/engines/twoFactorAuthentication/twoFactorSettings/{}/skipTwoFactorSetup"
+    DOTNETLOGIN_URL_TEMPLATE = (
+        "{}system-install/api/installmanager/getCustomerDotNetLoginUrl"
     )
+    WRAPUPJOURNEY_URL_TEMPLATE = "{}system-install/api/installmanager/wrapupJourney"
 
-    async def async_login(self):
-        """Login to control.adt.com."""
-        _LOGGER.debug("Attempting to log into control.adt.com...")
+    async def _async_get_ajax_key_adt(self):
         try:
             # login and grab ajax key
             async with self._websession.post(
-                url=self.LOGIN_POST_URL,
+                url=self.LOGIN_POST_URL_ADT,
                 data={
                     "JavaScriptTest": 1,
                     "cookieTest": 1,
@@ -412,30 +419,36 @@ class AlarmdotcomADT(Alarmdotcom):
         except KeyError:
             _LOGGER.error("Unable to extract ajax key from Alarm.com")
             raise
+
+    async def _async_get_system_info_adt(self):
         try:
             # grab system id
             async with self._websession.get(
-                url=self.IDENTITY_URL, headers=self._ajax_headers
+                url=self.IDENTITY_URL_TEMPLATE.format(self._url_base),
+                headers=self._ajax_headers,
             ) as resp:
                 json = await resp.json()
             adt_id = json["value"]["id"]
             self._systemid = json["value"]["customerId"]
             await self._websession.post(
-                url=self.SKIP_2FA_URL.format(adt_id), headers=self._ajax_headers
+                url=self.SKIP_2FA_URL_TEMPLATE.format(self._url_base, adt_id),
+                headers=self._ajax_headers,
             )
             async with self._websession.post(
-                url=self.DOTNETLOGIN_URL, headers=self._ajax_headers,
+                url=self.DOTNETLOGIN_URL_TEMPLATE.format(self._url_base),
+                headers=self._ajax_headers,
             ) as resp:
                 json = await resp.json()
             dotnet_url = json["value"]["url"]
             await self._websession.post(
-                url=self.WRAPUPJOURNEY_URL, headers=self._ajax_headers,
+                url=self.WRAPUPJOURNEY_URL_TEMPLATE.format(self._url_base),
+                headers=self._ajax_headers,
             )
             async with self._websession.get(url=dotnet_url) as resp:
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self.URL_BASE, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -446,16 +459,55 @@ class AlarmdotcomADT(Alarmdotcom):
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
             )
             self._thermostat_detected = len(thermostats) > 0
-            
-            # CHECK IF GARAGE DOORS EXIST ON SYSTEM
-            garageDoors = (
+            # check if garage doors exist on system
+            garage_doors = (
                 json["data"]["relationships"].get("garageDoors", {}).get("data", [])
             )
-            self._garage_door_detected = len(garageDoors) > 0
+            self._garage_door_detected = len(garage_doors) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
-            _LOGGER.error("Unable to log in to adt.com")
+            _LOGGER.error("Network error encountered during log in")
             return False
         except (KeyError, IndexError):
-            _LOGGER.error("Unable to extract data from adt.com")
+            _LOGGER.warning("ADT log in style unsuccessful")
             raise
+
+    async def async_login(self):
+        """Log in to ADT."""
+        _LOGGER.debug("Attempting to log in to ADT")
+        try:
+            self._url_base = self.URL_BASE_ADT
+            await self._async_get_ajax_key_adt()
+            await self._async_get_system_info_adt()
+        except (KeyError, IndexError):
+            _LOGGER.warning("Falling back to ADC log in style")
+            try:
+                self._url_base = self.URL_BASE
+                await self._async_get_ajax_key()
+                await self._async_get_system_info()
+            except (KeyError, IndexError):
+                _LOGGER.error("Unable to log in")
+                return False
+        return True
+
+
+class AlarmdotcomProtection1(AlarmdotcomADT):
+    """
+    Access to alarm.com portal for Protection 1.
+
+    This class uses the alarm.com portal but uses some ADT style endpoints.
+    """
+
+    async def async_login(self):
+        """Log in to Protection 1."""
+        _LOGGER.debug("Attempting to log in to Protection 1")
+        await self._async_get_ajax_key()
+        try:
+            await self._async_get_system_info_adt()
+        except (KeyError, IndexError):
+            _LOGGER.warning("Falling back to ADC log in style")
+            try:
+                await self._async_get_system_info()
+            except (KeyError, IndexError):
+                _LOGGER.error("Unable to log in")
+                return False
         return True
