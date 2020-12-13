@@ -33,12 +33,18 @@ class Alarmdotcom:
     )
     SENSOR_STATUS_URL_TEMPLATE = "{}web/api/devices/sensors"
     THERMOSTAT_STATUS_URL_TEMPLATE = "{}web/api/devices/thermostats"
+    GARAGE_DOOR_STATUS_URL_TEMPLATE = "{}web/api/devices/garageDoors"
     STATEMAP = (
         "",
         "disarmed",
         "armed stay",
         "armed away",
     )  # index is ADC's json status, value is integration's status
+    GARAGE_DOOR_STATEMAP = (
+        "Transitioning",  # 0
+        "Open",  # 1
+        "Closed",  # 2
+    )
     COMMAND_LIST = {
         "Disarm": {"command": "disarm"},
         "Arm+Stay": {"command": "armStay"},
@@ -79,6 +85,7 @@ class Alarmdotcom:
         self._noentrydelay = noentrydelay  # "stay","away","true","false"
         self._silentarming = silentarming  # "stay","away","true","false"
         self._thermostat_detected = False
+        self._garage_door_detected = False
 
     async def async_login(self):
         """Login to Alarm.com."""
@@ -161,6 +168,12 @@ class Alarmdotcom:
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
             )
             self._thermostat_detected = len(thermostats) > 0
+            
+            # CHECK IF GARAGE DOORS EXIST ON SYSTEM
+            garageDoors = (
+                json["data"]["relationships"].get("garageDoors", {}).get("data", [])
+            )
+            self._garage_door_detected = len(garageDoors) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load partition data from Alarm.com")
             return False
@@ -247,6 +260,28 @@ class Alarmdotcom:
                 return False
             except KeyError:
                 _LOGGER.error("Unable to extract thermostat status from Alarm.com")
+                raise
+
+        # GET GARAGE DOOR STATUS
+        if self._garage_door_detected:
+            try:
+                async with self._websession.get(
+                    url=self.GARAGE_DOOR_STATUS_URL_TEMPLATE.format(self.URL_BASE),
+                    headers=self._ajax_headers,
+                ) as resp:
+                    json = await (resp.json())
+                for sensor in json["data"]:
+                    self.garageState = sensor["attributes"]["state"]
+                    self.garageState = self.GARAGE_DOOR_STATEMAP[self.garageState]
+                    self.sensor_status += (
+                        ", " + sensor["attributes"]["description"] + " is " + self.garageState
+                    )
+            except (asyncio.TimeoutError, aiohttp.ClientError):
+                _LOGGER.error("Can not load garage door status from Alarm.com")
+                return False
+            except KeyError:
+                _LOGGER.error("Unable to extract garage door status from Alarm.com")
+                self.garageState = None
                 raise
         try:
             async with self._websession.get(
@@ -411,6 +446,12 @@ class AlarmdotcomADT(Alarmdotcom):
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
             )
             self._thermostat_detected = len(thermostats) > 0
+            
+            # CHECK IF GARAGE DOORS EXIST ON SYSTEM
+            garageDoors = (
+                json["data"]["relationships"].get("garageDoors", {}).get("data", [])
+            )
+            self._garage_door_detected = len(garageDoors) > 0
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Unable to log in to adt.com")
             return False
