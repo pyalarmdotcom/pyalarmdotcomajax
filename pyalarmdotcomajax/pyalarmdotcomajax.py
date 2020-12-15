@@ -60,7 +60,14 @@ class Alarmdotcom:
     )
 
     def __init__(
-        self, username, password, websession, forcebypass, noentrydelay, silentarming
+        self,
+        username,
+        password,
+        websession,
+        forcebypass,
+        noentrydelay,
+        silentarming,
+        twofactorcookie,
     ):
         """
         Use aiohttp to make a request to alarm.com
@@ -87,11 +94,16 @@ class Alarmdotcom:
         self._thermostat_detected = False
         self._garage_door_detected = False
         self._url_base = self.URL_BASE
+        self._twofactor_cookie = (
+            {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
+        )
 
     async def _async_get_ajax_key(self):
         try:
             # load login page once and grab VIEWSTATE/cookies
-            async with self._websession.get(url=self.LOGIN_URL) as resp:
+            async with self._websession.get(
+                url=self.LOGIN_URL, cookies=self._twofactor_cookie
+            ) as resp:
                 text = await resp.text()
                 _LOGGER.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
@@ -132,6 +144,7 @@ class Alarmdotcom:
                     self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
                     "IsFromNewSite": "1",
                 },
+                cookies=self._twofactor_cookie,
             ) as resp:
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
         except (asyncio.TimeoutError, aiohttp.ClientError):

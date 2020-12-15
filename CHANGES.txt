@@ -1,3 +1,4 @@
+v0.1.8, 2020-12-15 -- Add 2FA cookie
 v0.1.7, 2020-12-13 -- Add AlarmdotcomProtection1 and refactor classes
                       Add Garage Doors status
 v0.1.6, 2020-11-16 -- Add thermostat status for ADT
