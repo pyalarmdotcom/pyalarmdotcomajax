@@ -153,6 +153,7 @@ class Alarmdotcom:
         except KeyError:
             _LOGGER.error("Unable to extract ajax key from Alarm.com")
             raise
+        return True
 
     async def _async_get_system_info(self):
         try:
@@ -194,13 +195,14 @@ class Alarmdotcom:
         except (KeyError, IndexError):
             _LOGGER.error("Unable to extract partition id from Alarm.com")
             raise
+        return True
 
     async def async_login(self):
         """Login to Alarm.com."""
         _LOGGER.debug("Attempting to log in to Alarm.com")
-        await self._async_get_ajax_key()
-        await self._async_get_system_info()
-        return True
+        if not await self._async_get_ajax_key():
+            return False
+        return await self._async_get_system_info()
 
     async def async_update(self):
         """Fetch the latest state."""
@@ -432,6 +434,7 @@ class AlarmdotcomADT(Alarmdotcom):
         except KeyError:
             _LOGGER.error("Unable to extract ajax key from Alarm.com")
             raise
+        return True
 
     async def _async_get_system_info_adt(self):
         try:
@@ -483,24 +486,26 @@ class AlarmdotcomADT(Alarmdotcom):
         except (KeyError, IndexError):
             _LOGGER.warning("ADT log in style unsuccessful")
             raise
+        return True
 
     async def async_login(self):
         """Log in to ADT."""
         _LOGGER.debug("Attempting to log in to ADT")
         try:
             self._url_base = self.URL_BASE_ADT
-            await self._async_get_ajax_key_adt()
-            await self._async_get_system_info_adt()
+            if not await self._async_get_ajax_key_adt():
+                raise KeyError
+            return await self._async_get_system_info_adt()
         except (KeyError, IndexError):
             _LOGGER.warning("Falling back to ADC log in style")
             try:
                 self._url_base = self.URL_BASE
-                await self._async_get_ajax_key()
-                await self._async_get_system_info()
+                if not await self._async_get_ajax_key():
+                    return False
+                return await self._async_get_system_info()
             except (KeyError, IndexError):
                 _LOGGER.error("Unable to log in")
                 return False
-        return True
 
 
 class AlarmdotcomProtection1(AlarmdotcomADT):
@@ -515,12 +520,12 @@ class AlarmdotcomProtection1(AlarmdotcomADT):
         _LOGGER.debug("Attempting to log in to Protection 1")
         await self._async_get_ajax_key()
         try:
-            await self._async_get_system_info_adt()
+            if not await self._async_get_system_info_adt():
+                return False
         except (KeyError, IndexError):
             _LOGGER.warning("Falling back to ADC log in style")
             try:
-                await self._async_get_system_info()
+                return await self._async_get_system_info()
             except (KeyError, IndexError):
                 _LOGGER.error("Unable to log in")
                 return False
-        return True
