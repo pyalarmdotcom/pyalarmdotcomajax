@@ -39,6 +39,7 @@ class Alarmdotcom:
         "disarmed",
         "armed stay",
         "armed away",
+        "armed night",
     )  # index is ADC's json status, value is integration's status
     GARAGE_DOOR_STATEMAP = (
         "Transitioning",  # 0
