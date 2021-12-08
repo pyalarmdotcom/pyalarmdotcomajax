@@ -182,7 +182,7 @@ class Alarmdotcom:
             _LOGGER.error("Unable to extract system id from Alarm.com")
             raise
         try:
-            # grab partition id
+            # grab partition id and lock id
             async with self._websession.get(
                 url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
                 headers=self._ajax_headers,
@@ -633,3 +633,4 @@ class AlarmdotcomProtection1(AlarmdotcomADT):
             except (KeyError, IndexError):
                 _LOGGER.error("Unable to log in")
                 return False
+
