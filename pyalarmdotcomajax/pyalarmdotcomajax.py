@@ -257,7 +257,7 @@ class Alarmdotcom:
             self.state = None
             self.sensor_status = None
             self._ajax_headers["ajaxrequestuniquekey"] = None
-            await self.async_update()
+            await self.async_update_lock()
 
     async def async_update(self):
         """Fetch the latest state."""
