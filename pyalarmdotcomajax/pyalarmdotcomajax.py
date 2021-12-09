@@ -36,7 +36,7 @@ class Alarmdotcom:
     THERMOSTAT_STATUS_URL_TEMPLATE = "{}web/api/devices/thermostats"
     GARAGE_DOOR_STATUS_URL_TEMPLATE = "{}web/api/devices/garageDoors"
     LOCK_STATUS_URL_TEMPLATE = "{}web/api/devices/locks"
-    STATEMAP = (
+    ALARM_STATEMAP = (
         "",
         "disarmed",
         "armed stay",
@@ -227,26 +227,28 @@ class Alarmdotcom:
             return False
         return await self._async_get_system_info()
 
-    async def async_update_lock(self):
-        """Fetch the latest lock state."""
+    async def async_update_common(self, url,statemap):
+        """Fetch the latest state."""
         _LOGGER.debug("Calling update on Alarm.com")
         if not self._ajax_headers["ajaxrequestuniquekey"]:
             await self.async_login()
         try:
             # grab lock status
             async with self._websession.get(
-                url=self.LOCK_URL_TEMPLATE.format(
-                    self._url_base, self._lockid
-                ),
+                url=url,
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
             self.state = json["data"]["attributes"]["state"]
-            self.state = self.LOCK_STATEMAP[self.state]
+            self.state = statemap[self.state]
             _LOGGER.debug(
                 "Got state %s, mapping to %s",
                 json["data"]["attributes"]["state"],
                 self.state,
+            )
+            self.sensor_status = json["data"]["attributes"]["needsClearIssuesPrompt"]
+            self.sensor_status = (
+                "System needs to be cleared" if self.sensor_status else "System OK"
             )
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load state data from Alarm.com")
@@ -258,42 +260,22 @@ class Alarmdotcom:
             self.sensor_status = None
             self._ajax_headers["ajaxrequestuniquekey"] = None
             await self.async_update_lock()
+        
+    async def async_update_lock(self):
+        """Fetch the latest lock state."""
+            async_update_common(
+                self.LOCK_URL_TEMPLATE.format(
+                   self._url_base, self._lockid), 
+                self.LOCK_STATEMAP),
+            )
 
-    async def async_update(self):
-        """Fetch the latest state."""
-        _LOGGER.debug("Calling update on Alarm.com")
-        if not self._ajax_headers["ajaxrequestuniquekey"]:
-            await self.async_login()
-        try:
-            # grab alarm status
-            async with self._websession.get(
-                url=self.PARTITION_URL_TEMPLATE.format(
-                    self._url_base, self._partitionid
-                ),
-                headers=self._ajax_headers,
-            ) as resp:
-                json = await (resp.json())
-            self.sensor_status = json["data"]["attributes"]["needsClearIssuesPrompt"]
-            self.sensor_status = (
-                "System needs to be cleared" if self.sensor_status else "System OK"
+    async def async_update_alarm(self):
+        """Fetch the latest lock state."""
+            async_update_common(
+                self.PARTITION_URL_TEMPLATE.format(
+                    self._url_base, self._partitionid),
+                self.ALARM_STATEMAP),
             )
-            self.state = json["data"]["attributes"]["state"]
-            self.state = self.STATEMAP[self.state]
-            _LOGGER.debug(
-                "Got state %s, mapping to %s",
-                json["data"]["attributes"]["state"],
-                self.state,
-            )
-        except (asyncio.TimeoutError, aiohttp.ClientError):
-            _LOGGER.error("Can not load state data from Alarm.com")
-            return False
-        except KeyError:
-            _LOGGER.error("Unable to extract state data from Alarm.com")
-            # We may have timed out. Re-login again
-            self.state = None
-            self.sensor_status = None
-            self._ajax_headers["ajaxrequestuniquekey"] = None
-            await self.async_update()
         try:
             async with self._websession.get(
                 url=self.SENSOR_STATUS_URL_TEMPLATE.format(self._url_base),
