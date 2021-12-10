@@ -36,7 +36,7 @@ class Alarmdotcom:
     THERMOSTAT_STATUS_URL_TEMPLATE = "{}web/api/devices/thermostats"
     GARAGE_DOOR_STATUS_URL_TEMPLATE = "{}web/api/devices/garageDoors"
     LOCK_STATUS_URL_TEMPLATE = "{}web/api/devices/locks"
-    ALARM_STATEMAP = (
+    STATEMAP = (
         "",
         "disarmed",
         "armed stay",
@@ -227,29 +227,46 @@ class Alarmdotcom:
             return False
         return await self._async_get_system_info()
 
-    async def async_update_common(self, url,statemap):
-        """Fetch the latest state."""
+    async def async_update(self,mode):
+        """Fetch the latest state according to mode."""
         _LOGGER.debug("Calling update on Alarm.com")
         if not self._ajax_headers["ajaxrequestuniquekey"]:
             await self.async_login()
         try:
-            # grab lock status
+            if mode == "lock":
+                state_url=self.LOCK_URL_TEMPLATE.format(
+                    self._url_base, self._lockid
+                )
+            else:
+                state_url=self.PARTITION_URL_TEMPLATE.format(
+                    self._url_base, self._partitionid
+                )
+
+            # grab status
             async with self._websession.get(
-                url=url,
+                url=state_url,
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
             self.state = json["data"]["attributes"]["state"]
-            self.state = statemap[self.state]
+            if mode == "lock":
+                self.state = self.LOCK_STATEMAP[self.state]
+            else:
+                self.state = self.STATEMAP[self.state]
+
             _LOGGER.debug(
                 "Got state %s, mapping to %s",
                 json["data"]["attributes"]["state"],
                 self.state,
             )
-            self.sensor_status = json["data"]["attributes"]["needsClearIssuesPrompt"]
-            self.sensor_status = (
-                "System needs to be cleared" if self.sensor_status else "System OK"
-            )
+            if mode == "alarm":
+                self.sensor_status = json["data"]["attributes"]["needsClearIssuesPrompt"]
+                self.sensor_status = (
+                    "System needs to be cleared" if self.sensor_status else "System OK"
+                )
+            else:
+                self.sensor_status = ""
+
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load state data from Alarm.com")
             return False
@@ -259,23 +276,8 @@ class Alarmdotcom:
             self.state = None
             self.sensor_status = None
             self._ajax_headers["ajaxrequestuniquekey"] = None
-            await self.async_update_lock()
-        
-    async def async_update_lock(self):
-        """Fetch the latest lock state."""
-            async_update_common(
-                self.LOCK_URL_TEMPLATE.format(
-                   self._url_base, self._lockid), 
-                self.LOCK_STATEMAP),
-            )
+            await self.async_update(mode)
 
-    async def async_update_alarm(self):
-        """Fetch the latest lock state."""
-            async_update_common(
-                self.PARTITION_URL_TEMPLATE.format(
-                    self._url_base, self._partitionid),
-                self.ALARM_STATEMAP),
-            )
         try:
             async with self._websession.get(
                 url=self.SENSOR_STATUS_URL_TEMPLATE.format(self._url_base),
@@ -409,7 +411,7 @@ class Alarmdotcom:
                     if value is True
                 },
             }
-        if command == "partition":
+        if command == "alarm":
            url_prefix=self.PARTITION_URL_TEMPLATE.format(self._url_base, self._partitionid)
            _LOGGER.debug("Url prefix %s", url_prefix)
         elif command == "lock":
@@ -428,7 +430,7 @@ class Alarmdotcom:
             _LOGGER.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
-                await self.async_update()
+                await self.async_update(command)
             if resp.status == 403:
                 # May have been logged out, try again
                 _LOGGER.warning(
@@ -457,21 +459,21 @@ class Alarmdotcom:
 
     async def async_alarm_disarm(self):
         """Send disarm command."""
-        await self._send("partition","Disarm", False, False, False)
+        await self._send("alarm","Disarm", False, False, False)
 
     async def async_alarm_arm_stay(self):
         """Send arm stay command."""
         forcebypass = self._forcebypass in ["stay", "true"]
         noentrydelay = self._noentrydelay in ["stay", "true"]
         silentarming = self._silentarming in ["stay", "true"]
-        await self._send("partition","Arm+Stay", forcebypass, noentrydelay, silentarming)
+        await self._send("alarm","Arm+Stay", forcebypass, noentrydelay, silentarming)
 
     async def async_alarm_arm_away(self):
         """Send arm away command."""
         forcebypass = self._forcebypass in ["away", "true"]
         noentrydelay = self._noentrydelay in ["away", "true"]
         silentarming = self._silentarming in ["away", "true"]
-        await self._send("partition","Arm+Away", forcebypass, noentrydelay, silentarming)
+        await self._send("alarm","Arm+Away", forcebypass, noentrydelay, silentarming)
     
     async def async_lock(self):
         """Send lock command."""
