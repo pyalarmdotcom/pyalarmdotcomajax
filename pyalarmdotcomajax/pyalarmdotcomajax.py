@@ -227,7 +227,7 @@ class Alarmdotcom:
             return False
         return await self._async_get_system_info()
 
-    async def async_update(self,mode):
+    async def async_update(self,mode="alarm"):
         """Fetch the latest state according to mode."""
         _LOGGER.debug("Calling update on Alarm.com")
         if not self._ajax_headers["ajaxrequestuniquekey"]:
