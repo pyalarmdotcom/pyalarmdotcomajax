@@ -251,7 +251,7 @@ class Alarmdotcom:
                     ", "
                     + sensor["attributes"]["description"]
                     + " is "
-                    + sensor["attributes"]["stateText"]
+                    + sensor["attributes"]["displayStateText"]
                 )
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load sensor status from Alarm.com")
