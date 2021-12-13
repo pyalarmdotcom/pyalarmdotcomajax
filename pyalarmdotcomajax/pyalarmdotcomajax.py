@@ -192,15 +192,11 @@ class Alarmdotcom:
                 "id"
             ]
 
-            locks = (
-                json["data"]["relationships"].get("locks", {}).get("data", [])
-            )
+            locks = json["data"]["relationships"].get("locks", {}).get("data", [])
 
             self._lock_detected = len(locks) > 0
             if self._lock_detected:
-              self._lockid = json["data"]["relationships"]["locks"]["data"][0][
-                  "id"
-              ]
+                self._lockid = json["data"]["relationships"]["locks"]["data"][0]["id"]
 
             thermostats = (
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
@@ -227,18 +223,16 @@ class Alarmdotcom:
             return False
         return await self._async_get_system_info()
 
-    async def async_update(self,mode="alarm"):
+    async def async_update(self, mode="alarm"):
         """Fetch the latest state according to mode."""
         _LOGGER.debug("Calling update on Alarm.com")
         if not self._ajax_headers["ajaxrequestuniquekey"]:
             await self.async_login()
         try:
             if mode == "lock":
-                state_url=self.LOCK_URL_TEMPLATE.format(
-                    self._url_base, self._lockid
-                )
+                state_url = self.LOCK_URL_TEMPLATE.format(self._url_base, self._lockid)
             else:
-                state_url=self.PARTITION_URL_TEMPLATE.format(
+                state_url = self.PARTITION_URL_TEMPLATE.format(
                     self._url_base, self._partitionid
                 )
 
@@ -260,7 +254,9 @@ class Alarmdotcom:
                 self.state,
             )
             if mode == "alarm":
-                self.sensor_status = json["data"]["attributes"]["needsClearIssuesPrompt"]
+                self.sensor_status = json["data"]["attributes"][
+                    "needsClearIssuesPrompt"
+                ]
                 self.sensor_status = (
                     "System needs to be cleared" if self.sensor_status else "System OK"
                 )
@@ -309,10 +305,7 @@ class Alarmdotcom:
                     lock_state = sensor["attributes"]["state"]
                     lock_state = self.LOCK_STATEMAP[lock_state]
                     self.sensor_status += (
-                      ", "
-                      + sensor["attributes"]["description"]
-                      + " is "
-                      + lock_state
+                        ", " + sensor["attributes"]["description"] + " is " + lock_state
                     )
             except (asyncio.TimeoutError, aiohttp.ClientError):
                 _LOGGER.error("Can not load lock status from Alarm.com")
@@ -412,20 +405,20 @@ class Alarmdotcom:
                 },
             }
         if command == "alarm":
-           url_prefix=self.PARTITION_URL_TEMPLATE.format(self._url_base, self._partitionid)
-           _LOGGER.debug("Url prefix %s", url_prefix)
+            url_prefix = self.PARTITION_URL_TEMPLATE.format(
+                self._url_base, self._partitionid
+            )
+            _LOGGER.debug("Url prefix %s", url_prefix)
         elif command == "lock":
-           url_prefix=self.LOCK_URL_TEMPLATE.format(self._url_base, self._lockid)
-           _LOGGER.debug("Url prefix %s", url_prefix)
+            url_prefix = self.LOCK_URL_TEMPLATE.format(self._url_base, self._lockid)
+            _LOGGER.debug("Url prefix %s", url_prefix)
         else:
-          _LOGGER.debug("No such command %s", command)
-          return False
+            _LOGGER.debug("No such command %s", command)
+            return False
         async with self._websession.post(
-                   url=url_prefix
-                   + "/"
-                   + self.COMMAND_LIST[event]["command"],
-                   json=json,
-                   headers=self._ajax_headers,
+            url=url_prefix + "/" + self.COMMAND_LIST[event]["command"],
+            json=json,
+            headers=self._ajax_headers,
         ) as resp:
             _LOGGER.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
@@ -459,29 +452,30 @@ class Alarmdotcom:
 
     async def async_alarm_disarm(self):
         """Send disarm command."""
-        await self._send("alarm","Disarm", False, False, False)
+        await self._send("alarm", "Disarm", False, False, False)
 
     async def async_alarm_arm_stay(self):
         """Send arm stay command."""
         forcebypass = self._forcebypass in ["stay", "true"]
         noentrydelay = self._noentrydelay in ["stay", "true"]
         silentarming = self._silentarming in ["stay", "true"]
-        await self._send("alarm","Arm+Stay", forcebypass, noentrydelay, silentarming)
+        await self._send("alarm", "Arm+Stay", forcebypass, noentrydelay, silentarming)
 
     async def async_alarm_arm_away(self):
         """Send arm away command."""
         forcebypass = self._forcebypass in ["away", "true"]
         noentrydelay = self._noentrydelay in ["away", "true"]
         silentarming = self._silentarming in ["away", "true"]
-        await self._send("alarm","Arm+Away", forcebypass, noentrydelay, silentarming)
-    
+        await self._send("alarm", "Arm+Away", forcebypass, noentrydelay, silentarming)
+
     async def async_lock(self):
         """Send lock command."""
-        await self._send("lock","Lock",False,False,False)
+        await self._send("lock", "Lock", False, False, False)
 
     async def async_unlock(self):
         """Send lock command."""
-        await self._send("lock","Unlock",False,False,False)
+        await self._send("lock", "Unlock", False, False, False)
+
 
 class AlarmdotcomADT(Alarmdotcom):
     """
@@ -556,9 +550,7 @@ class AlarmdotcomADT(Alarmdotcom):
             self._partitionid = json["data"]["relationships"]["partitions"]["data"][0][
                 "id"
             ]
-            self._lockid = json["data"]["relationships"]["locks"]["data"][0][
-                "id"
-            ]
+            self._lockid = json["data"]["relationships"]["locks"]["data"][0]["id"]
             thermostats = (
                 json["data"]["relationships"].get("thermostats", {}).get("data", [])
             )
@@ -617,4 +609,3 @@ class AlarmdotcomProtection1(AlarmdotcomADT):
             except (KeyError, IndexError):
                 _LOGGER.error("Unable to log in")
                 return False
-
