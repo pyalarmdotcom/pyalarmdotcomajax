@@ -1,3 +1,4 @@
+v0.1.12, 2021-12-13 -- Adapt to sensorText rename in sensor endpoint json
 v0.1.11, 2021-03-31 -- Add armed night state
 v0.1.10, 2020-12-22 -- Fix login problem with refactor from 0.1.7
 v0.1.8, 2020-12-15 -- Add 2FA cookie
