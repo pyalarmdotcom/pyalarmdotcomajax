@@ -243,25 +243,23 @@ class Alarmdotcom:
             ) as resp:
                 json = await (resp.json())
             self.state = json["data"]["attributes"]["state"]
+            self.sensor_status = ""
             if mode == "lock":
                 self.state = self.LOCK_STATEMAP[self.state]
             else:
                 self.state = self.STATEMAP[self.state]
-
-            _LOGGER.debug(
-                "Got state %s, mapping to %s",
-                json["data"]["attributes"]["state"],
-                self.state,
-            )
-            if mode == "alarm":
                 self.sensor_status = json["data"]["attributes"][
                     "needsClearIssuesPrompt"
                 ]
                 self.sensor_status = (
                     "System needs to be cleared" if self.sensor_status else "System OK"
                 )
-            else:
-                self.sensor_status = ""
+
+            _LOGGER.debug(
+                "Got state %s, mapping to %s",
+                json["data"]["attributes"]["state"],
+                self.state,
+            )
 
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load state data from Alarm.com")
