@@ -379,12 +379,12 @@ class Alarmdotcom:
             raise
         return True
 
-    async def _send(self, command, event, forcebypass, noentrydelay, silentarming):
+    async def _send(self, mode, event, forcebypass, noentrydelay, silentarming):
         """Generic function for sending commands to Alarm.com
 
         :param event: Event command to send to alarm.com
 
-        :param command: lock or partition
+        :param mode: lock or partition
         """
         _LOGGER.debug("Sending %s to Alarm.com", event)
         if event == "Disarm":
@@ -402,16 +402,16 @@ class Alarmdotcom:
                     if value is True
                 },
             }
-        if command == "alarm":
+        if mode == "alarm":
             url_prefix = self.PARTITION_URL_TEMPLATE.format(
                 self._url_base, self._partitionid
             )
             _LOGGER.debug("Url prefix %s", url_prefix)
-        elif command == "lock":
+        elif mode == "lock":
             url_prefix = self.LOCK_URL_TEMPLATE.format(self._url_base, self._lockid)
             _LOGGER.debug("Url prefix %s", url_prefix)
         else:
-            _LOGGER.debug("No such command %s", command)
+            _LOGGER.debug("No such mode %s", mode)
             return False
         async with self._websession.post(
             url=url_prefix + "/" + self.COMMAND_LIST[event]["command"],
@@ -421,7 +421,7 @@ class Alarmdotcom:
             _LOGGER.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
-                await self.async_update(command)
+                await self.async_update(mode)
             if resp.status == 403:
                 # May have been logged out, try again
                 _LOGGER.warning(
