@@ -83,6 +83,7 @@ class Alarmdotcom:
         self._websession = websession
         self.state = ""  # empty string instead of None
         self.sensor_status = None
+        self.sensor_status_detailed = dict()
         self._ajax_headers = {
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
@@ -253,6 +254,16 @@ class Alarmdotcom:
                     + " is "
                     + sensor["attributes"]["displayStateText"]
                 )
+
+                # Populate detailed sensor data
+                self.sensor_status_detailed[sensor["id"]] = {
+                    "deviceType": sensor["attributes"]["deviceType"],
+                    "isMalfunctioning": sensor["attributes"]["isMalfunctioning"],
+                    "lowBattery": sensor["attributes"]["lowBattery"],
+                    "criticalBattery": sensor["attributes"]["criticalBattery"],
+                    "description": sensor["attributes"]["description"],
+                    "openClosedStatus": sensor["attributes"]["openClosedStatus"]
+                }
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load sensor status from Alarm.com")
             return False
