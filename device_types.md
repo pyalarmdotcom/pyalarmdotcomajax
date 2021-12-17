@@ -1,5 +1,7 @@
 # Sensor deviceTypes
 
+This list is incomplete. Please help by submitting missing values.
+
 | deviceType | Description          |
 |------------|----------------------|
 | 1          | Contact Sensor       |
