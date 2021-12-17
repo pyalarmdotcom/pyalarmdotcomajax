@@ -88,7 +88,7 @@ class Alarmdotcom:
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
         }
-        self._systemid = None
+        self.systemid = None
         self._partitionid = None
         self._forcebypass = forcebypass  # "stay","away","true","false"
         self._noentrydelay = noentrydelay  # "stay","away","true","false"
@@ -164,7 +164,7 @@ class Alarmdotcom:
                 url=self.SYSTEMITEMS_URL, headers=self._ajax_headers
             ) as resp:
                 json = await (resp.json())
-            self._systemid = json["data"][0]["id"]
+            self.systemid = json["data"][0]["id"]
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load system data from Alarm.com")
             return False
@@ -174,7 +174,7 @@ class Alarmdotcom:
         try:
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self.systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -262,7 +262,7 @@ class Alarmdotcom:
                     "lowBattery": sensor["attributes"]["lowBattery"],
                     "criticalBattery": sensor["attributes"]["criticalBattery"],
                     "description": sensor["attributes"]["description"],
-                    "openClosedStatus": sensor["attributes"]["openClosedStatus"]
+                    "openClosedStatus": sensor["attributes"]["openClosedStatus"],
                 }
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load sensor status from Alarm.com")
@@ -457,7 +457,7 @@ class AlarmdotcomADT(Alarmdotcom):
             ) as resp:
                 json = await resp.json()
             adt_id = json["value"]["id"]
-            self._systemid = json["value"]["customerId"]
+            self.systemid = json["value"]["customerId"]
             await self._websession.post(
                 url=self.SKIP_2FA_URL_TEMPLATE.format(self._url_base, adt_id),
                 headers=self._ajax_headers,
@@ -476,7 +476,7 @@ class AlarmdotcomADT(Alarmdotcom):
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self.systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
