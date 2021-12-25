@@ -257,12 +257,12 @@ class Alarmdotcom:
 
                 # Populate detailed sensor data
                 self.sensor_status_detailed[sensor["id"]] = {
-                    "deviceType": sensor["attributes"]["deviceType"],
-                    "isMalfunctioning": sensor["attributes"]["isMalfunctioning"],
-                    "lowBattery": sensor["attributes"]["lowBattery"],
-                    "criticalBattery": sensor["attributes"]["criticalBattery"],
-                    "description": sensor["attributes"]["description"],
-                    "openClosedStatus": sensor["attributes"]["openClosedStatus"],
+                    "deviceType": sensor["attributes"].get("deviceType"),
+                    "isMalfunctioning": sensor["attributes"].get("isMalfunctioning"),
+                    "lowBattery": sensor["attributes"].get("lowBattery"),
+                    "criticalBattery": sensor["attributes"].get("criticalBattery"),
+                    "description": sensor["attributes"].get("description"),
+                    "openClosedStatus": sensor["attributes"].get("openClosedStatus"),
                 }
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load sensor status from Alarm.com")
