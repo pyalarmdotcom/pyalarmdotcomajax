@@ -1,3 +1,3 @@
 """pyalarmdotcomajax module."""
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 from .pyalarmdotcomajax import Alarmdotcom, AlarmdotcomADT, AlarmdotcomProtection1
