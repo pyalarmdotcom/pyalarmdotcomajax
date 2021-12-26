@@ -92,11 +92,12 @@ class Alarmdotcom:
         self._websession = websession
         self.state = ""  # empty string instead of None
         self.sensor_status = None
+        self.sensor_status_detailed = dict()
         self._ajax_headers = {
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
         }
-        self._systemid = None
+        self.systemid = None
         self._partitionid = None
         self._lockid = None
         self._forcebypass = forcebypass  # "stay","away","true","false"
@@ -174,7 +175,7 @@ class Alarmdotcom:
                 url=self.SYSTEMITEMS_URL, headers=self._ajax_headers
             ) as resp:
                 json = await (resp.json())
-            self._systemid = json["data"][0]["id"]
+            self.systemid = json["data"][0]["id"]
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load system data from Alarm.com")
             return False
@@ -184,7 +185,7 @@ class Alarmdotcom:
         try:
             # grab partition id and lock id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self.systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
@@ -285,6 +286,16 @@ class Alarmdotcom:
                     + " is "
                     + sensor["attributes"]["displayStateText"]
                 )
+
+                # Populate detailed sensor data
+                self.sensor_status_detailed[sensor["id"]] = {
+                    "deviceType": sensor["attributes"].get("deviceType"),
+                    "isMalfunctioning": sensor["attributes"].get("isMalfunctioning"),
+                    "lowBattery": sensor["attributes"].get("lowBattery"),
+                    "criticalBattery": sensor["attributes"].get("criticalBattery"),
+                    "description": sensor["attributes"].get("description"),
+                    "openClosedStatus": sensor["attributes"].get("openClosedStatus"),
+                }
         except (asyncio.TimeoutError, aiohttp.ClientError):
             _LOGGER.error("Can not load sensor status from Alarm.com")
             return False
@@ -522,7 +533,7 @@ class AlarmdotcomADT(Alarmdotcom):
             ) as resp:
                 json = await resp.json()
             adt_id = json["value"]["id"]
-            self._systemid = json["value"]["customerId"]
+            self.systemid = json["value"]["customerId"]
             await self._websession.post(
                 url=self.SKIP_2FA_URL_TEMPLATE.format(self._url_base, adt_id),
                 headers=self._ajax_headers,
@@ -541,7 +552,7 @@ class AlarmdotcomADT(Alarmdotcom):
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
             # grab partition id
             async with self._websession.get(
-                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self._systemid),
+                url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, self.systemid),
                 headers=self._ajax_headers,
             ) as resp:
                 json = await (resp.json())
