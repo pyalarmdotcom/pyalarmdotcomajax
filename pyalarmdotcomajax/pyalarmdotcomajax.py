@@ -618,3 +618,49 @@ class AlarmdotcomProtection1(AlarmdotcomADT):
             except (KeyError, IndexError):
                 _LOGGER.error("Unable to log in")
                 return False
+
+# Main function used for command-line develpment and testing. Not used in normal library operation.
+async def main():
+    import os
+
+    username = os.getenv("ALARM_DOT_COM_USERNAME")
+    password = os.getenv("ALARM_DOT_COM_PASSWORD")
+    if username is None or password is None:
+        print("Set env ALARM_DOT_COM_USERNAME and ALARM_DOT_COM_PASSWORD for this to work")
+
+    twoFactorCookie = os.getenv("ALARM_DOT_COM_2FA_COOKIE")
+
+    print("Logging in with user: " + username + ", password: " + password)
+    if twoFactorCookie is not None:
+        print("Using 2FA cookie: " + twoFactorCookie)
+
+    print()
+    async with aiohttp.ClientSession() as session:
+        alarmCom = Alarmdotcom(
+            username,
+            password,
+            session,
+            False, # ForceBypass
+            False, # NoEntryDelay
+            False, # SilentArming
+            twoFactorCookie)
+
+        await alarmCom.async_login()
+        print("Logged in")
+        await alarmCom.async_update()
+        await alarmCom.async_update("lock")
+        print("Update success")
+        print()
+        print("State is:")
+        print(alarmCom.state)
+        print()
+
+        print("Detailed status is:")
+        print(alarmCom.sensor_status_detailed)
+        print()
+
+        print("Sensor status is:")
+        print(alarmCom.sensor_status)
+
+if __name__=="__main__":
+    asyncio.run(main())
