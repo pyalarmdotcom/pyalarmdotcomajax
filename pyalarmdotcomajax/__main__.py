@@ -1,23 +1,20 @@
 """
-pyalarmdotcomajax CLI
+pyalarmdotcomajax CLI.
 
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
 
-import aiohttp
-import asyncio
 import argparse
+import asyncio
 
-from pyalarmdotcomajax import (
-    ADCController,
-    ADCControllerADT,
-    ADCControllerProtection1,
-)
+import aiohttp
+
+from pyalarmdotcomajax import ADCController, ADCControllerADT, ADCControllerProtection1
 from pyalarmdotcomajax.entities import ADCBaseElement
 
 
 async def main():
-    """Main function used for command-line develpment and testing. Not used in normal library operation."""
+    """Support command-line development and testing. Not used in normal library operation."""
 
     parser = argparse.ArgumentParser(
         description="Basic command line interface for Alarm.com"

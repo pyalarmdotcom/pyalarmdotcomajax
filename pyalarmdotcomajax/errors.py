@@ -1,17 +1,17 @@
-"""Exceptions"""
+"""Exceptions."""
 
 
 class UnsupportedDevice(Exception):
-    """pyalarmdotcomajax encountered unsupported device"""
+    """pyalarmdotcomajax encountered a device not currently supported by the package."""
 
 
 class AuthenticationFailed(Exception):
-    """pyalarmdotcomajax encountered unsupported device"""
+    """Alarm.com authentication failure."""
 
 
 class DataFetchFailed(Exception):
-    """pyalarmdotcomajax encountered unsupported device"""
+    """General or connection error encountered when fetching data."""
 
 
 class UnexpectedDataStructure(Exception):
-    """pyalarmdotcomajax encountered unsupported device"""
+    """Successfully received JSON object, but format is not as expected."""

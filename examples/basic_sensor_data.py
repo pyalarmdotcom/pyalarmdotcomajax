@@ -1,8 +1,10 @@
 """Basic example for using pyalarmdotcomajax."""
 
-from pyalarmdotcomajax import ADCController
-import aiohttp
 import asyncio
+
+import aiohttp
+
+from pyalarmdotcomajax import ADCController
 
 username = "ENTER YOUR USERNAME"
 password = "ENTER YOUR PASSWORD"

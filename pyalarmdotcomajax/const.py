@@ -1,4 +1,4 @@
-"""Constants"""
+"""Constants."""
 
 from enum import Enum, IntEnum
 from typing import List
@@ -57,18 +57,13 @@ class ADCDeviceType(ExtendedEnumMixin):
 
 
 class ADCSensorSubtype(IntEnum):
-    """
-    Library of identified ADC device types. Synthetic device types are
-    added by pyalarmdotcomajax.
-    """
+    """Library of identified ADC device types."""
 
     CONTACT_SENSOR = 1
     SMOKE_DETECTOR = 5
     CO_DETECTOR = 6
     PANIC_BUTTON = 9
     GLASS_BREAK_DETECTOR = 19
-    WINDOW_SENSOR = 9911  # Synthetic
-    DOOR_SENSOR = 9912  # Synthetic
 
 
 class PartitionCommand(Enum):

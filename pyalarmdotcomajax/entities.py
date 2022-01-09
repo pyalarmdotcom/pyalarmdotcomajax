@@ -1,16 +1,16 @@
-"""Defines Alarmdotcom Components"""
+"""Defines pyalarmdotcomajax components."""
 
 from enum import Enum
-from types import FunctionType
 import logging
+from types import FunctionType
 
 from .const import (
-    ADCRelationshipType,
     ADCDeviceType,
+    ADCRelationshipType,
     ADCSensorSubtype,
-    PartitionCommand,
-    LockCommand,
     GarageDoorCommand,
+    LockCommand,
+    PartitionCommand,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG)
 #
 
 
-class DesiredStateMixin(object):
+class DesiredStateMixin:
     """Mixin decorator for mismatched_states function."""
 
     @property
@@ -61,6 +61,7 @@ class ADCBaseElement:
         parent_ids: dict = None,
         family_raw: str = None,
     ) -> None:
+        """Initialize base element class."""
         self._id_: str = id_
         self._family_raw: str = family_raw
         self._attribs_raw: dict = attribs_raw
@@ -82,12 +83,12 @@ class ADCBaseElement:
 
     @property
     def id_(self) -> str:
-        """Returns device ID."""
+        """Return device ID."""
         return self._id_
 
     @property
     def name(self) -> None or str:
-        """Returns user-assigned device name."""
+        """Return user-assigned device name."""
         return self._attribs_raw.get("description", None)
 
     @property
@@ -140,7 +141,7 @@ class ADCBaseElement:
     @property
     def malfunction(self) -> bool:
         """Return whether device is malfunctioning."""
-        return self._attribs_raw.get("isMalfunctioning", True) or self.state == None
+        return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
 
     @property
     def raw_state_text(self) -> bool:
@@ -157,7 +158,7 @@ class ADCSystem(DesiredStateMixin, ADCBaseElement):
 
     @property
     def unit_id(self) -> str:
-        """Returns device ID."""
+        """Return device ID."""
         return self._attribs_raw.get("unitId", None)
 
 
