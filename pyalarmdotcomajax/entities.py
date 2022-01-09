@@ -14,7 +14,7 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 #
 # Mixins
