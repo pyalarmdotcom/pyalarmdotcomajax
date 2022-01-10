@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.00"
+__version__ = "0.2.1"
 
 log = logging.getLogger(__name__)
 
