@@ -32,7 +32,7 @@ from pyalarmdotcomajax.errors import (
 
 __version__ = "0.2.00"
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # logging.basicConfig(level=logging.DEBUG)
 
@@ -59,6 +59,7 @@ class ADCController:
     SENSOR_URL_TEMPLATE = "{}web/api/devices/sensors/{}"
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
+    IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
 
     TROUBLECONDITIONS_URL_TEMPLATE = (
         "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
@@ -85,20 +86,20 @@ class ADCController:
         self._forcebypass = forcebypass  # "stay","away","true","false"
         self._noentrydelay = noentrydelay  # "stay","away","true","false"
         self._silentarming = silentarming  # "stay","away","true","false"
-        self._url_base = self.URL_BASE
-        self._twofactor_cookie = (
+        self._url_base: str = self.URL_BASE
+        self._twofactor_cookie: str = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
         )
         self._provider_name: str = ""
+        self._user_id: str = ""
         self._partition_map: dict = {}
-        self._adt_2fa_bypass_mode = False
+        self._adt_2fa_bypass_mode: bool = False
 
-        self.systems: list = []
-        self.partitions: list = []
-        self.thermostats: list = []
-        self.sensors: list = []
-        self.locks: list = []
-        self.garage_doors: list = []
+        self.systems: list[ADCSystem] = []
+        self.partitions: list[ADCPartition] = []
+        self.sensors: list[ADCSensor] = []
+        self.locks: list[ADCLock] = []
+        self.garage_doors: list[ADCGarageDoor] = []
 
         self._init_hook()
 
@@ -119,6 +120,11 @@ class ADCController:
         """Return provider name."""
         return self._provider_name
 
+    @property
+    def user_id(self) -> str:
+        """Return user ID."""
+        return self._user_id
+
     #
     #
     ####################
@@ -129,11 +135,11 @@ class ADCController:
 
     async def async_login(self) -> bool:
         """Login to Alarm.com."""
-        _LOGGER.debug("Attempting to log in to Alarm.com")
+        log.debug("Attempting to log in to Alarm.com")
 
         # TODO: Control exceptions
         await self._async_login_and_get_key()
-        await self._get_provider_info()
+        await self._get_identity_info()
         await self._async_bypass_2fa()
         await self.async_update()
 
@@ -177,7 +183,7 @@ class ADCController:
 
     async def async_update(self, device_type: ADCDeviceType = None) -> None:
         """Fetch the latest state according to device."""
-        _LOGGER.debug("Calling update on Alarm.com")
+        log.debug("Calling update on Alarm.com")
 
         await self._async_get_systems()
 
@@ -218,7 +224,7 @@ class ADCController:
         )
 
         if not entities:
-            _LOGGER.debug("%s: No entities returned.", __name__)
+            log.debug("%s: No entities returned.", __name__)
             return
 
         for entity_json, subordinates in entities:
@@ -334,7 +340,7 @@ class ADCController:
         ] = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
-        _LOGGER.debug("Sending %s to Alarm.com", event)
+        log.debug("Sending %s to Alarm.com", event)
         if device_type == ADCDeviceType.PARTITION and event != PartitionCommand.DISARM:
             json = {
                 "statePollOnly": False,
@@ -358,21 +364,21 @@ class ADCController:
         # PARTITION
         if device_type == ADCDeviceType.PARTITION:
             url = f"{self.PARTITION_URL_TEMPLATE.format(self._url_base, device_id)}/{PartitionCommand(event)}"
-            _LOGGER.debug("Url %s", url)
+            log.debug("Url %s", url)
 
         # LOCK
         elif device_type == ADCDeviceType.LOCK:
             url = f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{LockCommand(event)}"
-            _LOGGER.debug("Url %s", url)
+            log.debug("Url %s", url)
 
         # GARAGE DOOR
         elif device_type == ADCDeviceType.GARAGE_DOOR:
             url = f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{GarageDoorCommand(event)}"
-            _LOGGER.debug("Url %s", url)
+            log.debug("Url %s", url)
 
         # UNSUPPORTED
         else:
-            _LOGGER.debug("%s device type not supported.", device_type)
+            log.debug("%s device type not supported.", device_type)
             raise UnsupportedDevice(f"{device_type} device type not supported.")
 
         # #
@@ -384,16 +390,14 @@ class ADCController:
             json=json,
             headers=self._ajax_headers,
         ) as resp:
-            _LOGGER.debug("Response from Alarm.com %s", resp.status)
+            log.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
                 await self.async_update(device_type)
                 return True
             elif resp.status == 403:
                 # May have been logged out, try again
-                _LOGGER.warning(
-                    "Error executing %s, logging in and trying again...", event
-                )
+                log.warning("Error executing %s, logging in and trying again...", event)
                 if retry_on_failure:
                     await self.async_login()
                     return await self._send(
@@ -406,8 +410,8 @@ class ADCController:
                         False,
                     )
 
-        _LOGGER.error("%s failed with HTTP code %s", event, resp.status)
-        _LOGGER.error(
+        log.error("%s failed with HTTP code %s", event, resp.status)
+        log.error(
             "Arming parameters: force_bypass = %s, no_entry_delay = %s, silent_arming = %s",
             forcebypass,
             noentrydelay,
@@ -415,19 +419,20 @@ class ADCController:
         )
         raise ConnectionError
 
-    async def _get_provider_info(self) -> None:
+    async def _get_identity_info(self) -> None:
         async with self._websession.get(
-            url=self.PROVIDER_INFO_TEMPLATE.format(self._url_base),
+            url=self.IDENTITIES_URL_TEMPLATE.format(self._url_base, ""),
             headers=self._ajax_headers,
         ) as resp:
             json = await (resp.json())
 
-        if json.get("isLoggedIn") is not True:
+        try:
+            self._user_id = json["data"][0]["id"]
+            self._provider_name = json["data"][0]["attributes"]["logoName"]
+        except KeyError:
             raise AuthenticationFailed
 
-        self._provider_name = json.get("logoAlt")
-
-        _LOGGER.debug("Provider name retrieved: %s", self._provider_name)
+        log.debug("Got Provider: %s, User ID: %s", self._provider_name, self._user_id)
 
     async def _async_get_items_and_subordinates(
         self, url_template: str, device_type: ADCDeviceType.list()
@@ -442,7 +447,7 @@ class ADCController:
 
         rsp_errors = json.get("errors", [])
         if len(rsp_errors) != 0:
-            _LOGGER.debug(
+            log.debug(
                 "Failed to get data for device type %s. Response: %s",
                 device_type,
                 rsp_errors,
@@ -487,7 +492,7 @@ class ADCController:
                 url=self.LOGIN_URL, cookies=self._twofactor_cookie
             ) as resp:
                 text = await resp.text()
-                _LOGGER.debug("Response status from Alarm.com: %s", resp.status)
+                log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
                 login_info = {
                     self.VIEWSTATE_FIELD: tree.select(f"#{self.VIEWSTATE_FIELD}")[
@@ -503,13 +508,13 @@ class ADCController:
                         0
                     ].attrs.get("value"),
                 }
-                _LOGGER.debug(login_info)
-                _LOGGER.info("Attempting login to Alarm.com")
+                log.debug(login_info)
+                log.info("Attempting login to Alarm.com")
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Can not load login page from Alarm.com")
+            log.error("Can not load login page from Alarm.com")
             raise DataFetchFailed from err
         except (AttributeError, IndexError) as err:
-            _LOGGER.error("Unable to extract login info from Alarm.com")
+            log.error("Unable to extract login info from Alarm.com")
             raise DataFetchFailed from err
         try:
             # login and grab ajax key
@@ -530,10 +535,10 @@ class ADCController:
             ) as resp:
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Can not login to Alarm.com")
+            log.error("Can not login to Alarm.com")
             raise DataFetchFailed from err
         except KeyError as err:
-            _LOGGER.error("Unable to extract ajax key from Alarm.com")
+            log.error("Unable to extract ajax key from Alarm.com")
             raise DataFetchFailed from err
 
 
@@ -556,9 +561,6 @@ class ADCControllerADT(ADCController):
     def _init_hook(self) -> None:
         self._adt_2fa_bypass_mode: bool = True
 
-    async def _get_provider_info(self) -> None:
-        self._provider_name = "ADT"
-
     async def _async_login_and_get_key(self) -> None:
         try:
             # login and grab ajax key
@@ -574,10 +576,10 @@ class ADCControllerADT(ADCController):
             ) as resp:
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Can not login to Alarm.com")
+            log.error("Can not login to Alarm.com")
             raise ConnectionError from err
         except KeyError as err:
-            _LOGGER.error("Unable to extract ajax key from Alarm.com")
+            log.error("Unable to extract ajax key from Alarm.com")
             raise UnexpectedDataStructure from err
 
     async def _async_bypass_2fa(self):
@@ -615,30 +617,31 @@ class ADCControllerADT(ADCController):
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            _LOGGER.error("Network error encountered during 2FA bypass")
+            log.error("Network error encountered during 2FA bypass")
             raise ConnectionError from err
 
         except (KeyError, IndexError) as err:
-            _LOGGER.warning("ADT log in style unsuccessful")
+            log.warning("ADT log in style unsuccessful")
             raise UnexpectedDataStructure from err
 
     async def async_login(self):
         """Log in to ADT."""
-        _LOGGER.debug("Attempting to log in to ADT")
+        log.debug("Attempting to log in to ADT")
         try:
             self._url_base = self.ADT_URL_BASE
             try:
                 await self._async_login_and_get_key()
+                await self._get_identity_info()
             except Exception as err:
                 raise KeyError from err
             return await self._async_bypass_2fa()
         except (KeyError, IndexError):
-            _LOGGER.warning("Falling back to ADC log in style")
+            log.warning("Falling back to ADC log in style")
             try:
                 self._url_base = self.URL_BASE
                 await super().async_login
             except (KeyError, IndexError) as err:
-                _LOGGER.error("Unable to log in")
+                log.error("Unable to log in")
                 raise UnexpectedDataStructure from err
 
 
@@ -649,20 +652,18 @@ class ADCControllerProtection1(ADCControllerADT, ADCController):
     This class uses the alarm.com portal but uses some ADT style endpoints.
     """
 
-    async def _get_provider_info(self) -> None:
-        self._provider_name = "Protection1"
-
     async def async_login(self) -> None:
         """Log in to Protection 1."""
-        _LOGGER.debug("Attempting to log in to Protection1")
+        log.debug("Attempting to log in to Protection1")
         await ADCController._async_login_and_get_key(self)
         try:
             await self._async_bypass_2fa()
+            await self._get_identity_info()
         except (KeyError, IndexError):
-            _LOGGER.warning("Falling back to ADC log in style")
+            log.warning("Falling back to ADC log in style")
             try:
                 self._adt_2fa_bypass_mode = False
                 return await ADCControllerADT.async_login(self)
             except (KeyError, IndexError):
-                _LOGGER.error("Unable to log in")
+                log.error("Unable to log in")
                 return False

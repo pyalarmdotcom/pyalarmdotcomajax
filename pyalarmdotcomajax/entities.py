@@ -13,7 +13,7 @@ from .const import (
     PartitionCommand,
 )
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 # logging.basicConfig(level=logging.DEBUG)
 
 #
@@ -74,7 +74,7 @@ class ADCBaseElement:
             self._partition_id: str = parent_ids.get("partition")
             self._parent_id_: str = parent_ids.get("parent_device")
 
-        _LOGGER.debug(
+        log.debug(
             "Initialized %s (%s) %s", self.device_type, self._family_raw, self.name
         )
 

@@ -6,6 +6,7 @@ Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@
 
 import argparse
 import asyncio
+import logging
 
 import aiohttp
 
@@ -32,7 +33,15 @@ async def main():
         default="Other",
         required=False,
     )
-    parser.add_argument("-ver", "--version", action="version", version="2022.01")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="show debug output",
+        action="count",
+        default=0,
+        required=False,
+    )
+    parser.add_argument("-ver", "--version", action="version", version="2022.01.10")
     args = vars(parser.parse_args())
 
     print(f"Provider is {args.get('provider')}")
@@ -49,7 +58,9 @@ async def main():
     else:
         provider_class = ADCController
 
-    print()
+    if args.get("verbose") > 0:
+        logging.basicConfig(level=logging.DEBUG)
+
     async with aiohttp.ClientSession() as session:
         alarm = provider_class(
             args.get("username"),
@@ -63,7 +74,7 @@ async def main():
 
         await alarm.async_login()
 
-        print(f"\nProvider: {alarm.provider_name}\n")
+        print(f"\nProvider: {alarm.provider_name}\nUser ID: {alarm._user_id}\n")
 
         print("\n*** SYSTEMS ***\n")
         if len(alarm.systems) == 0:
