@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 log = logging.getLogger(__name__)
 
@@ -90,8 +90,9 @@ class ADCController:
         self._twofactor_cookie: str = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
         )
-        self._provider_name: str = ""
-        self._user_id: str = ""
+        self._provider_name: str = None
+        self._user_id: str = None
+        self._user_email: str = None
         self._partition_map: dict = {}
         self._adt_2fa_bypass_mode: bool = False
 
@@ -124,6 +125,11 @@ class ADCController:
     def user_id(self) -> str:
         """Return user ID."""
         return self._user_id
+
+    @property
+    def user_email(self) -> str:
+        """Return user email address."""
+        return self._user_email
 
     #
     #
@@ -429,8 +435,19 @@ class ADCController:
         try:
             self._user_id = json["data"][0]["id"]
             self._provider_name = json["data"][0]["attributes"]["logoName"]
-        except KeyError:
-            raise AuthenticationFailed
+
+            for inclusion in json["included"]:
+                if (
+                    inclusion["id"] == self._user_id
+                    and inclusion["type"] == "profile/profile"
+                ):
+                    self._user_email = inclusion["attributes"]["loginEmailAddress"]
+
+            if self._user_email is None:
+                raise AuthenticationFailed("Could not find user email address.")
+
+        except KeyError as err:
+            raise AuthenticationFailed from err
 
         log.debug("Got Provider: %s, User ID: %s", self._provider_name, self._user_id)
 

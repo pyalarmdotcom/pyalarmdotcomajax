@@ -10,6 +10,7 @@ import logging
 
 import aiohttp
 
+import pyalarmdotcomajax
 from pyalarmdotcomajax import ADCController, ADCControllerADT, ADCControllerProtection1
 from pyalarmdotcomajax.entities import ADCBaseElement
 
@@ -18,7 +19,8 @@ async def main():
     """Support command-line development and testing. Not used in normal library operation."""
 
     parser = argparse.ArgumentParser(
-        description="Basic command line interface for Alarm.com"
+        prog="pyalarmdotcomajax",
+        description="Basic command line interface for Alarm.com",
     )
     parser.add_argument("-u", "--username", help="alarm.com username", required=True)
     parser.add_argument("-p", "--password", help="alarm.com password", required=True)
@@ -41,7 +43,12 @@ async def main():
         default=0,
         required=False,
     )
-    parser.add_argument("-ver", "--version", action="version", version="2022.01.10")
+    parser.add_argument(
+        "-ver",
+        "--version",
+        action="version",
+        version=f"%(prog)s {pyalarmdotcomajax.__version__}",
+    )
     args = vars(parser.parse_args())
 
     print(f"Provider is {args.get('provider')}")
@@ -74,7 +81,8 @@ async def main():
 
         await alarm.async_login()
 
-        print(f"\nProvider: {alarm.provider_name}\nUser ID: {alarm._user_id}\n")
+        print(f"\nProvider: {alarm.provider_name})")
+        print(f"Logged in as: {alarm.user_email} ({alarm.user_id}")
 
         print("\n*** SYSTEMS ***\n")
         if len(alarm.systems) == 0:

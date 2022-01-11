@@ -1,4 +1,3 @@
-import io
 import os
 
 from setuptools import setup
@@ -24,7 +23,7 @@ setup(
     name="pyalarmdotcomajax",
     version=pyalarmdotcomajax.__version__,
     url="http://github.com/uvjustin/pyalarmdotcomajax/",
-    license=" ",
+    license="MIT",
     author="Justin Wong",
     install_requires=[],
     author_email="46082645+uvjustin@users.noreply.github.com",
