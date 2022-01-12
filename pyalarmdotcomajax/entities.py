@@ -153,7 +153,7 @@ class ADCBaseElement:
         return [i_id for i_id in self._subordinates if i_id[0] == device_id]
 
 
-class ADCSystem(DesiredStateMixin, ADCBaseElement):
+class ADCSystem(ADCBaseElement):
     """Represent Alarm.com system element."""
 
     @property
@@ -202,6 +202,15 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
         await self._send_action_callback(
             ADCDeviceType.PARTITION,
             PartitionCommand.ARM_AWAY,
+            self._id_,
+        )
+
+    async def async_alarm_arm_night(self) -> None:
+        """Send arm away command."""
+
+        await self._send_action_callback(
+            ADCDeviceType.PARTITION,
+            PartitionCommand.ARM_NIGHT,
             self._id_,
         )
 
@@ -260,7 +269,7 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
     """Represent Alarm.com system element."""
 
     class DeviceState(Enum):
-        """Enum of sensor states."""
+        """Enum of garage door states."""
 
         TRANSITIONING = 0
         OPEN = 1

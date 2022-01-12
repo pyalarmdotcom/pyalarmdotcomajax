@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 log = logging.getLogger(__name__)
 
@@ -219,11 +219,16 @@ class ADCController:
         """Reserved for child classes."""
         pass
 
+    # Get functions build a new internal list of entities before assigning to their respective instance variables.
+    # If we assign to the instance variable directly, the same elements will be added to the list every time we update.
+
     async def _async_get_systems(self) -> None:
 
         device_type = ADCDeviceType.SYSTEM
         device_storage = self.systems
         device_class = ADCSystem
+
+        new_storage = []
 
         entities = await self._async_get_items_and_subordinates(
             self.SYSTEM_URL_TEMPLATE, device_type
@@ -243,13 +248,17 @@ class ADCController:
                 subordinates=subordinates,
             )
 
-            device_storage.append(entity_obj)
+            new_storage.append(entity_obj)
+
+        device_storage[:] = new_storage
 
     async def _async_get_partitions(self) -> None:
 
         device_type = ADCDeviceType.PARTITION
         device_storage = self.partitions
         device_class = ADCPartition
+
+        new_storage = []
 
         entities = await self._async_get_items_and_subordinates(
             self.PARTITION_URL_TEMPLATE, device_type
@@ -276,7 +285,9 @@ class ADCController:
                 parent_ids=parent_ids,
             )
 
-            device_storage.append(entity_obj)
+            new_storage.append(entity_obj)
+
+        device_storage[:] = new_storage
 
     async def _async_get_devices(
         self,
@@ -293,6 +304,8 @@ class ADCController:
             url_template = self.SENSOR_URL_TEMPLATE
         else:
             raise UnsupportedDevice
+
+        new_storage = []
 
         entities = await self._async_get_items_and_subordinates(
             url_template, device_type
@@ -323,7 +336,9 @@ class ADCController:
                 parent_ids=parent_ids,
             )
 
-            device_storage.append(entity_obj)
+            new_storage.append(entity_obj)
+
+        device_storage[:] = new_storage
 
     #
     #
