@@ -7,7 +7,9 @@
 		"github.vscode-pull-request-github",
 		"ryanluker.vscode-coverage-gutters",
 		"ms-python.vscode-pylance",
-		"davidanson.vscode-markdownlint"
+		"davidanson.vscode-markdownlint",
+		"janisdd.vscode-edit-csv",
+		"mechatroner.rainbow-csv"
 	],
 	"settings": {
 		"files.eol": "\n",

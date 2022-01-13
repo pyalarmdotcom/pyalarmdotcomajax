@@ -144,6 +144,11 @@ def _print_element_tearsheet(element: ADCBaseElement):
         Battery: {battery}"""
     )
 
+    if element.make_and_model is not None:
+        print(
+            f"        Model: {element.make_and_model.get('description')} ({element.make_and_model.get('model')}) by {element.make_and_model.get('manufacturer')}"
+        )
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -14,7 +14,6 @@ from .const import (
 )
 
 log = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.DEBUG)
 
 #
 # Mixins
@@ -55,6 +54,7 @@ class ADCBaseElement:
     def __init__(
         self,
         send_action_callback: FunctionType,
+        get_make_model_callback: FunctionType,
         id_: str,
         attribs_raw: dict,
         subordinates: list,
@@ -67,6 +67,7 @@ class ADCBaseElement:
         self._attribs_raw: dict = attribs_raw
         self._parent_ids: dict = parent_ids
         self._send_action_callback: FunctionType = send_action_callback
+        self._get_make_model_callback: FunctionType = get_make_model_callback
         self._subordinates: list = subordinates
 
         if parent_ids:
@@ -142,6 +143,18 @@ class ADCBaseElement:
     def malfunction(self) -> bool:
         """Return whether device is malfunctioning."""
         return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
+
+    @property
+    def mac_address(self) -> bool:
+        """Return device MAC address."""
+        return self._attribs_raw.get("macAddress")
+
+    @property
+    def make_and_model(self) -> dict:
+        """Return device make and model information."""
+
+        if "deviceModelId" in self._attribs_raw:
+            return self._get_make_model_callback(self._attribs_raw.get("deviceModelId"))
 
     @property
     def raw_state_text(self) -> bool:

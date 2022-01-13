@@ -1,0 +1,7 @@
+deviceType,managedDeviceType,pyalarmdotcomajax,name
+1,10,CONTACT_SENSOR,Contact Sensor
+5,2,SMOKE_DETECTOR,Smoke Detector
+6,2,CO_DETECTOR,CO Detector
+9,10,PANIC_BUTTON,Panic Button
+19,10,GLASS_BREAK_DETECTOR,Glass Break Detector
+,9,PARTITION,Partition / Alarm Control Panel
