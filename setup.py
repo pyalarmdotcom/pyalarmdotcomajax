@@ -34,6 +34,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=["pyalarmdotcomajax"],
     include_package_data=True,
+    package_data={"": ["*.csv"]},
     platforms="any",
     classifiers=[
         "Programming Language :: Python",
