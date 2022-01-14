@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ class ADCController:
     async def async_send_action(
         self,
         device_type: ADCDeviceType,
-        event: PartitionCommand or LockCommand,
+        event: PartitionCommand or LockCommand or GarageDoorCommand,
         device_id: str,
     ) -> None:
         """Send command to take action on device."""
