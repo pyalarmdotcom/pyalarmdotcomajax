@@ -3,9 +3,7 @@
 # TODO: Add "debug" property that exports raw ADC responses. Useful for users who ask for support for devices not available to maintainers.
 
 import asyncio
-import csv
 import logging
-import os
 from typing import Optional
 
 import aiohttp
@@ -32,11 +30,9 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 log = logging.getLogger(__name__)
-
-# logging.basicConfig(level=logging.DEBUG)
 
 
 class ADCController:
@@ -62,8 +58,6 @@ class ADCController:
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
     IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
-
-    MAKE_MODEL_DB_PATH = "device_make_model_db.csv"
 
     TROUBLECONDITIONS_URL_TEMPLATE = (
         "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
@@ -105,20 +99,6 @@ class ADCController:
         self.sensors: list[ADCSensor] = []
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
-
-        self._device_make_model_db: dict = {}
-        with open(
-            os.path.join(os.path.dirname(__file__), self.MAKE_MODEL_DB_PATH),
-            newline="",
-            encoding="utf-8",
-        ) as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                self._device_make_model_db[row["deviceModelId"]] = {
-                    "manufacturer": row["manufacturer"],
-                    "description": row["description"],
-                    "model": row["model"],
-                }
 
         self._init_hook()
 
@@ -263,7 +243,6 @@ class ADCController:
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
                 send_action_callback=self.async_send_action,
-                get_make_model_callback=self._get_make_model,
                 subordinates=subordinates,
             )
 
@@ -300,7 +279,6 @@ class ADCController:
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
                 send_action_callback=self.async_send_action,
-                get_make_model_callback=self._get_make_model,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
             )
@@ -308,14 +286,6 @@ class ADCController:
             new_storage.append(entity_obj)
 
         device_storage[:] = new_storage
-
-    def _get_make_model(self, model_id: str or int) -> dict:
-        """Return make and model information by device model id."""
-
-        model_id = str(model_id)
-
-        if model_id in self._device_make_model_db:
-            return self._device_make_model_db[model_id]
 
     async def _async_get_devices(
         self,
@@ -360,7 +330,6 @@ class ADCController:
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
                 send_action_callback=self.async_send_action,
-                get_make_model_callback=self._get_make_model,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
             )
