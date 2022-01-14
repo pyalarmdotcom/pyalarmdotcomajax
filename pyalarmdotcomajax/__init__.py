@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.8"
+__version__ = "0.2.9"
 
 log = logging.getLogger(__name__)
 
@@ -349,7 +349,7 @@ class ADCController:
     async def _send(
         self,
         device_type: ADCDeviceType,
-        event: LockCommand or PartitionCommand,
+        event: LockCommand or PartitionCommand or GarageDoorCommand,
         forcebypass: Optional[bool] = False,
         noentrydelay: Optional[bool] = False,
         silentarming: Optional[bool] = False,
@@ -359,7 +359,7 @@ class ADCController:
         ] = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
-        log.debug("Sending %s to Alarm.com", event)
+        log.debug("Sending %s to Alarm.com.", event)
         if device_type == ADCDeviceType.PARTITION and event != PartitionCommand.DISARM:
             json = {
                 "statePollOnly": False,
@@ -382,17 +382,17 @@ class ADCController:
 
         # PARTITION
         if device_type == ADCDeviceType.PARTITION:
-            url = f"{self.PARTITION_URL_TEMPLATE.format(self._url_base, device_id)}/{PartitionCommand(event)}"
+            url = f"{self.PARTITION_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
             log.debug("Url %s", url)
 
         # LOCK
         elif device_type == ADCDeviceType.LOCK:
-            url = f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{LockCommand(event)}"
+            url = f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
             log.debug("Url %s", url)
 
         # GARAGE DOOR
         elif device_type == ADCDeviceType.GARAGE_DOOR:
-            url = f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{GarageDoorCommand(event)}"
+            url = f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
             log.debug("Url %s", url)
 
         # UNSUPPORTED
@@ -414,9 +414,15 @@ class ADCController:
                 # Update alarm.com status after calling state change.
                 await self.async_update(device_type)
                 return True
+            if resp.status == 423:
+                # User has read-only permission to the entity.
+                err_msg = f"{__name__}: User {self.user_email} has read-only access to {device_type.name.lower()} {device_id}."
+                raise PermissionError(err_msg)
             elif resp.status == 403:
                 # May have been logged out, try again
-                log.warning("Error executing %s, logging in and trying again...", event)
+                log.warning(
+                    "Error executing %s, logging in and trying again...", event.value
+                )
                 if retry_on_failure:
                     await self.async_login()
                     return await self._send(
@@ -429,12 +435,18 @@ class ADCController:
                         False,
                     )
 
-        log.error("%s failed with HTTP code %s", event, resp.status)
+        log.error("%s failed with HTTP code %s", event.value, resp.status)
         log.error(
-            "Arming parameters: force_bypass = %s, no_entry_delay = %s, silent_arming = %s",
+            """Arming parameters: force_bypass = %s, no_entry_delay = %s, silent_arming = %s
+            URL: %s
+            JSON: %s
+            Headers: %s""",
             forcebypass,
             noentrydelay,
             silentarming,
+            url,
+            json,
+            self._ajax_headers,
         )
         raise ConnectionError
 
