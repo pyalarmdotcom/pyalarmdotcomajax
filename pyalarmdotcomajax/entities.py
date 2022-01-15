@@ -264,7 +264,7 @@ class ADCSensor(ADCBaseElement):
     def device_subtype(self) -> None or str:
         """Return normalized device subtype constant. E.g.: contact, glass break, etc."""
         try:
-            return ADCSensorSubtype(self._attribs_raw.get("deviceType")).name
+            return ADCSensorSubtype(self._attribs_raw.get("deviceType"))
         except ValueError:
             return None
 

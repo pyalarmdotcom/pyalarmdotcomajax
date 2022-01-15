@@ -11,7 +11,7 @@ import logging
 import aiohttp
 
 import pyalarmdotcomajax
-from pyalarmdotcomajax import ADCController, ADCControllerADT, ADCControllerProtection1
+from pyalarmdotcomajax import ADCController
 from pyalarmdotcomajax.entities import ADCBaseElement
 
 
@@ -26,14 +26,6 @@ async def main():
     parser.add_argument("-p", "--password", help="alarm.com password", required=True)
     parser.add_argument(
         "-c", "--cookie", help="two-factor authentication cookie", required=False
-    )
-    parser.add_argument(
-        "-x",
-        "--provider",
-        help="alarm.com service provider (default: %(default)s)",
-        choices=["ADT", "Protection1", "Other"],
-        default="Other",
-        required=False,
     )
     parser.add_argument(
         "-v",
@@ -58,18 +50,11 @@ async def main():
     if args.get("cookie") is not None:
         print(f"Using 2FA cookie {args.get('cookie')}.")
 
-    if args.get("provider") == "ADT":
-        provider_class = ADCControllerADT
-    elif args.get("provider") == "Protection1":
-        provider_class = ADCControllerProtection1
-    else:
-        provider_class = ADCController
-
     if args.get("verbose") > 0:
         logging.basicConfig(level=logging.DEBUG)
 
     async with aiohttp.ClientSession() as session:
-        alarm = provider_class(
+        alarm = ADCController(
             args.get("username"),
             args.get("password"),
             session,
@@ -81,8 +66,8 @@ async def main():
 
         await alarm.async_login()
 
-        print(f"\nProvider: {alarm.provider_name})")
-        print(f"Logged in as: {alarm.user_email} ({alarm.user_id}")
+        print(f"\nProvider: {alarm.provider_name}")
+        print(f"Logged in as: {alarm.user_email} ({alarm.user_id})")
 
         print("\n*** SYSTEMS ***\n")
         if len(alarm.systems) == 0:
@@ -133,7 +118,7 @@ def _print_element_tearsheet(element: ADCBaseElement):
     malfunction = "\n   ~~MALFUNCTIONING~~" if element.malfunction else ""
 
     subtype = (
-        f"\n        Sensor Type: {element.device_subtype}"
+        f"\n        Sensor Type: {element.device_subtype.name}"
         if hasattr(element, "device_subtype")
         else ""
     )
