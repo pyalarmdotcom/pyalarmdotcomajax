@@ -11,9 +11,9 @@ from bs4 import BeautifulSoup
 
 from pyalarmdotcomajax.const import (
     ADCDeviceType,
-    GarageDoorCommand,
-    LockCommand,
-    PartitionCommand,
+    ADCGarageDoorCommand,
+    ADCLockCommand,
+    ADCPartitionCommand,
 )
 from pyalarmdotcomajax.entities import (
     ADCBaseElement,
@@ -30,7 +30,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.9"
+__version__ = "0.2.10"
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ class ADCController:
     async def async_send_action(
         self,
         device_type: ADCDeviceType,
-        event: PartitionCommand or LockCommand or GarageDoorCommand,
+        event: ADCPartitionCommand or ADCLockCommand or ADCGarageDoorCommand,
         device_id: str,
     ) -> bool:
         """Send command to take action on device."""
@@ -160,19 +160,19 @@ class ADCController:
         silentarming: bool = None
 
         if event in [
-            PartitionCommand.ARM_AWAY,
-            PartitionCommand.ARM_STAY,
+            ADCPartitionCommand.ARM_AWAY,
+            ADCPartitionCommand.ARM_STAY,
         ]:
             forcebypass = self._forcebypass in [
-                "stay" if event == PartitionCommand.ARM_AWAY else "away",
+                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
                 "true",
             ]
             noentrydelay = self._noentrydelay in [
-                "stay" if event == PartitionCommand.ARM_AWAY else "away",
+                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
                 "true",
             ]
             silentarming = self._silentarming in [
-                "stay" if event == PartitionCommand.ARM_AWAY else "away",
+                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
                 "true",
             ]
 
@@ -349,7 +349,7 @@ class ADCController:
     async def _send(
         self,
         device_type: ADCDeviceType,
-        event: LockCommand or PartitionCommand or GarageDoorCommand,
+        event: ADCLockCommand or ADCPartitionCommand or ADCGarageDoorCommand,
         forcebypass: Optional[bool] = False,
         noentrydelay: Optional[bool] = False,
         silentarming: Optional[bool] = False,
@@ -360,7 +360,10 @@ class ADCController:
     ) -> bool:
         """Send commands to Alarm.com."""
         log.debug("Sending %s to Alarm.com.", event)
-        if device_type == ADCDeviceType.PARTITION and event != PartitionCommand.DISARM:
+        if (
+            device_type == ADCDeviceType.PARTITION
+            and event != ADCPartitionCommand.DISARM
+        ):
             json = {
                 "statePollOnly": False,
                 **{

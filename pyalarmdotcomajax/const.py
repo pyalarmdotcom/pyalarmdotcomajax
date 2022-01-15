@@ -66,7 +66,7 @@ class ADCSensorSubtype(IntEnum):
     GLASS_BREAK_DETECTOR = 19
 
 
-class PartitionCommand(Enum):
+class ADCPartitionCommand(Enum):
     """Commands for ADC partitions."""
 
     DISARM = "disarm"
@@ -75,14 +75,14 @@ class PartitionCommand(Enum):
     ARM_NIGHT = "armNight"
 
 
-class LockCommand(Enum):
+class ADCLockCommand(Enum):
     """Commands for ADC locks."""
 
     LOCK = "lock"
     UNLOCK = "unlock"
 
 
-class GarageDoorCommand(Enum):
+class ADCGarageDoorCommand(Enum):
     """Commands for ADC garage doors."""
 
     OPEN = "open"

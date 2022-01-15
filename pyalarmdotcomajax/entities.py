@@ -6,11 +6,11 @@ from types import FunctionType
 
 from .const import (
     ADCDeviceType,
+    ADCGarageDoorCommand,
+    ADCLockCommand,
+    ADCPartitionCommand,
     ADCRelationshipType,
     ADCSensorSubtype,
-    GarageDoorCommand,
-    LockCommand,
-    PartitionCommand,
 )
 
 log = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
         """Send disarm command."""
         await self._send_action_callback(
             ADCDeviceType.PARTITION,
-            PartitionCommand.DISARM,
+            ADCPartitionCommand.DISARM,
             self._id_,
         )
 
@@ -196,7 +196,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
 
         await self._send_action_callback(
             ADCDeviceType.PARTITION,
-            PartitionCommand.ARM_STAY,
+            ADCPartitionCommand.ARM_STAY,
             self._id_,
         )
 
@@ -205,7 +205,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
 
         await self._send_action_callback(
             ADCDeviceType.PARTITION,
-            PartitionCommand.ARM_AWAY,
+            ADCPartitionCommand.ARM_AWAY,
             self._id_,
         )
 
@@ -214,7 +214,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
 
         await self._send_action_callback(
             ADCDeviceType.PARTITION,
-            PartitionCommand.ARM_NIGHT,
+            ADCPartitionCommand.ARM_NIGHT,
             self._id_,
         )
 
@@ -233,7 +233,7 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
         """Send lock command."""
         await self._send_action_callback(
             ADCDeviceType.LOCK,
-            LockCommand.LOCK,
+            ADCLockCommand.LOCK,
             self._id_,
         )
 
@@ -241,7 +241,7 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.LOCK,
-            LockCommand.UNLOCK,
+            ADCLockCommand.UNLOCK,
             self._id_,
         )
 
@@ -283,7 +283,7 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.GARAGE_DOOR,
-            GarageDoorCommand.OPEN,
+            ADCGarageDoorCommand.OPEN,
             self._id_,
         )
 
@@ -291,6 +291,6 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.GARAGE_DOOR,
-            GarageDoorCommand.CLOSE,
+            ADCGarageDoorCommand.CLOSE,
             self._id_,
         )
