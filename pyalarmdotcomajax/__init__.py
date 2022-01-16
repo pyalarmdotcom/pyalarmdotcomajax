@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import re
 from typing import Optional
 
 import aiohttp
@@ -30,7 +31,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.11"
+__version__ = "0.2.12"
 
 log = logging.getLogger(__name__)
 
@@ -92,7 +93,6 @@ class ADCController:
         self._user_id: str = None
         self._user_email: str = None
         self._partition_map: dict = {}
-        self._adt_2fa_bypass_mode: bool = False
 
         self.systems: list[ADCSystem] = []
         self.partitions: list[ADCPartition] = []
@@ -141,11 +141,14 @@ class ADCController:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
-        # TODO: Control exceptions
-        await self._async_login_and_get_key()
-        await self._get_identity_info()
-        await self._async_bypass_2fa()
-        await self.async_update()
+        try:
+            await self._async_login_and_get_key()
+            await self._get_identity_info()
+            await self.async_update()
+        except (DataFetchFailed, UnexpectedDataStructure) as err:
+            raise ConnectionError from err
+        except (AuthenticationFailed, PermissionError) as err:
+            raise AuthenticationFailed from err
 
     async def async_send_action(
         self,
@@ -189,21 +192,26 @@ class ADCController:
         """Fetch the latest state according to device."""
         log.debug("Calling update on Alarm.com")
 
-        await self._async_get_systems()
+        try:
+            await self._async_get_systems()
 
-        if device_type == ADCDeviceType.PARTITION or device_type is None:
-            await self._async_get_partitions()
+            if device_type == ADCDeviceType.PARTITION or device_type is None:
+                await self._async_get_partitions()
 
-        if device_type == ADCDeviceType.SENSOR or device_type is None:
-            await self._async_get_devices(ADCDeviceType.SENSOR, self.sensors, ADCSensor)
+            if device_type == ADCDeviceType.SENSOR or device_type is None:
+                await self._async_get_devices(
+                    ADCDeviceType.SENSOR, self.sensors, ADCSensor
+                )
 
-        if device_type == ADCDeviceType.GARAGE_DOOR or device_type is None:
-            await self._async_get_devices(
-                ADCDeviceType.GARAGE_DOOR, self.garage_doors, ADCGarageDoor
-            )
+            if device_type == ADCDeviceType.GARAGE_DOOR or device_type is None:
+                await self._async_get_devices(
+                    ADCDeviceType.GARAGE_DOOR, self.garage_doors, ADCGarageDoor
+                )
 
-        if device_type == ADCDeviceType.LOCK or device_type is None:
-            await self._async_get_devices(ADCDeviceType.LOCK, self.locks, ADCLock)
+            if device_type == ADCDeviceType.LOCK or device_type is None:
+                await self._async_get_devices(ADCDeviceType.LOCK, self.locks, ADCLock)
+        except (PermissionError, UnexpectedDataStructure) as err:
+            raise err
 
     #
     #
@@ -212,10 +220,6 @@ class ADCController:
     ####################
     #
     # Help process data returned by the API
-
-    async def _async_bypass_2fa(self) -> None:
-        """Reserved for child classes."""
-        pass
 
     # Get functions build a new internal list of entities before assigning to their respective instance variables.
     # If we assign to the instance variable directly, the same elements will be added to the list every time we update.
@@ -474,10 +478,12 @@ class ADCController:
             if self._user_email is None:
                 raise AuthenticationFailed("Could not find user email address.")
 
+            log.debug(
+                "Got Provider: %s, User ID: %s", self._provider_name, self._user_id
+            )
+
         except KeyError as err:
             raise AuthenticationFailed from err
-
-        log.debug("Got Provider: %s, User ID: %s", self._provider_name, self._user_id)
 
     async def _async_get_items_and_subordinates(
         self, url_template: str, device_type: ADCDeviceType.list()
@@ -560,7 +566,7 @@ class ADCController:
             raise DataFetchFailed from err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract login info from Alarm.com")
-            raise DataFetchFailed from err
+            raise UnexpectedDataStructure from err
         try:
             # login and grab ajax key
             async with self._websession.post(
@@ -578,10 +584,13 @@ class ADCController:
                 },
                 cookies=self._twofactor_cookie,
             ) as resp:
+                if re.search("m=login_fail", str(resp.url)) is not None:
+                    raise AuthenticationFailed("Invalid username and password.")
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
             log.error("Can not login to Alarm.com")
             raise DataFetchFailed from err
         except KeyError as err:
             log.error("Unable to extract ajax key from Alarm.com")
+            log.debug("Response: %s", resp)
             raise DataFetchFailed from err
