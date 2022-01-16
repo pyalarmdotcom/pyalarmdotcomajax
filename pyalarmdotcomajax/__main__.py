@@ -133,7 +133,7 @@ def _print_element_tearsheet(
 
     print(
         f"""{element.name} ({element.id_}){malfunction}{subtype}
-        State: {element.state} {f"Desired: {element.desired_state}" if hasattr(element,"desired_state") else ""}
+        State: {element.state} {f"(Desired: {element.desired_state}, Mismatched: {element.mismatched_states})" if hasattr(element,"desired_state") else ""}
         Battery: {battery}"""
     )
 

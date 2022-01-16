@@ -26,10 +26,10 @@ class DesiredStateMixin:
     @property
     def mismatched_states(self) -> bool:
         """Return whether actual state is equal to desired state. False indicates problem."""
-        return self._attribs_raw.get("desiredState") == self._attribs_raw.get("state")
+        return self.desired_state != self.state
 
     @property
-    def desired_state(self) -> str:
+    def desired_state(self) -> Enum:
         """Return state."""
 
         if self.has_state:
@@ -104,7 +104,7 @@ class ADCBaseElement:
         return self._attribs_raw.get("hasState", False)
 
     @property
-    def state(self) -> str:
+    def state(self) -> str or bool or DeviceState:
         """Return state."""
 
         if self.has_state:
