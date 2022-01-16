@@ -34,7 +34,7 @@ class DesiredStateMixin:
 
         if self.has_state:
             try:
-                state = self.DeviceState(self._attribs_raw.get("desiredState")).name
+                state = self.DeviceState(self._attribs_raw.get("desiredState"))
             except ValueError:
                 return None
             else:

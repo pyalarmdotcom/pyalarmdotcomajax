@@ -12,7 +12,13 @@ import aiohttp
 
 import pyalarmdotcomajax
 from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.entities import ADCBaseElement
+from pyalarmdotcomajax.entities import (
+    ADCGarageDoor,
+    ADCLock,
+    ADCPartition,
+    ADCSensor,
+    ADCSystem,
+)
 
 
 async def main():
@@ -107,7 +113,9 @@ async def main():
         print("\n")
 
 
-def _print_element_tearsheet(element: ADCBaseElement):
+def _print_element_tearsheet(
+    element: ADCGarageDoor or ADCLock or ADCPartition or ADCSensor or ADCSystem,
+):
     if element.battery_critical:
         battery = "Critical"
     elif element.battery_low:
@@ -125,7 +133,7 @@ def _print_element_tearsheet(element: ADCBaseElement):
 
     print(
         f"""{element.name} ({element.id_}){malfunction}{subtype}
-        State: {element.state}
+        State: {element.state} {f"Desired: {element.desired_state}" if hasattr(element,"desired_state") else ""}
         Battery: {battery}"""
     )
 
