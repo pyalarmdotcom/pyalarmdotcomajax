@@ -94,7 +94,7 @@ class ADCBaseElement:
     def device_type(self) -> None or str:
         """Return normalized device type constant. E.g.: sensor, thermostat, etc."""
         try:
-            return ADCRelationshipType(self._family_raw).name
+            return ADCRelationshipType(self._family_raw)
         except ValueError:
             return None
 
@@ -109,7 +109,7 @@ class ADCBaseElement:
 
         if self.has_state:
             try:
-                state = self.DeviceState(self._attribs_raw.get("state")).name
+                state = self.DeviceState(self._attribs_raw.get("state"))
             except ValueError:
                 return None
             else:
