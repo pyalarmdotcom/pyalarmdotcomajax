@@ -4,6 +4,15 @@ from enum import Enum, IntEnum
 from typing import List
 
 
+class ArmingOption(Enum):
+    """Specify when to force bypass device problems."""
+
+    STAY = "stay"
+    AWAY = "away"
+    ALWAYS = "true"
+    NEVER = "false"
+
+
 class ExtendedEnumMixin(Enum):
     """Search and export-list functions to enums."""
 

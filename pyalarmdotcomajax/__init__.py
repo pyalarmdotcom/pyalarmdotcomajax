@@ -15,6 +15,7 @@ from pyalarmdotcomajax.const import (
     ADCGarageDoorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
+    ArmingOption,
 )
 from pyalarmdotcomajax.entities import (
     ADCBaseElement,
@@ -31,7 +32,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.15"
+__version__ = "0.2.16"
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class ADCController:
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
-    LOGIN_PASSWORD_FIELD = "txtPassword"
+    LOGIN_PASSWORD_FIELD = "txtPassword"  # nosec
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
@@ -69,9 +70,9 @@ class ADCController:
         username: str,
         password: str,
         websession: aiohttp.ClientSession,
-        forcebypass: bool,
-        noentrydelay: bool,
-        silentarming: bool,
+        forcebypass: ArmingOption,
+        noentrydelay: ArmingOption,
+        silentarming: ArmingOption,
         twofactorcookie: str,
     ):
         """Use AIOHTTP to make a request to alarm.com."""
@@ -82,9 +83,9 @@ class ADCController:
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
         }
-        self._forcebypass = forcebypass  # "stay","away","true","false"
-        self._noentrydelay = noentrydelay  # "stay","away","true","false"
-        self._silentarming = silentarming  # "stay","away","true","false"
+        self._forcebypass = forcebypass
+        self._noentrydelay = noentrydelay
+        self._silentarming = silentarming
         self._url_base: str = self.URL_BASE
         self._twofactor_cookie: str = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
@@ -158,25 +159,31 @@ class ADCController:
     ) -> bool:
         """Send command to take action on device."""
 
-        forcebypass: bool = None
-        noentrydelay: bool = None
-        silentarming: bool = None
+        forcebypass: ArmingOption = None
+        noentrydelay: ArmingOption = None
+        silentarming: ArmingOption = None
 
         if event in [
             ADCPartitionCommand.ARM_AWAY,
             ADCPartitionCommand.ARM_STAY,
         ]:
             forcebypass = self._forcebypass in [
-                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
-                "true",
+                ArmingOption.STAY
+                if event == ADCPartitionCommand.ARM_STAY
+                else ArmingOption.AWAY,
+                ArmingOption.ALWAYS,
             ]
             noentrydelay = self._noentrydelay in [
-                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
-                "true",
+                ArmingOption.STAY
+                if event == ADCPartitionCommand.ARM_STAY
+                else ArmingOption.AWAY,
+                ArmingOption.ALWAYS,
             ]
             silentarming = self._silentarming in [
-                "stay" if event == ADCPartitionCommand.ARM_AWAY else "away",
-                "true",
+                ArmingOption.STAY
+                if event == ADCPartitionCommand.ARM_STAY
+                else ArmingOption.AWAY,
+                ArmingOption.ALWAYS,
             ]
 
         return await self._send(
@@ -354,9 +361,9 @@ class ADCController:
         self,
         device_type: ADCDeviceType,
         event: ADCLockCommand or ADCPartitionCommand or ADCGarageDoorCommand,
-        forcebypass: Optional[bool] = False,
-        noentrydelay: Optional[bool] = False,
-        silentarming: Optional[bool] = False,
+        forcebypass: ArmingOption = False,
+        noentrydelay: ArmingOption = False,
+        silentarming: ArmingOption = False,
         device_id: Optional[str] = None,  # ID corresponds to device_type
         retry_on_failure: Optional[
             bool
@@ -373,9 +380,9 @@ class ADCController:
                 **{
                     key: value
                     for key, value in {
-                        "forceBypass": forcebypass,
-                        "noEntryDelay": noentrydelay,
-                        "silentArming": silentarming,
+                        "forceBypass": forcebypass.value,
+                        "noEntryDelay": noentrydelay.value,
+                        "silentArming": silentarming.value,
                     }.items()
                     if value is True
                 },
