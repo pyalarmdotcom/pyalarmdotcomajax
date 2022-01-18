@@ -32,7 +32,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.16"
+__version__ = "0.2.17"
 
 log = logging.getLogger(__name__)
 
@@ -505,16 +505,17 @@ class ADCController:
 
         rsp_errors = json.get("errors", [])
         if len(rsp_errors) != 0:
-            log.debug(
-                "Failed to get data for device type %s. Response: %s",
-                device_type,
-                rsp_errors,
-            )
+
+            error_msg = f"Failed to get data for device type {device_type}. Response: {rsp_errors}"
+            log.debug(error_msg)
+
             if rsp_errors[0].get("status") == "423":
                 # TODO: This probably means that we're logged out. Should we log back in?
-                raise PermissionError
-            else:
-                raise DataFetchFailed
+                raise PermissionError(error_msg)
+
+            error_msg = f"{__name__}: Showing first error only. Status: {rsp_errors[0].get('status')}. Response: {json}"
+            log.debug(error_msg)
+            raise DataFetchFailed(error_msg)
 
         try:
             for device in json["data"]:
