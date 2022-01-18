@@ -32,7 +32,7 @@ from pyalarmdotcomajax.errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.17"
+__version__ = "0.2.18"
 
 log = logging.getLogger(__name__)
 
@@ -493,7 +493,7 @@ class ADCController:
             raise AuthenticationFailed from err
 
     async def _async_get_items_and_subordinates(
-        self, url_template: str, device_type: ADCDeviceType.list()
+        self, url_template: str, device_type: ADCDeviceType.list(), retry=False
     ) -> None:
         async with self._websession.get(
             url=url_template.format(self._url_base, ""),
@@ -509,9 +509,14 @@ class ADCController:
             error_msg = f"Failed to get data for device type {device_type}. Response: {rsp_errors}"
             log.debug(error_msg)
 
-            if rsp_errors[0].get("status") == "423":
-                # TODO: This probably means that we're logged out. Should we log back in?
-                raise PermissionError(error_msg)
+            if rsp_errors[0].get("status") in ["423", "403"]:
+                # TODO: This probably means that we're logged out. How do we handle this?
+                if retry:
+                    raise PermissionError(error_msg)
+
+                self._async_get_items_and_subordinates(
+                    url_template=url_template, device_type=device_type, retry=True
+                )
 
             error_msg = f"{__name__}: Showing first error only. Status: {rsp_errors[0].get('status')}. Response: {json}"
             log.debug(error_msg)
