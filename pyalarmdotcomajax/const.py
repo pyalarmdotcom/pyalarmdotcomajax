@@ -75,6 +75,7 @@ class ADCSensorSubtype(IntEnum):
     """Library of identified ADC device types."""
 
     CONTACT_SENSOR = 1
+    MOTION_SENSOR = 2
     SMOKE_DETECTOR = 5
     CO_DETECTOR = 6
     PANIC_BUTTON = 9

@@ -12,6 +12,7 @@ import logging
 import aiohttp
 
 import pyalarmdotcomajax
+from pyalarmdotcomajax.errors import DataFetchFailed
 
 from . import ADCController
 from .const import ArmingOption
@@ -30,7 +31,10 @@ async def cli() -> None:
 
     parser = argparse.ArgumentParser(
         prog="adc",
-        description="Basic command line interface for Alarm.com via pyalarmdotcomajax",
+        description=(
+            "Basic command line debug interface for Alarm.com via pyalarmdotcomajax."
+            " Shows device states in various formats."
+        ),
     )
     parser.add_argument("-u", "--username", help="alarm.com username", required=True)
     parser.add_argument("-p", "--password", help="alarm.com password", required=True)
@@ -40,7 +44,18 @@ async def cli() -> None:
     parser.add_argument(
         "-v",
         "--verbose",
-        help="show debug output",
+        help=(
+            "show verbose output. -v returns server response for all devices except"
+            " systems. -vv returns server response for all devices."
+        ),
+        action="count",
+        default=0,
+        required=False,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="show pyalarmdotcomajax's debug output.",
         action="count",
         default=0,
         required=False,
@@ -60,7 +75,7 @@ async def cli() -> None:
     if args.get("cookie") is not None:
         print(f"Using 2FA cookie {args.get('cookie')}.")
 
-    if args.get("verbose", 0) > 0:
+    if args.get("debug", 0) > 0:
         logging.basicConfig(level=logging.DEBUG)
 
     async with aiohttp.ClientSession() as session:
@@ -76,45 +91,64 @@ async def cli() -> None:
 
         await alarm.async_login()
 
-        print(f"\nProvider: {alarm.provider_name}")
-        print(f"Logged in as: {alarm.user_email} ({alarm.user_id})")
-
-        print("\n*** SYSTEMS ***\n")
-        if len(alarm.systems) == 0:
-            print("(none found)")
+        if args.get("verbose", 0) > 0:
+            await _async_machine_output(alarm)
         else:
-            for system in alarm.systems:
-                _print_element_tearsheet(system)
+            _human_readable_output(alarm)
 
-        print("\n*** PARTITIONS ***\n")
-        if len(alarm.partitions) == 0:
-            print("(none found)")
-        else:
-            for partition in alarm.partitions:
-                _print_element_tearsheet(partition)
 
-        print("\n*** SENSORS ***\n")
-        if len(alarm.sensors) == 0:
-            print("(none found)")
-        else:
-            for sensor in alarm.sensors:
-                _print_element_tearsheet(sensor)
+async def _async_machine_output(alarm: ADCController) -> None:
+    """Output raw server responses."""
 
-        print("\n*** LOCKS ***\n")
-        if len(alarm.locks) == 0:
-            print("(none found)")
-        else:
-            for lock in alarm.locks:
-                _print_element_tearsheet(lock)
+    try:
+        print(await alarm.async_get_raw_server_responses())
+    except PermissionError:
+        print("Permission error. Check that your credentials are correct.")
+    except DataFetchFailed:
+        print("Connection error.")
 
-        print("\n*** GARAGE DOORS ***\n")
-        if len(alarm.garage_doors) == 0:
-            print("(none found)")
-        else:
-            for garage_door in alarm.garage_doors:
-                _print_element_tearsheet(garage_door)
 
-        print("\n")
+def _human_readable_output(alarm: ADCController) -> None:
+    """Output user-friendly list of devices and statuses."""
+    print(f"\nProvider: {alarm.provider_name}")
+    print(f"Logged in as: {alarm.user_email} ({alarm.user_id})")
+
+    print("\n*** SYSTEMS ***\n")
+    if len(alarm.systems) == 0:
+        print("(none found)")
+    else:
+        for system in alarm.systems:
+            _print_element_tearsheet(system)
+
+    print("\n*** PARTITIONS ***\n")
+    if len(alarm.partitions) == 0:
+        print("(none found)")
+    else:
+        for partition in alarm.partitions:
+            _print_element_tearsheet(partition)
+
+    print("\n*** SENSORS ***\n")
+    if len(alarm.sensors) == 0:
+        print("(none found)")
+    else:
+        for sensor in alarm.sensors:
+            _print_element_tearsheet(sensor)
+
+    print("\n*** LOCKS ***\n")
+    if len(alarm.locks) == 0:
+        print("(none found)")
+    else:
+        for lock in alarm.locks:
+            _print_element_tearsheet(lock)
+
+    print("\n*** GARAGE DOORS ***\n")
+    if len(alarm.garage_doors) == 0:
+        print("(none found)")
+    else:
+        for garage_door in alarm.garage_doors:
+            _print_element_tearsheet(garage_door)
+
+    print("\n")
 
 
 def _print_element_tearsheet(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 from typing import Literal
@@ -25,7 +26,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "2.0.19-beta"
+__version__ = "2.1.0-beta"
 
 
 log = logging.getLogger(__name__)
@@ -367,7 +368,7 @@ class ADCController:
             device_type == ADCDeviceType.PARTITION
             and event != ADCPartitionCommand.DISARM
         ):
-            json = {
+            json_req = {
                 "statePollOnly": False,
                 **{
                     key: value
@@ -380,7 +381,7 @@ class ADCController:
                 },
             }
         else:
-            json = {"statePollOnly": False}
+            json_req = {"statePollOnly": False}
 
         # ################################
         # # BEGIN: SET URL BY DEVICE TYPE
@@ -388,17 +389,23 @@ class ADCController:
 
         # PARTITION
         if device_type == ADCDeviceType.PARTITION:
-            url = f"{self.PARTITION_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            url = (
+                f"{self.PARTITION_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            )
             log.debug("Url %s", url)
 
         # LOCK
         elif device_type == ADCDeviceType.LOCK:
-            url = f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            url = (
+                f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            )
             log.debug("Url %s", url)
 
         # GARAGE DOOR
         elif device_type == ADCDeviceType.GARAGE_DOOR:
-            url = f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            url = (
+                f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            )
             log.debug("Url %s", url)
 
         # UNSUPPORTED
@@ -412,7 +419,7 @@ class ADCController:
 
         async with self._websession.post(
             url=url,
-            json=json,
+            json=json_req,
             headers=self._ajax_headers,
         ) as resp:
             log.debug("Response from Alarm.com %s", resp.status)
@@ -422,7 +429,10 @@ class ADCController:
                 return True
             if resp.status == 423:
                 # User has read-only permission to the entity.
-                err_msg = f"{__name__}: User {self.user_email} has read-only access to {device_type.name.lower()} {device_id}."
+                err_msg = (
+                    f"{__name__}: User {self.user_email} has read-only access to"
+                    f" {device_type.name.lower()} {device_id}."
+                )
                 raise PermissionError(err_msg)
             elif resp.status == 403:
                 # May have been logged out, try again
@@ -451,7 +461,7 @@ class ADCController:
             noentrydelay,
             silentarming,
             url,
-            json,
+            json_req,
             self._ajax_headers,
         )
         raise ConnectionError
@@ -461,13 +471,13 @@ class ADCController:
             url=self.IDENTITIES_URL_TEMPLATE.format(self._url_base, ""),
             headers=self._ajax_headers,
         ) as resp:
-            json = await (resp.json())
+            json_rsp = await (resp.json())
 
         try:
-            self._user_id = json["data"][0]["id"]
-            self._provider_name = json["data"][0]["attributes"]["logoName"]
+            self._user_id = json_rsp["data"][0]["id"]
+            self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
 
-            for inclusion in json["included"]:
+            for inclusion in json_rsp["included"]:
                 if (
                     inclusion["id"] == self._user_id
                     and inclusion["type"] == "profile/profile"
@@ -498,14 +508,17 @@ class ADCController:
             url=url_template.format(self._url_base, ""),
             headers=self._ajax_headers,
         ) as resp:
-            json = await (resp.json())
+            json_rsp = await (resp.json())
 
         return_items = []
 
-        rsp_errors = json.get("errors", [])
+        rsp_errors = json_rsp.get("errors", [])
         if len(rsp_errors) != 0:
 
-            error_msg = f"Failed to get data for device type {device_type}. Response: {rsp_errors}"
+            error_msg = (
+                f"Failed to get data for device type {device_type}. Response:"
+                f" {rsp_errors}"
+            )
             log.debug(error_msg)
 
             if rsp_errors[0].get("status") in ["423", "403"]:
@@ -517,12 +530,15 @@ class ADCController:
                     url_template=url_template, device_type=device_type, retry=True
                 )
 
-            error_msg = f"{__name__}: Showing first error only. Status: {rsp_errors[0].get('status')}. Response: {json}"
+            error_msg = (
+                f"{__name__}: Showing first error only. Status:"
+                f" {rsp_errors[0].get('status')}. Response: {json_rsp}"
+            )
             log.debug(error_msg)
             raise DataFetchFailed(error_msg)
 
         try:
-            for device in json["data"]:
+            for device in json_rsp["data"]:
                 # Get list of downstream devices. Add to list for reference
                 subordinates = []
                 if device_type in [
@@ -606,3 +622,46 @@ class ADCController:
             log.error("Unable to extract ajax key from Alarm.com")
             log.debug("Response: %s", resp)
             raise DataFetchFailed from err
+
+    async def async_get_raw_server_responses(
+        self,
+        include_systems: bool | None = False,
+    ) -> str:
+        """Get raw responses from Alarm.com device endpoints."""
+
+        return_str: str = ""
+
+        endpoints = [
+            ("LOCKS", self.LOCK_URL_TEMPLATE),
+            ("SENSORS", self.SENSOR_URL_TEMPLATE),
+            ("GARAGE_DOORS", self.GARAGE_DOOR_URL_TEMPLATE),
+            ("PARTITIONS", self.PARTITION_URL_TEMPLATE),
+        ]
+
+        if include_systems:
+            endpoints.append(("SYSTEMS", self.SYSTEM_URL_TEMPLATE))
+
+        for name, url_template in endpoints:
+
+            return_str += f"\n\n====[{name}]====\n\n"
+
+            async with self._websession.get(
+                url=url_template.format(self._url_base, ""),
+                headers=self._ajax_headers,
+            ) as resp:
+                json_rsp = await (resp.json())
+
+            rsp_errors = json_rsp.get("errors", [])
+            if len(rsp_errors) != 0:
+
+                error_msg = f"Failed to get data. Response: {rsp_errors}"
+                log.debug(error_msg)
+
+                if rsp_errors[0].get("status") in ["423", "403"]:
+                    raise PermissionError(error_msg)
+
+                raise DataFetchFailed(error_msg)
+
+            return_str += json.dumps(json_rsp)
+
+        return return_str
