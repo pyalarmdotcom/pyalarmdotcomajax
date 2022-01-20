@@ -1,7 +1,8 @@
 """Constants."""
+from __future__ import annotations
 
 from enum import Enum, IntEnum
-from typing import List
+from typing import Any
 
 
 class ArmingOption(Enum):
@@ -17,14 +18,19 @@ class ExtendedEnumMixin(Enum):
     """Search and export-list functions to enums."""
 
     @classmethod
-    def has_value(cls, value) -> bool:
+    def has_value(cls, value: str) -> bool:
         """Return whether value exists in enum."""
         return value in cls._value2member_map_
 
     @classmethod
-    def list(cls) -> List:
+    def list(cls) -> list:
         """Return list of all enum members."""
-        return list(map(lambda c: c.value, cls))
+
+        def get_enum_value(enum_class: Enum) -> Any:
+            """Mypy choked when this was expressed as a lambda."""
+            return enum_class.value
+
+        return list(map(get_enum_value, cls))
 
 
 class ADCRelationshipType(Enum):

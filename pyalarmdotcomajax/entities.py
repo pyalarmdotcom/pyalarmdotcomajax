@@ -1,8 +1,10 @@
 """Defines pyalarmdotcomajax components."""
+from __future__ import annotations
 
+from collections.abc import Callable
 from enum import Enum
 import logging
-from types import FunctionType
+from typing import Protocol
 
 from .const import (
     ADCDeviceType,
@@ -20,21 +22,31 @@ log = logging.getLogger(__name__)
 #
 
 
+class DesiredStateProtocol(Protocol):
+    """Private variables for DesiredStateMixin."""
+
+    _attribs_raw: dict
+    desired_state: Enum | None
+    has_state: bool
+    state: Enum | None
+    DeviceState: type[Enum]
+
+
 class DesiredStateMixin:
     """Mixin decorator for mismatched_states function."""
 
     @property
-    def mismatched_states(self) -> bool:
+    def mismatched_states(self: DesiredStateProtocol) -> bool | None:
         """Return whether actual state is equal to desired state. False indicates problem."""
         return self.desired_state != self.state
 
     @property
-    def desired_state(self) -> Enum:
+    def desired_state(self: DesiredStateProtocol) -> Enum | None:
         """Return state."""
 
         if self.has_state:
             try:
-                state = self.DeviceState(self._attribs_raw.get("desiredState"))
+                state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
             except ValueError:
                 return None
             else:
@@ -53,25 +65,25 @@ class ADCBaseElement:
 
     def __init__(
         self,
-        send_action_callback: FunctionType,
+        send_action_callback: Callable,
         id_: str,
         attribs_raw: dict,
         subordinates: list,
-        parent_ids: dict = None,
-        family_raw: str = None,
+        parent_ids: dict | None = None,
+        family_raw: str | None = None,
     ) -> None:
         """Initialize base element class."""
         self._id_: str = id_
-        self._family_raw: str = family_raw
+        self._family_raw: str | None = family_raw
         self._attribs_raw: dict = attribs_raw
-        self._parent_ids: dict = parent_ids
-        self._send_action_callback: FunctionType = send_action_callback
+        self._parent_ids: dict | None = parent_ids
+        self._send_action_callback: Callable = send_action_callback
         self._subordinates: list = subordinates
 
         if parent_ids:
-            self._system_id: str = parent_ids.get("system")
-            self._partition_id: str = parent_ids.get("partition")
-            self._parent_id_: str = parent_ids.get("parent_device")
+            self._system_id: str | None = parent_ids.get("system")
+            self._partition_id: str | None = parent_ids.get("partition")
+            self._parent_id_: str | None = parent_ids.get("parent_device")
 
         log.debug(
             "Initialized %s (%s) %s", self.device_type, self._family_raw, self.name
@@ -86,12 +98,12 @@ class ADCBaseElement:
         return self._id_
 
     @property
-    def name(self) -> None or str:
+    def name(self) -> None | str:
         """Return user-assigned device name."""
         return self._attribs_raw.get("description", None)
 
     @property
-    def device_type(self) -> None or str:
+    def device_type(self) -> None | ADCRelationshipType:
         """Return normalized device type constant. E.g.: sensor, thermostat, etc."""
         try:
             return ADCRelationshipType(self._family_raw)
@@ -104,7 +116,7 @@ class ADCBaseElement:
         return self._attribs_raw.get("hasState", False)
 
     @property
-    def state(self) -> str or bool or DeviceState:
+    def state(self) -> str | bool | DeviceState | None:
         """Return state."""
 
         if self.has_state:
@@ -118,43 +130,64 @@ class ADCBaseElement:
             return None
 
     @property
-    def battery_low(self) -> bool:
+    def battery_low(self) -> bool | None:
         """Return whether battery is low."""
-        return self._attribs_raw.get("lowBattery", None)
+        return self._attribs_raw.get("lowBattery")
 
     @property
-    def battery_critical(self) -> bool:
+    def battery_critical(self) -> bool | None:
         """Return whether battery is critically low."""
-        return self._attribs_raw.get("criticalBattery", None)
+        return self._attribs_raw.get("criticalBattery")
 
     @property
-    def system_id(self) -> str:
+    def system_id(self) -> str | None:
         """Return ID of device's parent system."""
-        return self._parent_ids.get("system", None)
+        return self._parent_ids.get("system") if self._parent_ids is not None else None
 
     @property
-    def partition_id(self) -> str:
+    def partition_id(self) -> str | None:
         """Return ID of device's parent partition."""
-        return self._parent_ids.get("partition", None)
+        return (
+            self._parent_ids.get("partition") if self._parent_ids is not None else None
+        )
 
     @property
-    def malfunction(self) -> bool:
+    def malfunction(self) -> bool | None:
         """Return whether device is malfunctioning."""
         return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
 
     @property
-    def mac_address(self) -> bool:
+    def mac_address(self) -> bool | None:
         """Return device MAC address."""
         return self._attribs_raw.get("macAddress")
 
     @property
-    def raw_state_text(self) -> bool:
+    def raw_state_text(self) -> str | None:
         """Return state description as reported by ADC."""
         return self._attribs_raw.get("displayStateText")
 
-    def is_subordinate(self, device_id: str) -> bool:
-        """Return whether submitted device is downstream from this device."""
-        return [i_id for i_id in self._subordinates if i_id[0] == device_id]
+    # def is_subordinate(self, device_id: str) -> bool:
+    #     """Return whether submitted device is downstream from this device."""
+    #     return [i_id for i_id in self._subordinates if i_id[0] == device_id]
+
+    # #
+    # PLACEHOLDERS
+    # #
+
+    # All subclasses will have above functions. Only some will have the below and must be implemented as overloads.
+    # Methods below are included here to silence mypy errors.
+
+    @property
+    def mismatched_states(self) -> bool | None:
+        """Return whether actual state is equal to desired state. False indicates problem."""
+
+    @property
+    def desired_state(self) -> Enum | None:
+        """Return state."""
+
+    @property
+    def device_subtype(self) -> ADCSensorSubtype | None:
+        """Return normalized device subtype constant. E.g.: contact, glass break, etc."""
 
 
 class ADCSystem(ADCBaseElement):
@@ -179,7 +212,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
         ARMED_NIGHT = 4
 
     @property
-    def uncleared_issues(self) -> bool or None:
+    def uncleared_issues(self) -> bool | None:
         """Return whether user needs to clear device state from alarm or device malfunction."""
         return self._attribs_raw.get("needsClearIssuesPrompt", None)
 
@@ -229,7 +262,7 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
         LOCKED = "Locked"
         UNLOCKED = "Open"
 
-    async def async_lock(self):
+    async def async_lock(self) -> None:
         """Send lock command."""
         await self._send_action_callback(
             ADCDeviceType.LOCK,
@@ -237,7 +270,7 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
             self._id_,
         )
 
-    async def async_unlock(self):
+    async def async_unlock(self) -> None:
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.LOCK,
@@ -261,10 +294,10 @@ class ADCSensor(ADCBaseElement):
         WET = 6
 
     @property
-    def device_subtype(self) -> None or str:
+    def device_subtype(self) -> ADCSensorSubtype | None:
         """Return normalized device subtype constant. E.g.: contact, glass break, etc."""
         try:
-            return ADCSensorSubtype(self._attribs_raw.get("deviceType"))
+            return ADCSensorSubtype(self._attribs_raw["deviceType"])
         except ValueError:
             return None
 
@@ -279,7 +312,7 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
         OPEN = 1
         CLOSED = 2
 
-    async def async_open(self):
+    async def async_open(self) -> None:
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.GARAGE_DOOR,
@@ -287,7 +320,7 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
             self._id_,
         )
 
-    async def async_close(self):
+    async def async_close(self) -> None:
         """Send unlock command."""
         await self._send_action_callback(
             ADCDeviceType.GARAGE_DOOR,

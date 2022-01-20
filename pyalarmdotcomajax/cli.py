@@ -3,6 +3,7 @@ pyalarmdotcomajax CLI.
 
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
+from __future__ import annotations
 
 import argparse
 import asyncio
@@ -11,22 +12,25 @@ import logging
 import aiohttp
 
 import pyalarmdotcomajax
-from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.entities import (
+
+from . import ADCController
+from .const import ArmingOption
+from .entities import (
     ADCGarageDoor,
     ADCLock,
     ADCPartition,
     ADCSensor,
+    ADCSensorSubtype,
     ADCSystem,
 )
 
 
-async def main():
+async def cli() -> None:
     """Support command-line development and testing. Not used in normal library operation."""
 
     parser = argparse.ArgumentParser(
-        prog="pyalarmdotcomajax",
-        description="Basic command line interface for Alarm.com",
+        prog="adc",
+        description="Basic command line interface for Alarm.com via pyalarmdotcomajax",
     )
     parser.add_argument("-u", "--username", help="alarm.com username", required=True)
     parser.add_argument("-p", "--password", help="alarm.com password", required=True)
@@ -56,18 +60,18 @@ async def main():
     if args.get("cookie") is not None:
         print(f"Using 2FA cookie {args.get('cookie')}.")
 
-    if args.get("verbose") > 0:
+    if args.get("verbose", 0) > 0:
         logging.basicConfig(level=logging.DEBUG)
 
     async with aiohttp.ClientSession() as session:
         alarm = ADCController(
-            args.get("username"),
-            args.get("password"),
-            session,
-            False,  # ForceBypass
-            False,  # NoEntryDelay
-            False,  # SilentArming
-            args.get("cookie"),
+            username=args.get("username", ""),
+            password=args.get("password", ""),
+            websession=session,
+            forcebypass=ArmingOption.NEVER,
+            noentrydelay=ArmingOption.NEVER,
+            silentarming=ArmingOption.NEVER,
+            twofactorcookie=args.get("cookie"),
         )
 
         await alarm.async_login()
@@ -79,43 +83,43 @@ async def main():
         if len(alarm.systems) == 0:
             print("(none found)")
         else:
-            for element in alarm.systems:
-                _print_element_tearsheet(element)
+            for system in alarm.systems:
+                _print_element_tearsheet(system)
 
         print("\n*** PARTITIONS ***\n")
         if len(alarm.partitions) == 0:
             print("(none found)")
         else:
-            for element in alarm.partitions:
-                _print_element_tearsheet(element)
+            for partition in alarm.partitions:
+                _print_element_tearsheet(partition)
 
         print("\n*** SENSORS ***\n")
         if len(alarm.sensors) == 0:
             print("(none found)")
         else:
-            for element in alarm.sensors:
-                _print_element_tearsheet(element)
+            for sensor in alarm.sensors:
+                _print_element_tearsheet(sensor)
 
         print("\n*** LOCKS ***\n")
         if len(alarm.locks) == 0:
             print("(none found)")
         else:
-            for element in alarm.locks:
-                _print_element_tearsheet(element)
+            for lock in alarm.locks:
+                _print_element_tearsheet(lock)
 
         print("\n*** GARAGE DOORS ***\n")
         if len(alarm.garage_doors) == 0:
             print("(none found)")
         else:
-            for element in alarm.garage_doors:
-                _print_element_tearsheet(element)
+            for garage_door in alarm.garage_doors:
+                _print_element_tearsheet(garage_door)
 
         print("\n")
 
 
 def _print_element_tearsheet(
-    element: ADCGarageDoor or ADCLock or ADCPartition or ADCSensor or ADCSystem,
-):
+    element: ADCGarageDoor | ADCLock | ADCPartition | ADCSensor | ADCSystem,
+) -> None:
     if element.battery_critical:
         battery = "Critical"
     elif element.battery_low:
@@ -127,16 +131,23 @@ def _print_element_tearsheet(
 
     subtype = (
         f"\n        Sensor Type: {element.device_subtype.name}"
-        if hasattr(element, "device_subtype")
-        else ""
+        if isinstance(element.device_subtype, ADCSensorSubtype)
+        else None
+    )
+
+    mismatched_str = (
+        f"(Desired: {element.desired_state}, Mismatched: {element.mismatched_states})"
+        if isinstance(element, ADCSystem)
+        else None
     )
 
     print(
         f"""{element.name} ({element.id_}){malfunction}{subtype}
-        State: {element.state} {f"(Desired: {element.desired_state}, Mismatched: {element.mismatched_states})" if hasattr(element,"desired_state") else ""}
+        State: {element.state} {mismatched_str}
         Battery: {battery}"""
     )
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+def main() -> None:
+    """Run primary CLI function via asyncio. Main entrypoint for command line tool."""
+    asyncio.run(cli())

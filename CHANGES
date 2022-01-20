@@ -15,4 +15,3 @@ v0.1.2, 2020-03-22 -- Added option for silent arming
                       Changed arming function name to use stay instead of home, sticking with ADC convention
 v0.1.1, 2020-03-18 -- Added sensor status
 v0.1.0, 2020-03-18 -- Initial release.
-

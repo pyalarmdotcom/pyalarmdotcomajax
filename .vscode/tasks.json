@@ -6,6 +6,12 @@
             "type": "shell",
             "command": "pre-commit run --all-files",
             "problemMatcher": []
+        },
+        {
+            "label": "Run pre-commit: mypy.",
+            "type": "shell",
+            "command": "pre-commit run mypy --all-files",
+            "problemMatcher": []
         }
     ]
 }

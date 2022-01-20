@@ -1,21 +1,26 @@
 {
-	"image": "ghcr.io/ludeeus/devcontainer/python:stable",
-	"context": "..",
-	"postCreateCommand": "python3 -m pip install -r requirements-dev.txt && pre-commit install",
+	"image": "ludeeus/container:python-base-debian",
+	"postCreateCommand": "pip install -r requirements-dev.txt && pip install --editable . && pre-commit install-hooks",
 	"extensions": [
-		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"esbenp.prettier-vscode",
 		"github.vscode-pull-request-github",
 		"ryanluker.vscode-coverage-gutters",
-		"ms-python.vscode-pylance",
-		"davidanson.vscode-markdownlint",
 		"janisdd.vscode-edit-csv",
-		"mechatroner.rainbow-csv"
+		"mechatroner.rainbow-csv",
+		"bungcip.better-toml",
+		"donjayamanne.python-extension-pack",
+		"marklarah.pre-commit-vscode"
 	],
 	"settings": {
 		"files.eol": "\n",
 		"editor.tabSize": 4,
-		"terminal.integrated.shell.linux": "/bin/bash",
-		"python.pythonPath": "/usr/local/python/bin/python",
+		"terminal.integrated.defaultProfile.linux": "bash",
+		"terminal.integrated.profiles.linux": {
+			"zsh": {
+				"path": "/bin/bash"
+			}
+		},
 		"python.analysis.autoSearchPaths": false,
 		"python.linting.pylintEnabled": true,
 		"python.linting.enabled": true,
@@ -27,6 +32,20 @@
 		"editor.formatOnPaste": false,
 		"editor.formatOnSave": true,
 		"editor.formatOnType": true,
-		"files.trimTrailingWhitespace": true
+		"files.trimTrailingWhitespace": true,
+		"python.linting.mypyEnabled": true,
+		"python.defaultInterpreterPath": "/usr/local/bin/python",
+		"python.formatting.blackPath": "/usr/local/bin/black",
+		"python.linting.banditPath": "/usr/local/bin/bandit",
+		"python.linting.flake8Path": "/usr/local/bin/flake8",
+		"python.linting.mypyPath": "/usr/local/bin/mypy",
+		"python.linting.pycodestylePath": "/usr/local/bin/pycodestyle",
+		"python.linting.pylintPath": "/usr/local/bin/pylint",
+		"python.sortImports.path": "/usr/local/bin/isort",
+		"typescript.tsc.autoDetect": "off",
+		"grunt.autoDetect": "off",
+		"jake.autoDetect": "off",
+		"gulp.autoDetect": "off",
+		"npm.autoDetect": "off"
 	}
 }

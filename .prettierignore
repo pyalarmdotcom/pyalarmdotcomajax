@@ -1,0 +1,8 @@
+# Prettier doesn't support pyproject.toml
+
+# Ignore everything
+**/**
+
+# Except
+!*.toml
+!*.yaml

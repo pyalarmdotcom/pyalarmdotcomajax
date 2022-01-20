@@ -1,38 +1,32 @@
 """Alarmdotcom API Controller."""
-
 # TODO: Add "debug" property that exports raw ADC responses. Useful for users who ask for support for devices not available to maintainers.
+from __future__ import annotations
 
 import asyncio
 import logging
 import re
-from typing import Optional
+from typing import Literal
 
 import aiohttp
 from bs4 import BeautifulSoup
 
-from pyalarmdotcomajax.const import (
+from .const import (
     ADCDeviceType,
     ADCGarageDoorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
     ArmingOption,
 )
-from pyalarmdotcomajax.entities import (
-    ADCBaseElement,
-    ADCGarageDoor,
-    ADCLock,
-    ADCPartition,
-    ADCSensor,
-    ADCSystem,
-)
-from pyalarmdotcomajax.errors import (
+from .entities import ADCGarageDoor, ADCLock, ADCPartition, ADCSensor, ADCSystem
+from .errors import (
     AuthenticationFailed,
     DataFetchFailed,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
 
-__version__ = "0.2.18"
+__version__ = "2.0.19-beta"
+
 
 log = logging.getLogger(__name__)
 
@@ -70,10 +64,10 @@ class ADCController:
         username: str,
         password: str,
         websession: aiohttp.ClientSession,
-        forcebypass: ArmingOption,
-        noentrydelay: ArmingOption,
-        silentarming: ArmingOption,
-        twofactorcookie: str,
+        twofactorcookie: str | None,
+        forcebypass: ArmingOption = ArmingOption.NEVER,
+        noentrydelay: ArmingOption = ArmingOption.NEVER,
+        silentarming: ArmingOption = ArmingOption.NEVER,
     ):
         """Use AIOHTTP to make a request to alarm.com."""
         self._username = username
@@ -87,12 +81,12 @@ class ADCController:
         self._noentrydelay = noentrydelay
         self._silentarming = silentarming
         self._url_base: str = self.URL_BASE
-        self._twofactor_cookie: str = (
+        self._twofactor_cookie: dict = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
         )
-        self._provider_name: str = None
-        self._user_id: str = None
-        self._user_email: str = None
+        self._provider_name: str | None = None
+        self._user_id: str | None = None
+        self._user_email: str | None = None
         self._partition_map: dict = {}
 
         self.systems: list[ADCSystem] = []
@@ -116,17 +110,17 @@ class ADCController:
     #
 
     @property
-    def provider_name(self) -> str:
+    def provider_name(self) -> str | None:
         """Return provider name."""
         return self._provider_name
 
     @property
-    def user_id(self) -> str:
+    def user_id(self) -> str | None:
         """Return user ID."""
         return self._user_id
 
     @property
-    def user_email(self) -> str:
+    def user_email(self) -> str | None:
         """Return user email address."""
         return self._user_email
 
@@ -138,7 +132,7 @@ class ADCController:
     #
     #
 
-    async def async_login(self) -> bool:
+    async def async_login(self) -> None:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
@@ -154,14 +148,14 @@ class ADCController:
     async def async_send_action(
         self,
         device_type: ADCDeviceType,
-        event: ADCPartitionCommand or ADCLockCommand or ADCGarageDoorCommand,
+        event: ADCPartitionCommand | ADCLockCommand | ADCGarageDoorCommand,
         device_id: str,
     ) -> bool:
         """Send command to take action on device."""
 
-        forcebypass: ArmingOption = None
-        noentrydelay: ArmingOption = None
-        silentarming: ArmingOption = None
+        forcebypass: bool = False
+        noentrydelay: bool = False
+        silentarming: bool = False
 
         if event in [
             ADCPartitionCommand.ARM_AWAY,
@@ -195,7 +189,7 @@ class ADCController:
             device_id,
         )
 
-    async def async_update(self, device_type: ADCDeviceType = None) -> None:
+    async def async_update(self, device_type: ADCDeviceType | None = None) -> None:
         """Fetch the latest state according to device."""
         log.debug("Calling update on Alarm.com")
 
@@ -302,7 +296,7 @@ class ADCController:
         self,
         device_type: ADCDeviceType,
         device_storage: list,
-        device_class: ADCBaseElement,
+        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor],
     ) -> None:
 
         if device_type == ADCDeviceType.GARAGE_DOOR:
@@ -360,14 +354,12 @@ class ADCController:
     async def _send(
         self,
         device_type: ADCDeviceType,
-        event: ADCLockCommand or ADCPartitionCommand or ADCGarageDoorCommand,
-        forcebypass: ArmingOption = False,
-        noentrydelay: ArmingOption = False,
-        silentarming: ArmingOption = False,
-        device_id: Optional[str] = None,  # ID corresponds to device_type
-        retry_on_failure: Optional[
-            bool
-        ] = True,  # Set to prevent infinite loops when function calls itself
+        event: ADCLockCommand | ADCPartitionCommand | ADCGarageDoorCommand,
+        forcebypass: bool = False,
+        noentrydelay: bool = False,
+        silentarming: bool = False,
+        device_id: str | None = None,  # ID corresponds to device_type
+        retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
         log.debug("Sending %s to Alarm.com.", event)
@@ -380,9 +372,9 @@ class ADCController:
                 **{
                     key: value
                     for key, value in {
-                        "forceBypass": forcebypass.value,
-                        "noEntryDelay": noentrydelay.value,
-                        "silentArming": silentarming.value,
+                        "forceBypass": forcebypass,
+                        "noEntryDelay": noentrydelay,
+                        "silentArming": silentarming,
                     }.items()
                     if value is True
                 },
@@ -493,8 +485,15 @@ class ADCController:
             raise AuthenticationFailed from err
 
     async def _async_get_items_and_subordinates(
-        self, url_template: str, device_type: ADCDeviceType.list(), retry=False
-    ) -> None:
+        self,
+        url_template: str,
+        device_type: Literal[ADCDeviceType.SYSTEM]
+        | Literal[ADCDeviceType.SENSOR]
+        | Literal[ADCDeviceType.PARTITION]
+        | Literal[ADCDeviceType.LOCK]
+        | Literal[ADCDeviceType.GARAGE_DOOR],
+        retry: bool = False,
+    ) -> list:
         async with self._websession.get(
             url=url_template.format(self._url_base, ""),
             headers=self._ajax_headers,
@@ -548,7 +547,7 @@ class ADCController:
 
         return return_items
 
-    async def _async_login_and_get_key(self) -> bool:
+    async def _async_login_and_get_key(self) -> None:
         """Load hidden fields from login page."""
         try:
             # load login page once and grab VIEWSTATE/cookies
