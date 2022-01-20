@@ -64,9 +64,9 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 The CLI is available by running `adc` from anywhere in your terminal.
 
 ```bash
-usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-ver]
+usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-d] [-ver]
 
-Basic command line interface for Alarm.com via pyalarmdotcomajax
+Basic command line debug interface for Alarm.com via pyalarmdotcomajax. Shows device states in various formats.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -76,7 +76,8 @@ optional arguments:
                         alarm.com password
   -c COOKIE, --cookie COOKIE
                         two-factor authentication cookie
-  -v, --verbose         show debug output
+  -v, --verbose         show verbose output. -v returns server response for all devices except systems. -vv returns server response for all devices.
+  -d, --debug           show pyalarmdotcomajax's debug output.
   -ver, --version       show program's version number and exit
 ```
 
