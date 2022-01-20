@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run pre-commit checks.",
+            "type": "shell",
+            "command": "pre-commit run --all-files",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run pre-commit: mypy.",
+            "type": "shell",
+            "command": "pre-commit run mypy --all-files",
+            "problemMatcher": []
+        }
+    ]
+}
