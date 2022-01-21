@@ -26,7 +26,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "2.1.0-beta"
+__version__ = "2.2.0-beta"
 
 
 log = logging.getLogger(__name__)
@@ -55,6 +55,11 @@ class ADCController:
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
     IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
+
+    # Unsupported
+    THERMOSTAT_URL_TEMPLATE = "{}web/api/devices/thermostats/{}"
+    LIGHT_URL_TEMPLATE = "{}web/api/devices/lights/{}"
+    CAMERA_URL_TEMPLATE = "{}web/api/video/cameras/{}"
 
     TROUBLECONDITIONS_URL_TEMPLATE = (
         "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
@@ -624,8 +629,7 @@ class ADCController:
             raise DataFetchFailed from err
 
     async def async_get_raw_server_responses(
-        self,
-        include_systems: bool | None = False,
+        self, include_systems: bool = False, include_unsupported: bool = False
     ) -> str:
         """Get raw responses from Alarm.com device endpoints."""
 
@@ -640,6 +644,13 @@ class ADCController:
 
         if include_systems:
             endpoints.append(("SYSTEMS", self.SYSTEM_URL_TEMPLATE))
+
+        if include_unsupported:
+            endpoints += [
+                ("THERMOSTATS", self.THERMOSTAT_URL_TEMPLATE),
+                ("LIGHTS", self.LIGHT_URL_TEMPLATE),
+                ("CAMERAS", self.CAMERA_URL_TEMPLATE),
+            ]
 
         for name, url_template in endpoints:
 

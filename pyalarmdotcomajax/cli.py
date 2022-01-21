@@ -53,6 +53,13 @@ async def cli() -> None:
         required=False,
     )
     parser.add_argument(
+        "-x",
+        "--include-unsupported",
+        help="when used with -v, returns data for cameras, lights, and thermostats.",
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "-d",
         "--debug",
         help="show pyalarmdotcomajax's debug output.",
@@ -91,17 +98,35 @@ async def cli() -> None:
 
         await alarm.async_login()
 
-        if args.get("verbose", 0) > 0:
-            await _async_machine_output(alarm)
+        if args.get("verbose", 0) == 1:
+            await _async_machine_output(
+                alarm=alarm,
+                include_systems=False,
+                include_unsupported=args.get("include_unsupported", False),
+            )
+        elif args.get("verbose", 0) > 1:
+            await _async_machine_output(
+                alarm=alarm,
+                include_systems=True,
+                include_unsupported=args.get("include_unsupported", False),
+            )
         else:
             _human_readable_output(alarm)
 
 
-async def _async_machine_output(alarm: ADCController) -> None:
+async def _async_machine_output(
+    alarm: ADCController,
+    include_systems: bool = False,
+    include_unsupported: bool = False,
+) -> None:
     """Output raw server responses."""
 
     try:
-        print(await alarm.async_get_raw_server_responses())
+        print(
+            await alarm.async_get_raw_server_responses(
+                include_systems, include_unsupported
+            )
+        )
     except PermissionError:
         print("Permission error. Check that your credentials are correct.")
     except DataFetchFailed:
