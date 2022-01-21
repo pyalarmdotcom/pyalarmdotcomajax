@@ -13,7 +13,7 @@ Forked from Daren Lord's pyalarmdotcom. Mainly built for use with Home Assistant
 
 ## BREAKING CHANGES
 
-v2 of pyalarmdotcomajax breaks just about all features available in v1. Be careful when updating.
+v0.2 of pyalarmdotcomajax breaks just about all features available in v0.1. Be careful when updating.
 
 ## Installation / Usage
 
