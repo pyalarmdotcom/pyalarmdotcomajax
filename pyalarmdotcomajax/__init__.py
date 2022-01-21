@@ -26,7 +26,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "2.2.0-beta"
+__version__ = "0.2.0-beta"
 
 
 log = logging.getLogger(__name__)
