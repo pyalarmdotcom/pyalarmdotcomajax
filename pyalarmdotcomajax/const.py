@@ -103,3 +103,28 @@ class ADCGarageDoorCommand(Enum):
 
     OPEN = "open"
     CLOSE = "close"
+
+
+# class DeviceTypeFetchErrors(TypedDict, total=False):
+#     """Store all errors encountered when fetching devices."""
+
+#     systems: DeviceTypeFetchError | None
+#     partitions: DeviceTypeFetchError | None
+#     locks: DeviceTypeFetchError | None
+#     sensors: DeviceTypeFetchError | None
+#     garageDoors: DeviceTypeFetchError | None
+
+
+# class DeviceTypeFetchError(TypedDict):
+#     """Store errors encountered when fetching a particular device type."""
+
+#     device_type: ADCDeviceType
+#     errors: list[ADCError]
+
+
+# class ADCError(TypedDict):
+#     """Alarm.com response error format."""
+
+#     status: str
+#     detail: str
+#     code: str
