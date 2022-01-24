@@ -526,7 +526,7 @@ class ADCController:
             )
             log.debug(error_msg)
 
-            if rsp_errors[0].get("status") in ["423", "403"]:
+            if rsp_errors[0].get("status") in ["403"]:
                 # TODO: This probably means that we're logged out. How do we handle this?
                 if retry:
                     raise PermissionError(error_msg)
@@ -540,8 +540,11 @@ class ADCController:
                 f" {rsp_errors[0].get('status')}. Response: {json_rsp}"
             )
             log.debug(error_msg)
-            raise DataFetchFailed(error_msg)
-
+            if rsp_errors[0].get("status") in ["423"]:
+               return return_items
+            elif rsp_errors[0].get("status") in ["403"]:
+               raise DataFetchFailed(error_msg)
+            
         try:
             for device in json_rsp["data"]:
                 # Get list of downstream devices. Add to list for reference
