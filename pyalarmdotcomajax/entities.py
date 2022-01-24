@@ -253,7 +253,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
 
 
 class ADCLock(DesiredStateMixin, ADCBaseElement):
-    """Represent Alarm.com partition element."""
+    """Represent Alarm.com sensor element."""
 
     class DeviceState(Enum):
         """Enum of lock states."""
@@ -303,7 +303,7 @@ class ADCSensor(ADCBaseElement):
 
 
 class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
-    """Represent Alarm.com system element."""
+    """Represent Alarm.com garage door element."""
 
     class DeviceState(Enum):
         """Enum of garage door states."""

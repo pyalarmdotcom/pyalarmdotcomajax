@@ -16,3 +16,11 @@ class DataFetchFailed(Exception):
 
 class UnexpectedDataStructure(Exception):
     """Successfully received JSON object, but format is not as expected."""
+
+
+class BadAccount(Exception):
+    """Account can't lock in or major permissions issue."""
+
+
+class DeviceTypeNotAuthorized(Exception):
+    """Account does not have access to a specific device type."""

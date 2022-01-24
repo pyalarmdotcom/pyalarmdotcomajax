@@ -1,5 +1,4 @@
 """Alarmdotcom API Controller."""
-# TODO: Add "debug" property that exports raw ADC responses. Useful for users who ask for support for devices not available to maintainers.
 from __future__ import annotations
 
 import asyncio
@@ -21,12 +20,14 @@ from .const import (
 from .entities import ADCGarageDoor, ADCLock, ADCPartition, ADCSensor, ADCSystem
 from .errors import (
     AuthenticationFailed,
+    BadAccount,
     DataFetchFailed,
+    DeviceTypeNotAuthorized,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0-beta.1"
+__version__ = "0.2.0-beta.2"
 
 
 log = logging.getLogger(__name__)
@@ -204,21 +205,19 @@ class ADCController:
         try:
             await self._async_get_systems()
 
-            if device_type == ADCDeviceType.PARTITION or device_type is None:
+            if device_type in [ADCDeviceType.PARTITION, None]:
                 await self._async_get_partitions()
 
-            if device_type == ADCDeviceType.SENSOR or device_type is None:
-                await self._async_get_devices(
-                    ADCDeviceType.SENSOR, self.sensors, ADCSensor
-                )
+            if device_type in [ADCDeviceType.SENSOR, None]:
+                await self._async_get_devices(ADCDeviceType.SENSOR, self.sensors)
 
-            if device_type == ADCDeviceType.GARAGE_DOOR or device_type is None:
+            if device_type in [ADCDeviceType.GARAGE_DOOR, None]:
                 await self._async_get_devices(
-                    ADCDeviceType.GARAGE_DOOR, self.garage_doors, ADCGarageDoor
+                    ADCDeviceType.GARAGE_DOOR, self.garage_doors
                 )
 
             if device_type == ADCDeviceType.LOCK or device_type is None:
-                await self._async_get_devices(ADCDeviceType.LOCK, self.locks, ADCLock)
+                await self._async_get_devices(ADCDeviceType.LOCK, self.locks)
         except (PermissionError, UnexpectedDataStructure) as err:
             raise err
 
@@ -304,23 +303,35 @@ class ADCController:
         self,
         device_type: ADCDeviceType,
         device_storage: list,
-        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor],
     ) -> None:
+
+        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor]
 
         if device_type == ADCDeviceType.GARAGE_DOOR:
             url_template = self.GARAGE_DOOR_URL_TEMPLATE
+            device_class = ADCGarageDoor
         elif device_type == ADCDeviceType.LOCK:
             url_template = self.LOCK_URL_TEMPLATE
+            device_class = ADCLock
         elif device_type == ADCDeviceType.SENSOR:
             url_template = self.SENSOR_URL_TEMPLATE
+            device_class = ADCSensor
         else:
             raise UnsupportedDevice
 
         new_storage = []
 
-        entities = await self._async_get_items_and_subordinates(
-            url_template, device_type
-        )
+        try:
+            entities = await self._async_get_items_and_subordinates(
+                url_template, device_type
+            )
+        except BadAccount as err:
+            # Indicates fatal account error.
+            raise PermissionError from err
+        except DeviceTypeNotAuthorized:
+            # Indicates that device type is not supported but we should proceed with other types.
+            # TODO: Bubble up notification that this device type is not supported so that the requesting script can stop asking for updates for this specific device type.
+            return
 
         if not entities:
             return
@@ -528,14 +539,23 @@ class ADCController:
             )
             log.debug(error_msg)
 
-            if rsp_errors[0].get("status") in ["423", "403"]:
-                # This probably means that we're logged out. Try again once, then give up.
+            if rsp_errors[0].get("status") == "423":
+                log.debug(
+                    "Error fetching data from Alarm.com. This account either doesn't"
+                    " have permission to %s or is on a plan that does not support %s.",
+                    device_type,
+                    device_type,
+                )
+                raise DeviceTypeNotAuthorized
+
+            if rsp_errors[0].get("status") == "403":
+                # This could mean that we're logged out. Try logging in once, then assume bad credentials or some other issue.
 
                 log.error("Error fetching data from Alarm.com.")
 
                 if not retry_on_failure:
                     log.error("Giving up.")
-                    raise PermissionError(error_msg)
+                    raise BadAccount
 
                 log.error("Trying to refresh auth tokens by logging in again.")
 
