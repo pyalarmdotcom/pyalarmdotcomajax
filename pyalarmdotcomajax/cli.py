@@ -12,7 +12,7 @@ import logging
 import aiohttp
 
 import pyalarmdotcomajax
-from pyalarmdotcomajax.errors import DataFetchFailed
+from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 
 from . import ADCController
 from .const import ArmingOption
@@ -131,6 +131,11 @@ async def _async_machine_output(
         print("Permission error. Check that your credentials are correct.")
     except DataFetchFailed:
         print("Connection error.")
+    except AuthenticationFailed:
+        print(
+            "Authentication error. Check that your two factor authentication cookie is"
+            " correct."
+        )
 
 
 def _human_readable_output(alarm: ADCController) -> None:

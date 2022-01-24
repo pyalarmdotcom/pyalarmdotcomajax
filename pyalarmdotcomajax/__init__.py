@@ -26,7 +26,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0-beta"
+__version__ = "0.2.0-beta.1"
 
 
 log = logging.getLogger(__name__)
@@ -138,14 +138,16 @@ class ADCController:
     #
     #
 
-    async def async_login(self) -> None:
+    async def async_login(self, with_update: bool = True) -> None:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
         try:
             await self._async_login_and_get_key()
             await self._get_identity_info()
-            await self.async_update()
+
+            if with_update:
+                await self.async_update()
         except (DataFetchFailed, UnexpectedDataStructure) as err:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
@@ -445,7 +447,7 @@ class ADCController:
                     "Error executing %s, logging in and trying again...", event.value
                 )
                 if retry_on_failure:
-                    await self.async_login()
+                    await self.async_login(with_update=False)
                     return await self._send(
                         device_type,
                         event,
@@ -507,7 +509,7 @@ class ADCController:
         | Literal[ADCDeviceType.PARTITION]
         | Literal[ADCDeviceType.LOCK]
         | Literal[ADCDeviceType.GARAGE_DOOR],
-        retry: bool = False,
+        retry_on_failure: bool = True,
     ) -> list:
         async with self._websession.get(
             url=url_template.format(self._url_base, ""),
@@ -522,17 +524,40 @@ class ADCController:
 
             error_msg = (
                 f"Failed to get data for device type {device_type}. Response:"
-                f" {rsp_errors}"
+                f" {rsp_errors}. Errors: {json_rsp}."
             )
             log.debug(error_msg)
 
             if rsp_errors[0].get("status") in ["423", "403"]:
-                # TODO: This probably means that we're logged out. How do we handle this?
-                if retry:
+                # This probably means that we're logged out. Try again once, then give up.
+
+                log.error("Error fetching data from Alarm.com.")
+
+                if not retry_on_failure:
+                    log.error("Giving up.")
                     raise PermissionError(error_msg)
 
-                self._async_get_items_and_subordinates(
-                    url_template=url_template, device_type=device_type, retry=True
+                log.error("Trying to refresh auth tokens by logging in again.")
+
+                await self.async_login(with_update=False)
+
+                return await self._async_get_items_and_subordinates(
+                    url_template=url_template,
+                    device_type=device_type,
+                    retry_on_failure=True,
+                )
+
+            if (
+                rsp_errors[0].get("status") == "409"
+                and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
+            ):
+                log.error(
+                    "Failed while fetching items and subordinates. Two factor"
+                    " authentication cookie is incorrect."
+                )
+                raise AuthenticationFailed(
+                    "Failed while fetching items and subordinates. Two factor"
+                    " authentication cookie is incorrect."
                 )
 
             error_msg = (
@@ -670,6 +695,11 @@ class ADCController:
 
                 if rsp_errors[0].get("status") in ["423", "403"]:
                     raise PermissionError(error_msg)
+                elif (
+                    rsp_errors[0].get("status") == "409"
+                    and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
+                ):
+                    raise AuthenticationFailed(error_msg)
 
                 raise DataFetchFailed(error_msg)
 
