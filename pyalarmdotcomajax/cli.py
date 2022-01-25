@@ -199,15 +199,13 @@ def _print_element_tearsheet(
         else None
     )
 
-    mismatched_str = (
-        f"(Desired: {element.desired_state}, Mismatched: {element.mismatched_states})"
-        if isinstance(element, ADCSystem)
-        else None
+    desired_str = (
+        f"(Desired: {element.desired_state})" if isinstance(element, ADCSystem) else ""
     )
 
     print(
         f"""{element.name} ({element.id_}){malfunction}{subtype}
-        State: {element.state} {mismatched_str}
+        State: {element.state} {desired_str}
         Battery: {battery}"""
     )
 
