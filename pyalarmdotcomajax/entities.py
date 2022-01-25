@@ -33,26 +33,18 @@ class DesiredStateProtocol(Protocol):
 
 
 class DesiredStateMixin:
-    """Mixin decorator for mismatched_states function."""
-
-    @property
-    def mismatched_states(self: DesiredStateProtocol) -> bool | None:
-        """Return whether actual state is equal to desired state. False indicates problem."""
-        return self.desired_state != self.state
+    """Mixin decorator for entities with desired_state attribute."""
 
     @property
     def desired_state(self: DesiredStateProtocol) -> Enum | None:
         """Return state."""
 
-        if self.has_state:
-            try:
-                state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
-            except ValueError:
-                return None
-            else:
-                return state
-        else:
+        try:
+            state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
+        except ValueError:
             return None
+        else:
+            return state
 
 
 #
@@ -119,15 +111,12 @@ class ADCBaseElement:
     def state(self) -> str | bool | DeviceState | None:
         """Return state."""
 
-        if self.has_state:
-            try:
-                state = self.DeviceState(self._attribs_raw.get("state"))
-            except ValueError:
-                return None
-            else:
-                return state
-        else:
+        try:
+            state = self.DeviceState(self._attribs_raw.get("state"))
+        except ValueError:
             return None
+        else:
+            return state
 
     @property
     def battery_low(self) -> bool | None:
@@ -176,10 +165,6 @@ class ADCBaseElement:
 
     # All subclasses will have above functions. Only some will have the below and must be implemented as overloads.
     # Methods below are included here to silence mypy errors.
-
-    @property
-    def mismatched_states(self) -> bool | None:
-        """Return whether actual state is equal to desired state. False indicates problem."""
 
     @property
     def desired_state(self) -> Enum | None:
@@ -308,7 +293,6 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
     class DeviceState(Enum):
         """Enum of garage door states."""
 
-        TRANSITIONING = 0
         OPEN = 1
         CLOSED = 2
 
