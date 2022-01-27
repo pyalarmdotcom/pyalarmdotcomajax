@@ -713,16 +713,15 @@ class ADCController:
                 error_msg = f"Failed to get data. Response: {rsp_errors}"
                 log.debug(error_msg)
 
-                if rsp_errors[0].get("status") in ["403"]:
+                if rsp_errors[0].get("status") in ["423", "403"]:
                     raise PermissionError(error_msg)
                 elif (
                     rsp_errors[0].get("status") == "409"
                     and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
                 ):
                     raise AuthenticationFailed(error_msg)
-             
-                if not (rsp_errors[0].get("status") in ["423"]):
-                  raise DataFetchFailed(error_msg)
+
+                raise DataFetchFailed(error_msg)
 
             return_str += json.dumps(json_rsp)
 
