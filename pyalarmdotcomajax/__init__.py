@@ -27,7 +27,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0-beta.4"
+__version__ = "0.2.0-beta.5"
 
 
 log = logging.getLogger(__name__)
@@ -452,7 +452,27 @@ class ADCController:
                     f" {device_type.name.lower()} {device_id}."
                 )
                 raise PermissionError(err_msg)
-            elif resp.status == 403:
+            if (
+                (resp.status == 422)
+                and isinstance(event, ADCPartitionCommand)
+                and (forcebypass is True)
+            ):
+                # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
+                log.warning(
+                    "Error executing %s, trying again without force bypass...",
+                    event.value,
+                )
+
+                # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
+                return await self._send(
+                    device_type,
+                    event,
+                    False,
+                    noentrydelay,
+                    silentarming,
+                    device_id,
+                )
+            if resp.status == 403:
                 # May have been logged out, try again
                 log.warning(
                     "Error executing %s, logging in and trying again...", event.value
@@ -720,9 +740,9 @@ class ADCController:
                     and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
                 ):
                     raise AuthenticationFailed(error_msg)
-             
+
                 if not (rsp_errors[0].get("status") in ["423"]):
-                  raise DataFetchFailed(error_msg)
+                    raise DataFetchFailed(error_msg)
 
             return_str += json.dumps(json_rsp)
 
