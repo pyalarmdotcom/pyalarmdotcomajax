@@ -243,9 +243,9 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
     class DeviceState(Enum):
         """Enum of lock states."""
 
-        FAILED = "Failed"
-        LOCKED = "Locked"
-        UNLOCKED = "Open"
+        FAILED = 0
+        LOCKED = 1
+        UNLOCKED = 2
 
     async def async_lock(self) -> None:
         """Send lock command."""
