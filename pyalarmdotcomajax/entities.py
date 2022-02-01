@@ -9,6 +9,7 @@ from typing import Protocol
 from .const import (
     ADCDeviceType,
     ADCGarageDoorCommand,
+    ADCImageSensorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
     ADCRelationshipType,
@@ -262,6 +263,40 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
             ADCLockCommand.UNLOCK,
             self._id_,
         )
+
+class ADCImageSensor(ADCBaseElement):
+    """Represent Alarm.com image sensor element."""
+    def __init__(
+        self,
+        send_action_callback: Callable,
+        id_: str,
+        attribs_raw: dict,
+        subordinates: list,
+        images_raw: list,
+        parent_ids: dict | None = None,
+        family_raw: str | None = None,
+    ) -> None:
+        super().__init__(
+            send_action_callback=send_action_callback,
+            id_=id_,
+            attribs_raw=attribs_raw,
+            subordinates=subordinates,
+            parent_ids=parent_ids,
+            family_raw=family_raw
+        )
+        
+        self._images_raw = images_raw
+        
+    async def async_peek_in(self) -> None:
+        """Send peek in command."""
+        await self._send_action_callback(
+            ADCDeviceType.IMAGE_SENSOR,
+            ADCImageSensorCommand.peekIn,
+            self._id_,
+        )
+    
+    def get_images(self) -> list[dict]:
+        return self._images_raw
 
 
 class ADCSensor(ADCBaseElement):

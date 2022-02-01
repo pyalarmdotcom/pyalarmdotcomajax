@@ -60,6 +60,7 @@ class ADCDeviceType(ExtendedEnumMixin):
     PARTITION = "partitions"
     LOCK = "locks"
     GARAGE_DOOR = "garageDoors"
+    IMAGE_SENSOR = "imageSensors"
 
     # Not Supported
     # THERMOSTAT = "thermostats"
@@ -104,6 +105,10 @@ class ADCGarageDoorCommand(Enum):
     OPEN = "open"
     CLOSE = "close"
 
+class ADCImageSensorCommand(Enum):
+    """Commands for ADC image sensors."""
+
+    peekIn = "doPeekInNow"
 
 # class DeviceTypeFetchErrors(TypedDict, total=False):
 #     """Store all errors encountered when fetching devices."""
