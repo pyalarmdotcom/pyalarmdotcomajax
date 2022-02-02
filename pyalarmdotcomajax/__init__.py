@@ -18,7 +18,14 @@ from .const import (
     ADCPartitionCommand,
     ArmingOption,
 )
-from .entities import ADCGarageDoor, ADCImageSensor, ADCLock, ADCPartition, ADCSensor, ADCSystem
+from .entities import (
+    ADCGarageDoor,
+    ADCImageSensor,
+    ADCLock,
+    ADCPartition,
+    ADCSensor,
+    ADCSystem,
+)
 from .errors import (
     AuthenticationFailed,
     BadAccount,
@@ -161,7 +168,10 @@ class ADCController:
     async def async_send_action(
         self,
         device_type: ADCDeviceType,
-        event: ADCPartitionCommand | ADCLockCommand | ADCGarageDoorCommand | ADCImageSensorCommand,
+        event: ADCPartitionCommand
+        | ADCLockCommand
+        | ADCGarageDoorCommand
+        | ADCImageSensorCommand,
         device_id: str,
     ) -> bool:
         """Send command to take action on device."""
@@ -221,9 +231,7 @@ class ADCController:
                 )
 
             if device_type == ADCDeviceType.LOCK or device_type is None:
-                await self._async_get_devices(
-                    ADCDeviceType.LOCK, self.locks
-                )
+                await self._async_get_devices(ADCDeviceType.LOCK, self.locks)
 
             if device_type in [ADCDeviceType.IMAGE_SENSOR, None]:
                 await self._async_get_devices(
@@ -246,7 +254,13 @@ class ADCController:
 
     async def _async_get_systems(self) -> None:
 
-        device_type = ADCDeviceType.SYSTEM
+        device_type: Literal[ADCDeviceType.SYSTEM] | Literal[
+            ADCDeviceType.SENSOR
+        ] | Literal[ADCDeviceType.PARTITION] | Literal[ADCDeviceType.LOCK] | Literal[
+            ADCDeviceType.GARAGE_DOOR
+        ] | Literal[
+            ADCDeviceType.IMAGE_SENSOR
+        ] = ADCDeviceType.SYSTEM
         device_storage = self.systems
         device_class = ADCSystem
 
@@ -276,7 +290,13 @@ class ADCController:
 
     async def _async_get_partitions(self) -> None:
 
-        device_type = ADCDeviceType.PARTITION
+        device_type: Literal[ADCDeviceType.SYSTEM] | Literal[
+            ADCDeviceType.SENSOR
+        ] | Literal[ADCDeviceType.PARTITION] | Literal[ADCDeviceType.LOCK] | Literal[
+            ADCDeviceType.GARAGE_DOOR
+        ] | Literal[
+            ADCDeviceType.IMAGE_SENSOR
+        ] = ADCDeviceType.PARTITION
         device_storage = self.partitions
         device_class = ADCPartition
 
@@ -313,11 +333,18 @@ class ADCController:
 
     async def _async_get_devices(
         self,
-        device_type: ADCDeviceType,
+        device_type: Literal[ADCDeviceType.SYSTEM]
+        | Literal[ADCDeviceType.SENSOR]
+        | Literal[ADCDeviceType.PARTITION]
+        | Literal[ADCDeviceType.LOCK]
+        | Literal[ADCDeviceType.GARAGE_DOOR]
+        | Literal[ADCDeviceType.IMAGE_SENSOR],
         device_storage: list,
     ) -> None:
 
-        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor] | type[ADCImageSensor]
+        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor] | type[
+            ADCImageSensor
+        ]
 
         if device_type == ADCDeviceType.GARAGE_DOOR:
             url_template = self.GARAGE_DOOR_URL_TEMPLATE
@@ -364,11 +391,17 @@ class ADCController:
 
             # Construct representation of discovered partitions.
             if device_class == ADCImageSensor:
-                imageData = await self.async_get_raw_server_response(
+                image_data_raw = await self.async_get_raw_server_response(
                     "IMAGE_SENSORS_DATA",
                 )
 
-                imageData = list(filter(lambda x: int(x["relationships"]["imageSensor"]["data"]["id"]) == entity_id, imageData))
+                image_data_filtered = list(
+                    filter(
+                        lambda x: int(x["relationships"]["imageSensor"]["data"]["id"])
+                        == entity_id,
+                        image_data_raw,
+                    )
+                )
 
                 entity_obj = device_class(
                     id_=entity_id,
@@ -377,7 +410,7 @@ class ADCController:
                     send_action_callback=self.async_send_action,
                     subordinates=subordinates,
                     parent_ids=parent_ids,
-                    images_raw=imageData
+                    element_specific_data={"image_urls_raw": image_data_filtered},
                 )
             else:
                 entity_obj = device_class(
@@ -404,7 +437,10 @@ class ADCController:
     async def _send(
         self,
         device_type: ADCDeviceType,
-        event: ADCLockCommand | ADCPartitionCommand | ADCGarageDoorCommand | ADCImageSensorCommand,
+        event: ADCLockCommand
+        | ADCPartitionCommand
+        | ADCGarageDoorCommand
+        | ADCImageSensorCommand,
         forcebypass: bool = False,
         noentrydelay: bool = False,
         silentarming: bool = False,
@@ -577,9 +613,9 @@ class ADCController:
         | Literal[ADCDeviceType.SENSOR]
         | Literal[ADCDeviceType.PARTITION]
         | Literal[ADCDeviceType.LOCK]
-        | Literal[ADCDeviceType.GARAGE_DOOR],
+        | Literal[ADCDeviceType.GARAGE_DOOR]
+        | Literal[ADCDeviceType.IMAGE_SENSOR],
         retry_on_failure: bool = True,
-        get_items_raw: bool = False
     ) -> list:
         async with self._websession.get(
             url=url_template.format(self._url_base, ""),
@@ -744,7 +780,7 @@ class ADCController:
             ("SENSORS", self.SENSOR_URL_TEMPLATE),
             ("GARAGE_DOORS", self.GARAGE_DOOR_URL_TEMPLATE),
             ("PARTITIONS", self.PARTITION_URL_TEMPLATE),
-            ("IMAGE_SENSORS_DATA", self.IMAGE_DATA_URL_TEMPLATE)
+            ("IMAGE_SENSORS_DATA", self.IMAGE_DATA_URL_TEMPLATE),
         ]
 
         if include_systems:
@@ -789,7 +825,10 @@ class ADCController:
         return return_str
 
     async def async_get_raw_server_response(
-        self, endpoint, include_systems: bool = False, include_unsupported: bool = False
+        self,
+        endpoint: str,
+        include_systems: bool = False,
+        include_unsupported: bool = False,
     ) -> dict:
         """Get raw responses from specific Alarm.com device endpoint."""
 
@@ -798,7 +837,7 @@ class ADCController:
             "SENSORS": self.SENSOR_URL_TEMPLATE,
             "GARAGE_DOORS": self.GARAGE_DOOR_URL_TEMPLATE,
             "PARTITIONS": self.PARTITION_URL_TEMPLATE,
-            "IMAGE_SENSORS_DATA": self.IMAGE_DATA_URL_TEMPLATE
+            "IMAGE_SENSORS_DATA": self.IMAGE_DATA_URL_TEMPLATE,
         }
 
         if include_systems:
@@ -815,11 +854,10 @@ class ADCController:
             url=url_template.format(self._url_base, ""),
             headers=self._ajax_headers,
         ) as resp:
-            json_rsp = await (resp.json())
+            json_rsp: dict = await (resp.json())
 
         rsp_errors = json_rsp.get("errors", [])
         if len(rsp_errors) != 0:
-
             error_msg = f"Failed to get data. Response: {rsp_errors}"
             log.debug(error_msg)
 
@@ -834,4 +872,5 @@ class ADCController:
             if not (rsp_errors[0].get("status") in ["423"]):
                 raise DataFetchFailed(error_msg)
 
-        return json_rsp["data"]
+        json_data: dict = json_rsp["data"]
+        return json_data

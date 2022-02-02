@@ -64,11 +64,13 @@ class ADCBaseElement:
         subordinates: list,
         parent_ids: dict | None = None,
         family_raw: str | None = None,
+        element_specific_data: dict = {},
     ) -> None:
         """Initialize base element class."""
         self._id_: str = id_
         self._family_raw: str | None = family_raw
         self._attribs_raw: dict = attribs_raw
+        self._element_specific_data: dict[str, list] = element_specific_data
         self._parent_ids: dict | None = parent_ids
         self._send_action_callback: Callable = send_action_callback
         self._subordinates: list = subordinates
@@ -264,29 +266,10 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
             self._id_,
         )
 
+
 class ADCImageSensor(ADCBaseElement):
     """Represent Alarm.com image sensor element."""
-    def __init__(
-        self,
-        send_action_callback: Callable,
-        id_: str,
-        attribs_raw: dict,
-        subordinates: list,
-        images_raw: list,
-        parent_ids: dict | None = None,
-        family_raw: str | None = None,
-    ) -> None:
-        super().__init__(
-            send_action_callback=send_action_callback,
-            id_=id_,
-            attribs_raw=attribs_raw,
-            subordinates=subordinates,
-            parent_ids=parent_ids,
-            family_raw=family_raw
-        )
-        
-        self._images_raw = images_raw
-        
+
     async def async_peek_in(self) -> None:
         """Send peek in command."""
         await self._send_action_callback(
@@ -294,9 +277,10 @@ class ADCImageSensor(ADCBaseElement):
             ADCImageSensorCommand.peekIn,
             self._id_,
         )
-    
-    def get_images(self) -> list[dict]:
-        return self._images_raw
+
+    def get_images(self) -> list:
+        """Get a list of images taken by the image sensor."""
+        return self._element_specific_data["image_urls_raw"]
 
 
 class ADCSensor(ADCBaseElement):

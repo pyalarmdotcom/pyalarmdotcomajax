@@ -105,10 +105,12 @@ class ADCGarageDoorCommand(Enum):
     OPEN = "open"
     CLOSE = "close"
 
+
 class ADCImageSensorCommand(Enum):
     """Commands for ADC image sensors."""
 
     peekIn = "doPeekInNow"
+
 
 # class DeviceTypeFetchErrors(TypedDict, total=False):
 #     """Store all errors encountered when fetching devices."""
