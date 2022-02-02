@@ -27,7 +27,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0-beta.6"
+__version__ = "0.2.0-beta.7"
 
 
 log = logging.getLogger(__name__)
@@ -101,12 +101,6 @@ class ADCController:
         self.sensors: list[ADCSensor] = []
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
-
-        self._init_hook()
-
-    def _init_hook(self) -> None:
-        """Let child classes do things during init without overriding the whole function."""
-        pass
 
     #
     #
@@ -566,7 +560,8 @@ class ADCController:
                     device_type,
                     device_type,
                 )
-                raise DeviceTypeNotAuthorized
+                # Carry on. We'll still try to load all other devices to which a user has access.
+                return []
 
             if rsp_errors[0].get("status") == "403":
                 # This could mean that we're logged out. Try logging in once, then assume bad credentials or some other issue.
