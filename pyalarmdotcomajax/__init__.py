@@ -102,12 +102,6 @@ class ADCController:
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
 
-        self._init_hook()
-
-    def _init_hook(self) -> None:
-        """Let child classes do things during init without overriding the whole function."""
-        pass
-
     #
     #
     ##############
@@ -566,7 +560,8 @@ class ADCController:
                     device_type,
                     device_type,
                 )
-                raise DeviceTypeNotAuthorized
+                # Carry on. We'll still try to load all other devices to which a user has access.
+                return []
 
             if rsp_errors[0].get("status") == "403":
                 # This could mean that we're logged out. Try logging in once, then assume bad credentials or some other issue.
