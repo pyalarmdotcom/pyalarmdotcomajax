@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum, IntEnum
-from typing import Any
+from typing import Any, TypedDict
 
 
 class ArmingOption(Enum):
@@ -110,6 +110,12 @@ class ADCImageSensorCommand(Enum):
     """Commands for ADC image sensors."""
 
     peekIn = "doPeekInNow"
+
+
+class ElementSpecificData(TypedDict, total=False):
+    """Hold entity-type-specific metadata."""
+
+    image_urls_raw: list | None
 
 
 # class DeviceTypeFetchErrors(TypedDict, total=False):
