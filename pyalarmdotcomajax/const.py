@@ -1,6 +1,7 @@
 """Constants."""
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Any, TypedDict
 
@@ -115,7 +116,17 @@ class ADCImageSensorCommand(Enum):
 class ElementSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
-    image_urls_raw: list | None
+    images: list[ImageData] | None
+
+
+class ImageData(TypedDict):
+    """Holds metadata for image sensor images."""
+
+    id_: str
+    image_b64: str
+    image_src: str
+    description: str
+    timestamp: datetime
 
 
 # class DeviceTypeFetchErrors(TypedDict, total=False):

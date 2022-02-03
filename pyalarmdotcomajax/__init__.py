@@ -9,6 +9,7 @@ from typing import Literal
 
 import aiohttp
 from bs4 import BeautifulSoup
+from dateutil import parser
 
 from .const import (
     ADCDeviceType,
@@ -18,6 +19,7 @@ from .const import (
     ADCPartitionCommand,
     ArmingOption,
     ElementSpecificData,
+    ImageData,
 )
 from .entities import (
     ADCGarageDoor,
@@ -381,7 +383,7 @@ class ADCController:
                 )
 
                 # Mypy wasn't happy when structured as a filter. Potential for stale entity_id.
-                image_data_filtered: list[dict] = []
+                processed_image_data: list[ImageData] = []
                 for image in image_data_raw:
                     if (
                         str(
@@ -392,9 +394,16 @@ class ADCController:
                         )
                         == entity_id
                     ):
-                        image_data_filtered.append(image)
+                        image_data: ImageData = {
+                            "id_": image["id"],
+                            "image_b64": image["attributes"]["image"],
+                            "image_src": image["attributes"]["imageSrc"],
+                            "description": image["attributes"]["description"],
+                            "timestamp": parser.parse(image["attributes"]["timestamp"]),
+                        }
+                        processed_image_data.append(image_data)
 
-                element_specific_data = {"image_urls_raw": image_data_filtered}
+                element_specific_data = {"images": processed_image_data}
 
             entity_obj = device_class(
                 id_=entity_id,

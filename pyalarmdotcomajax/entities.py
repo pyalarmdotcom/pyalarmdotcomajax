@@ -15,6 +15,7 @@ from .const import (
     ADCRelationshipType,
     ADCSensorSubtype,
     ElementSpecificData,
+    ImageData,
 )
 
 log = logging.getLogger(__name__)
@@ -280,14 +281,14 @@ class ADCImageSensor(ADCBaseElement):
         )
 
     @property
-    def image_urls(self) -> list | None:
+    def images(self) -> list[ImageData] | None:
         """Get a list of images taken by the image sensor."""
 
         if (
             self._element_specific_data is not None
-            and self._element_specific_data.get("image_urls_raw") is not None
+            and self._element_specific_data.get("images") is not None
         ):
-            return self._element_specific_data.get("image_urls_raw")
+            return self._element_specific_data.get("images")
 
         return None
 
