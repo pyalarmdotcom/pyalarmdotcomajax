@@ -359,7 +359,7 @@ class ADCController:
             return
 
         for entity_json, subordinates in entities:
-            entity_id: str = entity_json["id"]
+            entity_id: str = str(entity_json["id"])
 
             system_id: str = (
                 entity_json.get("relationships", {})
@@ -381,7 +381,7 @@ class ADCController:
                 )
 
                 # Mypy wasn't happy when structured as a filter. Potential for stale entity_id.
-                image_data_filtered = []
+                image_data_filtered: list[dict] = []
                 for image in image_data_raw:
                     if (
                         str(
