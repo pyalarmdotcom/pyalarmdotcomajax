@@ -9,10 +9,13 @@ from typing import Protocol
 from .const import (
     ADCDeviceType,
     ADCGarageDoorCommand,
+    ADCImageSensorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
     ADCRelationshipType,
     ADCSensorSubtype,
+    ElementSpecificData,
+    ImageData,
 )
 
 log = logging.getLogger(__name__)
@@ -63,11 +66,13 @@ class ADCBaseElement:
         subordinates: list,
         parent_ids: dict | None = None,
         family_raw: str | None = None,
+        element_specific_data: ElementSpecificData | None = None,
     ) -> None:
         """Initialize base element class."""
         self._id_: str = id_
         self._family_raw: str | None = family_raw
         self._attribs_raw: dict = attribs_raw
+        self._element_specific_data: ElementSpecificData | None = element_specific_data
         self._parent_ids: dict | None = parent_ids
         self._send_action_callback: Callable = send_action_callback
         self._subordinates: list = subordinates
@@ -262,6 +267,30 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
             ADCLockCommand.UNLOCK,
             self._id_,
         )
+
+
+class ADCImageSensor(ADCBaseElement):
+    """Represent Alarm.com image sensor element."""
+
+    async def async_peek_in(self) -> None:
+        """Send peek in command."""
+        await self._send_action_callback(
+            ADCDeviceType.IMAGE_SENSOR,
+            ADCImageSensorCommand.peekIn,
+            self._id_,
+        )
+
+    @property
+    def images(self) -> list[ImageData] | None:
+        """Get a list of images taken by the image sensor."""
+
+        if (
+            self._element_specific_data is not None
+            and self._element_specific_data.get("images") is not None
+        ):
+            return self._element_specific_data.get("images")
+
+        return None
 
 
 class ADCSensor(ADCBaseElement):

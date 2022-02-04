@@ -9,15 +9,26 @@ from typing import Literal
 
 import aiohttp
 from bs4 import BeautifulSoup
+from dateutil import parser
 
 from .const import (
     ADCDeviceType,
     ADCGarageDoorCommand,
+    ADCImageSensorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
     ArmingOption,
+    ElementSpecificData,
+    ImageData,
 )
-from .entities import ADCGarageDoor, ADCLock, ADCPartition, ADCSensor, ADCSystem
+from .entities import (
+    ADCGarageDoor,
+    ADCImageSensor,
+    ADCLock,
+    ADCPartition,
+    ADCSensor,
+    ADCSystem,
+)
 from .errors import (
     AuthenticationFailed,
     BadAccount,
@@ -56,6 +67,10 @@ class ADCController:
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
     IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
+    IMAGE_SENSOR_URL_TEMPLATE = "{}/web/api/imageSensor/imageSensors/{}"
+    IMAGE_SENSOR_DATA_URL_TEMPLATE = (
+        "{}/web/api/imageSensor/imageSensorImages/getRecentImages"
+    )
 
     # Unsupported
     THERMOSTAT_URL_TEMPLATE = "{}web/api/devices/thermostats/{}"
@@ -101,6 +116,7 @@ class ADCController:
         self.sensors: list[ADCSensor] = []
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
+        self.image_sensors: list[ADCImageSensor] = []
 
     #
     #
@@ -151,7 +167,10 @@ class ADCController:
     async def async_send_action(
         self,
         device_type: ADCDeviceType,
-        event: ADCPartitionCommand | ADCLockCommand | ADCGarageDoorCommand,
+        event: ADCPartitionCommand
+        | ADCLockCommand
+        | ADCGarageDoorCommand
+        | ADCImageSensorCommand,
         device_id: str,
     ) -> bool:
         """Send command to take action on device."""
@@ -212,6 +231,12 @@ class ADCController:
 
             if device_type == ADCDeviceType.LOCK or device_type is None:
                 await self._async_get_devices(ADCDeviceType.LOCK, self.locks)
+
+            if device_type in [ADCDeviceType.IMAGE_SENSOR, None]:
+                await self._async_get_devices(
+                    ADCDeviceType.IMAGE_SENSOR, self.image_sensors
+                )
+
         except (PermissionError, UnexpectedDataStructure) as err:
             raise err
 
@@ -299,7 +324,9 @@ class ADCController:
         device_storage: list,
     ) -> None:
 
-        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor]
+        device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor] | type[
+            ADCImageSensor
+        ]
 
         if device_type == ADCDeviceType.GARAGE_DOOR:
             url_template = self.GARAGE_DOOR_URL_TEMPLATE
@@ -310,6 +337,9 @@ class ADCController:
         elif device_type == ADCDeviceType.SENSOR:
             url_template = self.SENSOR_URL_TEMPLATE
             device_class = ADCSensor
+        elif device_type == ADCDeviceType.IMAGE_SENSOR:
+            url_template = self.IMAGE_SENSOR_URL_TEMPLATE
+            device_class = ADCImageSensor
         else:
             raise UnsupportedDevice
 
@@ -331,18 +361,50 @@ class ADCController:
             return
 
         for entity_json, subordinates in entities:
+            entity_id: str = str(entity_json["id"])
 
-            entity_id = entity_json["id"]
-
-            system_id = (
-                entity_json.get("relationships").get("system").get("data").get("id")
+            system_id: str = (
+                entity_json.get("relationships", {})
+                .get("system", {})
+                .get("data", {})
+                .get("id")
             )
 
             partition_id = self._partition_map.get(entity_id)
 
             parent_ids = {"system": system_id, "partition": partition_id}
 
-            # Construct representation of discovered partitions.
+            element_specific_data: ElementSpecificData | None = None
+
+            # Construct representation of discovered devices.
+            if device_class == ADCImageSensor:
+                image_data_raw = await self.async_get_raw_server_response(
+                    "IMAGE_SENSORS_DATA",
+                )
+
+                # Mypy wasn't happy when structured as a filter. Potential for stale entity_id.
+                processed_image_data: list[ImageData] = []
+                for image in image_data_raw:
+                    if (
+                        str(
+                            image.get("relationships", {})
+                            .get("imageSensor", {})
+                            .get("data", {})
+                            .get("id")
+                        )
+                        == entity_id
+                    ):
+                        image_data: ImageData = {
+                            "id_": image["id"],
+                            "image_b64": image["attributes"]["image"],
+                            "image_src": image["attributes"]["imageSrc"],
+                            "description": image["attributes"]["description"],
+                            "timestamp": parser.parse(image["attributes"]["timestamp"]),
+                        }
+                        processed_image_data.append(image_data)
+
+                element_specific_data = {"images": processed_image_data}
+
             entity_obj = device_class(
                 id_=entity_id,
                 attribs_raw=entity_json["attributes"],
@@ -350,6 +412,7 @@ class ADCController:
                 send_action_callback=self.async_send_action,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
+                element_specific_data=element_specific_data,
             )
 
             new_storage.append(entity_obj)
@@ -367,7 +430,10 @@ class ADCController:
     async def _send(
         self,
         device_type: ADCDeviceType,
-        event: ADCLockCommand | ADCPartitionCommand | ADCGarageDoorCommand,
+        event: ADCLockCommand
+        | ADCPartitionCommand
+        | ADCGarageDoorCommand
+        | ADCImageSensorCommand,
         forcebypass: bool = False,
         noentrydelay: bool = False,
         silentarming: bool = False,
@@ -417,6 +483,13 @@ class ADCController:
         elif device_type == ADCDeviceType.GARAGE_DOOR:
             url = (
                 f"{self.GARAGE_DOOR_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            )
+            log.debug("Url %s", url)
+
+        # IMAGE SENSORS
+        elif device_type == ADCDeviceType.IMAGE_SENSOR:
+            url = (
+                f"{self.IMAGE_SENSOR_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
             )
             log.debug("Url %s", url)
 
@@ -533,7 +606,8 @@ class ADCController:
         | Literal[ADCDeviceType.SENSOR]
         | Literal[ADCDeviceType.PARTITION]
         | Literal[ADCDeviceType.LOCK]
-        | Literal[ADCDeviceType.GARAGE_DOOR],
+        | Literal[ADCDeviceType.GARAGE_DOOR]
+        | Literal[ADCDeviceType.IMAGE_SENSOR],
         retry_on_failure: bool = True,
     ) -> list:
         async with self._websession.get(
@@ -700,6 +774,7 @@ class ADCController:
             ("SENSORS", self.SENSOR_URL_TEMPLATE),
             ("GARAGE_DOORS", self.GARAGE_DOOR_URL_TEMPLATE),
             ("PARTITIONS", self.PARTITION_URL_TEMPLATE),
+            ("IMAGE_SENSORS_DATA", self.IMAGE_SENSOR_DATA_URL_TEMPLATE),
         ]
 
         if include_systems:
@@ -742,3 +817,54 @@ class ADCController:
             return_str += json.dumps(json_rsp)
 
         return return_str
+
+    async def async_get_raw_server_response(
+        self,
+        endpoint: str,
+        include_systems: bool = False,
+        include_unsupported: bool = False,
+    ) -> dict:
+        """Get raw responses from specific Alarm.com device endpoint."""
+
+        endpoints = {
+            "LOCKS": self.LOCK_URL_TEMPLATE,
+            "SENSORS": self.SENSOR_URL_TEMPLATE,
+            "GARAGE_DOORS": self.GARAGE_DOOR_URL_TEMPLATE,
+            "PARTITIONS": self.PARTITION_URL_TEMPLATE,
+            "IMAGE_SENSORS_DATA": self.IMAGE_SENSOR_DATA_URL_TEMPLATE,
+        }
+
+        if include_systems:
+            endpoints["SYSTEMS"] = self.SYSTEM_URL_TEMPLATE
+
+        if include_unsupported:
+            endpoints["THERMOSTATS"] = self.THERMOSTAT_URL_TEMPLATE
+            endpoints["LIGHTS"] = self.LIGHT_URL_TEMPLATE
+            endpoints["CAMERAS"] = self.CAMERA_URL_TEMPLATE
+
+        url_template = endpoints[endpoint]
+
+        async with self._websession.get(
+            url=url_template.format(self._url_base, ""),
+            headers=self._ajax_headers,
+        ) as resp:
+            json_rsp: dict = await (resp.json())
+
+        rsp_errors = json_rsp.get("errors", [])
+        if len(rsp_errors) != 0:
+            error_msg = f"Failed to get data. Response: {rsp_errors}"
+            log.debug(error_msg)
+
+            if rsp_errors[0].get("status") in ["403"]:
+                raise PermissionError(error_msg)
+            elif (
+                rsp_errors[0].get("status") == "409"
+                and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
+            ):
+                raise AuthenticationFailed(error_msg)
+
+            if not (rsp_errors[0].get("status") in ["423"]):
+                raise DataFetchFailed(error_msg)
+
+        json_data: dict = json_rsp["data"]
+        return json_data
