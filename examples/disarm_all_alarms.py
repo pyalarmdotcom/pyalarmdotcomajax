@@ -16,7 +16,9 @@ from pyalarmdotcomajax.entities import ADCPartition
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
-TWOFACTOR = "YOUR 2FA COOKIE"  # Required if two factor authentication is enabled on your account.
+TWOFACTOR = (  # Required if two factor authentication is enabled on your account.
+    "YOUR 2FA COOKIE"
+)
 
 
 async def main() -> None:
@@ -35,12 +37,14 @@ async def main() -> None:
 
         try:
             await alarm.async_login()
+            await alarm.async_update()
         except AuthenticationError:
             print("Failed to login. Your credentials are incorrect.")
             sys.exit()
         except ConnectionError:
             print(
-                "Failed to login. Could not establish a connection to the Alarm.com server."
+                "Failed to login. Could not establish a connection to the Alarm.com"
+                " server."
             )
             sys.exit()
 
@@ -50,7 +54,8 @@ async def main() -> None:
                 != ADCPartition.DeviceState.DISARMED
             ):
                 print(
-                    f"Alarm control panel {partition.name} is currently armed. Disarming..."
+                    f"Alarm control panel {partition.name} is currently armed."
+                    " Disarming..."
                 )
                 try:
                     await alarm.async_send_action(
@@ -61,17 +66,20 @@ async def main() -> None:
                     print("Disarmed successfully.")
                 except PermissionError:
                     print(
-                        "Failed to disarm. Your Alarm.com user does not have permission to change the state of this control panel."
+                        "Failed to disarm. Your Alarm.com user does not have permission"
+                        " to change the state of this control panel."
                     )
                 except AuthenticationError:
                     print("Failed to disarm. Your credentials are incorrect.")
                 except ConnectionError:
                     print(
-                        "Failed to disarm. Could not establish a connection to the Alarm.com server."
+                        "Failed to disarm. Could not establish a connection to the"
+                        " Alarm.com server."
                     )
             else:
                 print(
-                    f"Alarm control panel {partition.name} is already disarmed. Nothing to do here..."
+                    f"Alarm control panel {partition.name} is already disarmed. Nothing"
+                    " to do here..."
                 )
 
 

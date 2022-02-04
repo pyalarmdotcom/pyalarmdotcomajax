@@ -8,11 +8,16 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import sys
 
 import aiohttp
 
 import pyalarmdotcomajax
-from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax.errors import (
+    AuthenticationFailed,
+    DataFetchFailed,
+    TwoFactorAuthEnabled,
+)
 
 from . import ADCController
 from .const import ArmingOption
@@ -39,7 +44,12 @@ async def cli() -> None:
     parser.add_argument("-u", "--username", help="alarm.com username", required=True)
     parser.add_argument("-p", "--password", help="alarm.com password", required=True)
     parser.add_argument(
-        "-c", "--cookie", help="two-factor authentication cookie", required=False
+        "-c",
+        "--cookie",
+        help=(
+            "two-factor authentication cookie. cannot be used with --one-time-password!"
+        ),
+        required=False,
     )
     parser.add_argument(
         "-v",
@@ -60,6 +70,33 @@ async def cli() -> None:
         required=False,
     )
     parser.add_argument(
+        "--skip-2fa-nag",
+        help=(
+            "skips alarm.com alert screen about upcoming two-factor authentication"
+            " mandate."
+        ),
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "-o",
+        "--one-time-password",
+        help=(
+            "provide otp code for accounts that have two-factor authentication enabled."
+            " cannot be used with --cookie!"
+        ),
+        required=False,
+    )
+    parser.add_argument(
+        "-n",
+        "--device-name",
+        help=(
+            "registers a device with this name on alarm.com and requests the two-factor"
+            " authentication cookie for this device."
+        ),
+        required=False,
+    )
+    parser.add_argument(
         "-d",
         "--debug",
         help="show pyalarmdotcomajax's debug output.",
@@ -74,8 +111,6 @@ async def cli() -> None:
         version=f"%(prog)s {pyalarmdotcomajax.__version__}",
     )
     args = vars(parser.parse_args())
-
-    print(f"Provider is {args.get('provider')}")
 
     print(f"Logging in as {args.get('username')}.")
 
@@ -96,7 +131,42 @@ async def cli() -> None:
             twofactorcookie=args.get("cookie"),
         )
 
-        await alarm.async_login()
+        try:
+            await alarm.async_login(skip_2fa_nag=bool(args.get("skip_2fa_nag")))
+        except TwoFactorAuthEnabled:
+
+            print(args.get("one_time_password"))
+
+            code: str | None
+            if not (code := args.get("one_time_password")):
+                print("Two factor authentication is enabled for this user.")
+                code = input("Enter One-Time Password: ")
+
+            device_name_input: str | None = None
+            remember_me: bool = False
+            if not (device_name_input := args.get("device_name")):
+                print("Request a two factor authentication cookie?")
+                remember_me_input: str = input("(y)es/(n)o: ")
+                yesses = ["Y", "y", "yes", "Yes", "YES"]
+                # noes = ["N", "n", "no", "No", "NO"]
+                remember_me = bool(remember_me_input in yesses)
+
+            if code:
+                device_name: str | None = None
+                if device_name_input:
+                    device_name = device_name_input
+                elif remember_me:
+                    device_name = "pyalarmdotcomajax"
+                cookie = await alarm.submit_2fa(code=code, device_name=device_name)
+                print(f"Got 2FA Cookie: {cookie}")
+            else:
+                print(
+                    "Not enough information provided to make a decision regarding"
+                    " two-factor authentication."
+                )
+                sys.exit()
+
+        await alarm.async_update()
 
         if args.get("verbose", 0) == 1:
             await _async_machine_output(

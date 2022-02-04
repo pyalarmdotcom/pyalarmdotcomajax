@@ -10,6 +10,14 @@ class AuthenticationFailed(Exception):
     """Alarm.com authentication failure."""
 
 
+class TwoFactorAuthEnabled(Exception):
+    """User has two factor authentication enabled."""
+
+
+class NagScreen(Exception):
+    """Client encountered Alarm.com nag screen to setup 2 factor authentication."""
+
+
 class DataFetchFailed(Exception):
     """General or connection error encountered when fetching data."""
 

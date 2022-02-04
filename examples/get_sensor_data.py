@@ -9,7 +9,9 @@ from pyalarmdotcomajax.const import ArmingOption
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
-TWOFACTOR = "YOUR 2FA COOKIE"  # Required if two factor authentication is enabled on your account.
+TWOFACTOR = (  # Required if two factor authentication is enabled on your account.
+    "YOUR 2FA COOKIE"
+)
 
 
 async def main() -> None:
@@ -27,10 +29,12 @@ async def main() -> None:
         )
 
         await alarm.async_login()
+        await alarm.async_update()
 
         for sensor in alarm.sensors:
             print(
-                f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}"
+                f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State:"
+                f" {sensor.state}"
             )
 
 

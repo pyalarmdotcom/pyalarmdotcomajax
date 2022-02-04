@@ -4,6 +4,8 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 from typing import Any
 
+TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
+
 
 class ArmingOption(Enum):
     """Specify when to force bypass device problems."""
