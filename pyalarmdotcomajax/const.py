@@ -1,8 +1,9 @@
 """Constants."""
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum, IntEnum
-from typing import Any
+from typing import Any, TypedDict
 
 TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
 
@@ -62,6 +63,7 @@ class ADCDeviceType(ExtendedEnumMixin):
     PARTITION = "partitions"
     LOCK = "locks"
     GARAGE_DOOR = "garageDoors"
+    IMAGE_SENSOR = "imageSensors"
 
     # Not Supported
     # THERMOSTAT = "thermostats"
@@ -105,6 +107,28 @@ class ADCGarageDoorCommand(Enum):
 
     OPEN = "open"
     CLOSE = "close"
+
+
+class ADCImageSensorCommand(Enum):
+    """Commands for ADC image sensors."""
+
+    peekIn = "doPeekInNow"
+
+
+class ElementSpecificData(TypedDict, total=False):
+    """Hold entity-type-specific metadata."""
+
+    images: list[ImageData] | None
+
+
+class ImageData(TypedDict):
+    """Holds metadata for image sensor images."""
+
+    id_: str
+    image_b64: str
+    image_src: str
+    description: str
+    timestamp: datetime
 
 
 # class DeviceTypeFetchErrors(TypedDict, total=False):

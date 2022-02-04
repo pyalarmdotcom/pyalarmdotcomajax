@@ -23,6 +23,7 @@ from . import ADCController
 from .const import ArmingOption
 from .entities import (
     ADCGarageDoor,
+    ADCImageSensor,
     ADCLock,
     ADCPartition,
     ADCSensor,
@@ -248,11 +249,23 @@ def _human_readable_output(alarm: ADCController) -> None:
         for garage_door in alarm.garage_doors:
             _print_element_tearsheet(garage_door)
 
+    print("\n*** IMAGE SENSORS ***\n")
+    if len(alarm.image_sensors) == 0:
+        print("(none found)")
+    else:
+        for image_sensor in alarm.image_sensors:
+            _print_element_tearsheet(image_sensor)
+
     print("\n")
 
 
 def _print_element_tearsheet(
-    element: ADCGarageDoor | ADCLock | ADCPartition | ADCSensor | ADCSystem,
+    element: ADCGarageDoor
+    | ADCLock
+    | ADCPartition
+    | ADCSensor
+    | ADCSystem
+    | ADCImageSensor,
 ) -> None:
     if element.battery_critical:
         battery = "Critical"

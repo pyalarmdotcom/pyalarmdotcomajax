@@ -35,20 +35,21 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 - As of v0.2, multiples of all devices are supported.
 - All devices include the attributes: `name`, `id_`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
 
-|Device Type|Notable Attributes|Actions|
-|--|--|--|
-|System|`unit_id`|(none)|
-|Partition|`uncleared_issues`, `desired_state`|arm away, arm stay, arm night, disarm
-|Sensors|`device_subtype`|(none)|
-|Locks|`desired_state`|lock, unlock|
-|Garage Door|(none)|open, close|
+| Device Type  | Notable Attributes                  | Actions                               |
+| ------------ | ----------------------------------- | ------------------------------------- |
+| System       | `unit_id`                           | (none)                                |
+| Partition    | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |
+| Sensors      | `device_subtype`                    | (none)                                |
+| Locks        | `desired_state`                     | lock, unlock                          |
+| Garage Door  | (none)                              | open, close                           |
+| Image Sensor | `images`                        | peek_in                               |
 
 ### Known Sensor deviceTypes
 
 This list identifies deviceTypes used in the alarm.com API and is incomplete. Please help by submitting missing values.
 
 | deviceType | Description          |
-|------------|----------------------|
+| ---------- | -------------------- |
 | 1          | Contact Sensor       |
 | 5          | Smoke Detector       |
 | 6          | CO Detector          |
