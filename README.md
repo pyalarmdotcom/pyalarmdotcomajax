@@ -42,7 +42,7 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 | Sensors      | `device_subtype`                    | (none)                                |
 | Locks        | `desired_state`                     | lock, unlock                          |
 | Garage Door  | (none)                              | open, close                           |
-| Image Sensor | `image_urls`                        | peek_in                               |
+| Image Sensor | `images`                        | peek_in                               |
 
 ### Known Sensor deviceTypes
 
