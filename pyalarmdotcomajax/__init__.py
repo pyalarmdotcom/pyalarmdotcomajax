@@ -38,7 +38,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0-beta.7"
+__version__ = "0.2.0-beta.8"
 
 
 log = logging.getLogger(__name__)
