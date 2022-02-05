@@ -5,6 +5,8 @@ from datetime import datetime
 from enum import Enum, IntEnum
 from typing import Any, TypedDict
 
+TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
+
 
 class ArmingOption(Enum):
     """Specify when to force bypass device problems."""
@@ -32,6 +34,15 @@ class ExtendedEnumMixin(Enum):
             return enum_class.value
 
         return list(map(get_enum_value, cls))
+
+
+class ADCTroubleCondition(TypedDict):
+    """Alarm.com alert / trouble condition."""
+
+    message_id: str
+    title: str
+    body: str
+    device_id: str
 
 
 class ADCRelationshipType(Enum):
