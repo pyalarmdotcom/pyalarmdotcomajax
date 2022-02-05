@@ -14,6 +14,7 @@ from .const import (
     ADCPartitionCommand,
     ADCRelationshipType,
     ADCSensorSubtype,
+    ADCTroubleCondition,
     ElementSpecificData,
     ImageData,
 )
@@ -67,6 +68,7 @@ class ADCBaseElement:
         parent_ids: dict | None = None,
         family_raw: str | None = None,
         element_specific_data: ElementSpecificData | None = None,
+        trouble_conditions: list | None = None,
     ) -> None:
         """Initialize base element class."""
         self._id_: str = id_
@@ -76,6 +78,9 @@ class ADCBaseElement:
         self._parent_ids: dict | None = parent_ids
         self._send_action_callback: Callable = send_action_callback
         self._subordinates: list = subordinates
+        self.trouble_conditions: list[ADCTroubleCondition] = (
+            trouble_conditions if trouble_conditions else []
+        )
 
         if parent_ids:
             self._system_id: str | None = parent_ids.get("system")
@@ -187,6 +192,11 @@ class ADCSystem(ADCBaseElement):
     def unit_id(self) -> str:
         """Return device ID."""
         return self._attribs_raw.get("unitId", None)
+
+    @property
+    def malfunction(self) -> bool | None:
+        """Return whether device is malfunctioning."""
+        return None
 
 
 class ADCPartition(DesiredStateMixin, ADCBaseElement):

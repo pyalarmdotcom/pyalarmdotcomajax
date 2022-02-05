@@ -36,6 +36,15 @@ class ExtendedEnumMixin(Enum):
         return list(map(get_enum_value, cls))
 
 
+class ADCTroubleCondition(TypedDict):
+    """Alarm.com alert / trouble condition."""
+
+    message_id: str
+    title: str
+    body: str
+    device_id: str
+
+
 class ADCRelationshipType(Enum):
     """Library of identified ADC device families."""
 

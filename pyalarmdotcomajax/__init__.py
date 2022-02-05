@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from multiprocessing import AuthenticationError
 import re
 from typing import Literal
 
@@ -19,6 +18,7 @@ from .const import (
     ADCImageSensorCommand,
     ADCLockCommand,
     ADCPartitionCommand,
+    ADCTroubleCondition,
     ArmingOption,
     ElementSpecificData,
     ImageData,
@@ -62,7 +62,6 @@ class ADCController:
         "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}"
     )
     LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
-    LOGIN_2FA_SKIP_NAG = "{}/system-install/api/engines/twoFactorAuthentication/twoFactorSettings/{}/skipTwoFactorSetup"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
@@ -77,6 +76,7 @@ class ADCController:
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
     IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
+    IDENTITIES_2FA_NAG_URL_TEMPLATE = "{}system-install/api/identity"
     IMAGE_SENSOR_URL_TEMPLATE = "{}/web/api/imageSensor/imageSensors/{}"
     IMAGE_SENSOR_DATA_URL_TEMPLATE = (
         "{}/web/api/imageSensor/imageSensorImages/getRecentImages"
@@ -117,12 +117,16 @@ class ADCController:
         self._noentrydelay = noentrydelay
         self._silentarming = silentarming
         self._url_base: str = self.URL_BASE
-        self._twofactor_cookie: dict = {}
+        self._two_factor_cookie: dict = (
+            {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
+        )
         self._factor_type_id: int | None = None
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
         self._partition_map: dict = {}
+
+        self._trouble_conditions: dict = {}
 
         self.systems: list[ADCSystem] = []
         self.partitions: list[ADCPartition] = []
@@ -130,8 +134,6 @@ class ADCController:
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
         self.image_sensors: list[ADCImageSensor] = []
-
-        self._set_2fa_cookie(twofactorcookie)
 
     #
     #
@@ -159,7 +161,12 @@ class ADCController:
     @property
     def two_factor_cookie(self) -> str | None:
         """Return user email address."""
-        return self._twofactor_cookie.get(TWO_FACTOR_COOKIE_NAME)
+        return (
+            cookie
+            if isinstance(self._two_factor_cookie, dict)
+            and (cookie := self._two_factor_cookie.get(TWO_FACTOR_COOKIE_NAME))
+            else None
+        )
 
     #
     #
@@ -169,12 +176,12 @@ class ADCController:
     #
     #
 
-    async def async_login(self, skip_2fa_nag: bool = False) -> None:
+    async def async_login(self) -> None:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
         try:
-            await self._async_login_and_get_key(skip_2fa_nag=skip_2fa_nag)
+            await self._async_login_and_get_key()
             await self._async_get_identity_info()
 
             if await self._async_requires_2fa():
@@ -238,46 +245,15 @@ class ADCController:
                 log.error("Can not load device trust page from Alarm.com")
                 raise DataFetchFailed from err
 
-        # Get 2FA cookie value.
+        # Save 2FA cookie value.
         for cookie in self._websession.cookie_jar:
             if cookie.key == TWO_FACTOR_COOKIE_NAME:
-                self._set_2fa_cookie(cookie.value)
+                self._two_factor_cookie = (
+                    {"twoFactorAuthenticationId": cookie.value} if cookie.value else {}
+                )
                 return str(cookie.value)
 
         return None
-
-    async def _async_requires_2fa(self) -> bool | None:
-        """Check whether two factor authentication is enabled on the account."""
-        async with self._websession.get(
-            url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, ""),
-            headers=self._ajax_headers,
-        ) as resp:
-            json_rsp = await (resp.json())
-
-        if (errors := json_rsp.get("errors")) and len(errors) > 0:
-            for error in errors:
-                if (
-                    error.get("status") == "409"
-                    and error.get("detail") == "TwoFactorAuthenticationRequired"
-                ):
-                    # Get 2FA type ID
-                    async with self._websession.get(
-                        url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(
-                            self._url_base, self._user_id
-                        ),
-                        headers=self._ajax_headers,
-                    ) as resp:
-                        json_rsp = await (resp.json())
-
-                        if isinstance(
-                            factor_id := json_rsp.get("data", {}).get("id"), int
-                        ):
-                            self._factor_type_id = factor_id
-                            log.debug("Requires 2FA.")
-                            return True
-
-        log.debug("Does not require 2FA.")
-        return False
 
     async def async_send_action(
         self,
@@ -331,6 +307,8 @@ class ADCController:
         log.debug("Calling update on Alarm.com")
 
         try:
+            await self._async_get_trouble_conditions()
+
             await self._async_get_systems()
 
             if device_type in [ADCDeviceType.PARTITION, None]:
@@ -366,12 +344,6 @@ class ADCController:
     # Get functions build a new internal list of entities before assigning to their respective instance variables.
     # If we assign to the instance variable directly, the same elements will be added to the list every time we update.
 
-    def _set_2fa_cookie(self, cookie_value: str | None = None) -> None:
-        """Set Alarm.com 2FA cookie."""
-        self._twofactor_cookie = (
-            {TWO_FACTOR_COOKIE_NAME: cookie_value} if cookie_value else {}
-        )
-
     async def _async_get_systems(self) -> None:
 
         device_type = ADCDeviceType.SYSTEM
@@ -396,6 +368,7 @@ class ADCController:
                 family_raw=entity_json["type"],
                 send_action_callback=self.async_send_action,
                 subordinates=subordinates,
+                trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
             )
 
             new_storage.append(entity_obj)
@@ -433,6 +406,7 @@ class ADCController:
                 send_action_callback=self.async_send_action,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
+                trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
             )
 
             new_storage.append(entity_obj)
@@ -534,6 +508,7 @@ class ADCController:
                 subordinates=subordinates,
                 parent_ids=parent_ids,
                 element_specific_data=element_specific_data,
+                trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
             )
 
             new_storage.append(entity_obj)
@@ -692,25 +667,60 @@ class ADCController:
         )
         raise ConnectionError
 
-    async def _async_get_identity_info(self) -> None:
+    async def _async_requires_2fa(self) -> bool | None:
+        """Check whether two factor authentication is enabled on the account."""
         async with self._websession.get(
-            url=self.IDENTITIES_URL_TEMPLATE.format(self._url_base, ""),
+            url=self.SYSTEM_URL_TEMPLATE.format(self._url_base, ""),
             headers=self._ajax_headers,
         ) as resp:
             json_rsp = await (resp.json())
 
-        log.debug("Got identity info:\n%s", json_rsp)
-
-        try:
-            self._user_id = json_rsp["data"][0]["id"]
-            self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
-
-            for inclusion in json_rsp["included"]:
+        if (errors := json_rsp.get("errors")) and len(errors) > 0:
+            for error in errors:
                 if (
-                    inclusion["id"] == self._user_id
-                    and inclusion["type"] == "profile/profile"
+                    error.get("status") == "409"
+                    and error.get("detail") == "TwoFactorAuthenticationRequired"
                 ):
-                    self._user_email = inclusion["attributes"]["loginEmailAddress"]
+                    # Get 2FA type ID
+                    async with self._websession.get(
+                        url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(
+                            self._url_base, self._user_id
+                        ),
+                        headers=self._ajax_headers,
+                    ) as resp:
+                        json_rsp = await (resp.json())
+
+                        if isinstance(
+                            factor_id := json_rsp.get("data", {}).get("id"), int
+                        ):
+                            self._factor_type_id = factor_id
+                            log.debug("Requires 2FA.")
+                            return True
+
+        log.debug("Does not require 2FA.")
+        return False
+
+    async def _async_get_identity_info(self) -> None:
+        """Get user id, email address, provider name, etc."""
+        try:
+            async with self._websession.get(
+                url=self.IDENTITIES_URL_TEMPLATE.format(self._url_base, ""),
+                headers=self._ajax_headers,
+                cookies=self._two_factor_cookie,
+            ) as resp:
+                json_rsp = await (resp.json())
+
+                log.debug("Got identity info:\n%s", json_rsp)
+
+                self._user_id = json_rsp["data"][0]["id"]
+                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
+
+                for inclusion in json_rsp["included"]:
+                    if (
+                        inclusion["id"] == self._user_id
+                        and inclusion["type"] == "profile/profile"
+                    ):
+                        self._user_email = inclusion["attributes"]["loginEmailAddress"]
 
             if self._user_email is None:
                 raise AuthenticationFailed("Could not find user email address.")
@@ -723,6 +733,44 @@ class ADCController:
             log.debug(json_rsp)
             raise AuthenticationFailed from err
 
+    async def _async_get_trouble_conditions(self) -> None:
+        """Get trouble conditions for all devices."""
+        try:
+            async with self._websession.get(
+                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self._url_base, ""),
+                headers=self._ajax_headers,
+            ) as resp:
+                json_rsp = await (resp.json())
+
+                trouble_all_devices: dict = {}
+                for condition in json_rsp.get("data", []):
+                    new_trouble: ADCTroubleCondition = {
+                        "message_id": condition.get("id"),
+                        "title": condition.get("attributes", {}).get("description"),
+                        "body": condition.get("attributes", {})
+                        .get("extraData", {})
+                        .get("description"),
+                        "device_id": (
+                            device_id := condition.get("attributes", {}).get(
+                                "emberDeviceId"
+                            )
+                        ),
+                    }
+
+                    trouble_single_device: list = trouble_all_devices.get(device_id, [])
+                    trouble_single_device.append(new_trouble)
+                    trouble_all_devices[device_id] = trouble_single_device
+
+                self._trouble_conditions = trouble_all_devices
+
+        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+            log.error("Connection error while fetching trouble conditions.")
+            raise DataFetchFailed from err
+
+        except (KeyError) as err:
+            log.error("Failed processing trouble conditions.")
+            raise UnexpectedDataStructure from err
+
     async def _async_get_items_and_subordinates(
         self,
         url_template: str,
@@ -734,6 +782,7 @@ class ADCController:
         | Literal[ADCDeviceType.IMAGE_SENSOR],
         retry_on_failure: bool = True,
     ) -> list:
+        """Get attributes, metadata, and child devices for an ADC device class."""
         async with self._websession.get(
             url=url_template.format(self._url_base, ""),
             headers=self._ajax_headers,
@@ -826,12 +875,12 @@ class ADCController:
 
         return return_items
 
-    async def _async_login_and_get_key(self, skip_2fa_nag: bool = False) -> None:
+    async def _async_login_and_get_key(self) -> None:
         """Load hidden fields from login page."""
         try:
             # load login page once and grab VIEWSTATE/cookies
             async with self._websession.get(
-                url=self.LOGIN_URL, cookies=self._twofactor_cookie
+                url=self.LOGIN_URL, cookies=self._two_factor_cookie
             ) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
@@ -850,8 +899,9 @@ class ADCController:
                         0
                     ].attrs.get("value"),
                 }
+
                 log.debug(login_info)
-                log.info("Attempting login to Alarm.com")
+
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
             log.error("Can not load login page from Alarm.com")
             raise DataFetchFailed from err
@@ -873,20 +923,15 @@ class ADCController:
                     self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
                     "IsFromNewSite": "1",
                 },
-                cookies=self._twofactor_cookie,
+                cookies=self._two_factor_cookie,
             ) as resp:
 
                 if re.search("m=login_fail", str(resp.url)) is not None:
                     raise AuthenticationFailed("Invalid username and password.")
 
-                # If Alarm.com is warning us that we'll have to set up two factor authentication soon, skip the
-                # screen and carry on if told, otherwise alert caller.
-                if re.search("two-factor-authentication", str(resp.url)) is not None:
-                    log.debug("Encountered 2FA nag screen.")
-                    if skip_2fa_nag:
-                        await self.skip_2fa_nag()
-                    else:
-                        raise NagScreen("2FA")
+                # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.
+                if re.search("system-install", str(resp.url)) is not None:
+                    raise NagScreen("Encountered 2FA nag screen.")
 
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
 
@@ -899,23 +944,6 @@ class ADCController:
             raise DataFetchFailed from err
 
         logging.debug("Logged in to Alarm.com.")
-
-    async def skip_2fa_nag(self) -> None:
-        """Skips 2FA nag screen."""
-        try:
-            async with self._websession.post(
-                url=self.LOGIN_2FA_SKIP_NAG.format(self._url_base, self._user_id),
-                headers=self._ajax_headers,
-            ) as resp:
-                resp_code = await (resp.status)
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            log.error("Can not load 2FA submission page from Alarm.com")
-            raise DataFetchFailed from err
-
-        if resp_code != 200:
-            raise AuthenticationError("Failed to skip 2FA nag screen.")
-
-        return None
 
     async def async_get_raw_server_responses(
         self, include_systems: bool = False, include_unsupported: bool = False
