@@ -184,8 +184,8 @@ class ADCController:
             await self._async_login_and_get_key()
             await self._async_get_identity_info()
 
-            if await self._async_requires_2fa():
-                log.debug("Two factor authentication code required.")
+            if self._two_factor_cookie and await self._async_requires_2fa():
+                log.debug("Two factor authentication code or cookie required.")
                 raise TwoFactorAuthEnabled
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
