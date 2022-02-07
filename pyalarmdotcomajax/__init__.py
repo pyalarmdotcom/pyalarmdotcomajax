@@ -22,6 +22,7 @@ from .const import (
     ArmingOption,
     ElementSpecificData,
     ImageData,
+    AuthResult,
 )
 from .entities import (
     ADCGarageDoor,
@@ -176,7 +177,7 @@ class ADCController:
     #
     #
 
-    async def async_login(self) -> None:
+    async def async_login(self) -> AuthResult:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
@@ -186,14 +187,16 @@ class ADCController:
 
             if self._two_factor_cookie and await self._async_requires_2fa():
                 log.debug("Two factor authentication code or cookie required.")
-                raise TwoFactorAuthEnabled
+                return AuthResult.OTP_REQUIRED
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
             raise AuthenticationFailed from err
         except NagScreen as err:
-            raise NagScreen from err
+            return AuthResult.ENABLE_TWO_FACTOR
+
+        return AuthResult.SUCCESS
 
     async def submit_2fa(self, code: str, device_name: str | None = None) -> str | None:
         """

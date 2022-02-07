@@ -8,6 +8,14 @@ from typing import Any, TypedDict
 TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
 
 
+class AuthResult(Enum):
+    """Standard for reporting results of login attempt."""
+
+    SUCCESS = "success"
+    OTP_REQUIRED = "otp_required"
+    ENABLE_TWO_FACTOR = "enable_two_factor"
+
+
 class ArmingOption(Enum):
     """Specify when to force bypass device problems."""
 
