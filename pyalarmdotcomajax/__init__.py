@@ -198,7 +198,9 @@ class ADCController:
 
         return AuthResult.SUCCESS
 
-    async def submit_2fa(self, code: str, device_name: str | None = None) -> str | None:
+    async def async_submit_otp(
+        self, code: str, device_name: str | None = None
+    ) -> str | None:
         """
         Submit two factor authentication code.
 
