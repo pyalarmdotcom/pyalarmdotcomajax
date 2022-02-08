@@ -1,6 +1,5 @@
 ---
 # https://pypi.org/project/python-typing-update/ was causing trouble. Some of the below items seek to re-implement the typing-update flow.
-# isort will always fail because it always undoes some of reorder_python_imports' work. This is desired.
 
 default_language_version:
   python: python3.9
