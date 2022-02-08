@@ -105,7 +105,6 @@ This repository includes a full development environment for VS Code:
 #### Housekeeping
 
 1. Testing framework
-2. Auto-build and publish to pypi w/ GitHub release.
 
 [license-shield]: https://img.shields.io/github/license/uvjustin/pyalarmdotcomajax.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/uvjustin/pyalarmdotcomajax.svg?style=for-the-badge
