@@ -142,7 +142,7 @@ async def cli() -> None:
                 code = input("Enter One-Time Password: ")
 
             if code:
-                generated_2fa_cookie = await alarm.submit_2fa(
+                generated_2fa_cookie = await alarm.async_submit_otp(
                     code=code, device_name=args.get("device_name")
                 )
             else:

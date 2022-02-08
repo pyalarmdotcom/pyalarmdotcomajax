@@ -20,9 +20,9 @@ from .const import (
     ADCPartitionCommand,
     ADCTroubleCondition,
     ArmingOption,
+    AuthResult,
     ElementSpecificData,
     ImageData,
-    AuthResult,
 )
 from .entities import (
     ADCGarageDoor,
@@ -38,7 +38,6 @@ from .errors import (
     DataFetchFailed,
     DeviceTypeNotAuthorized,
     NagScreen,
-    TwoFactorAuthEnabled,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
@@ -193,7 +192,7 @@ class ADCController:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
             raise AuthenticationFailed from err
-        except NagScreen as err:
+        except NagScreen:
             return AuthResult.ENABLE_TWO_FACTOR
 
         return AuthResult.SUCCESS
