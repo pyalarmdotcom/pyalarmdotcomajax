@@ -17,6 +17,7 @@
     "python.formatting.provider": "black",
     "editor.formatOnPaste": false,
     "editor.formatOnSave": true,
+    "python.linting.banditEnabled": true,
     "editor.formatOnType": true,
     "files.trimTrailingWhitespace": true,
     "python.linting.mypyEnabled": true,
@@ -29,8 +30,5 @@
     "python.linting.pylintPath": "/usr/local/bin/pylint",
     "python.sortImports.path": "/usr/local/bin/isort",
     "typescript.tsc.autoDetect": "off",
-    "grunt.autoDetect": "off",
-    "jake.autoDetect": "off",
-    "gulp.autoDetect": "off",
     "npm.autoDetect": "off"
 }

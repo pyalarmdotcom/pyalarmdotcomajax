@@ -20,6 +20,7 @@ from .const import (
     ADCPartitionCommand,
     ADCTroubleCondition,
     ArmingOption,
+    AuthResult,
     ElementSpecificData,
     ImageData,
 )
@@ -37,7 +38,6 @@ from .errors import (
     DataFetchFailed,
     DeviceTypeNotAuthorized,
     NagScreen,
-    TwoFactorAuthEnabled,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
@@ -176,7 +176,7 @@ class ADCController:
     #
     #
 
-    async def async_login(self) -> None:
+    async def async_login(self) -> AuthResult:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
@@ -184,18 +184,22 @@ class ADCController:
             await self._async_login_and_get_key()
             await self._async_get_identity_info()
 
-            if self._two_factor_cookie and await self._async_requires_2fa():
+            if not self._two_factor_cookie and await self._async_requires_2fa():
                 log.debug("Two factor authentication code or cookie required.")
-                raise TwoFactorAuthEnabled
+                return AuthResult.OTP_REQUIRED
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
             raise AuthenticationFailed from err
-        except NagScreen as err:
-            raise NagScreen from err
+        except NagScreen:
+            return AuthResult.ENABLE_TWO_FACTOR
 
-    async def submit_2fa(self, code: str, device_name: str | None = None) -> str | None:
+        return AuthResult.SUCCESS
+
+    async def async_submit_otp(
+        self, code: str, device_name: str | None = None
+    ) -> str | None:
         """
         Submit two factor authentication code.
 
@@ -204,6 +208,9 @@ class ADCController:
 
         # Submit code
         try:
+
+            log.debug("Submitting OTP code...")
+
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(
                     self._url_base, self._user_id
@@ -227,12 +234,18 @@ class ADCController:
             )
             raise DataFetchFailed("Unknown error.")
 
+        log.debug("Submitted OTP code.")
+
         if not device_name:
+            log.debug('Skipping "Remember Me".')
             return None
 
         # Submit device name for "remember me" function.
         if json_rsp.get("value", {}).get("deviceName"):
             try:
+
+                log.debug("Registering device...")
+
                 async with self._websession.post(
                     url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(
                         self._url_base, self._user_id
@@ -245,14 +258,18 @@ class ADCController:
                 log.error("Can not load device trust page from Alarm.com")
                 raise DataFetchFailed from err
 
+            log.debug("Registered device.")
+
         # Save 2FA cookie value.
         for cookie in self._websession.cookie_jar:
             if cookie.key == TWO_FACTOR_COOKIE_NAME:
+                log.debug("Found two-factor authentication cookie: %s", cookie.value)
                 self._two_factor_cookie = (
                     {"twoFactorAuthenticationId": cookie.value} if cookie.value else {}
                 )
                 return str(cookie.value)
 
+        log.error("Failed to find two-factor authentication cookie.")
         return None
 
     async def async_send_action(
