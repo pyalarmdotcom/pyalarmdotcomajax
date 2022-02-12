@@ -51,12 +51,13 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 | deviceType | Description           |
 | ---------- | --------------------- |
 | 1          | Contact Sensor        |
+| 2          | Motion Sensor         |
 | 5          | Smoke Detector        |
 | 6          | CO Detector           |
 | 9          | Panic Button          |
 | 19         | Glass Break Detector  |
 | 68         | Panel(?) Image Sensor |
-| 89         | Panel Motion Detector |
+| 89         | Panel Motion Sensor   |
 
 ## Command Line Interface
 
