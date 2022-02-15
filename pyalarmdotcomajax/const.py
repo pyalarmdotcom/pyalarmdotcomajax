@@ -101,8 +101,9 @@ class ADCSensorSubtype(IntEnum):
     CO_DETECTOR = 6
     PANIC_BUTTON = 9
     GLASS_BREAK_DETECTOR = 19
+    PANEL_MOTION_SENSOR = 89
 
-
+    
 class ADCPartitionCommand(Enum):
     """Commands for ADC partitions."""
 
