@@ -49,7 +49,7 @@ class ADCOtpType(Enum):
 
     APP = 1
     SMS = 2
-    EMAIL = 3
+    EMAIL = 4
 
 
 class ADCTroubleCondition(TypedDict):
