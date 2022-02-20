@@ -63,7 +63,8 @@ class ADCController:
         "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}"
     )
     LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
-    LOGIN_2FA_REQUEST_OTP_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
@@ -214,10 +215,14 @@ class ADCController:
 
             log.debug("Requesting OTP code...")
 
+            request_url = (
+                self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
+                if self._two_factor_method == ADCOtpType.EMAIL
+                else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
+            )
+
             async with self._websession.post(
-                url=self.LOGIN_2FA_REQUEST_OTP_URL_TEMPLATE.format(
-                    self._url_base, self._user_id
-                ),
+                url=request_url.format(self._url_base, self._user_id),
                 headers=self._ajax_headers,
             ) as resp:
                 if resp.status != 200:
