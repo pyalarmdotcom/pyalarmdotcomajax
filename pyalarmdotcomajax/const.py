@@ -44,6 +44,14 @@ class ExtendedEnumMixin(Enum):
         return list(map(get_enum_value, cls))
 
 
+class ADCOtpType(Enum):
+    """Alarm.com two factor authentication type."""
+
+    APP = 1
+    SMS = 2
+    EMAIL = 3
+
+
 class ADCTroubleCondition(TypedDict):
     """Alarm.com alert / trouble condition."""
 
@@ -103,7 +111,7 @@ class ADCSensorSubtype(IntEnum):
     GLASS_BREAK_DETECTOR = 19
     PANEL_MOTION_SENSOR = 89
 
-    
+
 class ADCPartitionCommand(Enum):
     """Commands for ADC partitions."""
 
@@ -147,28 +155,3 @@ class ImageData(TypedDict):
     image_src: str
     description: str
     timestamp: datetime
-
-
-# class DeviceTypeFetchErrors(TypedDict, total=False):
-#     """Store all errors encountered when fetching devices."""
-
-#     systems: DeviceTypeFetchError | None
-#     partitions: DeviceTypeFetchError | None
-#     locks: DeviceTypeFetchError | None
-#     sensors: DeviceTypeFetchError | None
-#     garageDoors: DeviceTypeFetchError | None
-
-
-# class DeviceTypeFetchError(TypedDict):
-#     """Store errors encountered when fetching a particular device type."""
-
-#     device_type: ADCDeviceType
-#     errors: list[ADCError]
-
-
-# class ADCError(TypedDict):
-#     """Alarm.com response error format."""
-
-#     status: str
-#     detail: str
-#     code: str

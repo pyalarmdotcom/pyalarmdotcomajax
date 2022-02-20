@@ -17,6 +17,7 @@ from .const import (
     ADCGarageDoorCommand,
     ADCImageSensorCommand,
     ADCLockCommand,
+    ADCOtpType,
     ADCPartitionCommand,
     ADCTroubleCondition,
     ArmingOption,
@@ -42,7 +43,7 @@ from .errors import (
     UnsupportedDevice,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 log = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ class ADCController:
         "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}"
     )
     LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
+    LOGIN_2FA_REQUEST_OTP_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
@@ -106,9 +108,9 @@ class ADCController:
         silentarming: ArmingOption = ArmingOption.NEVER,
     ):
         """Use AIOHTTP to make a request to alarm.com."""
-        self._username = username
-        self._password = password
-        self._websession = websession
+        self._username: str = username
+        self._password: str = password
+        self._websession: aiohttp.ClientSession = websession
         self._ajax_headers = {
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
@@ -121,6 +123,7 @@ class ADCController:
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
         )
         self._factor_type_id: int | None = None
+        self._two_factor_method: ADCOtpType | None = None
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
@@ -176,7 +179,7 @@ class ADCController:
     #
     #
 
-    async def async_login(self) -> AuthResult:
+    async def async_login(self, request_otp: bool = True) -> AuthResult:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
@@ -186,6 +189,13 @@ class ADCController:
 
             if not self._two_factor_cookie and await self._async_requires_2fa():
                 log.debug("Two factor authentication code or cookie required.")
+
+                if request_otp and self._two_factor_method in [
+                    ADCOtpType.SMS,
+                    ADCOtpType.EMAIL,
+                ]:
+                    await self.async_request_otp()
+
                 return AuthResult.OTP_REQUIRED
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
@@ -196,6 +206,28 @@ class ADCController:
             return AuthResult.ENABLE_TWO_FACTOR
 
         return AuthResult.SUCCESS
+
+    async def async_request_otp(self) -> str | None:
+        """Request SMS/email OTP code from Alarm.com."""
+
+        try:
+
+            log.debug("Requesting OTP code...")
+
+            async with self._websession.post(
+                url=self.LOGIN_2FA_REQUEST_OTP_URL_TEMPLATE.format(
+                    self._url_base, self._user_id
+                ),
+                headers=self._ajax_headers,
+            ) as resp:
+                if resp.status != 200:
+                    raise DataFetchFailed("Failed to request 2FA code.")
+
+        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+            log.error("Can not load 2FA submission page from Alarm.com")
+            raise DataFetchFailed from err
+
+        return None
 
     async def async_submit_otp(
         self, code: str, device_name: str | None = None
@@ -216,7 +248,7 @@ class ADCController:
                     self._url_base, self._user_id
                 ),
                 headers=self._ajax_headers,
-                json={"code": code, "typeOf2FA": 1},
+                json={"code": code, "typeOf2FA": self._two_factor_method},
             ) as resp:
                 json_rsp = await (resp.json())
 
@@ -711,7 +743,14 @@ class ADCController:
                             factor_id := json_rsp.get("data", {}).get("id"), int
                         ):
                             self._factor_type_id = factor_id
-                            log.debug("Requires 2FA.")
+                            self._two_factor_method = ADCOtpType(
+                                json_rsp.get("data", {})
+                                .get("attributes", {})
+                                .get("twoFactorType")
+                            )
+                            log.debug(
+                                "Requires 2FA. Using method {}", self._two_factor_method
+                            )
                             return True
 
         log.debug("Does not require 2FA.")
