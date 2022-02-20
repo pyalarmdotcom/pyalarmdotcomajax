@@ -248,7 +248,7 @@ class ADCController:
                     self._url_base, self._user_id
                 ),
                 headers=self._ajax_headers,
-                json={"code": code, "typeOf2FA": self._two_factor_method},
+                json={"code": code, "typeOf2FA": self._two_factor_method.value},
             ) as resp:
                 json_rsp = await (resp.json())
 
@@ -749,7 +749,7 @@ class ADCController:
                                 .get("twoFactorType")
                             )
                             log.debug(
-                                "Requires 2FA. Using method {}", self._two_factor_method
+                                "Requires 2FA. Using method %s", self._two_factor_method
                             )
                             return True
 
