@@ -323,10 +323,12 @@ class ADCController:
         forcebypass: bool = False
         noentrydelay: bool = False
         silentarming: bool = False
+        nigharming: bool = False
 
         if event in [
             ADCPartitionCommand.ARM_AWAY,
             ADCPartitionCommand.ARM_STAY,
+            ADCPartitionCommand.ARM_NIGHT,
         ]:
             forcebypass = self._forcebypass in [
                 ArmingOption.STAY
@@ -347,12 +349,18 @@ class ADCController:
                 ArmingOption.ALWAYS,
             ]
 
+        # the ArmNight command is a flag on the ArmStay command
+        if event == ADCPartitionCommand.ARM_NIGHT:
+            nightarming = True
+            event = ADCPartitionCommand.ARM_STAY
+
         return await self._send(
             device_type,
             event,
             forcebypass,
             noentrydelay,
             silentarming,
+            nightarming,
             device_id,
         )
 
@@ -587,6 +595,7 @@ class ADCController:
         forcebypass: bool = False,
         noentrydelay: bool = False,
         silentarming: bool = False,
+        nightarming: bool = False,
         device_id: str | None = None,  # ID corresponds to device_type
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
@@ -604,6 +613,7 @@ class ADCController:
                         "forceBypass": forcebypass,
                         "noEntryDelay": noentrydelay,
                         "silentArming": silentarming,
+                        "nightArming": nightarming,
                     }.items()
                     if value is True
                 },
@@ -687,6 +697,7 @@ class ADCController:
                     False,
                     noentrydelay,
                     silentarming,
+                    nightarming,
                     device_id,
                 )
             if resp.status == 403:
@@ -702,6 +713,7 @@ class ADCController:
                         forcebypass,
                         noentrydelay,
                         silentarming,
+                        nightarming,
                         device_id,
                         False,
                     )
