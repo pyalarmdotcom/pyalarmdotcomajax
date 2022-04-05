@@ -39,7 +39,7 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 | ------------ | ----------------------------------- | ------------------------------------- |
 | System       | `unit_id`                           | (none)                                |
 | Partition    | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |
-| Sensors      | `device_subtype`                    | (none)                                |
+| Sensor       | `device_subtype`                    | (none)                                |
 | Locks        | `desired_state`                     | lock, unlock                          |
 | Garage Door  | (none)                              | open, close                           |
 | Image Sensor | `images`                            | peek_in                               |
