@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum, IntEnum
-from typing import Any, TypedDict
+from enum import Enum
+from enum import IntEnum
+from typing import Any
+from typing import TypedDict
 
 TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
 
@@ -14,15 +16,6 @@ class AuthResult(Enum):
     SUCCESS = "success"
     OTP_REQUIRED = "otp_required"
     ENABLE_TWO_FACTOR = "enable_two_factor"
-
-
-class ArmingOption(Enum):
-    """Specify when to force bypass device problems."""
-
-    STAY = "stay"
-    AWAY = "away"
-    ALWAYS = "true"
-    NEVER = "false"
 
 
 class ExtendedEnumMixin(Enum):
@@ -69,6 +62,8 @@ class ADCRelationshipType(Enum):
     PARTITION = "devices/partition"
     LOCK = "devices/lock"
     GARAGE_DOOR = "devices/garage-door"
+    IMAGE_SENSOR_IMAGE = "image-sensor/image-sensor"
+    LIGHT = "devices/light"
 
     # Not Supported
     # THERMOSTAT = "devices/thermostat"
@@ -89,11 +84,11 @@ class ADCDeviceType(ExtendedEnumMixin):
     LOCK = "locks"
     GARAGE_DOOR = "garageDoors"
     IMAGE_SENSOR = "imageSensors"
+    LIGHT = "lights"
 
     # Not Supported
     # THERMOSTAT = "thermostats"
     # CONFIGURATION = "configuration"
-    # LIGHT = "light"
     # CAMERA = "camera"
     # GEO_DEVICE = "geo-device"
     # GEO_FENCE = "fence"
@@ -110,6 +105,9 @@ class ADCSensorSubtype(IntEnum):
     PANIC_BUTTON = 9
     GLASS_BREAK_DETECTOR = 19
     PANEL_MOTION_SENSOR = 89
+    PANEL_GLASS_BREAK_DETECTOR = 83
+    PANEL_IMAGE_SENSOR = 68
+    MOBILE_PHONE = 69
 
 
 class ADCPartitionCommand(Enum):
@@ -135,10 +133,17 @@ class ADCGarageDoorCommand(Enum):
     CLOSE = "close"
 
 
+class ADCLightCommand(Enum):
+    """Commands for ADC lights."""
+
+    ON = "turnOn"
+    OFF = "turnOff"
+
+
 class ADCImageSensorCommand(Enum):
     """Commands for ADC image sensors."""
 
-    peekIn = "doPeekInNow"
+    PEEK_IN = "doPeekInNow"
 
 
 class ElementSpecificData(TypedDict, total=False):

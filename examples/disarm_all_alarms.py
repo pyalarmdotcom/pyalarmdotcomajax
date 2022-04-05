@@ -9,9 +9,7 @@ from multiprocessing import AuthenticationError
 import sys
 
 import aiohttp
-
 from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.const import ADCDeviceType, ADCPartitionCommand, ArmingOption
 from pyalarmdotcomajax.entities import ADCPartition
 
 USERNAME = "ENTER YOUR USERNAME"
@@ -30,9 +28,6 @@ async def main() -> None:
             password=PASSWORD,
             websession=session,
             twofactorcookie=TWOFACTOR or None,
-            forcebypass=ArmingOption.ALWAYS,
-            noentrydelay=ArmingOption.NEVER,
-            silentarming=ArmingOption.NEVER,
         )
 
         try:
@@ -58,11 +53,7 @@ async def main() -> None:
                     " Disarming..."
                 )
                 try:
-                    await alarm.async_send_action(
-                        ADCDeviceType.PARTITION,
-                        ADCPartitionCommand.DISARM,
-                        partition.id_,
-                    )
+                    await partition.async_disarm()
                     print("Disarmed successfully.")
                 except PermissionError:
                     print(
