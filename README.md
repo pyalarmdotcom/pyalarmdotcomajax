@@ -43,21 +43,24 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 | Locks        | `desired_state`                     | lock, unlock                          |
 | Garage Door  | (none)                              | open, close                           |
 | Image Sensor | `images`                            | peek_in                               |
+| Light        | `brightness`                        | turn_on (with brightness), turn_off   |
 
 ### Known Sensor deviceTypes
 
 This list identifies deviceTypes used in the alarm.com API and is incomplete. Please help by submitting missing values.
 
-| deviceType | Description           |
-| ---------- | --------------------- |
-| 1          | Contact Sensor        |
-| 2          | Motion Sensor         |
-| 5          | Smoke Detector        |
-| 6          | CO Detector           |
-| 9          | Panic Button          |
-| 19         | Glass Break Detector  |
-| 68         | Panel(?) Image Sensor |
-| 89         | Panel Motion Sensor   |
+| deviceType | Description                            |
+| ---------- | -------------------------------------- |
+| 1          | Contact Sensor                         |
+| 2          | Motion Sensor                          |
+| 5          | Smoke Detector                         |
+| 6          | CO Detector                            |
+| 9          | Panic Button                           |
+| 19         | Glass Break Detector                   |
+| 68         | Panel Image Sensor                     |
+| 69         | Mobile Phone (for Bluetooth Disarming) |
+| 83         | Panel Glass Break Sensor               |
+| 89         | Panel Motion Sensor                    |
 
 ## Command Line Interface
 

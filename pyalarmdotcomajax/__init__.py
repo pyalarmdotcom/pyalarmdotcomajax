@@ -11,39 +11,34 @@ import aiohttp
 from bs4 import BeautifulSoup
 from dateutil import parser
 
-from .const import (
-    TWO_FACTOR_COOKIE_NAME,
-    ADCDeviceType,
-    ADCGarageDoorCommand,
-    ADCImageSensorCommand,
-    ADCLockCommand,
-    ADCOtpType,
-    ADCPartitionCommand,
-    ADCTroubleCondition,
-    ArmingOption,
-    AuthResult,
-    ElementSpecificData,
-    ImageData,
-)
-from .entities import (
-    ADCGarageDoor,
-    ADCImageSensor,
-    ADCLock,
-    ADCPartition,
-    ADCSensor,
-    ADCSystem,
-)
-from .errors import (
-    AuthenticationFailed,
-    BadAccount,
-    DataFetchFailed,
-    DeviceTypeNotAuthorized,
-    NagScreen,
-    UnexpectedDataStructure,
-    UnsupportedDevice,
-)
+from .const import ADCDeviceType
+from .const import ADCGarageDoorCommand
+from .const import ADCImageSensorCommand
+from .const import ADCLightCommand
+from .const import ADCLockCommand
+from .const import ADCOtpType
+from .const import ADCPartitionCommand
+from .const import ADCTroubleCondition
+from .const import AuthResult
+from .const import ElementSpecificData
+from .const import ImageData
+from .const import TWO_FACTOR_COOKIE_NAME
+from .entities import ADCGarageDoor
+from .entities import ADCImageSensor
+from .entities import ADCLight
+from .entities import ADCLock
+from .entities import ADCPartition
+from .entities import ADCSensor
+from .entities import ADCSystem
+from .errors import AuthenticationFailed
+from .errors import BadAccount
+from .errors import DataFetchFailed
+from .errors import DeviceTypeNotAuthorized
+from .errors import NagScreen
+from .errors import UnexpectedDataStructure
+from .errors import UnsupportedDevice
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 log = logging.getLogger(__name__)
@@ -104,9 +99,6 @@ class ADCController:
         password: str,
         websession: aiohttp.ClientSession,
         twofactorcookie: str | None,
-        forcebypass: ArmingOption = ArmingOption.NEVER,
-        noentrydelay: ArmingOption = ArmingOption.NEVER,
-        silentarming: ArmingOption = ArmingOption.NEVER,
     ):
         """Use AIOHTTP to make a request to alarm.com."""
         self._username: str = username
@@ -116,9 +108,6 @@ class ADCController:
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
         }
-        self._forcebypass = forcebypass
-        self._noentrydelay = noentrydelay
-        self._silentarming = silentarming
         self._url_base: str = self.URL_BASE
         self._two_factor_cookie: dict = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
@@ -138,6 +127,7 @@ class ADCController:
         self.locks: list[ADCLock] = []
         self.garage_doors: list[ADCGarageDoor] = []
         self.image_sensors: list[ADCImageSensor] = []
+        self.lights: list[ADCLight] = []
 
     #
     #
@@ -248,6 +238,9 @@ class ADCController:
 
             log.debug("Submitting OTP code...")
 
+            if not self._two_factor_method:
+                raise AuthenticationFailed("Missing OTP type.")
+
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(
                     self._url_base, self._user_id
@@ -309,53 +302,6 @@ class ADCController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_send_action(
-        self,
-        device_type: ADCDeviceType,
-        event: ADCPartitionCommand
-        | ADCLockCommand
-        | ADCGarageDoorCommand
-        | ADCImageSensorCommand,
-        device_id: str,
-    ) -> bool:
-        """Send command to take action on device."""
-
-        forcebypass: bool = False
-        noentrydelay: bool = False
-        silentarming: bool = False
-
-        if event in [
-            ADCPartitionCommand.ARM_AWAY,
-            ADCPartitionCommand.ARM_STAY,
-        ]:
-            forcebypass = self._forcebypass in [
-                ArmingOption.STAY
-                if event == ADCPartitionCommand.ARM_STAY
-                else ArmingOption.AWAY,
-                ArmingOption.ALWAYS,
-            ]
-            noentrydelay = self._noentrydelay in [
-                ArmingOption.STAY
-                if event == ADCPartitionCommand.ARM_STAY
-                else ArmingOption.AWAY,
-                ArmingOption.ALWAYS,
-            ]
-            silentarming = self._silentarming in [
-                ArmingOption.STAY
-                if event == ADCPartitionCommand.ARM_STAY
-                else ArmingOption.AWAY,
-                ArmingOption.ALWAYS,
-            ]
-
-        return await self._send(
-            device_type,
-            event,
-            forcebypass,
-            noentrydelay,
-            silentarming,
-            device_id,
-        )
-
     async def async_update(self, device_type: ADCDeviceType | None = None) -> None:
         """Fetch the latest state according to device."""
         log.debug("Calling update on Alarm.com")
@@ -378,6 +324,9 @@ class ADCController:
 
             if device_type == ADCDeviceType.LOCK or device_type is None:
                 await self._async_get_devices(ADCDeviceType.LOCK, self.locks)
+
+            if device_type == ADCDeviceType.LIGHT or device_type is None:
+                await self._async_get_devices(ADCDeviceType.LIGHT, self.lights)
 
             if device_type in [ADCDeviceType.IMAGE_SENSOR, None]:
                 await self._async_get_devices(
@@ -420,7 +369,7 @@ class ADCController:
                 id_=entity_json["id"],
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
-                send_action_callback=self.async_send_action,
+                send_action_callback=self.async_send,
                 subordinates=subordinates,
                 trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
             )
@@ -457,7 +406,7 @@ class ADCController:
                 id_=entity_json["id"],
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
-                send_action_callback=self.async_send_action,
+                send_action_callback=self.async_send,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
                 trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
@@ -475,7 +424,7 @@ class ADCController:
 
         device_class: type[ADCGarageDoor] | type[ADCLock] | type[ADCSensor] | type[
             ADCImageSensor
-        ]
+        ] | type[ADCLight]
 
         if device_type == ADCDeviceType.GARAGE_DOOR:
             url_template = self.GARAGE_DOOR_URL_TEMPLATE
@@ -489,6 +438,9 @@ class ADCController:
         elif device_type == ADCDeviceType.IMAGE_SENSOR:
             url_template = self.IMAGE_SENSOR_URL_TEMPLATE
             device_class = ADCImageSensor
+        elif device_type == ADCDeviceType.LIGHT:
+            url_template = self.LIGHT_URL_TEMPLATE
+            device_class = ADCLight
         else:
             raise UnsupportedDevice
 
@@ -558,10 +510,10 @@ class ADCController:
                 id_=entity_id,
                 attribs_raw=entity_json["attributes"],
                 family_raw=entity_json["type"],
-                send_action_callback=self.async_send_action,
                 subordinates=subordinates,
                 parent_ids=parent_ids,
                 element_specific_data=element_specific_data,
+                send_action_callback=self.async_send,
                 trouble_conditions=self._trouble_conditions.get(entity_json["id"]),
             )
 
@@ -577,39 +529,25 @@ class ADCController:
     #
     # Communicate directly with the ADC API
 
-    async def _send(
+    async def async_send(
         self,
         device_type: ADCDeviceType,
         event: ADCLockCommand
         | ADCPartitionCommand
         | ADCGarageDoorCommand
+        | ADCLightCommand
         | ADCImageSensorCommand,
-        forcebypass: bool = False,
-        noentrydelay: bool = False,
-        silentarming: bool = False,
         device_id: str | None = None,  # ID corresponds to device_type
+        msg_body: dict | None = None,  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
         log.debug("Sending %s to Alarm.com.", event)
-        if (
-            device_type == ADCDeviceType.PARTITION
-            and event != ADCPartitionCommand.DISARM
-        ):
-            json_req = {
-                "statePollOnly": False,
-                **{
-                    key: value
-                    for key, value in {
-                        "forceBypass": forcebypass,
-                        "noEntryDelay": noentrydelay,
-                        "silentArming": silentarming,
-                    }.items()
-                    if value is True
-                },
-            }
-        else:
-            json_req = {"statePollOnly": False}
+
+        if not msg_body:
+            msg_body = {}
+
+        msg_body["statePollOnly"] = False
 
         # ################################
         # # BEGIN: SET URL BY DEVICE TYPE
@@ -626,6 +564,13 @@ class ADCController:
         elif device_type == ADCDeviceType.LOCK:
             url = (
                 f"{self.LOCK_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
+            )
+            log.debug("Url %s", url)
+
+        # LIGHT
+        elif device_type == ADCDeviceType.LIGHT:
+            url = (
+                f"{self.LIGHT_URL_TEMPLATE.format(self._url_base, device_id)}/{event.value}"
             )
             log.debug("Url %s", url)
 
@@ -653,10 +598,9 @@ class ADCController:
         # ##############################
 
         async with self._websession.post(
-            url=url,
-            json=json_req,
-            headers=self._ajax_headers,
+            url=url, json=msg_body, headers=self._ajax_headers
         ) as resp:
+
             log.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
@@ -672,7 +616,7 @@ class ADCController:
             if (
                 (resp.status == 422)
                 and isinstance(event, ADCPartitionCommand)
-                and (forcebypass is True)
+                and (msg_body.get("forceBypass") is True)
             ):
                 # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
                 log.warning(
@@ -681,14 +625,10 @@ class ADCController:
                 )
 
                 # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
-                return await self._send(
-                    device_type,
-                    event,
-                    False,
-                    noentrydelay,
-                    silentarming,
-                    device_id,
-                )
+
+                msg_body["forceBypass"] = False
+
+                return await self.async_send(device_type, event, device_id, msg_body)
             if resp.status == 403:
                 # May have been logged out, try again
                 log.warning(
@@ -696,27 +636,21 @@ class ADCController:
                 )
                 if retry_on_failure:
                     await self.async_login()
-                    return await self._send(
+                    return await self.async_send(
                         device_type,
                         event,
-                        forcebypass,
-                        noentrydelay,
-                        silentarming,
                         device_id,
+                        msg_body,
                         False,
                     )
 
         log.error("%s failed with HTTP code %s", event.value, resp.status)
         log.error(
-            """Arming parameters: force_bypass = %s, no_entry_delay = %s, silent_arming = %s
-            URL: %s
+            """URL: %s
             JSON: %s
             Headers: %s""",
-            forcebypass,
-            noentrydelay,
-            silentarming,
             url,
-            json_req,
+            msg_body,
             self._ajax_headers,
         )
         raise ConnectionError
@@ -840,7 +774,8 @@ class ADCController:
         | Literal[ADCDeviceType.PARTITION]
         | Literal[ADCDeviceType.LOCK]
         | Literal[ADCDeviceType.GARAGE_DOOR]
-        | Literal[ADCDeviceType.IMAGE_SENSOR],
+        | Literal[ADCDeviceType.IMAGE_SENSOR]
+        | Literal[ADCDeviceType.LIGHT],
         retry_on_failure: bool = True,
     ) -> list:
         """Get attributes, metadata, and child devices for an ADC device class."""
@@ -864,7 +799,9 @@ class ADCController:
             if rsp_errors[0].get("status") == "423":
                 log.debug(
                     "Error fetching data from Alarm.com. This account either doesn't"
-                    " have permission to %s or is on a plan that does not support %s.",
+                    " have permission to %s, is on a plan that does not support %s, or"
+                    " is part of a system with %s turned off.",
+                    device_type,
                     device_type,
                     device_type,
                 )
@@ -936,7 +873,7 @@ class ADCController:
 
         return return_items
 
-    async def _async_login_and_get_key(self) -> None:
+    async def _async_login_and_get_key(self, attempts: int = 1) -> None:
         """Load hidden fields from login page."""
         try:
             # load login page once and grab VIEWSTATE/cookies
@@ -963,8 +900,18 @@ class ADCController:
 
                 log.debug(login_info)
 
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+        except (
+            asyncio.TimeoutError,
+            aiohttp.ClientError,
+            asyncio.exceptions.CancelledError,
+        ) as err:
             log.error("Can not load login page from Alarm.com")
+
+            # Users reporting that this step throws CancelledErrors. Try a second time in 1 minute.
+            if attempts > 0:
+                await asyncio.sleep(60)
+                self._async_login_and_get_key(attempts - 1)
+
             raise DataFetchFailed from err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract login info from Alarm.com")
@@ -1019,6 +966,7 @@ class ADCController:
             ("GARAGE_DOORS", self.GARAGE_DOOR_URL_TEMPLATE),
             ("PARTITIONS", self.PARTITION_URL_TEMPLATE),
             ("IMAGE_SENSORS_DATA", self.IMAGE_SENSOR_DATA_URL_TEMPLATE),
+            ("LIGHTS", self.LIGHT_URL_TEMPLATE),
         ]
 
         if include_systems:
@@ -1027,7 +975,6 @@ class ADCController:
         if include_unsupported:
             endpoints += [
                 ("THERMOSTATS", self.THERMOSTAT_URL_TEMPLATE),
-                ("LIGHTS", self.LIGHT_URL_TEMPLATE),
                 ("CAMERAS", self.CAMERA_URL_TEMPLATE),
             ]
 
@@ -1076,6 +1023,7 @@ class ADCController:
             "GARAGE_DOORS": self.GARAGE_DOOR_URL_TEMPLATE,
             "PARTITIONS": self.PARTITION_URL_TEMPLATE,
             "IMAGE_SENSORS_DATA": self.IMAGE_SENSOR_DATA_URL_TEMPLATE,
+            "LIGHTS": self.LIGHT_URL_TEMPLATE,
         }
 
         if include_systems:
@@ -1083,7 +1031,6 @@ class ADCController:
 
         if include_unsupported:
             endpoints["THERMOSTATS"] = self.THERMOSTAT_URL_TEMPLATE
-            endpoints["LIGHTS"] = self.LIGHT_URL_TEMPLATE
             endpoints["CAMERAS"] = self.CAMERA_URL_TEMPLATE
 
         url_template = endpoints[endpoint]

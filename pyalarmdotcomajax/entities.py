@@ -6,18 +6,17 @@ from enum import Enum
 import logging
 from typing import Protocol
 
-from .const import (
-    ADCDeviceType,
-    ADCGarageDoorCommand,
-    ADCImageSensorCommand,
-    ADCLockCommand,
-    ADCPartitionCommand,
-    ADCRelationshipType,
-    ADCSensorSubtype,
-    ADCTroubleCondition,
-    ElementSpecificData,
-    ImageData,
-)
+from .const import ADCDeviceType
+from .const import ADCGarageDoorCommand
+from .const import ADCImageSensorCommand
+from .const import ADCLightCommand
+from .const import ADCLockCommand
+from .const import ADCPartitionCommand
+from .const import ADCRelationshipType
+from .const import ADCSensorSubtype
+from .const import ADCTroubleCondition
+from .const import ElementSpecificData
+from .const import ImageData
 
 log = logging.getLogger(__name__)
 
@@ -165,10 +164,6 @@ class ADCBaseElement:
         """Return state description as reported by ADC."""
         return self._attribs_raw.get("displayStateText")
 
-    # def is_subordinate(self, device_id: str) -> bool:
-    #     """Return whether submitted device is downstream from this device."""
-    #     return [i_id for i_id in self._subordinates if i_id[0] == device_id]
-
     # #
     # PLACEHOLDERS
     # #
@@ -216,39 +211,83 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
         """Return whether user needs to clear device state from alarm or device malfunction."""
         return self._attribs_raw.get("needsClearIssuesPrompt", None)
 
-    async def async_alarm_disarm(self) -> None:
-        """Send disarm command."""
+    async def _async_arm(
+        self,
+        arm_type: ADCPartitionCommand,
+        force_bypass: bool = False,
+        no_entry_delay: bool = False,
+        silent_arming: bool = False,
+    ) -> None:
+        """Arm alarm system."""
+
+        if arm_type == ADCPartitionCommand.DISARM:
+            log.error("Invalid arm type.")
+            return
+
+        msg_body = {
+            "forceBypass": force_bypass,
+            "noEntryDelay": no_entry_delay,
+            "silentArming": silent_arming,
+        }
+
         await self._send_action_callback(
-            ADCDeviceType.PARTITION,
-            ADCPartitionCommand.DISARM,
-            self._id_,
+            device_type=ADCDeviceType.PARTITION,
+            event=arm_type,
+            device_id=self.id_,
+            msg_body=msg_body,
         )
 
-    async def async_alarm_arm_stay(self) -> None:
-        """Send arm stay command."""
-
-        await self._send_action_callback(
-            ADCDeviceType.PARTITION,
-            ADCPartitionCommand.ARM_STAY,
-            self._id_,
+    async def async_arm_stay(
+        self,
+        force_bypass: bool = False,
+        no_entry_delay: bool = False,
+        silent_arming: bool = False,
+    ) -> None:
+        """Arm stay alarm."""
+        await self._async_arm(
+            arm_type=ADCPartitionCommand.ARM_STAY,
+            force_bypass=force_bypass,
+            no_entry_delay=no_entry_delay,
+            silent_arming=silent_arming,
         )
 
-    async def async_alarm_arm_away(self) -> None:
-        """Send arm away command."""
-
-        await self._send_action_callback(
-            ADCDeviceType.PARTITION,
-            ADCPartitionCommand.ARM_AWAY,
-            self._id_,
+    async def async_arm_away(
+        self,
+        force_bypass: bool = False,
+        no_entry_delay: bool = False,
+        silent_arming: bool = False,
+    ) -> None:
+        """Arm stay alarm."""
+        await self._async_arm(
+            arm_type=ADCPartitionCommand.ARM_AWAY,
+            force_bypass=force_bypass,
+            no_entry_delay=no_entry_delay,
+            silent_arming=silent_arming,
         )
 
-    async def async_alarm_arm_night(self) -> None:
-        """Send arm away command."""
+    async def async_arm_night(
+        self,
+        force_bypass: bool = False,
+        no_entry_delay: bool = False,
+        silent_arming: bool = False,
+    ) -> None:
+        """Arm stay alarm."""
+        await self._async_arm(
+            arm_type=ADCPartitionCommand.ARM_NIGHT,
+            force_bypass=force_bypass,
+            no_entry_delay=no_entry_delay,
+            silent_arming=silent_arming,
+        )
+
+    async def async_disarm(
+        self,
+    ) -> None:
+        """Disarm alarm system."""
 
         await self._send_action_callback(
-            ADCDeviceType.PARTITION,
-            ADCPartitionCommand.ARM_NIGHT,
-            self._id_,
+            device_type=ADCDeviceType.PARTITION,
+            event=ADCPartitionCommand.DISARM,
+            device_id=self.id_,
         )
 
 
@@ -264,31 +303,81 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
 
     async def async_lock(self) -> None:
         """Send lock command."""
+
         await self._send_action_callback(
-            ADCDeviceType.LOCK,
-            ADCLockCommand.LOCK,
-            self._id_,
+            device_type=ADCDeviceType.LOCK,
+            event=ADCLockCommand.LOCK,
+            device_id=self.id_,
         )
 
     async def async_unlock(self) -> None:
         """Send unlock command."""
+
         await self._send_action_callback(
-            ADCDeviceType.LOCK,
-            ADCLockCommand.UNLOCK,
-            self._id_,
+            device_type=ADCDeviceType.LOCK,
+            event=ADCLockCommand.UNLOCK,
+            device_id=self.id_,
+        )
+
+
+class ADCLight(DesiredStateMixin, ADCBaseElement):
+    """Represent Alarm.com light element."""
+
+    class DeviceState(Enum):
+        """Enum of light states."""
+
+        ON = 2
+        OFF = 3
+
+    @property
+    def available(self) -> bool:
+        """Return whether the light can be manipulated."""
+        return (
+            self._attribs_raw.get("canReceiveCommands", False)
+            and self._attribs_raw.get("remoteCommandsEnabled", False)
+            and self._attribs_raw.get("hasPermissionToChangeState", False)
+        )
+
+    @property
+    def brightness(self) -> int | None:
+        """Return light's brightness."""
+        if not self._attribs_raw.get("isDimmer", False):
+            return None
+
+        return self._attribs_raw.get("lightLevel", 0)
+
+    async def async_turn_on(self, brightness: int | None = None) -> None:
+        """Send turn on command with optional brightness."""
+
+        msg_body: dict | None = None
+        if brightness:
+            msg_body = {}
+            msg_body["dimmerLevel"] = brightness
+
+        await self._send_action_callback(
+            device_type=ADCDeviceType.LIGHT,
+            event=ADCLightCommand.ON,
+            device_id=self.id_,
+            msg_body=msg_body,
+        )
+
+    async def async_turn_off(self) -> None:
+        """Send turn off command."""
+
+        await self._send_action_callback(
+            device_type=ADCDeviceType.LIGHT,
+            event=ADCLightCommand.OFF,
+            device_id=self.id_,
         )
 
 
 class ADCImageSensor(ADCBaseElement):
     """Represent Alarm.com image sensor element."""
 
-    async def async_peek_in(self) -> None:
-        """Send peek in command."""
-        await self._send_action_callback(
-            ADCDeviceType.IMAGE_SENSOR,
-            ADCImageSensorCommand.peekIn,
-            self._id_,
-        )
+    @property
+    def malfunction(self) -> bool | None:
+        """Return whether device is malfunctioning."""
+        return None
 
     @property
     def images(self) -> list[ImageData] | None:
@@ -301,6 +390,15 @@ class ADCImageSensor(ADCBaseElement):
             return self._element_specific_data.get("images")
 
         return None
+
+    async def async_peek_in(self) -> None:
+        """Send peek in command to take photo."""
+
+        await self._send_action_callback(
+            device_type=ADCDeviceType.IMAGE_SENSOR,
+            event=ADCImageSensorCommand.PEEK_IN,
+            device_id=self.id_,
+        )
 
 
 class ADCSensor(ADCBaseElement):
@@ -336,17 +434,19 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
         CLOSED = 2
 
     async def async_open(self) -> None:
-        """Send unlock command."""
+        """Send open command."""
+
         await self._send_action_callback(
-            ADCDeviceType.GARAGE_DOOR,
-            ADCGarageDoorCommand.OPEN,
-            self._id_,
+            device_type=ADCDeviceType.GARAGE_DOOR,
+            event=ADCGarageDoorCommand.OPEN,
+            device_id=self.id_,
         )
 
     async def async_close(self) -> None:
-        """Send unlock command."""
+        """Send close command."""
+
         await self._send_action_callback(
-            ADCDeviceType.GARAGE_DOOR,
-            ADCGarageDoorCommand.CLOSE,
-            self._id_,
+            device_type=ADCDeviceType.GARAGE_DOOR,
+            event=ADCGarageDoorCommand.CLOSE,
+            device_id=self.id_,
         )

@@ -11,26 +11,21 @@ import logging
 import sys
 
 import aiohttp
-
 import pyalarmdotcomajax
-from pyalarmdotcomajax.errors import (
-    AuthenticationFailed,
-    DataFetchFailed,
-    NagScreen,
-    TwoFactorAuthEnabled,
-)
+from pyalarmdotcomajax.errors import AuthenticationFailed
+from pyalarmdotcomajax.errors import DataFetchFailed
+from pyalarmdotcomajax.errors import NagScreen
 
 from . import ADCController
-from .const import ArmingOption
-from .entities import (
-    ADCGarageDoor,
-    ADCImageSensor,
-    ADCLock,
-    ADCPartition,
-    ADCSensor,
-    ADCSensorSubtype,
-    ADCSystem,
-)
+from .const import AuthResult
+from .entities import ADCGarageDoor
+from .entities import ADCImageSensor
+from .entities import ADCLight
+from .entities import ADCLock
+from .entities import ADCPartition
+from .entities import ADCSensor
+from .entities import ADCSensorSubtype
+from .entities import ADCSystem
 
 CLI_CARD_BREAK = "--------"
 
@@ -120,21 +115,21 @@ async def cli() -> None:
             username=args.get("username", ""),
             password=args.get("password", ""),
             websession=session,
-            forcebypass=ArmingOption.NEVER,
-            noentrydelay=ArmingOption.NEVER,
-            silentarming=ArmingOption.NEVER,
             twofactorcookie=args.get("cookie"),
         )
 
+        generated_2fa_cookie = None
+
         try:
-            await alarm.async_login()
+            login_result = await alarm.async_login()
         except NagScreen:
             print(
                 "Unable to log in. Please set up two-factor authentication for this"
                 " account."
             )
             sys.exit()
-        except TwoFactorAuthEnabled:
+
+        if login_result == AuthResult.OTP_REQUIRED:
 
             code: str | None
             if not (code := args.get("one_time_password")):
@@ -151,6 +146,13 @@ async def cli() -> None:
                     " two-factor authentication."
                 )
                 sys.exit()
+
+        if login_result == AuthResult.ENABLE_TWO_FACTOR:
+            print(
+                "Unable to log in. Please set up two-factor authentication for this"
+                " account."
+            )
+            sys.exit()
 
         await alarm.async_update()
 
@@ -169,7 +171,8 @@ async def cli() -> None:
         else:
             _human_readable_output(alarm, generated_2fa_cookie)
 
-        print(f"\n2FA Cookie: {generated_2fa_cookie}\n")
+        if generated_2fa_cookie:
+            print(f"\n2FA Cookie: {generated_2fa_cookie}\n")
 
 
 async def _async_machine_output(
@@ -257,6 +260,15 @@ def _human_readable_output(
             _print_element_tearsheet(image_sensor)
             print(CLI_CARD_BREAK)
 
+    print("\n*** LIGHTS ***\n")
+    if len(alarm.lights) == 0:
+        print("(none found)")
+    else:
+        print(CLI_CARD_BREAK)
+        for light in alarm.lights:
+            _print_element_tearsheet(light)
+            print(CLI_CARD_BREAK)
+
     print("\n")
 
 
@@ -266,6 +278,7 @@ def _print_element_tearsheet(
     | ADCPartition
     | ADCSensor
     | ADCSystem
+    | ADCLight
     | ADCImageSensor,
 ) -> None:
 
@@ -291,6 +304,9 @@ def _print_element_tearsheet(
         State: {element.state} {desired_str}
         Battery: {battery}"""
     )
+
+    if isinstance(element, ADCLight) and element.brightness:
+        print(f"        Brightness: {element.brightness}%")
 
     if element.malfunction:
         print("\n        ~~MALFUNCTION~~\n")

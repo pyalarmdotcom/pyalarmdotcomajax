@@ -3,9 +3,7 @@
 import asyncio
 
 import aiohttp
-
 from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.const import ArmingOption
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -23,9 +21,6 @@ async def main() -> None:
             password=PASSWORD,
             websession=session,
             twofactorcookie=TWOFACTOR,
-            forcebypass=ArmingOption.NEVER,
-            noentrydelay=ArmingOption.NEVER,
-            silentarming=ArmingOption.NEVER,
         )
 
         await alarm.async_login()
