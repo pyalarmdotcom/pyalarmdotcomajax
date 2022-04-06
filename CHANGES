@@ -1,3 +1,4 @@
+v0.2.3, 2022-04-06			Fixed CLI asyncio error for Windows systems.
 v0.2.2, 2022-04-05			[BREAKING] Moved action functions from controller to individual devices.
 							Added support for lights.
 							Fixed OTP login workflow in CLI.

@@ -4,6 +4,7 @@ pyalarmdotcomajax CLI.
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
 from __future__ import annotations
+import platform
 
 import argparse
 import asyncio
@@ -11,6 +12,7 @@ import logging
 import sys
 
 import aiohttp
+from attr import has
 import pyalarmdotcomajax
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
@@ -322,4 +324,11 @@ def _print_element_tearsheet(
 
 def main() -> None:
     """Run primary CLI function via asyncio. Main entrypoint for command line tool."""
+
+    # Below is necessary to prevent asyncio "Event loop is closed" error in Windows.
+    if platform.system() == "Windows" and hasattr(
+        asyncio, "WindowsSelectorEventLoopPolicy"
+    ):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+
     asyncio.run(cli())
