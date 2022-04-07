@@ -120,7 +120,6 @@ class ADCPartitionCommand(Enum):
     DISARM = "disarm"
     ARM_STAY = "armStay"
     ARM_AWAY = "armAway"
-    ARM_NIGHT = "armNight"
 
 
 class ADCLockCommand(Enum):

@@ -217,6 +217,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
         force_bypass: bool = False,
         no_entry_delay: bool = False,
         silent_arming: bool = False,
+        night_arming: bool = False,
     ) -> None:
         """Arm alarm system."""
 
@@ -228,6 +229,7 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
             "forceBypass": force_bypass,
             "noEntryDelay": no_entry_delay,
             "silentArming": silent_arming,
+            "nightArming": night_arming,
         }
 
         await self._send_action_callback(
@@ -273,10 +275,11 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
     ) -> None:
         """Arm stay alarm."""
         await self._async_arm(
-            arm_type=ADCPartitionCommand.ARM_NIGHT,
+            arm_type=ADCPartitionCommand.ARM_STAY,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
+            night_arming=True,
         )
 
     async def async_disarm(

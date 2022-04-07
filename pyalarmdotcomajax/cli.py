@@ -4,15 +4,14 @@ pyalarmdotcomajax CLI.
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
 from __future__ import annotations
-import platform
 
 import argparse
 import asyncio
 import logging
+import platform
 import sys
 
 import aiohttp
-from attr import has
 import pyalarmdotcomajax
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
