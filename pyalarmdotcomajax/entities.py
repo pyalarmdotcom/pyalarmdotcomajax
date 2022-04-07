@@ -407,6 +407,8 @@ class ADCSensor(ADCBaseElement):
     class DeviceState(Enum):
         """Enum of sensor states."""
 
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/SensorStatus.js
+
         UNKNOWN = 0
         CLOSED = 1
         OPEN = 2
@@ -414,6 +416,13 @@ class ADCSensor(ADCBaseElement):
         ACTIVE = 4
         DRY = 5
         WET = 6
+
+        # Below not currently supported.
+        # FULL = 7
+        # LOW = 8
+        # OPENED_CLOSED = 9
+        # ISSUE = 10
+        # OK = 11
 
     @property
     def device_subtype(self) -> ADCSensorSubtype | None:

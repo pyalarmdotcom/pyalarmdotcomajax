@@ -55,6 +55,7 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 | 2          | Motion Sensor                          |
 | 5          | Smoke Detector                         |
 | 6          | CO Detector                            |
+| 8          | Freeze Sensor                          |
 | 9          | Panic Button                           |
 | 19         | Glass Break Detector                   |
 | 68         | Panel Image Sensor                     |
@@ -67,7 +68,7 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 The CLI is available by running `adc` from anywhere in your terminal.
 
 ```bash
-usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-d] [-ver]
+usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-x] [-o ONE_TIME_PASSWORD] [-n DEVICE_NAME] [-d] [-ver]
 
 Basic command line debug interface for Alarm.com via pyalarmdotcomajax. Shows device states in various formats.
 
@@ -78,8 +79,14 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         alarm.com password
   -c COOKIE, --cookie COOKIE
-                        two-factor authentication cookie
+                        two-factor authentication cookie. cannot be used with --one-time-password!
   -v, --verbose         show verbose output. -v returns server response for all devices except systems. -vv returns server response for all devices.
+  -x, --include-unsupported
+                        when used with -v, returns data for cameras, lights, and thermostats.
+  -o ONE_TIME_PASSWORD, --one-time-password ONE_TIME_PASSWORD
+                        provide otp code for accounts that have two-factor authentication enabled. cannot be used with --cookie!
+  -n DEVICE_NAME, --device-name DEVICE_NAME
+                        registers a device with this name on alarm.com and requests the two-factor authentication cookie for this device.
   -d, --debug           show pyalarmdotcomajax's debug output.
   -ver, --version       show program's version number and exit
 ```

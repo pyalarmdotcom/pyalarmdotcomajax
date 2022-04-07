@@ -40,6 +40,9 @@ class ExtendedEnumMixin(Enum):
 class ADCOtpType(Enum):
     """Alarm.com two factor authentication type."""
 
+    # https://www.alarm.com/web/system/assets/customer-ember/enums/TwoFactorAuthenticationType.js
+
+    DISABLED = 0
     APP = 1
     SMS = 2
     EMAIL = 4
@@ -101,6 +104,7 @@ class ADCSensorSubtype(IntEnum):
     CONTACT_SENSOR = 1
     MOTION_SENSOR = 2
     SMOKE_DETECTOR = 5
+    FREEZE_SENSOR = 8
     CO_DETECTOR = 6
     PANIC_BUTTON = 9
     GLASS_BREAK_DETECTOR = 19
