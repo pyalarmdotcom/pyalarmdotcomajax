@@ -935,9 +935,9 @@ class ADCController:
             ) as resp:
 
                 if re.search("m=login_fail", str(resp.url)) is not None:
-                    log.error("Login failed.")
-                    log.error("\nResponse URL:\n%s\n", str(resp.url))
-                    log.error(
+                    log.debug("Login failed.")
+                    log.debug("\nResponse URL:\n%s\n", str(resp.url))
+                    log.debug(
                         "\nRequest Headers:\n%s\n", str(resp.request_info.headers)
                     )
                     raise AuthenticationFailed("Invalid username and password.")
