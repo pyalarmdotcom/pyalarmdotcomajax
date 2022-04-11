@@ -306,6 +306,9 @@ def _print_element_tearsheet(
         Battery: {battery}"""
     )
 
+    if element.read_only:
+        print(f"        Read Only: {element.read_only}")
+
     if isinstance(element, ADCLight) and element.brightness:
         print(f"        Brightness: {element.brightness}%")
 
