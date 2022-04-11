@@ -129,7 +129,7 @@ class ADCBaseElement:
         return self._attribs_raw.get("hasState", False)
 
     @property
-    def state(self) -> str | bool | DeviceState | None:
+    def state(self) -> DeviceState | None:
         """Return state."""
 
         try:
@@ -216,6 +216,8 @@ class ADCPartition(DesiredStateMixin, ADCBaseElement):
 
     class DeviceState(Enum):
         """Enum of arming states."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingState.js
 
         UNKNOWN = 0
         DISARMED = 1
@@ -317,7 +319,9 @@ class ADCLock(DesiredStateMixin, ADCBaseElement):
     class DeviceState(Enum):
         """Enum of lock states."""
 
-        FAILED = 0
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/LockStatus.js
+
+        UNKNOWN = 0
         LOCKED = 1
         UNLOCKED = 2
 
@@ -346,8 +350,13 @@ class ADCLight(DesiredStateMixin, ADCBaseElement):
     class DeviceState(Enum):
         """Enum of light states."""
 
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
+
+        OFFLINE = 0
+        NOSTATE = 1
         ON = 2
         OFF = 3
+        LEVELCHANGE = 4
 
     @property
     def available(self) -> bool:
@@ -356,6 +365,8 @@ class ADCLight(DesiredStateMixin, ADCBaseElement):
             self._attribs_raw.get("canReceiveCommands", False)
             and self._attribs_raw.get("remoteCommandsEnabled", False)
             and self._attribs_raw.get("hasPermissionToChangeState", False)
+            and self.state
+            in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
         )
 
     @property
@@ -365,6 +376,12 @@ class ADCLight(DesiredStateMixin, ADCBaseElement):
             return None
 
         return self._attribs_raw.get("lightLevel", 0)
+
+    @property
+    def supports_state_tracking(self) -> bool | None:
+        """Return whether the light reports its current state."""
+
+        return self._attribs_raw.get("stateTrackingEnabled")
 
     async def async_turn_on(self, brightness: int | None = None) -> None:
         """Send turn on command with optional brightness."""
@@ -464,6 +481,9 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
     class DeviceState(Enum):
         """Enum of garage door states."""
 
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
+
+        UNKNOWN = 0
         OPEN = 1
         CLOSED = 2
 

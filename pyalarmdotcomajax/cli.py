@@ -309,8 +309,12 @@ def _print_element_tearsheet(
     if element.read_only:
         print(f"        Read Only: {element.read_only}")
 
-    if isinstance(element, ADCLight) and element.brightness:
-        print(f"        Brightness: {element.brightness}%")
+    if isinstance(element, ADCLight):
+
+        print(f"        Reports State: {element.supports_state_tracking}")
+
+        if element.brightness:
+            print(f"        Brightness: {element.brightness}%")
 
     if element.malfunction:
         print("\n        ~~MALFUNCTION~~\n")
