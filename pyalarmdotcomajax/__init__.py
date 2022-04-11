@@ -38,7 +38,7 @@ from .errors import NagScreen
 from .errors import UnexpectedDataStructure
 from .errors import UnsupportedDevice
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 
 log = logging.getLogger(__name__)
@@ -935,6 +935,11 @@ class ADCController:
             ) as resp:
 
                 if re.search("m=login_fail", str(resp.url)) is not None:
+                    log.error("Login failed.")
+                    log.error("\nResponse URL:\n%s\n", str(resp.url))
+                    log.error(
+                        "\nRequest Headers:\n%s\n", str(resp.request_info.headers)
+                    )
                     raise AuthenticationFailed("Invalid username and password.")
 
                 # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.

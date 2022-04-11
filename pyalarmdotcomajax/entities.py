@@ -90,6 +90,18 @@ class ADCBaseElement:
             "Initialized %s (%s) %s", self.device_type, self._family_raw, self.name
         )
 
+    @property
+    def read_only(self) -> bool | None:
+        """Return whether logged in user has permission to peek in."""
+        return (
+            not result
+            if isinstance(
+                (result := self._attribs_raw.get("hasPermissionToChangeState")),
+                bool,
+            )
+            else None
+        )
+
     class DeviceState(Enum):
         """Placeholder for child device states."""
 
@@ -192,6 +204,11 @@ class ADCSystem(ADCBaseElement):
     def malfunction(self) -> bool | None:
         """Return whether device is malfunctioning."""
         return None
+
+    @property
+    def read_only(self) -> None:
+        """Non-actionable object."""
+        return
 
 
 class ADCPartition(DesiredStateMixin, ADCBaseElement):
@@ -434,6 +451,11 @@ class ADCSensor(ADCBaseElement):
             return ADCSensorSubtype(self._attribs_raw["deviceType"])
         except ValueError:
             return None
+
+    @property
+    def read_only(self) -> None:
+        """Non-actionable object."""
+        return
 
 
 class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):

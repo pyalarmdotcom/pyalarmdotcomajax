@@ -1,3 +1,4 @@
+v0.2.5, 2022-04-08			Added read_only attribute to controllable devices.
 v0.2.4, 2022-04-07			Add freeze sensors.
 							Fixed night arming.
 							Started adding Alarm.com API reference data for future enhancements.
