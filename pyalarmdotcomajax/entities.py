@@ -176,6 +176,11 @@ class ADCBaseElement:
         """Return state description as reported by ADC."""
         return self._attribs_raw.get("displayStateText")
 
+    @property
+    def debug_data(self) -> dict:
+        """Return data that is helpful for debugging."""
+        return self._attribs_raw
+
     # #
     # PLACEHOLDERS
     # #
