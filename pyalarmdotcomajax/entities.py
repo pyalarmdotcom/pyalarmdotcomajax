@@ -371,7 +371,7 @@ class ADCLight(DesiredStateMixin, ADCBaseElement):
             and self._attribs_raw.get("remoteCommandsEnabled", False)
             and self._attribs_raw.get("hasPermissionToChangeState", False)
             and self.state
-            in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
+            in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]  # type: ignore
         )
 
     @property

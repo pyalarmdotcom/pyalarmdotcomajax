@@ -38,7 +38,7 @@ from .errors import NagScreen
 from .errors import UnexpectedDataStructure
 from .errors import UnsupportedDevice
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 
 
 log = logging.getLogger(__name__)
@@ -360,7 +360,7 @@ class ADCController:
         )
 
         if not entities:
-            log.debug("%s: No entities returned.", __name__)
+            log.error("%s: No entities returned.", __name__)
             return
 
         for entity_json, subordinates in entities:
@@ -936,8 +936,8 @@ class ADCController:
 
                 if re.search("m=login_fail", str(resp.url)) is not None:
                     log.error("Login failed.")
-                    log.debug("\nResponse URL:\n%s\n", str(resp.url))
-                    log.debug(
+                    log.error("\nResponse URL:\n%s\n", str(resp.url))
+                    log.error(
                         "\nRequest Headers:\n%s\n", str(resp.request_info.headers)
                     )
                     raise AuthenticationFailed("Invalid username and password.")
@@ -952,11 +952,10 @@ class ADCController:
             log.error("Can not login to Alarm.com")
             raise DataFetchFailed from err
         except KeyError as err:
-            log.error("Unable to extract ajax key from Alarm.com")
-            log.debug("Response: %s", resp)
+            log.error("Unable to extract ajax key from Alarm.com. Response:\n%s", resp)
             raise DataFetchFailed from err
 
-        logging.debug("Logged in to Alarm.com.")
+        log.debug("Logged in to Alarm.com.")
 
     async def async_get_raw_server_responses(
         self, include_systems: bool = False, include_unsupported: bool = False
@@ -997,11 +996,12 @@ class ADCController:
             if len(rsp_errors) != 0:
 
                 error_msg = f"Failed to get data. Response: {rsp_errors}"
-                log.debug(error_msg)
+                log.error(error_msg)
 
                 if rsp_errors[0].get("status") in ["403"]:
                     raise PermissionError(error_msg)
-                elif (
+
+                if (
                     rsp_errors[0].get("status") == "409"
                     and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
                 ):
@@ -1049,11 +1049,12 @@ class ADCController:
         rsp_errors = json_rsp.get("errors", [])
         if len(rsp_errors) != 0:
             error_msg = f"Failed to get data. Response: {rsp_errors}"
-            log.debug(error_msg)
+            log.error(error_msg)
 
             if rsp_errors[0].get("status") in ["403"]:
                 raise PermissionError(error_msg)
-            elif (
+
+            if (
                 rsp_errors[0].get("status") == "409"
                 and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
             ):
