@@ -1,4 +1,5 @@
-v0.2.8, 2022-04-22			No longer tries to log back in when Timeout / Cancelled / ClientError exceptions encountered. Will bubble up and leave to caller to handle.
+v0.2.9, 2022-04-22			No longer tries to log back in when Timeout / Cancelled / ClientError exceptions encountered. Will bubble up and leave to caller to handle.
+v0.2.8, 2022-04-16			Converted major debug messages to errors.
 v0.2.7, 2022-04-09			Added debug data property for all entities.
 v0.2.6, 2022-04-08			Added support for lights that don't report state.
 					Added previously unmapped device states.
