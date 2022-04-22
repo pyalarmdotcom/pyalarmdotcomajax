@@ -38,7 +38,7 @@ from .errors import NagScreen
 from .errors import UnexpectedDataStructure
 from .errors import UnsupportedDevice
 
-__version__ = "0.2.8"
+__version__ = "0.2.9"
 
 
 log = logging.getLogger(__name__)
