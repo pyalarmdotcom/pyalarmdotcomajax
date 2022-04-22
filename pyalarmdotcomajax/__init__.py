@@ -38,7 +38,7 @@ from .errors import NagScreen
 from .errors import UnexpectedDataStructure
 from .errors import UnsupportedDevice
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 
 
 log = logging.getLogger(__name__)
@@ -873,7 +873,7 @@ class ADCController:
 
         return return_items
 
-    async def _async_login_and_get_key(self, attempts: int = 1) -> None:
+    async def _async_login_and_get_key(self) -> None:
         """Load hidden fields from login page."""
         try:
             # load login page once and grab VIEWSTATE/cookies
@@ -907,12 +907,7 @@ class ADCController:
         ) as err:
             log.error("Can not load login page from Alarm.com")
 
-            # Users reporting that this step throws CancelledErrors. Try a second time in 1 minute.
-            if attempts > 0:
-                await asyncio.sleep(60)
-                self._async_login_and_get_key(attempts - 1)
-
-            raise DataFetchFailed from err
+            raise err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract login info from Alarm.com")
             raise UnexpectedDataStructure from err
