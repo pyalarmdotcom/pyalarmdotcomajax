@@ -49,6 +49,7 @@ class ADCController:
 
     URL_BASE = "https://www.alarm.com/"
 
+    # LOGIN & SESSION: BEGIN
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
     LOGIN_PASSWORD_FIELD = "txtPassword"  # nosec
@@ -61,44 +62,48 @@ class ADCController:
     LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
     LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
+    IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
+    IDENTITIES_2FA_NAG_URL_TEMPLATE = "{}system-install/api/identity"
+
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
     EVENTVALIDATION_FIELD = "__EVENTVALIDATION"
     PREVIOUSPAGE_FIELD = "__PREVIOUSPAGE"
 
+    KEEP_ALIVE_CHECK_URL_TEMPLATE = "{}web/KeepAlive.aspx?timestamp={}"
+    KEEP_ALIVE_CHECK_RESPONSE = '{"status":"Keep Alive"}'
+    KEEP_ALIVE_URL = "{}web/api/identities/{}/reloadContext"
+    # LOGIN & SESSION: END
+
+    # DEVICE MANAGEMENT: BEGIN
     PROVIDER_INFO_TEMPLATE = "{}/web/api/appload"
+    TROUBLECONDITIONS_URL_TEMPLATE = (
+        "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
+    )
+
     SYSTEM_URL_TEMPLATE = "{}web/api/systems/systems/{}"
     PARTITION_URL_TEMPLATE = "{}web/api/devices/partitions/{}"
     LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
     SENSOR_URL_TEMPLATE = "{}web/api/devices/sensors/{}"
     GARAGE_DOOR_URL_TEMPLATE = "{}web/api/devices/garageDoors/{}"
-    LOCK_URL_TEMPLATE = "{}web/api/devices/locks/{}"
-    IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
-    IDENTITIES_2FA_NAG_URL_TEMPLATE = "{}system-install/api/identity"
+    LIGHT_URL_TEMPLATE = "{}web/api/devices/lights/{}"
+
     IMAGE_SENSOR_URL_TEMPLATE = "{}/web/api/imageSensor/imageSensors/{}"
     IMAGE_SENSOR_DATA_URL_TEMPLATE = (
         "{}/web/api/imageSensor/imageSensorImages/getRecentImages"
     )
 
-    KEEP_ALIVE_CHECK_URL_TEMPLATE = "{}web/KeepAlive.aspx?timestamp={}"
-    KEEP_ALIVE_CHECK_RESPONSE = '{"status":"Keep Alive"}'
-    KEEP_ALIVE_URL = "{}web/api/identities/{}/reloadContext"
-
-    # Unsupported
+    # Unsupported Devices
     THERMOSTAT_URL_TEMPLATE = "{}web/api/devices/thermostats/{}"
-    LIGHT_URL_TEMPLATE = "{}web/api/devices/lights/{}"
     CAMERA_URL_TEMPLATE = "{}web/api/video/cameras/{}"
-
-    TROUBLECONDITIONS_URL_TEMPLATE = (
-        "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
-    )
+    # DEVICE MANAGEMENT: END
 
     def __init__(
         self,
         username: str,
         password: str,
         websession: aiohttp.ClientSession,
-        twofactorcookie: str | None,
+        twofactorcookie: str | None = None,
     ):
         """Use AIOHTTP to make a request to alarm.com."""
         self._username: str = username
@@ -307,6 +312,7 @@ class ADCController:
         log.debug("Calling update on Alarm.com")
 
         try:
+
             await self._async_get_trouble_conditions()
 
             await self._async_get_systems()
@@ -477,7 +483,11 @@ class ADCController:
 
             element_specific_data: ElementSpecificData | None = None
 
+            #
             # Construct representation of discovered devices.
+            #
+
+            # SPECIAL HANDLING FOR IMAGE SENSORS: Begin
             if device_class == ADCImageSensor:
                 image_data_raw = await self.async_get_raw_server_response(
                     "IMAGE_SENSORS_DATA",
@@ -505,6 +515,9 @@ class ADCController:
                         processed_image_data.append(image_data)
 
                 element_specific_data = {"images": processed_image_data}
+            # SPECIAL HANDLING FOR IMAGE SENSORS: End
+
+            print(entity_json.get("attributes", {}).get("deviceModelId"))
 
             entity_obj = device_class(
                 id_=entity_id,
@@ -953,7 +966,10 @@ class ADCController:
         log.debug("Logged in to Alarm.com.")
 
     async def async_get_raw_server_responses(
-        self, include_systems: bool = False, include_unsupported: bool = False
+        self,
+        include_systems: bool = False,
+        include_image_sensors: bool = False,
+        include_unsupported: bool = False,
     ) -> str:
         """Get raw responses from Alarm.com device endpoints."""
 
@@ -964,9 +980,13 @@ class ADCController:
             ("SENSORS", self.SENSOR_URL_TEMPLATE),
             ("GARAGE_DOORS", self.GARAGE_DOOR_URL_TEMPLATE),
             ("PARTITIONS", self.PARTITION_URL_TEMPLATE),
-            ("IMAGE_SENSORS_DATA", self.IMAGE_SENSOR_DATA_URL_TEMPLATE),
             ("LIGHTS", self.LIGHT_URL_TEMPLATE),
         ]
+
+        if include_image_sensors:
+            endpoints.append(
+                ("IMAGE_SENSORS_DATA", self.IMAGE_SENSOR_DATA_URL_TEMPLATE)
+            )
 
         if include_systems:
             endpoints.append(("SYSTEMS", self.SYSTEM_URL_TEMPLATE))

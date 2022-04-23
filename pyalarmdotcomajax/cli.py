@@ -56,7 +56,7 @@ async def cli() -> None:
         "--verbose",
         help=(
             "show verbose output. -v returns server response for all devices except"
-            " systems. -vv returns server response for all devices."
+            " systems and image sensors. -vv returns server response for all devices."
         ),
         action="count",
         default=0,
@@ -161,12 +161,14 @@ async def cli() -> None:
             await _async_machine_output(
                 alarm=alarm,
                 include_systems=False,
+                include_image_sensors=False,
                 include_unsupported=args.get("include_unsupported", False),
             )
         elif args.get("verbose", 0) > 1:
             await _async_machine_output(
                 alarm=alarm,
                 include_systems=True,
+                include_image_sensors=False,
                 include_unsupported=args.get("include_unsupported", False),
             )
         else:
@@ -179,6 +181,7 @@ async def cli() -> None:
 async def _async_machine_output(
     alarm: ADCController,
     include_systems: bool = False,
+    include_image_sensors: bool = False,
     include_unsupported: bool = False,
 ) -> None:
     """Output raw server responses."""
@@ -186,7 +189,9 @@ async def _async_machine_output(
     try:
         print(
             await alarm.async_get_raw_server_responses(
-                include_systems=include_systems, include_unsupported=include_unsupported
+                include_systems=include_systems,
+                include_image_sensors=include_image_sensors,
+                include_unsupported=include_unsupported,
             )
         )
     except PermissionError:
