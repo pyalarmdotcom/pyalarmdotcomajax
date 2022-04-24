@@ -71,7 +71,6 @@ class ADCRelationshipType(Enum):
     # Not Supported
     # THERMOSTAT = "devices/thermostat"
     # CONFIGURATION = "systems/configuration"
-    # LIGHT = "devices/light"
     # CAMERA = "video/camera"
     # GEO_DEVICE = "geolocation/geo-device"
     # GEO_FENCE = "geolocation/fence"

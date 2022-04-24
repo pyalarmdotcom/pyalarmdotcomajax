@@ -517,8 +517,6 @@ class ADCController:
                 element_specific_data = {"images": processed_image_data}
             # SPECIAL HANDLING FOR IMAGE SENSORS: End
 
-            print(entity_json.get("attributes", {}).get("deviceModelId"))
-
             entity_obj = device_class(
                 id_=entity_id,
                 attribs_raw=entity_json["attributes"],
