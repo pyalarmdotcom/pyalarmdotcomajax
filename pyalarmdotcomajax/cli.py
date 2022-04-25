@@ -56,7 +56,8 @@ async def cli() -> None:
         "--verbose",
         help=(
             "show verbose output. -v returns server response for all devices except"
-            " systems and image sensors. -vv returns server response for all devices."
+            " systems and image sensor base64 images. -vv returns server response for"
+            " all devices."
         ),
         action="count",
         default=0,
@@ -65,7 +66,7 @@ async def cli() -> None:
     parser.add_argument(
         "-x",
         "--include-unsupported",
-        help="when used with -v, returns data for cameras, lights, and thermostats.",
+        help="when used with -v, returns data for all known unsupported devices.",
         action="store_true",
         required=False,
     )
@@ -168,7 +169,7 @@ async def cli() -> None:
             await _async_machine_output(
                 alarm=alarm,
                 include_systems=True,
-                include_image_sensors=False,
+                include_image_sensors=True,
                 include_unsupported=args.get("include_unsupported", False),
             )
         else:

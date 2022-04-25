@@ -57,44 +57,76 @@ class ADCTroubleCondition(TypedDict):
     device_id: str
 
 
-class ADCRelationshipType(Enum):
-    """Library of identified ADC device families."""
-
-    SYSTEM = "systems/system"
-    SENSOR = "devices/sensor"
-    PARTITION = "devices/partition"
-    LOCK = "devices/lock"
-    GARAGE_DOOR = "devices/garage-door"
-    IMAGE_SENSOR_IMAGE = "image-sensor/image-sensor"
-    LIGHT = "devices/light"
-
-    # Not Supported
-    # THERMOSTAT = "devices/thermostat"
-    # CONFIGURATION = "systems/configuration"
-    # CAMERA = "video/camera"
-    # GEO_DEVICE = "geolocation/geo-device"
-    # GEO_FENCE = "geolocation/fence"
-    # SCENE = "automation/scene"
-
-
 class ADCDeviceType(ExtendedEnumMixin):
-    """Enum of SUPPORTED devices using ADC ids."""
+    """Enum of devices using ADC ids."""
 
-    SYSTEM = "systems"
-    SENSOR = "sensors"
-    PARTITION = "partitions"
-    LOCK = "locks"
+    # Supported
     GARAGE_DOOR = "garageDoors"
     IMAGE_SENSOR = "imageSensors"
     LIGHT = "lights"
+    LOCK = "locks"
+    PARTITION = "partitions"
+    SENSOR = "sensors"
+    SYSTEM = "systems"
 
-    # Not Supported
-    # THERMOSTAT = "thermostats"
+    # Unsupported
+    ACCESS_CONTROL = "accessControlAccessPointDevices"
+    CAMERA = "cameras"
+    CAMERA_SD = "sdCardCameras"
+    CAR_MONITOR = "carMonitors"
+    COMMERCIAL_TEMP = "commercialTemperatureSensors"
     # CONFIGURATION = "configuration"
-    # CAMERA = "camera"
-    # GEO_DEVICE = "geo-device"
-    # GEO_FENCE = "fence"
-    # SCENE = "scene"
+    # FENCE = "fences"
+    GATE = "gates"
+    GEO_DEVICE = "geoDevices"
+    IQ_ROUTER = "iqRouters"
+    REMOTE_TEMP = "remoteTemperatureSensors"
+    SCENE = "scenes"
+    SHADE = "shades"
+    SMART_CHIME = "smartChimeDevices"
+    SUMP_PUMP = "sumpPumps"
+    SWITCH = "switches"
+    THERMOSTAT = "thermostats"
+    VALVE_SWITCH = "valveSwitches"
+    WATER_METER = "waterMeters"
+    WATER_SENSOR = "waterSensors"
+    WATER_VALVE = "waterValves"
+    X10_LIGHT = "x10Lights"
+
+
+# class ADCRelationshipType(Enum):
+#     """Library of identified ADC device families."""
+
+#     SYSTEM = "systems/system"
+#     SENSOR = "devices/sensor"
+#     PARTITION = "devices/partition"
+#     LOCK = "devices/lock"
+#     GARAGE_DOOR = "devices/garage-door"
+#     IMAGE_SENSOR_IMAGE = "image-sensor/image-sensor"
+#     LIGHT = "devices/light"
+
+
+# class ADCUnsupportedDeviceType(ExtendedEnumMixin):
+#     """Enum of UNsupported devices using ADC ids."""
+
+#     THERMOSTAT = "devices/thermostat"
+#     CAMERA = "video/camera"
+#     SD_CAMERA = "video/sdCardCamera"
+#     CONFIGURATION = "systems/configuration"
+#     ACCESS_CONTROL = "devices/accessControlAccessPointDevice"
+#     SWITCH = "devices/switche"
+#     WATER_SENSOR = "devices/waterSensor"
+#     SCENE = "automation/scene"
+#     SUMP_PUMP = "devices/sumpPump"
+#     X10_LIGHT = "devices/x10Light"
+#     REMOTE_TEMP = "devices/remoteTemperatureSensor"
+#     COMMERCIAL_TEMP = "devices/commercialTemperatureSensor"
+#     VALVE_SWITCH = "devices/valveSwitch"
+#     BOILER_CONTROL = "automation/boilerControlSystem"
+#     GEODEVICE = "geolocation/geoDevice"
+#     FENCE = "geolocation/fence"
+#     SHADE = "devices/shade"
+#     GATE = "devices/gate"
 
 
 class ADCSensorSubtype(IntEnum):
@@ -151,10 +183,10 @@ class ADCImageSensorCommand(Enum):
 class ElementSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
-    images: list[ImageData] | None
+    images: list[ImageSensorElementSpecificData] | None
 
 
-class ImageData(TypedDict):
+class ImageSensorElementSpecificData(TypedDict):
     """Holds metadata for image sensor images."""
 
     id_: str
