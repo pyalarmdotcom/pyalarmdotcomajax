@@ -12,11 +12,10 @@ from .const import ADCImageSensorCommand
 from .const import ADCLightCommand
 from .const import ADCLockCommand
 from .const import ADCPartitionCommand
-from .const import ADCRelationshipType
 from .const import ADCSensorSubtype
 from .const import ADCTroubleCondition
 from .const import ElementSpecificData
-from .const import ImageData
+from .const import ImageSensorElementSpecificData
 
 log = logging.getLogger(__name__)
 
@@ -86,9 +85,7 @@ class ADCBaseElement:
             self._partition_id: str | None = parent_ids.get("partition")
             self._parent_id_: str | None = parent_ids.get("parent_device")
 
-        log.debug(
-            "Initialized %s (%s) %s", self.device_type, self._family_raw, self.name
-        )
+        log.debug("Initialized %s %s", self._family_raw, self.name)
 
     @property
     def read_only(self) -> bool | None:
@@ -114,14 +111,6 @@ class ADCBaseElement:
     def name(self) -> None | str:
         """Return user-assigned device name."""
         return self._attribs_raw.get("description", None)
-
-    @property
-    def device_type(self) -> None | ADCRelationshipType:
-        """Return normalized device type constant. E.g.: sensor, thermostat, etc."""
-        try:
-            return ADCRelationshipType(self._family_raw)
-        except ValueError:
-            return None
 
     @property
     def has_state(self) -> bool:
@@ -422,7 +411,7 @@ class ADCImageSensor(ADCBaseElement):
         return None
 
     @property
-    def images(self) -> list[ImageData] | None:
+    def images(self) -> list[ImageSensorElementSpecificData] | None:
         """Get a list of images taken by the image sensor."""
 
         if (
