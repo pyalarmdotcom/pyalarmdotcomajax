@@ -161,7 +161,7 @@ async def cli() -> None:
         if args.get("verbose", 0) == 1:
             await _async_machine_output(
                 alarm=alarm,
-                include_systems=False,
+                include_systems=True,
                 include_image_sensors=False,
                 include_unsupported=args.get("include_unsupported", False),
             )

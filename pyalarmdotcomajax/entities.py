@@ -6,6 +6,8 @@ from enum import Enum
 import logging
 from typing import Protocol
 
+from dateutil import parser
+
 from .const import ADCDeviceType
 from .const import ADCGarageDoorCommand
 from .const import ADCImageSensorCommand
@@ -15,7 +17,7 @@ from .const import ADCPartitionCommand
 from .const import ADCSensorSubtype
 from .const import ADCTroubleCondition
 from .const import ElementSpecificData
-from .const import ImageSensorElementSpecificData
+from .const import ImageSensorImage
 
 log = logging.getLogger(__name__)
 
@@ -59,31 +61,37 @@ class ADCBaseElement:
 
     def __init__(
         self,
-        send_action_callback: Callable,
         id_: str,
-        attribs_raw: dict,
+        send_action_callback: Callable,
         subordinates: list,
-        parent_ids: dict | None = None,
-        family_raw: str | None = None,
+        raw_device_data: dict,
         element_specific_data: ElementSpecificData | None = None,
         trouble_conditions: list | None = None,
+        partition_id: str | None = None,
     ) -> None:
         """Initialize base element class."""
+
         self._id_: str = id_
-        self._family_raw: str | None = family_raw
-        self._attribs_raw: dict = attribs_raw
-        self._element_specific_data: ElementSpecificData | None = element_specific_data
-        self._parent_ids: dict | None = parent_ids
+        self._family_raw: str | None = raw_device_data.get("type")
+        self._attribs_raw: dict = raw_device_data.get("attributes", {})
+        self._element_specific_data: ElementSpecificData = (
+            element_specific_data if element_specific_data else {}
+        )
         self._send_action_callback: Callable = send_action_callback
         self._subordinates: list = subordinates
         self.trouble_conditions: list[ADCTroubleCondition] = (
             trouble_conditions if trouble_conditions else []
         )
 
-        if parent_ids:
-            self._system_id: str | None = parent_ids.get("system")
-            self._partition_id: str | None = parent_ids.get("partition")
-            self._parent_id_: str | None = parent_ids.get("parent_device")
+        self._system_id: str | None = (
+            raw_device_data.get("relationships", {})
+            .get("system", {})
+            .get("data", {})
+            .get("id")
+        )
+        self._partition_id: str | None = partition_id
+
+        self.process_element_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
 
@@ -141,14 +149,12 @@ class ADCBaseElement:
     @property
     def system_id(self) -> str | None:
         """Return ID of device's parent system."""
-        return self._parent_ids.get("system") if self._parent_ids is not None else None
+        return self._system_id
 
     @property
     def partition_id(self) -> str | None:
         """Return ID of device's parent partition."""
-        return (
-            self._parent_ids.get("partition") if self._parent_ids is not None else None
-        )
+        return self._partition_id
 
     @property
     def malfunction(self) -> bool | None:
@@ -169,6 +175,11 @@ class ADCBaseElement:
     def debug_data(self) -> dict:
         """Return data that is helpful for debugging."""
         return self._attribs_raw
+
+    def process_element_specific_data(self) -> None:  # pylint: disable=no-self-use
+        """Process element specific data. To be overridden by children."""
+
+        return None
 
     # #
     # PLACEHOLDERS
@@ -405,22 +416,46 @@ class ADCLight(DesiredStateMixin, ADCBaseElement):
 class ADCImageSensor(ADCBaseElement):
     """Represent Alarm.com image sensor element."""
 
+    _recent_images: list[ImageSensorImage] = []
+
+    def process_element_specific_data(self) -> None:
+        """Process recent images."""
+
+        if not (
+            raw_recent_images := self._element_specific_data.get("raw_recent_images")
+        ):
+            return
+
+        for image in raw_recent_images:
+            if (
+                isinstance(image, dict)
+                and str(
+                    image.get("relationships", {})
+                    .get("imageSensor", {})
+                    .get("data", {})
+                    .get("id")
+                )
+                == self.id_
+            ):
+                image_data: ImageSensorImage = {
+                    "id_": image["id"],
+                    "image_b64": image["attributes"]["image"],
+                    "image_src": image["attributes"]["imageSrc"],
+                    "description": image["attributes"]["description"],
+                    "timestamp": parser.parse(image["attributes"]["timestamp"]),
+                }
+                self._recent_images.append(image_data)
+
     @property
     def malfunction(self) -> bool | None:
         """Return whether device is malfunctioning."""
         return None
 
     @property
-    def images(self) -> list[ImageSensorElementSpecificData] | None:
+    def images(self) -> list[ImageSensorImage] | None:
         """Get a list of images taken by the image sensor."""
 
-        if (
-            self._element_specific_data is not None
-            and self._element_specific_data.get("images") is not None
-        ):
-            return self._element_specific_data.get("images")
-
-        return None
+        return self._recent_images
 
     async def async_peek_in(self) -> None:
         """Send peek in command to take photo."""
@@ -498,3 +533,139 @@ class ADCGarageDoor(DesiredStateMixin, ADCBaseElement):
             event=ADCGarageDoorCommand.CLOSE,
             device_id=self.id_,
         )
+
+
+DEVICE_TYPE_METADATA: dict = {
+    "supported": {
+        ADCDeviceType.GARAGE_DOOR: {
+            "relationshipId": "devices/garage-door",
+            "endpoint": "{}web/api/devices/garageDoors/{}",
+            "device_class": ADCGarageDoor,
+        },
+        ADCDeviceType.IMAGE_SENSOR: {
+            "relationshipId": "image-sensor/image-sensor",
+            "endpoint": "{}web/api/imageSensor/imageSensors/{}",
+            "device_class": ADCImageSensor,
+            "additional_endpoints": {
+                "recent_images": (
+                    "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
+                )
+            },
+        },
+        ADCDeviceType.LIGHT: {
+            "relationshipId": "devices/light",
+            "endpoint": "{}web/api/devices/lights/{}",
+            "device_class": ADCLight,
+        },
+        ADCDeviceType.LOCK: {
+            "relationshipId": "devices/lock",
+            "endpoint": "{}web/api/devices/locks/{}",
+            "device_class": ADCLock,
+        },
+        ADCDeviceType.PARTITION: {
+            "relationshipId": "devices/partition",
+            "endpoint": "{}web/api/devices/partitions/{}",
+            "device_class": ADCPartition,
+        },
+        ADCDeviceType.SENSOR: {
+            "relationshipId": "devices/sensor",
+            "endpoint": "{}web/api/devices/sensors/{}",
+            "device_class": ADCSensor,
+        },
+        ADCDeviceType.SYSTEM: {
+            "relationshipId": "systems/system",
+            "endpoint": "{}web/api/systems/systems/{}",
+            "device_class": ADCSystem,
+        },
+    },
+    "unsupported": {
+        ADCDeviceType.ACCESS_CONTROL: {
+            "relationshipId": "devices/access-control-access-point-device",
+            "endpoint": "{}web/api/devices/accessControlAccessPointDevices/{}",
+        },
+        ADCDeviceType.CAMERA: {
+            "relationshipId": "video/camera",
+            "endpoint": "{}web/api/video/cameras/{}",
+        },
+        ADCDeviceType.CAMERA_SD: {
+            "relationshipId": "video/sd-card-camera",
+            "endpoint": "{}web/api/video/sdCardCameras/{}",
+        },
+        ADCDeviceType.CAR_MONITOR: {
+            "relationshipId": "devices/car-monitor",
+            "endpoint": "{}web/api/devices/carMonitors{}",
+        },
+        ADCDeviceType.COMMERCIAL_TEMP: {
+            "relationshipId": "devices/commercial-temperature-sensor",
+            "endpoint": "{}web/api/devices/commercialTemperatureSensors/{}",
+        },
+        # ADCDeviceType.CONFIGURATION: {
+        #     "relationshipId": "configuration",
+        #     "endpoint": "{}web/api/systems/configurations/{}",
+        # },
+        # ADCDeviceType.FENCE: {
+        #     "relationshipId": "",
+        #     "endpoint": "{}web/api/geolocation/fences/{}",
+        # },
+        ADCDeviceType.GATE: {
+            "relationshipId": "devices/gate",
+            "endpoint": "{}web/api/devices/gates/{}",
+        },
+        ADCDeviceType.GEO_DEVICE: {
+            "relationshipId": "geolocation/geo-device",
+            "endpoint": "{}web/api/geolocation/geoDevices/{}",
+        },
+        ADCDeviceType.IQ_ROUTER: {
+            "relationshipId": "devices/iq-router",
+            "endpoint": "{}web/api/devices/iqRouters/{}",
+        },
+        ADCDeviceType.REMOTE_TEMP: {
+            "relationshipId": "devices/remote-temperature-sensor",
+            "endpoint": "{}web/api/devices/remoteTemperatureSensors/{}",
+        },
+        ADCDeviceType.SCENE: {
+            "relationshipId": "automation/scene",
+            "endpoint": "{}web/api/automation/scenes/{}",
+        },
+        ADCDeviceType.SHADE: {
+            "relationshipId": "devices/shade",
+            "endpoint": "{}web/api/devices/shades/{}",
+        },
+        ADCDeviceType.SMART_CHIME: {
+            "relationshipId": "devices/smart-chime-device",
+            "endpoint": "{}web/api/devices/smartChimeDevices/{}",
+        },
+        ADCDeviceType.SUMP_PUMP: {
+            "relationshipId": "devices/sump-pump",
+            "endpoint": "{}web/api/devices/sumpPumps/{}",
+        },
+        ADCDeviceType.SWITCH: {
+            "relationshipId": "devices/switch",
+            "endpoint": "{}web/api/devices/switches/{}",
+        },
+        ADCDeviceType.THERMOSTAT: {
+            "relationshipId": "devices/thermostat",
+            "endpoint": "{}web/api/devices/thermostats/{}",
+        },
+        ADCDeviceType.VALVE_SWITCH: {
+            "relationshipId": "valve-switch",
+            "endpoint": "{}web/api/devices/valveSwitches/{}",
+        },
+        ADCDeviceType.WATER_METER: {
+            "relationshipId": "devices/water-meter",
+            "endpoint": "{}web/api/devices/waterMeters/{}",
+        },
+        ADCDeviceType.WATER_SENSOR: {
+            "relationshipId": "devices/water-sensor",
+            "endpoint": "{}web/api/devices/waterSensors/{}",
+        },
+        ADCDeviceType.WATER_VALVE: {
+            "relationshipId": "devices/water-valve",
+            "endpoint": "{}web/api/devices/waterValves/{}",
+        },
+        ADCDeviceType.X10_LIGHT: {
+            "relationshipId": "devices/x10light",
+            "endpoint": "{}web/api/devices/x10Lights/{}",
+        },
+    },
+}

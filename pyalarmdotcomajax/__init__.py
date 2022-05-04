@@ -9,7 +9,6 @@ import re
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
-from dateutil import parser
 
 from .const import ADCDeviceType
 from .const import ADCGarageDoorCommand
@@ -21,7 +20,6 @@ from .const import ADCPartitionCommand
 from .const import ADCTroubleCondition
 from .const import AuthResult
 from .const import ElementSpecificData
-from .const import ImageSensorElementSpecificData
 from .const import TWO_FACTOR_COOKIE_NAME
 from .entities import ADCGarageDoor
 from .entities import ADCImageSensor
@@ -30,153 +28,18 @@ from .entities import ADCLock
 from .entities import ADCPartition
 from .entities import ADCSensor
 from .entities import ADCSystem
+from .entities import DEVICE_TYPE_METADATA
 from .errors import AuthenticationFailed
 from .errors import BadAccount
 from .errors import DataFetchFailed
-from .errors import DeviceTypeNotAuthorized
 from .errors import NagScreen
 from .errors import UnexpectedDataStructure
 from .errors import UnsupportedDevice
 
-__version__ = "0.2.10"
+__version__ = "0.2.11"
 
 
 log = logging.getLogger(__name__)
-
-DEVICE_TYPE_METADATA: dict = {
-    "supported": {
-        ADCDeviceType.GARAGE_DOOR: {
-            "relationshipId": "devices/garage-door",
-            "endpoint": "{}web/api/devices/garageDoors/{}",
-            "device_class": ADCGarageDoor,
-        },
-        ADCDeviceType.IMAGE_SENSOR: {
-            "relationshipId": "image-sensor/image-sensor",
-            "endpoint": "{}web/api/imageSensor/imageSensors/{}",
-            "device_class": ADCImageSensor,
-            "additional_endpoints": {
-                "recent_images": (
-                    "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
-                )
-            },
-        },
-        ADCDeviceType.LIGHT: {
-            "relationshipId": "devices/light",
-            "endpoint": "{}web/api/devices/lights/{}",
-            "device_class": ADCLight,
-        },
-        ADCDeviceType.LOCK: {
-            "relationshipId": "devices/lock",
-            "endpoint": "{}web/api/devices/locks/{}",
-            "device_class": ADCLock,
-        },
-        ADCDeviceType.PARTITION: {
-            "relationshipId": "devices/partition",
-            "endpoint": "{}web/api/devices/partitions/{}",
-            "device_class": ADCPartition,
-        },
-        ADCDeviceType.SENSOR: {
-            "relationshipId": "devices/sensor",
-            "endpoint": "{}web/api/devices/sensors/{}",
-            "device_class": ADCSensor,
-        },
-        ADCDeviceType.SYSTEM: {
-            "relationshipId": "systems/system",
-            "endpoint": "{}web/api/systems/systems/{}",
-            "device_class": ADCSystem,
-        },
-    },
-    "unsupported": {
-        ADCDeviceType.ACCESS_CONTROL: {
-            "relationshipId": "devices/access-control-access-point-device",
-            "endpoint": "{}web/api/devices/accessControlAccessPointDevices/{}",
-        },
-        ADCDeviceType.CAMERA: {
-            "relationshipId": "video/camera",
-            "endpoint": "{}web/api/video/cameras/{}",
-        },
-        ADCDeviceType.CAMERA_SD: {
-            "relationshipId": "video/sd-card-camera",
-            "endpoint": "{}web/api/video/sdCardCameras/{}",
-        },
-        ADCDeviceType.CAR_MONITOR: {
-            "relationshipId": "devices/car-monitor",
-            "endpoint": "{}web/api/devices/carMonitors{}",
-        },
-        ADCDeviceType.COMMERCIAL_TEMP: {
-            "relationshipId": "devices/commercial-temperature-sensor",
-            "endpoint": "{}web/api/devices/commercialTemperatureSensors/{}",
-        },
-        # ADCDeviceType.CONFIGURATION: {
-        #     "relationshipId": "configuration",
-        #     "endpoint": "{}web/api/systems/configurations/{}",
-        # },
-        # ADCDeviceType.FENCE: {
-        #     "relationshipId": "",
-        #     "endpoint": "{}web/api/geolocation/fences/{}",
-        # },
-        ADCDeviceType.GATE: {
-            "relationshipId": "devices/gate",
-            "endpoint": "{}web/api/devices/gates/{}",
-        },
-        ADCDeviceType.GEO_DEVICE: {
-            "relationshipId": "geolocation/geo-device",
-            "endpoint": "{}web/api/geolocation/geoDevices/{}",
-        },
-        ADCDeviceType.IQ_ROUTER: {
-            "relationshipId": "devices/iq-router",
-            "endpoint": "{}web/api/devices/iqRouters/{}",
-        },
-        ADCDeviceType.REMOTE_TEMP: {
-            "relationshipId": "devices/remote-temperature-sensor",
-            "endpoint": "{}web/api/devices/remoteTemperatureSensors/{}",
-        },
-        ADCDeviceType.SCENE: {
-            "relationshipId": "automation/scene",
-            "endpoint": "{}web/api/automation/scenes/{}",
-        },
-        ADCDeviceType.SHADE: {
-            "relationshipId": "devices/shade",
-            "endpoint": "{}web/api/devices/shades/{}",
-        },
-        ADCDeviceType.SMART_CHIME: {
-            "relationshipId": "devices/smart-chime-device",
-            "endpoint": "{}web/api/devices/smartChimeDevices/{}",
-        },
-        ADCDeviceType.SUMP_PUMP: {
-            "relationshipId": "devices/sump-pump",
-            "endpoint": "{}web/api/devices/sumpPumps/{}",
-        },
-        ADCDeviceType.SWITCH: {
-            "relationshipId": "devices/switch",
-            "endpoint": "{}web/api/devices/switches/{}",
-        },
-        ADCDeviceType.THERMOSTAT: {
-            "relationshipId": "devices/thermostat",
-            "endpoint": "{}web/api/devices/thermostats/{}",
-        },
-        ADCDeviceType.VALVE_SWITCH: {
-            "relationshipId": "valve-switch",
-            "endpoint": "{}web/api/devices/valveSwitches/{}",
-        },
-        ADCDeviceType.WATER_METER: {
-            "relationshipId": "devices/water-meter",
-            "endpoint": "{}web/api/devices/waterMeters/{}",
-        },
-        ADCDeviceType.WATER_SENSOR: {
-            "relationshipId": "devices/water-sensor",
-            "endpoint": "{}web/api/devices/waterSensors/{}",
-        },
-        ADCDeviceType.WATER_VALVE: {
-            "relationshipId": "devices/water-valve",
-            "endpoint": "{}web/api/devices/waterValves/{}",
-        },
-        ADCDeviceType.X10_LIGHT: {
-            "relationshipId": "devices/x10light",
-            "endpoint": "{}web/api/devices/x10Lights/{}",
-        },
-    },
-}
 
 
 class ADCController:
@@ -235,7 +98,6 @@ class ADCController:
             "Accept": "application/vnd.api+json",
             "ajaxrequestuniquekey": None,
         }
-        self._url_base: str = self.URL_BASE
         self._two_factor_cookie: dict = (
             {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
         )
@@ -244,6 +106,8 @@ class ADCController:
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
+
+        # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
         self._partition_map: dict = {}
 
         self._trouble_conditions: dict = {}
@@ -339,7 +203,7 @@ class ADCController:
             )
 
             async with self._websession.post(
-                url=request_url.format(self._url_base, self._user_id),
+                url=request_url.format(self.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
             ) as resp:
                 if resp.status != 200:
@@ -370,7 +234,7 @@ class ADCController:
 
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(
-                    self._url_base, self._user_id
+                    self.URL_BASE, self._user_id
                 ),
                 headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": self._two_factor_method.value},
@@ -405,7 +269,7 @@ class ADCController:
 
                 async with self._websession.post(
                     url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(
-                        self._url_base, self._user_id
+                        self.URL_BASE, self._user_id
                     ),
                     headers=self._ajax_headers,
                     json={"deviceName": device_name},
@@ -430,229 +294,159 @@ class ADCController:
         return None
 
     async def async_update(self, device_type: ADCDeviceType | None = None) -> None:
-        """Fetch the latest state according to device."""
+        """Fetch latest device data."""
+
         log.debug("Calling update on Alarm.com")
 
         try:
 
             await self._async_get_trouble_conditions()
 
-            await self._async_get_devices(ADCDeviceType.SYSTEM, self.systems)
+            device_types: list[ADCDeviceType] = (
+                [ADCDeviceType.SYSTEM, device_type]
+                if device_type
+                else list(DEVICE_TYPE_METADATA["supported"].keys())
+            )
 
-            if device_type in [ADCDeviceType.PARTITION, None]:
-                await self._async_get_devices(ADCDeviceType.PARTITION, self.partitions)
-
-            if device_type in [ADCDeviceType.SENSOR, None]:
-                await self._async_get_devices(ADCDeviceType.SENSOR, self.sensors)
-
-            if device_type in [ADCDeviceType.GARAGE_DOOR, None]:
-                await self._async_get_devices(
-                    ADCDeviceType.GARAGE_DOOR, self.garage_doors
-                )
-
-            if device_type == ADCDeviceType.LOCK or device_type is None:
-                await self._async_get_devices(ADCDeviceType.LOCK, self.locks)
-
-            if device_type == ADCDeviceType.LIGHT or device_type is None:
-                await self._async_get_devices(ADCDeviceType.LIGHT, self.lights)
-
-            if device_type in [ADCDeviceType.IMAGE_SENSOR, None]:
-                await self._async_get_devices(
-                    ADCDeviceType.IMAGE_SENSOR, self.image_sensors
-                )
+            await self._async_get_and_build_devices(device_types)
 
         except (PermissionError, UnexpectedDataStructure) as err:
             raise err
 
     #
     #
-    ####################
-    # HELPER FUNCTIONS #
-    ####################
+    #####################
+    # PRIVATE FUNCTIONS #
+    #####################
     #
     # Help process data returned by the API
 
-    # Get functions build a new internal list of entities before assigning to their respective instance variables.
-    # If we assign to the instance variable directly, the same elements will be added to the list every time we update.
-
-    async def _async_get_devices(
+    async def _async_get_and_build_devices(
         self,
-        device_type: ADCDeviceType,
-        device_storage: list,
+        device_types: list[ADCDeviceType],
     ) -> None:
+        """Get data for the specified device types and build objects."""
 
-        #
-        # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
-        #
-        try:
-            device_class: (
-                type[ADCGarageDoor]
-                | type[ADCLock]
-                | type[ADCSensor]
-                | type[ADCImageSensor]
-                | type[ADCLight]
-                | type[ADCPartition]
-                | type[ADCSystem]
-            ) = DEVICE_TYPE_METADATA["supported"][device_type]["device_class"]
-        except KeyError as err:
-            raise UnsupportedDevice from err
+        for device_type in device_types:
 
-        #
-        # GET ALL DEVICES WITHIN CLASS
-        #
-        try:
-            entities = await self._async_get_items_and_subordinates(
-                device_type=device_type
-            )
+            #
+            # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
+            #
+            try:
+                device_class: (
+                    type[ADCGarageDoor]
+                    | type[ADCLock]
+                    | type[ADCSensor]
+                    | type[ADCImageSensor]
+                    | type[ADCLight]
+                    | type[ADCPartition]
+                    | type[ADCSystem]
+                ) = DEVICE_TYPE_METADATA["supported"][device_type]["device_class"]
 
-        except BadAccount as err:
-            # Indicates fatal account error.
-            raise PermissionError from err
+            except KeyError as err:
+                raise UnsupportedDevice from err
 
-        except DeviceTypeNotAuthorized:
-            # Indicates that device type is not supported but we should proceed with other types.
-            # TODO: Bubble up notification that this device type is not supported so that the requesting script can stop asking for updates for this specific device type.
-            return
+            #############################
+            # FETCH DATA FROM ALARM.COM #
+            #############################
 
-        if not entities:
-            return
+            #
+            # GET ALL DEVICES WITHIN SPECIFIED CLASS
+            #
+            try:
+                devices = await self._async_get_items_and_subordinates(
+                    device_type=device_type
+                )
 
-        #
-        # MAKE ADDITIONAL CALLS IF REQUIRED FOR DEVICE TYPE
-        #
-        additional_endpoint_raw_results: dict = {}
+            except BadAccount as err:
+                # Indicates fatal account error.
+                raise PermissionError from err
 
-        try:
+            if not devices:
+                pass
 
-            additional_endpoints: dict = DEVICE_TYPE_METADATA["supported"][device_type][
-                "additional_endpoints"
-            ]
+            #
+            # MAKE ADDITIONAL CALLS IF REQUIRED FOR DEVICE TYPE
+            #
+            additional_endpoint_raw_results: dict = {}
 
-            for name, url in additional_endpoints.items():
-                additional_endpoint_raw_results[
-                    name
-                ] = await self._async_get_items_and_subordinates(url=url)
+            try:
 
-        except KeyError:
+                additional_endpoints: dict = DEVICE_TYPE_METADATA["supported"][
+                    device_type
+                ]["additional_endpoints"]
 
-            pass
+                for name, url in additional_endpoints.items():
+                    additional_endpoint_raw_results[
+                        name
+                    ] = await self._async_get_items_and_subordinates(url=url)
 
-        temp_device_storage = []
+            except KeyError:
 
-        for entity_json, subordinates in entities:
+                pass
 
-            entity_id = entity_json["id"]
-
-            system_id = (
-                entity_json.get("relationships", {})
-                .get("system", {})
-                .get("data", {})
-                .get("id")
-            )
-
-            element_specific_data: ElementSpecificData | None = None
-
-            #################
-            # PREPROCESSING #
-            #################
+            ##############################
+            # PREPROCESS ADDITIONAL DATA #
+            ##############################
 
             #
             # PREPROCESSING FOR IMAGE SENSORS
             #
-            # Extract recent images
-            if device_class is ADCImageSensor:
+            # Extract recent images from image sensors
 
-                # Mypy wasn't happy when structured as a filter. Potential for stale entity_id.
-                processed_image_data: list[ImageSensorElementSpecificData] = []
+            element_specific_data: dict[str, ElementSpecificData] = {}
+
+            if device_class is ADCImageSensor:
                 for image in additional_endpoint_raw_results["recent_images"]:
-                    if (
-                        isinstance(image, dict)
-                        and str(
+                    if isinstance(image, dict) and (
+                        image_sensor_id := str(
                             image.get("relationships", {})
                             .get("imageSensor", {})
                             .get("data", {})
                             .get("id")
                         )
-                        == entity_id
                     ):
-                        image_data: ImageSensorElementSpecificData = {
-                            "id_": image["id"],
-                            "image_b64": image["attributes"]["image"],
-                            "image_src": image["attributes"]["imageSrc"],
-                            "description": image["attributes"]["description"],
-                            "timestamp": parser.parse(image["attributes"]["timestamp"]),
-                        }
-                        processed_image_data.append(image_data)
 
-                element_specific_data = {"images": processed_image_data}
+                        element_specific_data.setdefault(
+                            image_sensor_id, {}
+                        ).setdefault("raw_recent_images", set()).add(image)
 
             ###################
             # BASE PROCESSING #
             ###################
 
-            #
-            # BASE PROCESSING FOR SYSTEMS
-            #
+            temp_device_storage: list = []
+
+            for entity_json, subordinates in devices:
+
+                entity_id = entity_json["id"]
+
+                entity_obj = device_class(
+                    id_=entity_id,
+                    raw_device_data=entity_json,
+                    subordinates=subordinates,
+                    element_specific_data=element_specific_data.get(entity_id),
+                    send_action_callback=self.async_send,
+                    trouble_conditions=self._trouble_conditions.get(entity_id),
+                    partition_id=self._partition_map.get(entity_id),
+                )
+
+                temp_device_storage.append(entity_obj)
 
             if device_class is ADCSystem:
-
-                parent_ids = {"system": system_id}
-
-                # Construct representation of discovered partitions.
-                entity_obj = device_class(
-                    id_=entity_id,
-                    attribs_raw=entity_json["attributes"],
-                    family_raw=entity_json["type"],
-                    send_action_callback=self.async_send,
-                    subordinates=subordinates,
-                    parent_ids=parent_ids,
-                    trouble_conditions=self._trouble_conditions.get(entity_id),
-                )
-
-            #
-            # BASE PROCESSING FOR PARTITIONS
-            #
-
-            if device_class is ADCPartition:
-
-                parent_ids = {"system": system_id}
-
-                # Construct representation of discovered partitions.
-                entity_obj = device_class(
-                    id_=entity_id,
-                    attribs_raw=entity_json["attributes"],
-                    family_raw=entity_json["type"],
-                    send_action_callback=self.async_send,
-                    subordinates=subordinates,
-                    parent_ids=parent_ids,
-                    trouble_conditions=self._trouble_conditions.get(entity_id),
-                )
-
-            #
-            # BASE PROCESSING FOR ALL OTHER DEVICES
-            #
-
-            if device_class not in [ADCPartition, ADCSystem]:
-
-                partition_id = self._partition_map.get(entity_id)
-                parent_ids = {"system": system_id, "partition": partition_id}
-
-                # Construct representation of discovered devices.
-
-                entity_obj = device_class(
-                    id_=entity_id,
-                    attribs_raw=entity_json["attributes"],
-                    family_raw=entity_json["type"],
-                    subordinates=subordinates,
-                    parent_ids=parent_ids,
-                    element_specific_data=element_specific_data,
-                    send_action_callback=self.async_send,
-                    trouble_conditions=self._trouble_conditions.get(entity_id),
-                )
-
-            temp_device_storage.append(entity_obj)
-
-        device_storage[:] = temp_device_storage
+                self.systems[:] = temp_device_storage
+            elif device_class is ADCPartition:
+                self.partitions[:] = temp_device_storage
+            elif device_class is ADCSensor:
+                self.sensors[:] = temp_device_storage
+            elif device_class is ADCGarageDoor:
+                self.garage_doors[:] = temp_device_storage
+            elif device_class is ADCLock:
+                self.locks[:] = temp_device_storage
+            elif device_class is ADCLight:
+                self.lights[:] = temp_device_storage
+            elif device_class is ADCImageSensor:
+                self.image_sensors[:] = temp_device_storage
 
     #
     #
@@ -683,7 +477,7 @@ class ADCController:
         msg_body["statePollOnly"] = False
 
         url = (
-            f"{DEVICE_TYPE_METADATA['supported'][device_type]['endpoint'].format(self._url_base, device_id)}/{event.value}"
+            f"{DEVICE_TYPE_METADATA['supported'][device_type]['endpoint'].format(self.URL_BASE, device_id)}/{event.value}"
         )
         log.debug("Url %s", url)
 
@@ -750,7 +544,7 @@ class ADCController:
         async with self._websession.get(
             url=DEVICE_TYPE_METADATA["supported"][ADCDeviceType.SYSTEM][
                 "endpoint"
-            ].format(self._url_base, ""),
+            ].format(self.URL_BASE, ""),
             headers=self._ajax_headers,
         ) as resp:
             json_rsp = await (resp.json())
@@ -764,7 +558,7 @@ class ADCController:
                     # Get 2FA type ID
                     async with self._websession.get(
                         url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(
-                            self._url_base, self._user_id
+                            self.URL_BASE, self._user_id
                         ),
                         headers=self._ajax_headers,
                     ) as resp:
@@ -791,13 +585,13 @@ class ADCController:
         """Get user id, email address, provider name, etc."""
         try:
             async with self._websession.get(
-                url=self.IDENTITIES_URL_TEMPLATE.format(self._url_base, ""),
+                url=self.IDENTITIES_URL_TEMPLATE.format(self.URL_BASE, ""),
                 headers=self._ajax_headers,
                 cookies=self._two_factor_cookie,
             ) as resp:
                 json_rsp = await (resp.json())
 
-                log.debug("Got identity info:\n%s", json_rsp)
+                log.debug("Got identity info:\n%s", json.dumps(json_rsp))
 
                 self._user_id = json_rsp["data"][0]["id"]
                 self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
@@ -824,7 +618,7 @@ class ADCController:
         """Get trouble conditions for all devices."""
         try:
             async with self._websession.get(
-                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self._url_base, ""),
+                url=self.TROUBLECONDITIONS_URL_TEMPLATE.format(self.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
                 json_rsp = await (resp.json())
@@ -884,7 +678,7 @@ class ADCController:
         #
 
         async with self._websession.get(
-            url=full_path.format(self._url_base, ""),
+            url=full_path.format(self.URL_BASE, ""),
             headers=self._ajax_headers,
         ) as resp:
             json_rsp = await (resp.json())
@@ -979,7 +773,6 @@ class ADCController:
                                         (sub_device["id"], sub_device["type"])
                                     )
 
-                                    # Individual devices don't list their associated partitions. We'll use this map to retrieve partition id when each device is created.
                                     if device_type == ADCDeviceType.PARTITION:
                                         self._partition_map[sub_device["id"]] = device[
                                             "id"
@@ -1088,9 +881,8 @@ class ADCController:
             for device_type, device_type_metadata in DEVICE_TYPE_METADATA[
                 "supported"
             ].items()
-            if device_type is not ADCDeviceType.SYSTEM
-            and not include_systems
-            and isinstance(device_type, ADCDeviceType)
+            if isinstance(device_type, ADCDeviceType)
+            and not (device_type is ADCDeviceType.SYSTEM and not include_systems)
         ]
 
         endpoints.append(("IMAGE_SENSORS_DATA", self.IMAGE_SENSOR_DATA_URL_TEMPLATE))
@@ -1104,9 +896,8 @@ class ADCController:
                 for device_type, device_type_metadata in DEVICE_TYPE_METADATA[
                     "unsupported"
                 ].items()
-                if device_type is not ADCDeviceType.SYSTEM
-                and not include_systems
-                and isinstance(device_type, ADCDeviceType)
+                if isinstance(device_type, ADCDeviceType)
+                and not (device_type is ADCDeviceType.SYSTEM and not include_systems)
             ]
 
         for name, url_template in endpoints:
@@ -1114,7 +905,7 @@ class ADCController:
             return_str += f"\n\n====[{name}]====\n\n"
 
             async with self._websession.get(
-                url=url_template.format(self._url_base, ""),
+                url=url_template.format(self.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
                 try:

@@ -94,41 +94,6 @@ class ADCDeviceType(ExtendedEnumMixin):
     X10_LIGHT = "x10Lights"
 
 
-# class ADCRelationshipType(Enum):
-#     """Library of identified ADC device families."""
-
-#     SYSTEM = "systems/system"
-#     SENSOR = "devices/sensor"
-#     PARTITION = "devices/partition"
-#     LOCK = "devices/lock"
-#     GARAGE_DOOR = "devices/garage-door"
-#     IMAGE_SENSOR_IMAGE = "image-sensor/image-sensor"
-#     LIGHT = "devices/light"
-
-
-# class ADCUnsupportedDeviceType(ExtendedEnumMixin):
-#     """Enum of UNsupported devices using ADC ids."""
-
-#     THERMOSTAT = "devices/thermostat"
-#     CAMERA = "video/camera"
-#     SD_CAMERA = "video/sdCardCamera"
-#     CONFIGURATION = "systems/configuration"
-#     ACCESS_CONTROL = "devices/accessControlAccessPointDevice"
-#     SWITCH = "devices/switche"
-#     WATER_SENSOR = "devices/waterSensor"
-#     SCENE = "automation/scene"
-#     SUMP_PUMP = "devices/sumpPump"
-#     X10_LIGHT = "devices/x10Light"
-#     REMOTE_TEMP = "devices/remoteTemperatureSensor"
-#     COMMERCIAL_TEMP = "devices/commercialTemperatureSensor"
-#     VALVE_SWITCH = "devices/valveSwitch"
-#     BOILER_CONTROL = "automation/boilerControlSystem"
-#     GEODEVICE = "geolocation/geoDevice"
-#     FENCE = "geolocation/fence"
-#     SHADE = "devices/shade"
-#     GATE = "devices/gate"
-
-
 class ADCSensorSubtype(IntEnum):
     """Library of identified ADC device types."""
 
@@ -183,10 +148,10 @@ class ADCImageSensorCommand(Enum):
 class ElementSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
-    images: list[ImageSensorElementSpecificData] | None
+    raw_recent_images: set[dict]
 
 
-class ImageSensorElementSpecificData(TypedDict):
+class ImageSensorImage(TypedDict):
     """Holds metadata for image sensor images."""
 
     id_: str
