@@ -173,6 +173,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
 
+                # TODO: Remove this. Testing only.
+                print(text)
+                log.error(text)
+
                 # Build list of cameras (everything or selection from camera_names)
 
                 child: Tag
@@ -349,37 +353,43 @@ class CameraSkybellControllerExtension(ControllerExtension):
             "settings": {},
         }
 
-        try:
-            for field_name in self._FORM_FIELDS_GENERIC:
+        for field_name in self._FORM_FIELDS_GENERIC:
 
-                field = tree.find(attrs={"name": field_name})
+            field = tree.find(attrs={"name": field_name})
 
+            try:
                 value = extract_field_value(field)
+            except UnexpectedDataStructure as err:
+                log.error("Unable to extract field. Failed on field %s.", field_name)
+                raise err
 
-                raw_attribs[field_name] = value
+            raw_attribs[field_name] = value
 
-            for field_name, property_name in self._FORM_FIELDS_META:
+        for field_name, property_name in self._FORM_FIELDS_META:
 
-                field = tree.find(attrs={"name": field_name})
-
+            field = tree.find(attrs={"name": field_name})
+            try:
                 value = extract_field_value(field)
+            except UnexpectedDataStructure as err:
+                log.error("Unable to extract field. Failed on field %s.", field_name)
+                raise err
 
-                raw_attribs[field_name] = value
-                properties[property_name] = value  # type: ignore
+            raw_attribs[field_name] = value
+            properties[property_name] = value  # type: ignore
 
-            for field_name, config_option in self._FORM_FIELDS_SETTINGS:
+        for field_name, config_option in self._FORM_FIELDS_SETTINGS:
 
-                field = tree.find(attrs={"name": field_name})
+            field = tree.find(attrs={"name": field_name})
 
+            try:
                 value = extract_field_value(field)
+            except UnexpectedDataStructure as err:
+                log.error("Unable to extract field. Failed on field %s.", field_name)
+                raise err
 
-                raw_attribs[field_name] = value
-                config_option.update(ConfigurationOption({"current_value": value}))
-                properties["settings"][config_option.get("slug")] = config_option  # type: ignore
-
-        except UnexpectedDataStructure as err:
-            log.error("Unable to extract field. Failed on field %s.", field_name)
-            raise err
+            raw_attribs[field_name] = value
+            config_option.update(ConfigurationOption({"current_value": value}))
+            properties["settings"][config_option.get("slug")] = config_option  # type: ignore
 
         properties["raw_attribs"] = raw_attribs
 
