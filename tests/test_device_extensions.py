@@ -21,7 +21,7 @@ async def test__extension_camera_skybellhd__fetch(
     async with aiohttp.ClientSession() as websession:
         extension = CameraSkybellControllerExtension()
         configs: list[ExtendedProperties] = await extension.fetch(
-            websession=websession, cookies={"foo": "bar"}
+            websession=websession, headers={"foo": "bar"}
         )
 
     assert configs[0]["device_name"] == "Front Doorbell"

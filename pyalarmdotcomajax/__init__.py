@@ -73,7 +73,7 @@ class OtpType(Enum):
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
 
-    AJAX_HEADERS = {
+    AJAX_HEADERS_TEMPLATE = {
         "Accept": "application/vnd.api+json",
         "ajaxrequestuniquekey": None,
     }
@@ -132,6 +132,7 @@ class AlarmController:
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
+        self._ajax_headers: dict = self.AJAX_HEADERS_TEMPLATE
 
         # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
         self._partition_map: dict = {}
@@ -233,7 +234,7 @@ class AlarmController:
 
             async with self._websession.post(
                 url=request_url.format(c.URL_BASE, self._user_id),
-                headers=self.AJAX_HEADERS,
+                headers=self._ajax_headers,
             ) as resp:
                 if resp.status != 200:
                     raise DataFetchFailed("Failed to request 2FA code.")
@@ -263,7 +264,7 @@ class AlarmController:
 
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
-                headers=self.AJAX_HEADERS,
+                headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": self._two_factor_method.value},
             ) as resp:
                 json_rsp = await (resp.json())
@@ -298,7 +299,7 @@ class AlarmController:
                     url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(
                         c.URL_BASE, self._user_id
                     ),
-                    headers=self.AJAX_HEADERS,
+                    headers=self._ajax_headers,
                     json={"deviceName": device_name},
                 ) as resp:
                     json_rsp = await (resp.json())
@@ -366,7 +367,7 @@ class AlarmController:
         log.debug("Url %s", url)
 
         async with self._websession.post(
-            url=url, json=msg_body, headers=self.AJAX_HEADERS
+            url=url, json=msg_body, headers=self._ajax_headers
         ) as resp:
 
             log.debug("Response from Alarm.com %s", resp.status)
@@ -421,7 +422,7 @@ class AlarmController:
             Headers: %s""",
             url,
             msg_body,
-            self.AJAX_HEADERS,
+            self._ajax_headers,
         )
         raise ConnectionError
 
@@ -459,7 +460,7 @@ class AlarmController:
 
             async with self._websession.get(
                 url=url_template.format(c.URL_BASE, ""),
-                headers=self.AJAX_HEADERS,
+                headers=self._ajax_headers,
             ) as resp:
                 try:
                     json_rsp = await (resp.json())
@@ -639,8 +640,7 @@ class AlarmController:
                 extended_properties_list: list[
                     ExtendedProperties
                 ] = await extension_controller.fetch(
-                    websession=self._websession,
-                    cookies=self._two_factor_cookie,
+                    websession=self._websession, headers=self._ajax_headers
                 )
 
                 # Match extended properties to devices by name, then add to device_settings storage.
@@ -731,7 +731,7 @@ class AlarmController:
             url=DEVICE_URLS["supported"][DeviceType.SYSTEM]["endpoint"].format(
                 c.URL_BASE, ""
             ),
-            headers=self.AJAX_HEADERS,
+            headers=self._ajax_headers,
         ) as resp:
             json_rsp = await (resp.json())
 
@@ -746,7 +746,7 @@ class AlarmController:
                         url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(
                             c.URL_BASE, self._user_id
                         ),
-                        headers=self.AJAX_HEADERS,
+                        headers=self._ajax_headers,
                     ) as resp:
                         json_rsp = await (resp.json())
 
@@ -772,7 +772,7 @@ class AlarmController:
         try:
             async with self._websession.get(
                 url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
-                headers=self.AJAX_HEADERS,
+                headers=self._ajax_headers,
                 cookies=self._two_factor_cookie,
             ) as resp:
                 json_rsp = await (resp.json())
@@ -805,7 +805,7 @@ class AlarmController:
         try:
             async with self._websession.get(
                 url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
-                headers=self.AJAX_HEADERS,
+                headers=self._ajax_headers,
             ) as resp:
                 json_rsp = await (resp.json())
 
@@ -865,7 +865,7 @@ class AlarmController:
 
         async with self._websession.get(
             url=full_path.format(c.URL_BASE, ""),
-            headers=self.AJAX_HEADERS,
+            headers=self._ajax_headers,
         ) as resp:
             json_rsp = await (resp.json())
 
@@ -1040,7 +1040,7 @@ class AlarmController:
                 if re.search("system-install", str(resp.url)) is not None:
                     raise NagScreen("Encountered 2FA nag screen.")
 
-                self.AJAX_HEADERS["ajaxrequestuniquekey"] = resp.cookies["afg"].value
+                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
             log.error("Can not login to Alarm.com")

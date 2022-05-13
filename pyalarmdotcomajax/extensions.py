@@ -56,7 +56,7 @@ class ControllerExtension(ABC):
     async def fetch(
         self,
         websession: aiohttp.ClientSession,
-        cookies: dict,
+        headers: dict,
         camera_names: list | None = None,
     ) -> list[ExtendedProperties]:
         """Retrieve updated configuration data for specified devices."""
@@ -70,7 +70,7 @@ class ControllerExtension(ABC):
         slug: str,
         updated_value: Any,
         websession: aiohttp.ClientSession,
-        cookies: dict,
+        headers: dict,
     ) -> ExtendedProperties:
         """Change a setting."""
 
@@ -155,7 +155,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
     async def fetch(
         self,
         websession: aiohttp.ClientSession,
-        cookies: dict,
+        headers: dict,
         camera_names: list | None = None,
     ) -> list[ExtendedProperties]:
         """Retrieve updated configuration data for specified devices."""
@@ -168,7 +168,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
             additional_camera_config_ids: list[str] = []
 
-            async with websession.get(url=self.ENDPOINT, cookies=cookies) as resp:
+            async with websession.get(url=self.ENDPOINT, headers=headers) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
@@ -216,7 +216,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 postback_form_data["ctl00$phBody$CamSelector$ddlCams"] = config_id
 
                 async with websession.post(
-                    url=self.ENDPOINT, data=postback_form_data, cookies=cookies
+                    url=self.ENDPOINT,
+                    data=postback_form_data,
+                    headers=headers,
                 ) as resp:
                     text = await resp.text()
                     log.debug("Response status from Alarm.com: %s", resp.status)
@@ -235,6 +237,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
             raise err
         except UnexpectedDataStructure as err:
+            log.debug("HTTP Response Status %s, Body:\n%s", resp.status, text)
             raise err
 
         return camera_return_data
@@ -245,7 +248,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         slug: str,
         updated_value: Any,
         websession: aiohttp.ClientSession,
-        cookies: dict,
+        headers: dict,
     ) -> ExtendedProperties:
         """Change a setting."""
 
@@ -267,7 +270,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # Refresh settings data to prime submission payload.
         #
         results = await self.fetch(
-            websession=websession, cookies=cookies, camera_names=[camera_name]
+            websession=websession, headers=headers, camera_names=[camera_name]
         )
 
         if not (payload := results[0].get("raw_attributes")) or not (
@@ -289,7 +292,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         #
         try:
             async with websession.post(
-                url=self.ENDPOINT, data=payload, cookies=cookies
+                url=self.ENDPOINT, data=payload, headers=headers
             ) as resp:
                 text = await resp.text()
 
@@ -373,8 +376,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 properties["settings"][config_option.get("slug")] = config_option  # type: ignore
 
         except UnexpectedDataStructure as err:
-            error_msg = f"Unable to extract field. Failed on field {field_name}."
-            log.error(error_msg)
+            log.error("Unable to extract field. Failed on field %s.", field_name)
             raise err
 
         properties["raw_attribs"] = raw_attribs
