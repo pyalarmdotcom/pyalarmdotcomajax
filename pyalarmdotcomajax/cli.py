@@ -30,8 +30,6 @@ from pyalarmdotcomajax.extensions import ConfigurationOption
 
 CLI_CARD_BREAK = "--------"
 
-logging.basicConfig(level=logging.ERROR)
-
 
 async def cli() -> None:
     """Support command-line development and testing. Not used in normal library operation."""
@@ -112,6 +110,8 @@ async def cli() -> None:
 
     if args.get("debug", 0) > 0:
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.ERROR)
 
     async with aiohttp.ClientSession() as session:
         alarm = pyalarmdotcomajax.AlarmController(
