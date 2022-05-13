@@ -87,12 +87,15 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
     ENDPOINT = f"{c.URL_BASE}/web/Video/SettingsMain_V2.aspx"
 
-    # Fields not used for settings but required for form submission.
-    _FORM_FIELDS_GENERIC = [
-        "ctl00_ScriptManager1_HiddenField",
+    _FORM_FIELDS_BYPASSABLE = [
         "__EVENTTARGET",
         "__EVENTARGUMENT",
         "__LASTFOCUS",
+    ]
+
+    # Fields not used for settings but required for form submission.
+    _FORM_FIELDS_GENERIC = [
+        "ctl00_ScriptManager1_HiddenField",
         "__VIEWSTATE",
         "__VIEWSTATEGENERATOR",
         "__VIEWSTATEENCRYPTED",
@@ -353,43 +356,43 @@ class CameraSkybellControllerExtension(ControllerExtension):
             "settings": {},
         }
 
-        for field_name in self._FORM_FIELDS_GENERIC:
+        try:
 
-            field = tree.find(attrs={"name": field_name})
+            for field_name in self._FORM_FIELDS_BYPASSABLE:
 
-            try:
+                field = tree.find(attrs={"name": field_name})
+
+                if not field:
+                    raw_attribs[field_name] = ""
+                else:
+                    value = extract_field_value(field)
+                    raw_attribs[field_name] = value
+
+            for field_name in self._FORM_FIELDS_GENERIC:
+
+                field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
-            except UnexpectedDataStructure as err:
-                log.error("Unable to extract field. Failed on field %s.", field_name)
-                raise err
+                raw_attribs[field_name] = value
 
-            raw_attribs[field_name] = value
+            for field_name, property_name in self._FORM_FIELDS_META:
 
-        for field_name, property_name in self._FORM_FIELDS_META:
-
-            field = tree.find(attrs={"name": field_name})
-            try:
+                field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
-            except UnexpectedDataStructure as err:
-                log.error("Unable to extract field. Failed on field %s.", field_name)
-                raise err
+                raw_attribs[field_name] = value
+                properties[property_name] = value  # type: ignore
 
-            raw_attribs[field_name] = value
-            properties[property_name] = value  # type: ignore
+            for field_name, config_option in self._FORM_FIELDS_SETTINGS:
 
-        for field_name, config_option in self._FORM_FIELDS_SETTINGS:
-
-            field = tree.find(attrs={"name": field_name})
-
-            try:
+                field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
-            except UnexpectedDataStructure as err:
-                log.error("Unable to extract field. Failed on field %s.", field_name)
-                raise err
 
-            raw_attribs[field_name] = value
-            config_option.update(ConfigurationOption({"current_value": value}))
-            properties["settings"][config_option.get("slug")] = config_option  # type: ignore
+                raw_attribs[field_name] = value
+                config_option.update(ConfigurationOption({"current_value": value}))
+                properties["settings"][config_option.get("slug")] = config_option  # type: ignore
+
+        except UnexpectedDataStructure as err:
+            log.error("Unable to extract field. Failed on field %s.", field_name)
+            raise err
 
         properties["raw_attribs"] = raw_attribs
 
