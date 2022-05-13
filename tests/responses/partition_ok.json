@@ -1,0 +1,136 @@
+{
+    "data": [
+        {
+            "id": "555555555-127",
+            "type": "devices/partition",
+            "attributes": {
+                "partitionId": 1,
+                "state": 1,
+                "desiredState": 1,
+                "extendedArmingOptions": {
+                    "Disarmed": [],
+                    "ArmedStay": [
+                        2,
+                        1
+                    ],
+                    "ArmedAway": [
+                        2,
+                        1
+                    ],
+                    "ArmedNight": []
+                },
+                "invalidExtendedArmingOptions": {
+                    "Disarmed": [],
+                    "ArmedStay": [],
+                    "ArmedAway": [],
+                    "ArmedNight": []
+                },
+                "needsClearIssuesPrompt": false,
+                "canEnableAlexa": false,
+                "isAlexaEnabled": false,
+                "canAccessPanelWifi": true,
+                "canScanForWifi": true,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 9,
+                "canBeRenamed": true,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": true,
+                "webSettings": 1002,
+                "hasState": true,
+                "canBeDeleted": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Alarm",
+                "deviceModelId": 9609,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 184
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "sensors": {
+                    "data": [
+                        {
+                            "id": "555555555-11",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-12",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-13",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-14",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-15",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-16",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-17",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-177",
+                            "type": "devices/sensor"
+                        }
+                    ],
+                    "meta": {
+                        "count": "8"
+                    }
+                },
+                "cameras": {
+                    "data": [
+                        {
+                            "id": "555555555-90",
+                            "type": "video/camera"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": {
+                        "id": "555555555-127-4",
+                        "type": "devices/state-info"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

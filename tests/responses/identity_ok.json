@@ -1,0 +1,439 @@
+{
+    "data": [
+        {
+            "id": 98989898,
+            "type": "identity",
+            "attributes": {
+                "timezone": "America/New_York",
+                "preferredTimezone": "UTC",
+                "initialSetupSteps": [
+                    1
+                ],
+                "helpTours": [
+                    6
+                ],
+                "logoSource": "/api/PublishedImage.ashx?guid=765059B2-98DB-450B-99D6-1E01D61B8635",
+                "logoName": "Surety",
+                "dealerPath": "adc",
+                "favIconUrl": "/NewPublicLibraryFiles/images/favicons/adcfavicon.png",
+                "poweredByPath": "/webimages/productlogos/poweredby_footer_logo_text.gif",
+                "copyrightInfo": "Copyright © 2000-2022, Alarm.com. All rights reserved.",
+                "trademarkInfo": "Alarm.com and the Alarm.com Logo are registered trademarks of Alarm.com.",
+                "hasCompletedOnboarding": true,
+                "isEnterprise": false,
+                "isAccessControl": false,
+                "isCommercial": false,
+                "isPointCentral": false,
+                "isPcRpm": false,
+                "isPointCentralSTR": false,
+                "isPointCentralAccessControl": false,
+                "isMobileApp": false,
+                "applicationBuildNumber": 0,
+                "canViewHighlights": false,
+                "canViewVideoClips": false,
+                "hasSmartArmingSensorBased": false,
+                "isManagedAccessAccount": false,
+                "supportedNativeBridgeFeatures": null,
+                "supportedNativeViewTransitions": null,
+                "supportedDisplayModeFeatures": null,
+                "hasTroubleConditionsService": true,
+                "errorReportingConfiguration": {
+                    "providerName": "sentry",
+                    "apiKey": null,
+                    "scriptUrl": null,
+                    "isEnabled": true,
+                    "machineName": "NA01WWEBADCP02",
+                    "logErrorsToConsole": false,
+                    "showNotificationOnError": false,
+                    "redirectToErrorRouteOnUnhandledError": true,
+                    "environment": "prod-ash",
+                    "servicePlan": "Interactive Gold"
+                },
+                "enableHomeScreenConfiguration": true,
+                "accountType": 2,
+                "externalTerms": "",
+                "externalPrivacyPolicy": "",
+                "shouldHidePrivacyPolicyLink": false,
+                "shouldHideTermsAndConditionsLink": false,
+                "applicationSessionProperties": {
+                    "shouldTimeout": true,
+                    "keepAliveUrl": "/web/KeepAlive.aspx",
+                    "enableKeepAlive": true,
+                    "logoutTimeoutMs": 900000,
+                    "inactivityWarningTimeoutMs": 780000
+                },
+                "postLoginRedirect": null,
+                "hasPointCentralVisitorAccessManagementBeta": false,
+                "hasEmberEditLocationsAccess": false,
+                "hasAccessToNewRuleBuilderDropdown": false,
+                "canCreateEditScenes": true,
+                "accessControlMigratedForLockdown": false,
+                "accessControlLockdownEnabled": false,
+                "viewingParentGroup": false,
+                "localizeTempUnitsToCelsius": false,
+                "canDonateClips": false,
+                "hasInternalBetaAccess": false
+            },
+            "relationships": {
+                "dealer": {
+                    "data": {
+                        "id": "2326",
+                        "type": "dealers/dealer"
+                    }
+                },
+                "primaryColor": {
+                    "data": {
+                        "id": "0",
+                        "type": "ui/color"
+                    }
+                },
+                "secondaryColor": {
+                    "data": {
+                        "id": "0",
+                        "type": "ui/color"
+                    }
+                },
+                "navColor": {
+                    "data": {
+                        "id": "0",
+                        "type": "ui/color"
+                    }
+                },
+                "profile": {
+                    "data": {
+                        "id": "98989898",
+                        "type": "profile/profile"
+                    }
+                },
+                "accountInformation": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "settings/account-management/account-information/account-information"
+                    }
+                },
+                "availableRouteItems": {
+                    "data": [
+                        {
+                            "id": "1001",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "automation",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "notifications",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "activity",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "users",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1435",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1200",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "201",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "76",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "ember-profile.1235",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1279",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "705",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "700",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "125",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1091",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1423",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "708",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "377",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1263",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1439",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "131",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "158",
+                            "type": "navigation/route-item"
+                        },
+                        {
+                            "id": "1443",
+                            "type": "navigation/route-item"
+                        }
+                    ],
+                    "meta": {
+                        "count": "23"
+                    }
+                },
+                "wizard": {
+                    "data": null
+                },
+                "clipDonationAgreement": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "video/clipDonationAgreement"
+                    }
+                },
+                "upcomingAppointmentInfo": {
+                    "data": null
+                },
+                "selectedSystem": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "selectedSystemGroup": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "included": [
+        {
+            "id": 98989898,
+            "type": "profile/profile",
+            "attributes": {
+                "loginName": "test-username",
+                "loginInitials": "T",
+                "primaryEmailAddress": "primary@example.com",
+                "loginEmailAddress": "login@example.com",
+                "securityQuestionId": 2,
+                "loginFlags": {
+                    "0": false,
+                    "1": false
+                },
+                "canLogoutAllLoginsOnPasswordUpdate": true,
+                "shouldSendNewDeviceAlerts": true
+            },
+            "relationships": {
+                "supportOption": {
+                    "data": {
+                        "id": "98989898",
+                        "type": "support/support-option"
+                    }
+                },
+                "locale": {
+                    "data": {
+                        "id": "1",
+                        "type": "locale"
+                    }
+                },
+                "availableLocales": {
+                    "data": [
+                        {
+                            "id": "1",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "37",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "36",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "26",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "18",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "32",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "17",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "10",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "6",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "14",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "19",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "8",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "7",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "9",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "12",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "15",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "3",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "20",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "5",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "11",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "38",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "13",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "2",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "22",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "27",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "35",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "21",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "23",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "4",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "24",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "30",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "25",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "16",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "28",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "34",
+                            "type": "locale"
+                        },
+                        {
+                            "id": "29",
+                            "type": "locale"
+                        }
+                    ],
+                    "meta": {
+                        "count": "36"
+                    }
+                },
+                "siteAppearance": {
+                    "data": {
+                        "id": "98989898",
+                        "type": "siteAppearance/siteAppearance"
+                    }
+                },
+                "communicationPreference": {
+                    "data": {
+                        "id": "98989898",
+                        "type": "communicationPreferences/communicationPreference"
+                    }
+                },
+                "videoDownloadFormat": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "meta": {
+        "transformer_version": "1.0"
+    }
+}

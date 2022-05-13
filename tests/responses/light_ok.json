@@ -1,0 +1,149 @@
+{
+    "data": [
+        {
+            "id": "555555555-21",
+            "type": "devices/light",
+            "attributes": {
+                "state": 2,
+                "desiredState": 2,
+                "isDimmer": true,
+                "isFavorite": false,
+                "lightLevel": 100,
+                "stateTrackingEnabled": true,
+                "shouldShowFavoritesToggle": false,
+                "canEnableRemoteCommands": true,
+                "canEnableStateTracking": false,
+                "supportsRGBColorControl": false,
+                "supportsWhiteLightColorControl": false,
+                "percentWarmth": 0,
+                "lightColorFormat": 0,
+                "hexColor": null,
+                "shouldUpdateMultiLevelState": false,
+                "managedDeviceType": 5,
+                "canAccessWebSettings": true,
+                "webSettings": 1017,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": null,
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Balcony",
+                "deviceModelId": 4154,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 319
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "lightGroups": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": {
+                        "id": "555555555-21-3",
+                        "type": "devices/state-info"
+                    }
+                }
+            }
+        },
+        {
+            "id": "555555555-22",
+            "type": "devices/light",
+            "attributes": {
+                "state": 3,
+                "desiredState": 3,
+                "isDimmer": false,
+                "isFavorite": false,
+                "lightLevel": 0,
+                "stateTrackingEnabled": true,
+                "shouldShowFavoritesToggle": false,
+                "canEnableRemoteCommands": true,
+                "canEnableStateTracking": false,
+                "supportsRGBColorControl": false,
+                "supportsWhiteLightColorControl": false,
+                "percentWarmth": 0,
+                "lightColorFormat": 0,
+                "hexColor": null,
+                "shouldUpdateMultiLevelState": false,
+                "managedDeviceType": 5,
+                "canAccessWebSettings": true,
+                "webSettings": 1017,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "Jasco",
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Upstairs Stairway",
+                "deviceModelId": 3597,
+                "canConfirmStateChange": false,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 319
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "lightGroups": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

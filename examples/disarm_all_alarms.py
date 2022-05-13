@@ -9,8 +9,8 @@ from multiprocessing import AuthenticationError
 import sys
 
 import aiohttp
-from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.entities import ADCPartition
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax.devices import Partition
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -23,7 +23,7 @@ async def main() -> None:
     """Request Alarm.com sensor data."""
     async with aiohttp.ClientSession() as session:
 
-        alarm = ADCController(
+        alarm = AlarmController(
             username=USERNAME,
             password=PASSWORD,
             websession=session,
@@ -44,9 +44,8 @@ async def main() -> None:
             sys.exit()
 
         for partition in alarm.partitions:
-            if isinstance(partition.state, ADCPartition.DeviceState) is True and (
-                ADCPartition.DeviceState(partition.state)
-                != ADCPartition.DeviceState.DISARMED
+            if isinstance(partition.state, Partition.DeviceState) is True and (
+                Partition.DeviceState(partition.state) != Partition.DeviceState.DISARMED
             ):
                 print(
                     f"Alarm control panel {partition.name} is currently armed."

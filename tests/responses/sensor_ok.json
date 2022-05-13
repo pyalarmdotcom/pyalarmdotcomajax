@@ -1,0 +1,456 @@
+{
+    "data": [
+        {
+            "id": "555555555-11",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 1,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Closed",
+                "isMonitoringEnabled": true,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 10,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Back Door",
+                "deviceModelId": 110,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 317
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": true,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-12",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 19,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Idle",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 10,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Basement Hallway Glass Break",
+                "deviceModelId": 128,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 317
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-13",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 1,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Closed",
+                "isMonitoringEnabled": true,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 10,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Kid's Room Left Window",
+                "deviceModelId": 110,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 317
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": true,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-14",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 69,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Closed",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 10,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Dad's iPhone",
+                "deviceModelId": 821,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 317
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-15",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 6,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Closed",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 2,
+                "hasState": false,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Interconnected Carbon Monoxide Detectors",
+                "deviceModelId": 115,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 218
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-16",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 5,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Not Reset",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 2,
+                "hasState": false,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Interconnected Smoke Detectors",
+                "deviceModelId": 114,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 218
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-17",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 5,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Not Reset",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 2,
+                "hasState": false,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Laundry Room Smoke Detector",
+                "deviceModelId": 114,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 218
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        },
+        {
+            "id": "555555555-177",
+            "type": "devices/sensor",
+            "attributes": {
+                "deviceType": 68,
+                "openClosedStatus": 2,
+                "state": 1,
+                "isFlexIO": false,
+                "deviceRole": 0,
+                "displayStateText": "Idle",
+                "isMonitoringEnabled": false,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 10,
+                "hasState": true,
+                "canBeRenamed": false,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": false,
+                "webSettings": 400,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Panel Camera",
+                "deviceModelId": 818,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 317
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

@@ -1,0 +1,102 @@
+{
+    "data": [
+        {
+            "id": "555555555-31",
+            "type": "devices/garage-door",
+            "attributes": {
+                "state": 2,
+                "desiredState": 2,
+                "managedDeviceType": 3,
+                "canAccessWebSettings": true,
+                "webSettings": 1003,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": null,
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Right Garage Door",
+                "deviceModelId": 9999,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 320
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": "555555555-32",
+            "type": "devices/light",
+            "attributes": {
+                "state": 1,
+                "desiredState": 1,
+                "managedDeviceType": 3,
+                "canAccessWebSettings": true,
+                "webSettings": 1003,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": null,
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Left Garage Door",
+                "deviceModelId": 9999,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 320
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

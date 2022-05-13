@@ -3,7 +3,7 @@
 import asyncio
 
 import aiohttp
-from pyalarmdotcomajax import ADCController
+from pyalarmdotcomajax import AlarmController
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -16,7 +16,7 @@ async def main() -> None:
     """Request Alarm.com sensor data."""
     async with aiohttp.ClientSession() as session:
 
-        alarm = ADCController(
+        alarm = AlarmController(
             username=USERNAME,
             password=PASSWORD,
             websession=session,

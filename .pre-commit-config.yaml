@@ -29,7 +29,7 @@ repos:
       - id: codespell
         args:
           - --ignore-words-list=hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing
-          - --skip="./.*,*.csv,*.json"
+          - --skip="./.*,*.csv,*.json",*.html
           - --quiet-level=2
         exclude_types: [csv, json]
   - repo: https://gitlab.com/pycqa/flake8
@@ -82,4 +82,4 @@ repos:
         exclude: (.vscode|.devcontainer|.github)
         args:
           - --output-format=colorized
-          - -d W0511  # ignores TODO messages when running via pre-commit
+          - -d W0511 # ignores TODO messages when running via pre-commit

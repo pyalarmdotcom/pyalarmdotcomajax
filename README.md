@@ -35,15 +35,16 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 - As of v0.2, multiples of all devices are supported.
 - All devices include the attributes: `name`, `id_`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
 
-| Device Type  | Notable Attributes                  | Actions                               |
-| ------------ | ----------------------------------- | ------------------------------------- |
-| System       | `unit_id`                           | (none)                                |
-| Partition    | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |
-| Sensor       | `device_subtype`                    | (none)                                |
-| Locks        | `desired_state`                     | lock, unlock                          |
-| Garage Door  | (none)                              | open, close                           |
-| Image Sensor | `images`                            | peek_in                               |
-| Light        | `brightness`                        | turn_on (with brightness), turn_off   |
+| Device Type               | Notable Attributes                  | Actions                               | Notes                                                     |
+| ------------------------- | ----------------------------------- | ------------------------------------- | --------------------------------------------------------- |
+| System                    | `unit_id`                           | (none)                                |                                                           |
+| Partition                 | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |                                                           |
+| Sensor                    | `device_subtype`                    | (none)                                |                                                           |
+| Locks                     | `desired_state`                     | lock, unlock                          |                                                           |
+| Garage Door               | (none)                              | open, close                           |                                                           |
+| Image Sensor              | `images`                            | peek_in                               |                                                           |
+| Light                     | `brightness`                        | turn_on (with brightness), turn_off   | No support for RGB/W, effects, temperature, etc.          |
+| Camera (Skybell HD Only!) |                                     | Turn chimes on / off.                 | No support for video. No support for other camera models. |
 
 ### Known Sensor deviceTypes
 
@@ -72,7 +73,7 @@ usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-x] [-o ONE_TIME_PASSW
 
 Basic command line debug interface for Alarm.com via pyalarmdotcomajax. Shows device states in various formats.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -u USERNAME, --username USERNAME
                         alarm.com username
@@ -80,9 +81,9 @@ optional arguments:
                         alarm.com password
   -c COOKIE, --cookie COOKIE
                         two-factor authentication cookie. cannot be used with --one-time-password!
-  -v, --verbose         show verbose output. -v returns server response for all devices except systems. -vv returns server response for all devices.
+  -v, --verbose         show verbose output. -vv returns base64 image data for image sensor images.
   -x, --include-unsupported
-                        when used with -v, returns data for cameras, lights, and thermostats.
+                        when used with -v, returns data for all known unsupported devices.
   -o ONE_TIME_PASSWORD, --one-time-password ONE_TIME_PASSWORD
                         provide otp code for accounts that have two-factor authentication enabled. cannot be used with --cookie!
   -n DEVICE_NAME, --device-name DEVICE_NAME

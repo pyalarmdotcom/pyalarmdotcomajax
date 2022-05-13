@@ -154,3 +154,4 @@ cython_debug/
 *test.py
 *.ignore.*
 temp/
+node_modules/

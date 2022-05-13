@@ -13,20 +13,20 @@ import sys
 
 import aiohttp
 import pyalarmdotcomajax
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax import AuthResult
+from pyalarmdotcomajax.devices import Camera
+from pyalarmdotcomajax.devices import GarageDoor
+from pyalarmdotcomajax.devices import ImageSensor
+from pyalarmdotcomajax.devices import Light
+from pyalarmdotcomajax.devices import Lock
+from pyalarmdotcomajax.devices import Partition
+from pyalarmdotcomajax.devices import Sensor
+from pyalarmdotcomajax.devices import System
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
 from pyalarmdotcomajax.errors import NagScreen
-
-from . import ADCController
-from .const import AuthResult
-from .entities import ADCGarageDoor
-from .entities import ADCImageSensor
-from .entities import ADCLight
-from .entities import ADCLock
-from .entities import ADCPartition
-from .entities import ADCSensor
-from .entities import ADCSensorSubtype
-from .entities import ADCSystem
+from pyalarmdotcomajax.extensions import ConfigurationOption
 
 CLI_CARD_BREAK = "--------"
 
@@ -55,9 +55,8 @@ async def cli() -> None:
         "-v",
         "--verbose",
         help=(
-            "show verbose output. -v returns server response for all devices except"
-            " systems and image sensor base64 images. -vv returns server response for"
-            " all devices."
+            "show verbose output. -vv returns base64 image data for image sensor"
+            " images."
         ),
         action="count",
         default=0,
@@ -113,7 +112,7 @@ async def cli() -> None:
         logging.basicConfig(level=logging.DEBUG)
 
     async with aiohttp.ClientSession() as session:
-        alarm = ADCController(
+        alarm = pyalarmdotcomajax.AlarmController(
             username=args.get("username", ""),
             password=args.get("password", ""),
             websession=session,
@@ -161,15 +160,13 @@ async def cli() -> None:
         if args.get("verbose", 0) == 1:
             await _async_machine_output(
                 alarm=alarm,
-                include_systems=True,
-                include_image_sensors=False,
+                include_image_sensor_b64=False,
                 include_unsupported=args.get("include_unsupported", False),
             )
         elif args.get("verbose", 0) > 1:
             await _async_machine_output(
                 alarm=alarm,
-                include_systems=True,
-                include_image_sensors=True,
+                include_image_sensor_b64=True,
                 include_unsupported=args.get("include_unsupported", False),
             )
         else:
@@ -180,9 +177,8 @@ async def cli() -> None:
 
 
 async def _async_machine_output(
-    alarm: ADCController,
-    include_systems: bool = False,
-    include_image_sensors: bool = False,
+    alarm: AlarmController,
+    include_image_sensor_b64: bool = False,
     include_unsupported: bool = False,
 ) -> None:
     """Output raw server responses."""
@@ -190,8 +186,7 @@ async def _async_machine_output(
     try:
         print(
             await alarm.async_get_raw_server_responses(
-                include_systems=include_systems,
-                include_image_sensors=include_image_sensors,
+                include_image_sensor_b64=include_image_sensor_b64,
                 include_unsupported=include_unsupported,
             )
         )
@@ -207,7 +202,7 @@ async def _async_machine_output(
 
 
 def _human_readable_output(
-    alarm: ADCController, generated_2fa_cookie: str | None = None
+    alarm: AlarmController, generated_2fa_cookie: str | None = None
 ) -> None:
     """Output user-friendly list of devices and statuses."""
     print(f"\nProvider: {alarm.provider_name}")
@@ -278,15 +273,27 @@ def _human_readable_output(
 
     print("\n")
 
+    print("\n*** CAMERAS ***\n")
+    if len(alarm.cameras) == 0:
+        print("(none found)")
+    else:
+        print(CLI_CARD_BREAK)
+        for camera in alarm.cameras:
+            _print_element_tearsheet(camera)
+            print(CLI_CARD_BREAK)
+
+    print("\n")
+
 
 def _print_element_tearsheet(
-    element: ADCGarageDoor
-    | ADCLock
-    | ADCPartition
-    | ADCSensor
-    | ADCSystem
-    | ADCLight
-    | ADCImageSensor,
+    element: GarageDoor
+    | Lock
+    | Partition
+    | Sensor
+    | System
+    | Light
+    | ImageSensor
+    | Camera,
 ) -> None:
 
     if element.battery_critical:
@@ -296,41 +303,60 @@ def _print_element_tearsheet(
     else:
         battery = "Normal"
 
-    subtype = (
-        f"\n        Sensor Type: {element.device_subtype.name}"
-        if isinstance(element.device_subtype, ADCSensorSubtype)
+    desired_str = (
+        f" (Desired: {element.desired_state.name})"
+        if isinstance(element, System) and element.desired_state
         else ""
     )
 
-    desired_str = (
-        f"(Desired: {element.desired_state})" if isinstance(element, ADCSystem) else ""
-    )
+    print(f"{element.name} ({element.id_})")
 
-    print(
-        f"""{element.name} ({element.id_}){subtype}
-        State: {element.state} {desired_str}
-        Battery: {battery}"""
-    )
+    attribute_str = "ATTRIBUTES: "
+
+    if isinstance(element.device_subtype, Sensor.Subtype):
+        attribute_str += (
+            f'[Type: {element.device_subtype.name.title().replace("_"," ")}] '
+        )
+
+    if element.state:
+        attribute_str += f"[STATE: {element.state.name.title()}{desired_str}] "
+
+    attribute_str += f"[BATTERY: {battery}] "
 
     if element.read_only:
-        print(f"        Read Only: {element.read_only}")
+        attribute_str += f"[READ ONLY: {element.read_only}] "
 
-    if isinstance(element, ADCLight):
-
-        print(f"        Reports State: {element.supports_state_tracking}")
+    if isinstance(element, Light):
+        # Disabling. Boring stat.
+        # attribute_str += f"[REPORTS STATE: {element.supports_state_tracking}] "
 
         if element.brightness:
-            print(f"        Brightness: {element.brightness}%")
+            attribute_str += f"[BRIGHTNESS: {element.brightness}%] "
+
+    print(attribute_str)
+
+    settings_str = "SETTINGS: "
+
+    if element.settings:
+        config_option: ConfigurationOption
+        for _, config_option in element.settings.items():
+
+            settings_str += (
+                f'{{{{ {config_option["name"]} [Type:'
+                f' {config_option["option_type"].name.title()}] '
+                f'[State: {config_option["current_value"]}] }}}} '
+            )
+
+    print(settings_str)
 
     if element.malfunction:
-        print("\n        ~~MALFUNCTION~~\n")
+        print("\n~~MALFUNCTION~~\n")
 
     for condition in element.trouble_conditions:
         print(
-            f"""
-        ~~TROUBLE~~
-        {condition["title"]} ({condition["message_id"]})
-        {condition["body"]}"""
+            """~~TROUBLE~~"""
+            f"""{condition["title"]} ({condition["message_id"]})"""
+            f"""{condition["body"]}"""
         )
 
 
