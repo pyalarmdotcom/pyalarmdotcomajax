@@ -202,7 +202,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
             raise err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract page info from Alarm.com.")
-            log.debug("Page contents:\n %s", text)
+            log.debug(
+                "====== HTTP DUMP BEGIN ======\n%s\n====== HTTP DUMP END ======", text
+            )
             raise UnexpectedDataStructure from err
 
         #
