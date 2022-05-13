@@ -373,6 +373,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 properties["settings"][config_option.get("slug")] = config_option  # type: ignore
 
         except UnexpectedDataStructure as err:
+            error_msg = f"Unable to extract field. Failed on field {field_name}."
+            log.error(error_msg)
             raise err
 
         properties["raw_attribs"] = raw_attribs

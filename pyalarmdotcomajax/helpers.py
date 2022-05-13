@@ -47,10 +47,6 @@ def extract_field_value(field: Tag) -> str | None:
             pass
 
     except (KeyError, AttributeError) as err:
-        log.error(
-            "Unable to extract field. Failed on field %s",
-            field,
-        )
         raise UnexpectedDataStructure from err
 
     return value

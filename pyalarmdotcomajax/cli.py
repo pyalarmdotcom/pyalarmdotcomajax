@@ -30,6 +30,8 @@ from pyalarmdotcomajax.extensions import ConfigurationOption
 
 CLI_CARD_BREAK = "--------"
 
+logging.basicConfig(level=logging.ERROR)
+
 
 async def cli() -> None:
     """Support command-line development and testing. Not used in normal library operation."""
