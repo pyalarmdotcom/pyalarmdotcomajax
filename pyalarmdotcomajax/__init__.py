@@ -630,18 +630,18 @@ class AlarmController:
             # Retrieve data for extensions
             #
 
+            extension_controller: CameraSkybellControllerExtension | None = None
+
             for extension_class in required_extensions:
 
-                extension_controller: CameraSkybellControllerExtension = (
-                    extension_class()
+                extension_controller = extension_class(
+                    websession=self._websession, headers=self._ajax_headers
                 )
 
                 # Fetch from Alarm.com
                 extended_properties_list: list[
                     ExtendedProperties
-                ] = await extension_controller.fetch(
-                    websession=self._websession, headers=self._ajax_headers
-                )
+                ] = await extension_controller.fetch()
 
                 # Match extended properties to devices by name, then add to device_settings storage.
                 for extended_property in extended_properties_list:
@@ -693,6 +693,9 @@ class AlarmController:
                     subordinates=subordinates,
                     element_specific_data=element_specific_data.get(entity_id),
                     send_action_callback=self.async_send_command,
+                    config_change_callback=extension_controller.submit_change
+                    if extension_controller
+                    else None,
                     trouble_conditions=self._trouble_conditions.get(entity_id),
                     partition_id=self._partition_map.get(entity_id),
                     settings=device_settings.get(entity_id),

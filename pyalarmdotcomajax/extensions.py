@@ -47,21 +47,21 @@ class ConfigurationOption(TypedDict, total=False):
     current_value: Any
     option_type: ConfigurationOptionType
     value_type: type
+    extension: type[CameraSkybellControllerExtension]
 
 
 class ControllerExtension(ABC):
     """Fetcher base class for device config data."""
 
+    def __init__(self) -> None:
+        """Initialize extension."""
+
     @abstractmethod
     async def fetch(
         self,
-        websession: aiohttp.ClientSession,
-        headers: dict,
         camera_names: list | None = None,
     ) -> list[ExtendedProperties]:
         """Retrieve updated configuration data for specified devices."""
-
-        raise NotImplementedError
 
     @abstractmethod
     async def submit_change(
@@ -69,12 +69,8 @@ class ControllerExtension(ABC):
         camera_name: str,
         slug: str,
         updated_value: Any,
-        websession: aiohttp.ClientSession,
-        headers: dict,
-    ) -> ExtendedProperties:
+    ) -> ConfigurationOption:
         """Change a setting."""
-
-        raise NotImplementedError
 
 
 # ###############
@@ -85,7 +81,7 @@ class ControllerExtension(ABC):
 class CameraSkybellControllerExtension(ControllerExtension):
     """Fetcher for Skybell HD config data."""
 
-    ENDPOINT = f"{c.URL_BASE}/web/Video/SettingsMain_V2.aspx"
+    ENDPOINT = f"{c.URL_BASE}web/Video/SettingsMain_V2.aspx"
 
     _FORM_FIELDS_BYPASSABLE = [
         "__EVENTTARGET",
@@ -129,36 +125,44 @@ class CameraSkybellControllerExtension(ControllerExtension):
         ("ctl00$phBody$tbCamName", "device_name"),
     ]
 
-    # Fields containing configuration options.
-    _FORM_FIELDS_SETTINGS: list[tuple[str, ConfigurationOption]] = [
-        (
-            "ctl00$phBody$cbIndoorChime",
-            ConfigurationOption(
-                {
-                    "slug": "indoor_chime_on",
-                    "name": "Indoor Chime",
-                    "option_type": ConfigurationOptionType.CHIME,
-                    "value_type": bool,
-                }
+    def __init__(self, websession: aiohttp.ClientSession, headers: dict) -> None:
+        """Initialize extension."""
+
+        super().__init__()
+
+        self._websession = websession
+        self._headers = headers
+
+        # Fields containing configuration options.
+        self._form_field_settings: list[tuple[str, ConfigurationOption]] = [
+            (
+                "ctl00$phBody$cbIndoorChime",
+                ConfigurationOption(
+                    {
+                        "slug": "indoor_chime_on",
+                        "name": "Indoor Chime",
+                        "option_type": ConfigurationOptionType.CHIME,
+                        "value_type": bool,
+                        "extension": self.__class__,
+                    }
+                ),
             ),
-        ),
-        (
-            "ctl00$phBody$cbOutdoorChime",
-            ConfigurationOption(
-                {
-                    "slug": "outdoor_chime_on",
-                    "name": "Outdoor Chime",
-                    "option_type": ConfigurationOptionType.CHIME,
-                    "value_type": bool,
-                }
+            (
+                "ctl00$phBody$cbOutdoorChime",
+                ConfigurationOption(
+                    {
+                        "slug": "outdoor_chime_on",
+                        "name": "Outdoor Chime",
+                        "option_type": ConfigurationOptionType.CHIME,
+                        "value_type": bool,
+                        "extension": self.__class__,
+                    }
+                ),
             ),
-        ),
-    ]
+        ]
 
     async def fetch(
         self,
-        websession: aiohttp.ClientSession,
-        headers: dict,
         camera_names: list | None = None,
     ) -> list[ExtendedProperties]:
         """Retrieve updated configuration data for specified devices."""
@@ -171,14 +175,12 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
             additional_camera_config_ids: list[str] = []
 
-            async with websession.get(url=self.ENDPOINT, headers=headers) as resp:
+            async with self._websession.get(
+                url=self.ENDPOINT, headers=self._headers
+            ) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
-
-                # TODO: Remove this. Testing only.
-                print(text)
-                log.error(text)
 
                 # Build list of cameras (everything or selection from camera_names)
 
@@ -205,7 +207,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
             asyncio.exceptions.CancelledError,
         ) as err:
             log.error("Can not load settings page from Alarm.com")
-
             raise err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract page info from Alarm.com.")
@@ -224,10 +225,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 postback_form_data["__EVENTTARGET"] = "ctl00$phBody$CamSelector$ddlCams"
                 postback_form_data["ctl00$phBody$CamSelector$ddlCams"] = config_id
 
-                async with websession.post(
+                async with self._websession.post(
                     url=self.ENDPOINT,
                     data=postback_form_data,
-                    headers=headers,
+                    headers=self._headers,
                 ) as resp:
                     text = await resp.text()
                     log.debug("Response status from Alarm.com: %s", resp.status)
@@ -256,9 +257,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         camera_name: str,
         slug: str,
         updated_value: Any,
-        websession: aiohttp.ClientSession,
-        headers: dict,
-    ) -> ExtendedProperties:
+    ) -> ConfigurationOption:
         """Change a setting."""
 
         #
@@ -268,7 +267,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         try:
 
-            for config_option_field_name, config_option in self._FORM_FIELDS_SETTINGS:
+            for config_option_field_name, config_option in self._form_field_settings:
                 if config_option["slug"] == slug:
                     field_name = config_option_field_name
 
@@ -279,10 +278,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # Refresh settings data to prime submission payload.
         #
         results = await self.fetch(
-            websession=websession, headers=headers, camera_names=[camera_name]
+            camera_names=[camera_name],
         )
 
-        if not (payload := results[0].get("raw_attributes")) or not (
+        if not (payload := results[0].get("raw_attribs")) or not (
             config_id := results[0].get("config_id")
         ):
             raise UnexpectedDataStructure("Failed to refresh settings data for device.")
@@ -300,8 +299,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # Submit payload and refresh data.
         #
         try:
-            async with websession.post(
-                url=self.ENDPOINT, data=payload, headers=headers
+            async with self._websession.post(
+                url=self.ENDPOINT, data=payload, headers=self._headers
             ) as resp:
                 text = await resp.text()
 
@@ -320,7 +319,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
             raise err
 
-        return camera_return_data
+        return camera_return_data["settings"][slug]
 
     async def _build_submit_payload(  # pylint: disable = no-self-use
         self, dynamic_form_data: dict
@@ -381,7 +380,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 raw_attribs[field_name] = value
                 properties[property_name] = value  # type: ignore
 
-            for field_name, config_option in self._FORM_FIELDS_SETTINGS:
+            for field_name, config_option in self._form_field_settings:
 
                 field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)

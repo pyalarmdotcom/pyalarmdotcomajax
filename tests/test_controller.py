@@ -33,7 +33,7 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
 
 @pytest.mark.asyncio  # type: ignore
 async def test__async_get_items_and_subordinates__sensors(
-    all_ok_responses: pytest.fixture,
+    all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Test for function that fetches item metadata from Alarm.com API."""
@@ -56,7 +56,7 @@ async def test__async_get_items_and_subordinates__sensors(
 
 @pytest.mark.asyncio  # type: ignore
 async def test___async_get_and_build_devices__sensors(
-    all_ok_responses: pytest.fixture,
+    all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Test whether pyalarmdotcomajax sensor objects are built."""

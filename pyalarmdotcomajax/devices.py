@@ -1,15 +1,21 @@
 """Representations of devices."""
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from enum import IntEnum
 import logging
+from typing import Any
 from typing import Protocol
 from typing import TypedDict
 
+import aiohttp
 from dateutil import parser
+from pyalarmdotcomajax.errors import InvalidConfigurationOption
+from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
 from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
@@ -228,6 +234,7 @@ class BaseDevice:
         self,
         id_: str,
         send_action_callback: Callable,
+        config_change_callback: Callable | None,
         subordinates: list,
         raw_device_data: dict,
         element_specific_data: ElementSpecificData | None = None,
@@ -244,6 +251,7 @@ class BaseDevice:
             element_specific_data if element_specific_data else {}
         )
         self._send_action_callback: Callable = send_action_callback
+        self._config_change_callback: Callable | None = config_change_callback
         self._subordinates: list = subordinates
         self._settings: dict = settings if settings else {}
 
@@ -376,9 +384,6 @@ class BaseDevice:
     class Subtype(Enum):
         """Hold device subtypes. To be overridden by children."""
 
-    def configuration_settings(self) -> dict[str, type] | None:
-        """Return configuration options made available via device extensions."""
-
     @property
     def desired_state(self) -> Enum | None:
         """Return state. To be overridden by children."""
@@ -388,19 +393,49 @@ class BaseDevice:
 
         return None
 
-    @classmethod
-    def configuration_extension(  # pylint: disable=no-self-use
-        cls, raw_attribs: dict
-    ) -> Callable | None:
-        """Determine whether device requires a configuration extension. To be overridden by children."""
+    async def async_change_setting(self, slug: str, updated_value: Any) -> None:
+        """Update specified configuration setting via extension."""
 
-        return None
+        if not self._config_change_callback:
+            log.error(
+                "async_change_setting called for %s, which does not have a"
+                " config_change_callback set.",
+                self.name,
+            )
+            return
+
+        extension: CameraSkybellControllerExtension | None = self.settings.get(
+            slug, {}
+        ).get("extension")
+
+        if not extension:
+            raise InvalidConfigurationOption
+
+        try:
+            updated_option = await self._config_change_callback(
+                camera_name=self.name, slug=slug, updated_value=updated_value
+            )
+        except (
+            asyncio.TimeoutError,
+            aiohttp.ClientError,
+            asyncio.exceptions.CancelledError,
+        ) as err:
+            raise err
+        except UnexpectedDataStructure as err:
+            raise err
+
+        self._settings["slug"] = updated_option
 
 
 class Camera(DesiredStateMixin, BaseDevice):
     """Represent Alarm.com camera element."""
 
     # Cameras do not have a state.
+
+    @property
+    def malfunction(self) -> bool | None:
+        """Return whether device is malfunctioning."""
+        return None
 
 
 class GarageDoor(DesiredStateMixin, BaseDevice):

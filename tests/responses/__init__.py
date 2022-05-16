@@ -61,3 +61,8 @@ SKYBELL_CONFIG_PAGE = resources.read_text(
     __package__,
     "camera_settings_skybell.html",
 )
+
+SKYBELL_CONFIG_PAGE_CHANGED = resources.read_text(
+    __package__,
+    "camera_settings_skybell_changed.html",
+)

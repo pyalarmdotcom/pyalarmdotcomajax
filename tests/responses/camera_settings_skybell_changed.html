@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html id="ctl00__page_html" data-dealer-color="#40D637" data-unit-description="Test's home" class="registers-tap-events not-webview  non-ajax-data  not-mobile  production" data-number-format-decimal-separator="." data-unit-id="555555555" data-dealer-name="Go Secure Limited" xmlns="http://www.w3.org/1999/xhtml" dir="ltr" data-locale="en-GB" data-is-pc-rpm="false" data-is-commercial="false" data-language="en" data-number-format-group-separator=",">
+ <head id="ctl00_Head1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="text/javascript">
+    // Make sure that the legacy page is running in an iframe of the main app.
+    // But do not do this if we do not want to run this page inside the app. This should be SUPER rare.
+    if (!window.frameElement && !document.documentElement.classList.contains('no-spa')) {
+        var l = window.location;
+
+        l.replace('/web/system/legacy-page?url=' + encodeURIComponent(l.pathname) +
+            '&search=' + encodeURIComponent(l.search) +
+            '&hash=' + encodeURIComponent(l.hash) +
+            '&timeStamp=' + Math.floor(new Date().getTime() / 1000).toString());
+
+        window.document.documentElement.style.display = 'none';
+    }
+    </script>
+  <link id="ctl00_xicon" rel="shortcut icon" type="image/x-icon" href="/NewPublicLibraryFiles/images/favicons/adcfavicon.png" />
+  <link id="ctl00_icon" rel="icon" type="image/icon" href="/NewPublicLibraryFiles/images/favicons/adcfavicon.png" />
+  <link type="text/css" rel="stylesheet" href="/common/UIComponents/adc-framework/font-awesome/css/font-awesome.adc.css?v=1" />
+  <link type="text/css" rel="stylesheet" href="/common/UIComponents/adc-framework/adc-font/adc-font.adc.css?v=2" />
+  <link type="text/css" rel="stylesheet" href="/common/UIComponents/adc-framework/climacons/webfont/climacons-font.adc.css?v=1" />
+  <link type="text/css" rel="stylesheet" href="/common/UIComponents/adc-framework/ErrorManager/errorManager.adc.css?v=1" />
+  <link type="text/css" rel="stylesheet" href="/common/UIComponents/slider/css/slider.adc.css?v=1" />
+  <link type="text/css" rel="Stylesheet" href="/web/Modern/styles/modern.min.css?v=221001" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/CamAndPageSelectorWithDeviceId.min.css?v=219719" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/NoCamsMessage.min.css?v=176469" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/AutomaticClipDonationSettings.min.css?v=132857" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/BridgeDeviceInfo.min.css?v=2" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/SettingsWirelessNetworkV2.min.css?v=169845" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/VideoAnalyticsFlagPopup.css?v=132857" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/Video/ClipDonationLegalAgreement.min.css?v=132858" />
+  <link type="text/css" rel="stylesheet" href="/web/Video/SettingsMain_V2.min.css?v=155377" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <link type="text/css" rel="stylesheet" href="/web/App_UserControls/AdcSlider.min.css?v=178462" />
+  <script type="text/javascript" src="https://cdn.ravenjs.com/3.22.4/raven.min.js" crossorigin="anonymous"></script>
+  <script type="text/javascript">
+    Raven.config('https://ee7d5900e1e74c53af3ced3d9bbce0fb@o80433.ingest.sentry.io/176097').install();
+    </script>
+  <script type="text/javascript">
+    Raven.setUserContext({ "ID": 98989898 });
+    </script>
+  <script type="text/javascript">
+    Raven.setTagsContext({ "loggedInState": "LoggedIn", "customerId": "6464646", "dealerId": "15806", "servicePlan": "interactive + automation", "locale": "English_UK", "isLoginAsLoginRep": "false", "isMobileApp": "false", "MachineName": "NA01WWEBADCP01", "GitBranchName": "", "environment": "prod-ash" })
+    </script>
+  <script type="text/javascript">
+    Raven.setExtraContext({});
+    </script>
+  <title></title>
+ </head>
+ <body id="ctl00__page_body_" class="font-modern modern-ui iframe-page base-background not-responsive-page  page-not-scrolling " data-route-id="503">
+  <script type="text/javascript" src="/common/UIComponents/jquery/jquery-1.10.2.min.js"></script>
+  <script type="text/javascript" src="/common/UIComponents/jquery/jquery-migrate-1.2.1.min.js"></script>
+  <script type="text/javascript" src="/common/UIComponents/Modernizr/modernizr.custom.20299.min.js"></script>
+  <script type="text/javascript" src="/common/UIComponents/Moment.js/moment.min.js?v=53783"></script>
+  <link rel="stylesheet" href="/common/UIComponents/jquery-minicolors-master/jquery.minicolors.adc.css?v=1" />
+  <link rel="stylesheet" href="video.min.css?v=212884" />
+  <input name="ctl00$isInternalDealer" type="hidden" id="ctl00_isInternalDealer" data-is-internal-dealer-input="" value="False" />
+  <input name="ctl00$isMobileApp" type="hidden" id="ctl00_isMobileApp" data-is-mobile-input="" value="False" />
+  <form name="aspnetForm" method="post" action="./SettingsMain_V2.aspx" onkeypress="javascript:return WebForm_FireDefaultButton(event, 'ctl00_butDoNothing')" id="aspnetForm">
+   <div>
+    <input type="hidden" name="ctl00_ScriptManager1_HiddenField" id="ctl00_ScriptManager1_HiddenField" value="" />
+    <input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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..." />
+   </div>
+   <script type="text/javascript"> // var theForm=document.forms['aspnetForm']; if (!theForm) { theForm=document.aspnetForm; } function __doPostBack(eventTarget, eventArgument) { if (!theForm.onsubmit || (theForm.onsubmit() !=false)) { theForm.__EVENTTARGET.value=eventTarget; theForm.__EVENTARGUMENT.value=eventArgument; theForm.submit(); } } </script>
+   <script src="/web/WebResource.axd?d=pynGkmcFUV13He1Qd6_TZFuqERrjkYQ3JKpiGdcYjWN_LB4Z-JCcM7PJKymUh9JloxLOsycr1iMoGS1yxOH8CA2&amp;t=637729440413207958" type="text/javascript"></script>
+   <script src="/web/AlarmDefaultButton.js?v=1919" type="text/javascript"></script>
+   <script src="/web/ScriptResource.axd?d=x6wALODbMJK5e0eRC_p1Lahwbpc_mtigGgqA9v9e4txBGvzZDEazxMleSkjmAAmx-5cQI3KBH9salYAlpVByD7Gk66LdqYJP-OqMsc-Hx6LNqw0euMrld84z6i87znx70&amp;t=60b7ac5d" type="text/javascript"></script>
+   <script src="/web/ScriptResource.axd?d=P5lTttoqSeZXoYRLQMIScNRlqzPU1s5hhNln2dJEcj_UfevJJkgysjHiWwT0kPiRuRJDc2U-3gLC2305vd-0IXTQ0MEoNDT7LZBgXYIEKsZvlD4USAI7I9b_QgwyKzrA0&amp;t=60b7ac5d" type="text/javascript"></script>
+   <script src="/web/WebResource.axd?d=JoBkLzP19aTuxbWOhHobYo7CDNVx9Fm2UIOW8llWJ0BUdAnXfYeKqPNr4pXhvmq-kyZP6KeUI1RW1wYWg8lPkg2&amp;t=637729440413207958" type="text/javascript"></script>
+   <div>
+    <input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="F11B076E" />
+    <input type="hidden" name="__SCROLLPOSITIONX" id="__SCROLLPOSITIONX" value="0" />
+    <input type="hidden" name="__SCROLLPOSITIONY" id="__SCROLLPOSITIONY" value="0" />
+    <input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+    <input type="hidden" name="__PREVIOUSPAGE" id="__PREVIOUSPAGE" value="sQ4gBws2BcYicBxd1Y9jKEiL57AVEcrtbCKQdjaHkI3aP1PcUizOQ60-TeJ8w1Kr3UbKnhSw5G9-Sov-XxEEKjK20OQBQ9LTS3Vas0WIW8I1" />
+    <input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="Aw1yY0W9s03caZQVkUXxWIHWQSuQ6fQDbNQtVZHpPkFQVOQaV3QAtclnkeZuoOu61pS3gUQMhn6YdDvaokw/G8eCtpq5SOHvAiIK0X3bNXm4NK8OjsjW38gyj1jdq9HowhXtd/QTLkyTOZx43J8afhu3aWN0HFRRfIiuSXyZjUwj9Lgeqg+2psrEJrJNQ7D1O6WH1zxzY3SmlTsx27heBtCd/baFbQwPvnEp7ouMhZ1DZWHOq7wAs+b5B/QJfOA5572c8dGdv2+3PkF+ixo0wA7JsGySGmUcIntQ/l0bRYz7CKaGhEbKmL3d5sKgzfj/2U3iEjBP6I394aLp2TTqA6dvweF6mqpkG6Y8/BBKrj348tNnMhlSJhIZUvB09K3Dcskwv0DPpW9eciLe65DX+D7pZnmtBsRsrQd3+ojBHbF2dXt7MvIqqetQh0mR88a6e8m/Y357DTkSiNJQfLlGseKYAuIQyQIATawCEXanDyVEAK5sSKCO74xEczvh/XHjjvlbWKjfW0DMUUjhRBXUZqPxj8+PUowydhDYRJIpZthLBUyy+Zn4hVLozdNwM/6AHkpwkm/q41oUngEfIIvGI0Yl3JhGnC8QGjRO2Vyy1tMVibmOe1+MCbkfphl5mMWJnrIirAKyhAIa9pVuB7zFXp+vlLHt3m+reEZRc6wTIV2TnmYQG1nVSpiscP1YSzJp/0iJk/AQfrF9kZvIlpkoqLx/VGNN2vDw4fAbozwowK7h5i39zQA10OfcVsECsmwMLi/GGKy+v3ZkTyuTQlFTOQoh5lpSB6G0D1WI3YCAaeULkVLWXSKS2UYmpdJMI6N+9eW7/qBozwYUUa4IWuQS+pXae/LteTtsaQOZNrNKuL5Lj3en6k9GMzUiWud+rFQ/iq53EDparciMSXBVh8ANFNNPMdr9R4Oe67dxrcorlUuwn9p6LkAWhlZnltSy7xrCHXe99xODLBPRn1K9vNy3v+w4VE+/T0gE0JUB1QUgRJtKxzmjgwYXTeQON2z/lQTJmMjni2GNZC1uFy2Cjf8Ja8iThzTjfRUFo0603oLQ21ZsXnuO1sJzsqr6GC+fdNwFCC3y5+b2VHD+cKk3J7yKVOFoQtG/WFmluQT206V1kuKdlMfjTiEqTkjNmhlnZdniKaXT7e/suppOr/mABhVVhUMQR3i4pwvse7IFrEs6ynaOEXwl/5Wm6bT0AeQ/T6iHI0JGLSDAWt3FvKAGgve8FgN78kC/ea0SuDXjKboqWoCT3BEFjRve7Mody1TfhNP6lgtSxS/q6SvKKsc1FZUvlC7qdtywLibYDbXr2Ug1LCUEagaeIyIzdKdUZanf9+Ml2GOeMX0xeRy4wqaJNmWq3i59mly1URmJrgqVIRfX+WcZA2a40bplXBlgmDSmwIeT+rJ5HX2eRR1+LeKZoPqyOqU5tXs1ULyqoq0WUkkICKe/LzcFZhEhmUPIwAmMqVG39IUq21h+ONt4u375oPQA9d4S7egLJY3Nl29j4Ge0Vjzdyp8GiXVcLYyHcj+Si66dHAset5fDCfw/SHpI16MszUhSRY0i4vFz1GF1QmEChFy74gAypq1XFIQvbUCcnVqO" />
+   </div>
+   <script type="text/javascript">
+            //<![CDATA[
+            Sys.WebForms.PageRequestManager._initialize('ctl00$ScriptManager1', 'aspnetForm', ['tctl00$headerUpdate', ''], [], [], 90, 'ctl00');
+            //]]>
+            </script>
+   <input class="unique-form-key" type="hidden" name="ctl00$key" id="ctl00_key" value="f9nNC3TE3kvuLgPf+e70yQ==" />
+   <div id="app-page">
+    <div id="app-content">
+     <div id="ctl00_headerUpdate">
+     </div>
+     <div id="ctl00_legacyPageContent" class="view-container surface page-content ">
+      <div class="view-content">
+       <div class="shared-video-css">
+        <div id="ctl00_phBody_CamSelector_MainPanel" class="row main-panel">
+         <div class="col-xs-12">
+           Video Device:
+          <select name="ctl00$phBody$CamSelector$ddlCams" onchange="javascript:setTimeout('__doPostBack(\'ctl00$phBody$CamSelector$ddlCams\',\'\')', 0)" id="ctl00_phBody_CamSelector_ddlCams" class="form-control camera-ddl-max-width"> <option selected="selected" value="2048">Front Doorbell</option> </select> &nbsp;
+          <span id="ctl00_phBody_CamSelector_lblSettings">Settings:</span>
+          <select name="ctl00$phBody$CamSelector$ddlPage" onchange="javascript:setTimeout('__doPostBack(\'ctl00$phBody$CamSelector$ddlPage\',\'\')', 0)" id="ctl00_phBody_CamSelector_ddlPage" class="form-control"> <option value="Overview" meta:resourcekey="Overview">Overview</option> <option selected="selected" value="CameraInfo" meta:resourcekey="CameraInfo">Device Info</option> </select>
+          <span id="imgWait" class="cam-selector-spinner icon-2x icon-refresh icon-spin" style="display: none"></span>
+         </div>
+        </div>
+        <div class="no-cams-message-user-control">
+        </div>
+        <div class="container video-container">
+         <div id="ctl00_phBody_TheMainPanel">
+          <input type="hidden" name="ctl00$phBody$hfRemoteAccessTestResult" id="ctl00_phBody_hfRemoteAccessTestResult" />
+          <input type="hidden" name="ctl00$phBody$hfAgeLimit" id="ctl00_phBody_hfAgeLimit" value="-1" />
+          <div class="container">
+           <div id="ctl00_phBody_PanelAutomaticClipDonation" style="display:none">
+            <div id="ctl00_phBody_AutomaticClipDonationSettings_ClipDonationSettingsDiv">
+             <div class="showing-clip-donation-legal-agreement">
+              <input type="hidden" name="ctl00$phBody$AutomaticClipDonationSettings$ShowClipDonationLegalAgreement" id="ctl00_phBody_AutomaticClipDonationSettings_ShowClipDonationLegalAgreement" value="0" />
+             </div>
+             <div class="row clip-donation-row">
+              <div class="col-xs-12 sub-heading">
+                Video Feedback Settings
+              </div>
+             </div>
+             <div class="row clip-donation-row">
+              <div class="col-xs-6">
+               <span class="style-checkbox enable-device-clip-donation-checkbox"><input id="ctl00_phBody_AutomaticClipDonationSettings_CheckBoxAutomaticClipDonation" type="checkbox" name="ctl00$phBody$AutomaticClipDonationSettings$CheckBoxAutomaticClipDonation" /><label for="ctl00_phBody_AutomaticClipDonationSettings_CheckBoxAutomaticClipDonation">Automatically share videos from this camera</label></span>
+               <span id="ctl00_phBody_AutomaticClipDonationSettings_ctl00" class="icon-large tooltip-pointer "><i class="icon-question-sign icon-large"></i></span>
+              </div>
+             </div>
+             <div id="ctl00_phBody_AutomaticClipDonationSettings_ClipDescriptorRegion" class="clip-descriptor-region">
+              <div class="row clip-donation-row automatic-clip-feedback-header">
+                What do you think this camera will see?
+              </div>
+              <div class="row clip-donation-row automatic-clip-feedback-header">
+               <input name="ctl00$phBody$AutomaticClipDonationSettings$TextBoxClipQualityComments" type="text" maxlength="100" id="ctl00_phBody_AutomaticClipDonationSettings_TextBoxClipQualityComments" class="bootstrap form-control ddl-resolution tb-other-category" placeholder="Please briefly describe what you can see" />
+              </div>
+             </div>
+             <div class="row-divider"></div>
+             <br />
+            </div>
+           </div>
+           <div class="row device-info-row no-border">
+            <div class="col-xs-12 sub-heading">
+              Video Device Info
+            </div>
+           </div>
+           <div id="ctl00_phBody_VideoDeviceNameRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+              Video Device Name:
+            </div>
+            <div class="col-xs-6 right">
+             <input name="ctl00$phBody$tbCamName" type="text" value="Front Doorbell" maxlength="16" id="ctl00_phBody_tbCamName" class="text-box-camera-name" />
+            </div>
+           </div>
+           <div class="row device-info-row">
+            <div class="col-xs-6 left">
+              Model:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblModel">SKYBELLHD</span>
+            </div>
+           </div>
+           <div class="row device-info-row">
+            <div class="col-xs-6 left">
+              MAC:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblMAC">REDACTED</span>
+            </div>
+           </div>
+           <div id="ctl00_phBody_SerialNumberRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+              Serial Number:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblSerialNumber">REDACTED</span>
+            </div>
+           </div>
+           <div id="ctl00_phBody_publicIpRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+              Public IP Address:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblPublicIP">REDACTED</span>
+            </div>
+           </div>
+           <div id="ctl00_phBody_firmwareRow" class="row device-info-row firmware-row">
+            <div class="col-xs-6 left">
+              Current Firmware Version:
+            </div>
+            <div class="col-xs-6 right firmware-row-value" style="display:inline-flex;flex-wrap:wrap">
+             <span id="ctl00_phBody_lblFirmware" class="firmware-value">5042</span>
+             <input type="image" name="ctl00$phBody$btnRefreshFW" id="ctl00_phBody_btnRefreshFW" src="../webimages/widgets/refresh.png" alt="refresh" onclick="return _showProcessingIcon();" style="border-width:0px;" /> &nbsp;&nbsp;&nbsp; &nbsp;
+             <div id="ctl00_phBody_firmwareStatus">
+              <span id="ctl00_phBody_ctl02" class=" tooltip-pointer "><i class="icon-question-sign icon-large"></i></span>
+              <span style="font-size: small"> Your device is on the most up to date firmware version. </span>
+             </div>
+            </div>
+           </div>
+           <div id="ctl00_phBody_lastDdnsUpdateTimeRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+              Last DDNS Update Time:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblDDNSUpdate">29 April 2022 17:29</span>
+            </div>
+           </div>
+           <div id="ctl00_phBody_wirelessStrengthRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+              Normalized Wireless Signal Strength:
+            </div>
+            <div class="col-xs-6 right">
+             <span id="ctl00_phBody_lblSignalStrength">Refresh to load value.</span>
+             <input type="image" name="ctl00$phBody$imgRefresh" id="ctl00_phBody_imgRefresh" src="../webimages/widgets/refresh.png" alt="refresh" onclick="return _showProcessingIcon();" style="border-width:0px;" />
+            </div>
+           </div>
+           <div id="ctl00_phBody_VideoQualityRow" class="row device-info-row">
+            <div class="col-xs-6 left">
+             <label> Video Resolution &amp; Quality: </label>
+            </div>
+            <div class="col-xs-4 right">
+             <div class="slider-wrapper">
+              <select name="ctl00$phBody$ddlVideoQuality" id="ctl00_phBody_ddlVideoQuality"> <option value="3">480p (Standard Quality)</option> <option value="2">720p (Good Quality)</option> <option selected="selected" value="1">720p (Better Quality)</option> <option value="0">1080p (Excellent Quality)</option> </select>
+             </div>
+            </div>
+           </div>
+           <div id="ctl00_phBody_ChimeRow">
+            <div id="ctl00_phBody_ChimeSettingsLabel" class="row device-info-row no-border">
+             <div class="col-xs-6 left sub-heading">
+              <label> Chime Settings </label>
+             </div>
+            </div>
+            <div id="ctl00_phBody_ChimeTypeRow" class="row device-info-row">
+             <div class="col-xs-6 left">
+              <label> Chime Type: </label>
+             </div>
+             <div class="col-xs-2 right">
+              <select name="ctl00$phBody$ddChimeType" id="ctl00_phBody_ddChimeType" class="ddl-chime-type"> <option value="1">Digital</option> <option selected="selected" value="0">Mechanical</option> <option value="-1">None</option> </select>
+             </div>
+            </div>
+            <div id="ctl00_phBody_IndoorChimeRow" class="row device-info-row indoor-chime-row">
+             <div class="col-xs-12 left">
+              <span class="style-checkbox"><input id="ctl00_phBody_cbIndoorChime" type="checkbox" name="ctl00$phBody$cbIndoorChime" checked="unchecked" /><label for="ctl00_phBody_cbIndoorChime">Indoor Chime</label></span>
+              <span id="ctl00_phBody_ctl16" class="doorbell-hint tooltip-pointer "><i class="icon-question-sign icon-large"></i></span>
+             </div>
+            </div>
+            <div id="ctl00_phBody_OutdoorChimeRow" class="row device-info-row">
+             <div class="col-xs-12 left">
+              <span class="style-checkbox doorbell-outdoor-tone-cb"><input id="ctl00_phBody_cbOutdoorChime" type="checkbox" name="ctl00$phBody$cbOutdoorChime" checked="unchecked" /><label for="ctl00_phBody_cbOutdoorChime">Outdoor Tone</label></span>
+              <span id="ctl00_phBody_ctl17" class="doorbell-hint tooltip-pointer "><i class="icon-question-sign icon-large"></i></span>
+             </div>
+            </div>
+            <div id="ctl00_phBody_ChimeLevelRow" class="row device-info-row">
+             <div class="col-xs-6 left">
+              <label> Outdoor Tone Volume: </label>
+              <span id="ctl00_phBody_ctl20" class="doorbell-hint tooltip-pointer "><i class="icon-question-sign icon-large"></i></span>
+             </div>
+             <div class="col-xs-4 right">
+              <div class="slider-wrapper">
+               <div id="ctl00_phBody_inpChimeLevel_wrapper" class="bootstrap-adc-slider fill-width doorbell-chime-level-sl  small-slider ">
+                <div class="padding-fix">
+                 <input name="ctl00$phBody$inpChimeLevel$bootstrapSlider" type="text" id="ctl00_phBody_inpChimeLevel_bootstrapSlider" class="slider-input bootstrap-slider" value="2" data-slider-id="ChimeLevelSlider" data-slider-min="0" data-slider-max="3" data-slider-step="1" data-slider-value="2" />
+                </div>
+               </div>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div id="ctl00_phBody_DoorbellSettingsRow">
+            <div id="ctl00_phBody_DoorbellSettingsLabel" class="row device-info-row no-border">
+             <div class="col-xs-6 sub-heading">
+              <label> Doorbell Settings </label>
+             </div>
+            </div>
+            <div id="ctl00_phBody_LedIntensityRow" class="row device-info-row doorbell-led-brigthness-row">
+             <div class="col-xs-6 left">
+              <label> Doorbell LED Brightness </label>
+             </div>
+             <div class="col-xs-4 right">
+              <div class="slider-wrapper brightness-slider-wrapper">
+               <div id="ctl00_phBody_inpDoorbellLEDIntensity_wrapper" class="bootstrap-adc-slider fill-width small-slider ">
+                <div class="padding-fix">
+                 <i id="leftIcon" class="left-icon adc-brightness-min "></i>
+                 <input name="ctl00$phBody$inpDoorbellLEDIntensity$bootstrapSlider" type="text" id="ctl00_phBody_inpDoorbellLEDIntensity_bootstrapSlider" class="slider-input bootstrap-slider" value="100" data-slider-id="DoorbellLEDIntensitySlider" data-slider-min="0" data-slider-max="100" data-slider-step="1" data-slider-value="100" />
+                 <i id="rightIcon" class="right-icon adc-brightness-max "></i>
+                </div>
+               </div>
+              </div>
+             </div>
+            </div>
+            <div id="ctl00_phBody_LedColorRow" class="row device-info-row">
+             <div class="col-xs-6 left">
+              <label for="colorPicker"> Doorbell LED Color </label>
+             </div>
+             <div id="ctl00_phBody_LedColorPicker" class="col-xs-1">
+              <input name="ctl00$phBody$colorPicker" type="text" id="colorPicker" class="form-control mini-colors" value="#007F00" />
+             </div>
+            </div>
+            <div id="ctl00_phBody_DoorbellMotionRow" class="row device-info-row large-row">
+             <div class="col-xs-6 left">
+              <label> Sensitivity to Motion </label>
+             </div>
+             <div class="col-xs-4 right">
+              <div class="slider-wrapper">
+               <div id="ctl00_phBody_inpMotionThreshold_wrapper" class="bootstrap-adc-slider fill-width small-slider ">
+                <div class="padding-fix">
+                 <input name="ctl00$phBody$inpMotionThreshold$bootstrapSlider" type="text" id="ctl00_phBody_inpMotionThreshold_bootstrapSlider" class="slider-input bootstrap-slider" value="4" data-slider-id="MotionThresholdSlider" data-slider-min="1" data-slider-max="4" data-slider-step="1" data-slider-value="4" />
+                </div>
+               </div>
+              </div>
+             </div>
+            </div>
+           </div>
+           <div id="ctl00_phBody_bridgeInfo_Container" class="container video-container" style="display:none;">
+            <div class="row-fluid bridge-collapser ">
+             <div class="collapser-first-div">
+              <span class="padding collapser-first-text">Wi-FI BRIDGE</span>
+             </div>
+             <div class="collapser-second-div">
+              <span class="padding collapser-second-text">SHOW DETAILS</span>
+              <i class="adc-chevron-down collapse-icon"></i>
+             </div>
+            </div>
+            <div id="ctl00_phBody_bridgeInfo_MainDiv" class="bridge-device-info hidden">
+             <div class="container">
+              <div class="row video-row">
+               <div class="col-xs-12 sub-heading">
+                 Video Device Info
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 Video Device Name:
+               </div>
+               <div class="col-xs-6">
+                <input name="ctl00$phBody$bridgeInfo$tbCamName" type="text" maxlength="16" id="ctl00_phBody_bridgeInfo_tbCamName" class="text-box-camera-name" />
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 Model:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblModel">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 MAC:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblMAC">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row margin-top-15 video-row">
+               <div class="col-xs-6">
+                 Private IP Address:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblPrivateIP">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 Public IP Address:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblPublicIP">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 Port:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblPort">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 HTTPS Port:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblHttpsPort">&nbsp;</span>
+               </div>
+              </div>
+              <div id="ctl00_phBody_bridgeInfo_firmwareRow" class="row video-row margin-top-15 firmware-row">
+               <div class="col-xs-6">
+                 Firmware Version:
+               </div>
+               <div class="col-xs-6 firmware-row-value">
+                <span id="ctl00_phBody_bridgeInfo_lblFirmware" class="firmware-value">&nbsp;</span>
+                <input type="image" name="ctl00$phBody$bridgeInfo$btnRefreshFW" id="ctl00_phBody_bridgeInfo_btnRefreshFW" src="../webimages/widgets/refresh.png" alt="Refresh Firmware" onclick="return _showProcessingIcon();" style="border-width:0px;" />
+               </div>
+              </div>
+              <div id="ctl00_phBody_bridgeInfo_currentFirmwareRow" class="row video-row margin-top-15 current-firmware-row">
+               <div class="col-xs-6">
+                 Most Current Firmware Version:
+               </div>
+               <div class="col-xs-6 current-firmware-row-value">
+                <span id="ctl00_phBody_bridgeInfo_lblCurrentFirmware" class="current-firmware-value">&nbsp;</span>
+               </div>
+              </div>
+              <div class="row video-row">
+               <div class="col-xs-6">
+                 Last DDNS update time:
+               </div>
+               <div class="col-xs-6">
+                <span id="ctl00_phBody_bridgeInfo_lblDDNSUpdate">&nbsp;</span>
+               </div>
+              </div>
+              <div id="ctl00_phBody_bridgeInfo_BridgePwdRow" class="row video-row margin-top-15">
+               <div id="ctl00_phBody_bridgeInfo_PwdCell" class="col-xs-3">
+                <span id="ctl00_phBody_bridgeInfo_BridgeLogin">New Login:</span>
+                <input name="ctl00$phBody$bridgeInfo$tbBridgeLogin" type="text" maxlength="15" id="ctl00_phBody_bridgeInfo_tbBridgeLogin" />
+               </div>
+               <div class="col-xs-3">
+                <span id="ctl00_phBody_bridgeInfo_BridgePwd">New Password:</span>
+                <input name="ctl00$phBody$bridgeInfo$tbBridgePwd" type="password" maxlength="15" id="ctl00_phBody_bridgeInfo_tbBridgePwd" />
+               </div>
+               <div class="col-xs-3">
+                <span id="ctl00_phBody_bridgeInfo_BridgePwdConfirm">Confirm Password:</span>
+                <input name="ctl00$phBody$bridgeInfo$tbBridgePwdConfirm" type="password" maxlength="15" id="ctl00_phBody_bridgeInfo_tbBridgePwdConfirm" />
+               </div>
+              </div>
+             </div>
+             <div class="hidden-field-div">
+              <input type="hidden" name="ctl00$phBody$bridgeInfo$hfSelectedDeviceId" id="ctl00_phBody_bridgeInfo_hfSelectedDeviceId" />
+             </div>
+             <link rel="stylesheet" href="video.min.css?v=212884" />
+             <!-- This code is used in SettingsWireless page, AddCamera page and AddCameraSuccess pages. -->
+             <div class="shared-video-css">
+              <div class="container video-container settings-wireless-container">
+               <div class="settings-wireless-spinner" style="display: none">
+                <i class="icon-spinner icon-spin icon-4x"></i> Getting wireless info...
+               </div>
+               <div class="settings-wireless-main-content">
+                <div class="row video-row">
+                 <div id="divWirelessSettingsSubHeading" class="col-xs-12 sub-heading">
+                   Wireless Network Settings
+                 </div>
+                </div>
+                <div class="row video-row">
+                 <div id="divCurrentNetworkInfo" class="col-xs-12">
+                  <span id="ctl00_phBody_bridgeInfo_wirelessSettings_lblNetwork" class="current-network-lbl">Current Network:</span>
+                  <span id="ctl00_phBody_bridgeInfo_wirelessSettings_lblNetworkSSID" class="success-text-color network-ssid">&nbsp;</span> &nbsp; &nbsp;&nbsp;
+                  <a onclick="return gSettingsWirelessInstance.reloadWirelessSettings();" id="ctl00_phBody_bridgeInfo_wirelessSettings_reloadWirelessSettingsLink" title="Click to request updated wireless settings from the camera" class="reloadWirelessLink" href="javascript:__doPostBack('ctl00$phBody$bridgeInfo$wirelessSettings$reloadWirelessSettingsLink','')">Refresh</a>
+                  <span class="outer-icon"> <i class="icon-refresh" onclick="return gSettingsWirelessInstance.reloadWirelessSettings();"></i> </span>
+                 </div>
+                </div>
+                <div class="row row-divider video-row">
+                 <div class="col-xs-12">
+                   Edit the wireless connection for your camera. Pick the setup option below that's best for your camera.
+                 </div>
+                </div>
+                <div class="row row-divider video-row">
+                 <div class="col-xs-12 border-divider"></div>
+                </div>
+                <div class="row row-divider video-row">
+                </div>
+                <!-- row for access point btn -->
+                <!-- row for Copy btn -->
+                <!-- row for Scan btn -->
+                <div id="ctl00_phBody_bridgeInfo_wirelessSettings_scanConfigRow" class="row video-row row-divider">
+                 <div class="col-xs-3 ws-buttons">
+                  <button id="ctl00_phBody_bridgeInfo_wirelessSettings_btnScanForNetworks" class="btn btn-lg btn-primary wireless-button video-col" data-toggle="modal" onclick="return gSettingsWirelessInstance.scanWirelessNetworks();"> <i class="adc-pointcentral"></i> Scan </button>
+                 </div>
+                 <div class="col-xs-9">
+                   Scan for wireless networks. Use this option to configure a wireless network to a camera for the first time. The camera will search for available networks within wireless range. When the search is complete, you will need to enter in the wireless password to complete the setup.
+                 </div>
+                </div>
+                <!-- row for Manual btn -->
+                <div class="row video-row row-divider">
+                 <div class="col-xs-3 ws-buttons">
+                  <button id="ctl00_phBody_bridgeInfo_wirelessSettings_btnManualConfig" class="btn btn-lg btn-primary wireless-button video-col" data-toggle="modal" onclick="return gSettingsWirelessInstance.manaullyConfigWirelessNetwork();"> <i class="icon-wrench"></i> Manual </button>
+                 </div>
+                 <div class="col-xs-9">
+                   Manually configure the wireless network. If the wireless network you are configuring is temporarily out of range or does not broadcast its SSID, use this option to manually enter in the camera's wireless settings.
+                 </div>
+                </div>
+               </div>
+              </div>
+             </div>
+             <!--end of container -->
+             <!-- Modal popup -->
+             <div class="modal fade wireless-scan-modal shared-video-css" id="wirelessSettingsAvailableNetworksModal">
+              <div class="modal-dialog">
+               <div class="modal-content">
+                <div class="modal-header">
+                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                 <h3> Select Wireless Network </h3>
+                </div>
+                <div class="modal-body wireless-scan-modal-body">
+                 <div class="row video-row request-wireless-network-div connect-to-wireless-step1">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_lblWait">Requesting wireless network information from the camera</span>
+                  </div>
+                  <div class="col-xs-1">
+                   <img id="ctl00_phBody_bridgeInfo_wirelessSettings_imgLoaderGif" src="../webimages/ajax-loader.gif" style="border-width:0px;" />
+                  </div>
+                 </div>
+                 <div class="row video-row try-again-div hidden connect-to-wireless-step1">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_lblWirelessNetworkNotFound">No wireless networks detected by the camera.</span> &nbsp; &nbsp;
+                   <a class="video-try-again" href="javascript:void(0);" onclick="gSettingsWirelessInstance.scanWirelessNetworks();"> Try Again <span class="outer-icon"> <i id="ctl00_phBody_bridgeInfo_wirelessSettings_refreshIcon" class="icon-refresh" onclick="gSettingsWirelessInstance.scanWirelessNetworks();"></i> </span> </a>
+                  </div>
+                 </div>
+                 <div class="row request-wireless-network-div hidden copy-wireless-network-step1 ">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel7">Requesting wireless network information from the other camera(s).</span>
+                  </div>
+                  <div class="col-xs-1">
+                   <img id="ctl00_phBody_bridgeInfo_wirelessSettings_Image1" src="../webimages/ajax-loader.gif" style="border-width:0px;" />
+                  </div>
+                 </div>
+                 <div class="row request-wireless-network-div hidden scan-access-point-step1 ">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel10">Scanning for available access point devices.</span>
+                  </div>
+                  <div class="col-xs-1">
+                   <img id="ctl00_phBody_bridgeInfo_wirelessSettings_Image2" src="../webimages/ajax-loader.gif" style="border-width:0px;" />
+                  </div>
+                 </div>
+                 <div class="row video-row try-again-div-copy hidden copy-wireless-network-step1">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel8">Could not find any wireless network to copy. </span> &nbsp; &nbsp;
+                   <a class="video-try-again" href="javascript:void(0);" onclick="gSettingsWirelessInstance.copyWirelessNetwork();"> Try Again </a> &nbsp;
+                   <span class="outer-icon"> <i id="ctl00_phBody_bridgeInfo_wirelessSettings_I1" class="icon-refresh" onclick="gSettingsWirelessInstance.copyWirelessNetwork();"></i> </span>
+                  </div>
+                 </div>
+                 <div class="row video-row try-again-div-scan-access-point hidden scan-access-point-step1">
+                  <div class="col-xs-1"></div>
+                  <div class="col-xs-9">
+                   <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel11">Could not find available access points. </span> &nbsp; &nbsp;
+                   <a class="video-try-again" href="javascript:void(0);" onclick="gSettingsWirelessInstance.connectToAccessPoint();"> Try Again </a> &nbsp;
+                   <span class="outer-icon"> <i id="ctl00_phBody_bridgeInfo_wirelessSettings_I2" class="icon-refresh" onclick="gSettingsWirelessInstance.connectToAccessPoint();"></i> </span>
+                  </div>
+                 </div>
+                 <!--further instructions for connecting to a wireless network. Step2-->
+                 <div id="goWirelessStep2" class="connect-to-wireless-step2 connect-to-wireless-step2-instruction video-row">
+                  <span id="ctl00_phBody_bridgeInfo_wirelessSettings_wirelessInfoSaved">Your wireless settings have been saved to your camera.</span>
+                  <br />
+                  <div class="power-off">
+                   <ol>
+                    <li>Please remove the power and Ethernet cables from the camera</li>
+                    <li>Reconnect the power cord</li>
+                   </ol>
+                  </div>
+                  <div class="power-off-no-ethernet">
+                   <ol>
+                    <li>Please remove the power cord from the camera</li>
+                    <li>Reconnect the power cord</li>
+                   </ol>
+                  </div>
+                  <div class="power-off-dbc">
+                   <ol>
+                    <li>Remove the device from its mounting.</li>
+                    <li>Flip the switch on the back of the device to the OFF position.</li>
+                    <li>Flip the switch to the ON position.</li>
+                    <li>Reattach the device back to its mount.</li>
+                   </ol>
+                  </div>
+                  <div class="no-power-off">
+                   <ol>
+                    <li>Please remove the Ethernet cable from the camera</li>
+                   </ol>
+                  </div>
+                 </div>
+                 <!--trying to connect over the wireless -->
+                 <div id="goWirelessStep3" class="connect-to-wireless-step3 video-row">
+                  <div class="power-off">
+                    Waiting for the camera to connect wirelessly. If you didn't power-cycle the camera on the previous page, do so now. This page will update when the camera has reconnected.
+                  </div>
+                  <div class="no-power-off">
+                    Waiting for the camera to connect wirelessly. This page will update when the camera has reconnected.
+                  </div>
+                  <br />
+                  <br />
+                  <div class="div-wireless-progress progress">
+                   <div id="progressBar" class="video-wireless-progress-bar progress-bar" style="width: 1%"></div>
+                  </div>
+                 </div>
+                 <!-- failed to connect to wireless -->
+                 <div id="wirelessSetupFailed" class="hidden connect-to-wireless-failed video-row">
+                  <div style="color: red;">
+                    Your camera has not reconnected to the wireless network.
+                  </div>
+                  <br />
+                  <ol>
+                   <li class="failed-step-one"> Reconnect the ethernet cord to the camera. </li>
+                   <li class="failed-step-two"> Power cycle the camera. </li>
+                   <li class="failed-step-three"> Make sure the camera is within the range of the wireless network. </li>
+                   <li class="failed-step-four"> Double check the wireless setting and try again. </li>
+                  </ol>
+                 </div>
+                 <!--Manually config wireless div-->
+                 <div class="manual-config-div hidden">
+                  <div class="row">
+                   <div class="col-xs-4">
+                     Wireless Network Name (SSID):
+                    <br />
+                    <input name="ctl00$phBody$bridgeInfo$wirelessSettings$txtSSID" type="text" maxlength="32" id="ctl00_phBody_bridgeInfo_wirelessSettings_txtSSID" class="video-col wireless-signal-name" />
+                   </div>
+                   <div class="col-xs-8">
+                     This should match the Wireless Network Name (SSID) of your wireless network (case sensitive).
+                   </div>
+                  </div>
+                  <!--end row-->
+                  <div class="row-divider"></div>
+                  <div class="row">
+                   <div class="col-xs-4">
+                     Encryption Type:
+                    <br />
+                    <select name="ctl00$phBody$bridgeInfo$wirelessSettings$rblEncryption" id="ctl00_phBody_bridgeInfo_wirelessSettings_rblEncryption" class="bootstrap form-control encryption-type-dropdown video-col"> <option value="MakeASelection">Make a selection</option> <option value="None">No Encryption</option> <option value="Wep">WEP</option> <option value="Wpa">WPA-Personal</option> <option value="Wpa2">WPA2-Personal</option> <option value="Wpa3">WPA3-Personal</option> </select>
+                   </div>
+                   <div class="col-xs-8">
+                     In order to connect wirelessly to your router the camera needs to be configured with any required security credentials. If your router has WEP or WPA encryption, you will need to provide the Wireless Network Key
+                   </div>
+                  </div>
+                  <!--end row-->
+                  <div id="warningNetworkUnsecured" class="row hidden">
+                   <div class="col-xs-4"></div>
+                   <div class="col-xs-8">
+                    <h4 class="icon-warning-sign"> Attention! </h4>
+                    <br />
+                    <strong> WEP and open networks offer almost no protection from malicious users getting onto a network. It is highly recommended that you upgrade your wireless security to WPA2 or WPA to protect yourself and your internet activity from being compromised. </strong>
+                   </div>
+                  </div>
+                  <!--end warning network unsecured message-->
+                  <div class="row-divider"></div>
+                  <div class="row encryption-algorithm-row">
+                   <div class="col-xs-4">
+                     Algorithm:
+                    <br />
+                    <!-- Note: the values match up with the enum in backend -->
+                    <select name="ctl00$phBody$bridgeInfo$wirelessSettings$rblAlgoritm" id="ctl00_phBody_bridgeInfo_wirelessSettings_rblAlgoritm" class="bootstrap form-control algorithm-dropdown video-col"> <option value="MakeASelection">Make a selection</option> <option value="AmbiguousOpenShared">Open Shared</option> <option value="Tkip">TKIP (Default for WPA)</option> <option value="Aes">AES (Default for WPA2)</option> <option value="Open">Open</option> <option value="Shared">Shared</option> </select>
+                   </div>
+                   <div class="col-xs-8">
+                     Data encryption algorithm for WPA.
+                   </div>
+                  </div>
+                  <!--end row-->
+                  <div class="row-divider"></div>
+                  <div class="row password-row">
+                   <div class="col-xs-4">
+                     Password:
+                    <input name="ctl00$phBody$bridgeInfo$wirelessSettings$ctl05" type="text" class="wireless-signal-password video-col" />
+                   </div>
+                   <div class="col-xs-8">
+                     Make sure the Wireless Network Key matches the value of the 1st WEP key of your router and the 1st WEP key is selected on your router.
+                   </div>
+                  </div>
+                  <!--end row-->
+                  <div class="row-divider"></div>
+                 </div>
+                 <!--end of manual config div-->
+                </div>
+                <!-- modal-body-->
+                <div class="modal-footer">
+                 <div class="video-row wireless_row footer-inner-div hidden" id="divAdvancedToggleButton">
+                  <button class="btn btn-primary wireless-button video-col" onclick="return gSettingsWirelessInstance.advancedToggle();"> Advanced </button>
+                  <div id="divApplyToAll" class="footer-inner-div connect-to-wireless-step1 hidden">
+                   <span class="style-checkbox"><input id="ctl00_phBody_bridgeInfo_wirelessSettings_applyToAll" type="checkbox" name="ctl00$phBody$bridgeInfo$wirelessSettings$applyToAll" /><label for="ctl00_phBody_bridgeInfo_wirelessSettings_applyToAll">Apply these settings to all wireless cameras on this account</label></span>
+                  </div>
+                 </div>
+                 <div class="row video-row">
+                  <span class="outer-icon wireless-setting-spinner connect-to-wireless-step2 "> <span id="imgWait" class="wireless-setting-spinner connect-to-wireless-step2 icon-2x icon-refresh icon-spin hidden"></span> </span>
+                 </div>
+                 <input type="submit" name="ctl00$phBody$bridgeInfo$wirelessSettings$btnSave" value="Continue" onclick="return SettingsWireless._getInstance().saveWirelessInfo();" id="ctl00_phBody_bridgeInfo_wirelessSettings_btnSave" class="btn btn-primary btn-save-wireless hidden connect-to-wireless-step1" />
+                 <input type="submit" name="ctl00$phBody$bridgeInfo$wirelessSettings$btnAboveStepsCompleted" value="Above steps completed" id="ctl00_phBody_bridgeInfo_wirelessSettings_btnAboveStepsCompleted" class="btn btn-primary hidden connect-to-wireless-step2" />
+                </div>
+                <!-- modal-footer-->
+               </div>
+               <!-- modal-content-->
+              </div>
+              <!-- /.modal-dialog -->
+             </div>
+             <!-- /.modal -->
+             <!--sample row for: scan for wireless networks popup-->
+             <div class="shared-video-css">
+              <div class="sample-row row cursor-pointer highlight-row highlight-row-video wireless_row hidden">
+               <div class="col-xs-6 wireless-td vertically-center-wide">
+                <span class="style-checkbox wireless-signal-checkbox"><input id="ctl00_phBody_bridgeInfo_wirelessSettings_sampleCheckBox" type="checkbox" name="ctl00$phBody$bridgeInfo$wirelessSettings$sampleCheckBox" /><label for="ctl00_phBody_bridgeInfo_wirelessSettings_sampleCheckBox"> </label></span>
+                <img id="ctl00_phBody_bridgeInfo_wirelessSettings_sampleImg" class="wireless-signal-img" src="" style="border-width:0px;" />
+                <span id="ctl00_phBody_bridgeInfo_wirelessSettings_sampleSsid" class="wireless-signal-name">&nbsp;</span>
+               </div>
+               <div class="col-xs-3 wireless-td vertically-center-wide">
+                <div class="icon-warning-sign hidden" title="WEP and open networks offer almost no protection from malicious users getting onto a network. It is highly recommended that you upgrade your wireless security to WPA2 or WPA to protect yourself and your internet activity from being compromised.">
+                </div>
+                <div class="vertically-center-tall">
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_sampleEncryptionLabel" class="wireless-signal-encr">&nbsp;</span>
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_algorithm" class="wireless-signal-alg hidden">&nbsp;</span>
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_encryptionType" class="wireless-signal-encryptionType hidden">&nbsp;</span>
+                </div>
+               </div>
+               <div class="col-xs-1 wireless-td vertically-center-tall">
+                <span id="ctl00_phBody_bridgeInfo_wirelessSettings_freqBand" class="wireless-signal-frequency">&nbsp;</span>
+               </div>
+               <div class="col-xs-1 wireless-td password-outer vertically-center-tall">
+                <input name="ctl00$phBody$bridgeInfo$wirelessSettings$ctl07" type="text" class="wireless-signal-password hidden" />
+               </div>
+              </div>
+             </div>
+             <!--sample row for: copy wireless networks popup-->
+             <!-- note: the cols take up space even if they are hidden, so doing a separate sample row (otherwise we could have used the sample for scan wireless)-->
+             <div class="shared-video-css">
+              <div class="sample-row-copy row cursor-pointer highlight-row highlight-row-video wireless_row hidden">
+               <div class="col-xs-4 wireless-td vertically-center-wide">
+                <span class="style-checkbox wireless-signal-checkbox"><input id="ctl00_phBody_bridgeInfo_wirelessSettings_Checkbox1" type="checkbox" name="ctl00$phBody$bridgeInfo$wirelessSettings$Checkbox1" /><label for="ctl00_phBody_bridgeInfo_wirelessSettings_Checkbox1"> </label></span>
+                <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel1" class="wireless-signal-name">&nbsp;</span>
+               </div>
+               <div class="col-xs-3 wireless-td vertically-center-wide">
+                <div class="icon-warning-sign hidden" title="WEP and open networks offer almost no protection from malicious users getting onto a network. It is highly recommended that you upgrade your wireless security to WPA2 or WPA to protect yourself and your internet activity from being compromised.">
+                </div>
+                <div class="vertically-center-tall">
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel2" class="wireless-signal-encr">&nbsp;</span>
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel3" class="wireless-signal-alg hidden">&nbsp;</span>
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel4" class="wireless-signal-encryptionType hidden">&nbsp;</span>
+                </div>
+               </div>
+               <div class="col-xs-5 wireless-td vertically-center-tall">
+                <div class="bold italics">
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel5">Cameras on this network:</span>
+                </div>
+                <div class="italics">
+                 <span id="ctl00_phBody_bridgeInfo_wirelessSettings_EncodingLabel6" class="cams-on-this-network">&nbsp;</span>
+                </div>
+               </div>
+              </div>
+             </div>
+             <!--sample row for: access points available-->
+             <div class="shared-video-css">
+              <div class="sample-row-access-point row cursor-pointer highlight-row highlight-row-video wireless_row hidden">
+               <div class="col-xs-1 wireless-td">
+                <span class="style-checkbox wireless-signal-checkbox"><input id="ctl00_phBody_bridgeInfo_wirelessSettings_ctl08" type="checkbox" name="ctl00$phBody$bridgeInfo$wirelessSettings$ctl08" /><label for="ctl00_phBody_bridgeInfo_wirelessSettings_ctl08"> </label></span>
+               </div>
+               <div class="col-xs-2 wireless-td vertically-center-wide">
+                <img class="wireless-signal-img" src="" style="border-width:0px;" />
+               </div>
+               <div class="col-xs-4 wireless-td vertically-center-tall">
+                <span class="wireless-signal-name">&nbsp;</span>
+                <span class="wireless-signal-ssid hidden">&nbsp;</span>
+               </div>
+               <div class="col-xs-2 wireless-td vertically-center-tall">
+                <span class="wireless-signal-frequency">&nbsp;</span>
+               </div>
+              </div>
+             </div>
+             <input type="hidden" name="ctl00$phBody$bridgeInfo$wirelessSettings$wirelessShowsBridge" id="wirelessShowsBridge" value="0" />
+            </div>
+           </div>
+           <div class="row device-info-row no-border save-delete-associate">
+            <div class="col-xs-6">
+            </div>
+            <div class="save-delete col-xs-6">
+             <div class="delete">
+              <div id="ctl00_phBody_ilDelCam" title="Delete this Video Device" class="icon_link">
+               <input type="image" name="ctl00$phBody$ilDelCam$ctl00" src="../webimages/trash_icon.png" alt="" onclick="return confirmDelete();" style="border-width:0px;" />&nbsp;
+               <a onclick="return confirmDelete();" href="javascript:__doPostBack('ctl00$phBody$ilDelCam$ctl01','')">Delete this Video Device</a>
+              </div>
+             </div>
+             <div class="save">
+              <input type="submit" name="ctl00$phBody$tfSave" value="Save" onclick="return btnSaveClicked();" id="ctl00_phBody_tfSave" class="btn btn-primary save-btn" />
+             </div>
+            </div>
+           </div>
+           <div class="row margin-top-15">
+            <div class="col-xs-5 legacy-return-to-link">
+             <div id="ctl00_phBody_liBackToOverview" class="icon_link">
+              <input type="image" name="ctl00$phBody$liBackToOverview$ctl00" src="../webimages/previous.gif" alt="" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions('ctl00$phBody$liBackToOverview$ctl00', '', false, '', 'SettingsOverview_v2.aspx', false, false))" style="border-width:0px;" />&nbsp;
+              <a href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions('ctl00$phBody$liBackToOverview$ctl01', '', false, '', 'SettingsOverview_v2.aspx', false, true))">Back to Video Device Settings Overview</a>
+             </div>
+            </div>
+            <div class="col-xs-5">
+             <div id="ctl00_phBody_lnkAddCamera" title="Add another Video Device" class="icon_link">
+              <input type="image" name="ctl00$phBody$lnkAddCamera$ctl00" src="../webimages/plus_icon.png" alt="" onclick="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions('ctl00$phBody$lnkAddCamera$ctl00', '', false, '', 'AddVideoDevice.aspx', false, false))" style="border-width:0px;" />&nbsp;
+              <a href="javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions('ctl00$phBody$lnkAddCamera$ctl01', '', false, '', 'AddVideoDevice.aspx', false, true))">Add another Video Device</a>
+             </div>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div class="modal-wrapper">
+         <div id="remote_access_test_message" class="modal fade">
+          <div class="modal-dialog">
+           <div class="modal-content">
+            <div class="modal-header">
+             <button type="button" class="close icon-remove" data-dismiss="modal" aria-hidden="true"> </button>
+             <h4 class="modal-title"> Please wait </h4>
+            </div>
+            <div class="modal-body">
+             <table style="height: 100px; width: 100%;">
+              <tbody>
+               <tr>
+                <td> <img style="margin-left: 20px" alt="" src="../webimages/spinner.gif?v=1439" /> </td>
+                <td style="padding-left: 10px"> Testing remote access to the Video Device. This process can take up to 2 minutes. </td>
+               </tr>
+              </tbody>
+             </table>
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div class="modal-wrapper-firmware-upgrade modal fade" id="upgradeFirmwareModal" role="dialog">
+         <div class="modal-dialog">
+          <div class="modal-content">
+           <div class="modal-header">
+            <button type="button" class="close icon-remove" data-dismiss="modal" aria-hidden="true"> </button>
+            <h4 class="modal-title"> Upgrading Firmware... </h4>
+           </div>
+           <div class="modal-body modal-body-style">
+            <div id="modalBody">
+             <ol id="ctl00_phBody_FirmwareUpgradeMessages" class="fw-upgrade-steps" style="list-style-type:decimal;">
+              <li>Do not unplug this video device until green success message is shown below</li>
+              <li>This upgrade will take around 2 minutes to complete</li>
+              <li>The video device LED will flash blue and yellow during this upgrade</li>
+              <li>The video device will reboot at the end of this upgrade</li>
+             </ol>
+            </div> File upload status:
+            <textarea name="ctl00$phBody$upgradeFirmwareMessageBox" rows="2" cols="20" readonly="readonly" id="ctl00_phBody_upgradeFirmwareMessageBox" class="fwUpgradeMessageBox-style upgrade-firmware-message-box">
+</textarea>
+           </div>
+           <div id="fwUpgradeModalTail" class="modal-tail modal-tail-style invisible">
+            <textarea name="ctl00$phBody$fwUpgradeModalTailTextBox" rows="2" cols="20" id="ctl00_phBody_fwUpgradeModalTailTextBox" class="modal-tail-messageBox">
+Firmware upgrade is complete. You can check the video device status after closing this dialog box.</textarea>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div class="modal-wrapper-div">
+         <div id="popupClipFlagFeedbackLegalAgreement" class="modal fade" role="dialog" tabindex="-1">
+          <div class="modal-dialog">
+           <div class="modal-content">
+            <div class="modal-header">
+             <button type="button" class="close icon-remove icon-remove-legal-agreement" data-dismiss="modal" aria-hidden="true"></button>
+             <h4 class="modal-title"> Video Feedback – Video Analytics Notice &amp; Release </h4>
+            </div>
+            <div class="modal-body modal-body-feedback-legal-agreement-popup">
+             <div style="padding: 10px">
+              <div class="terms">
+               <span id="ctl00_phBody_ClipDonationTerms_ctl00_VAWaiverLong"> <p> Thank you for submitting your video clips (the “<u>Videos</u>”) from your Alarm.com Incorporated (including its affiliates, “<u>Alarm.com</u>,” “<u>we</u>” or “<u>our</u>”) security monitoring device to Alarm.com for our research and development purposes. Please read this Video Analytics Notice &amp; Release (the “Notice &amp; Release”) carefully, and, if you agree to its terms, indicate your consent by clicking “Yes” below. </p> <p><b>Eligibility Criteria</b></p> <p> By submitting Videos to us and indicating your consent to this Notice &amp; Release, you represent to us that: </p>
+                <ol type="a">
+                 <li>You are 18 years of age or older;</li>
+                 <li>You are a resident of the United States, and the Videos were filmed within the United States;</li>
+                 <li>You are not a resident of the State of Illinois or the State of Texas;</li>
+                 <li>None of the Videos were filmed in the State of Illinois or the State of Texas, or include any Illinois or Texas residents;</li>
+                 <li>All individuals appearing in the Videos expressly consented to being video-recorded, and expressly consented to your submission of the Videos to us;</li>
+                 <li>Each Video complies with all applicable laws relating to video recordings;</li>
+                 <li>None of the Videos contain audio recordings; and</li>
+                 <li>None of the Videos contain nudity, or behavior which may be reasonably considered indecent or obscene.</li>
+                </ol> <p><b>Notice of Collection, Storage, and Use of Biometric Information</b></p> <p> Alarm.com may collect and store information about face geometry and related biometric information derived from the Videos you submit to us for the purpose of improving our artificial intelligence technology used for facial recognition. </p> <p> We may collect, store, and use this information from the time of your submission of each Video to us, and for the duration of the term of our research and development relating to our facial recognition technology, and, thereafter, we may use the Video for other internal testing or research and development purposes. </p> <p> Your consent to this Notice &amp; Release below signifies your written release to us to collect, store and use the biometric information we may derive from the Videos, as described above. </p> <p><b>Grant of License</b></p> <p> By consenting to this Notice &amp; Release below, you hereby grant Alarm.com a non-exclusive, royalty-free, perpetual, revocable, non-transferrable and non-sublicensable (other than to Alarm.com’s successors and assigns) right to view, access, modify, copy and otherwise use such Videos for the purposes of performing analytics tests, running algorithms, testing motion detection and other related settings and parameters, and similar actions in accordance with this Notice &amp; Release and the Alarm.com <a href="http://www.alarm.com/privacy_policy.aspx" target="_blank">Privacy Policy</a>. </p> <p><b>Release of Claims</b></p> <p> By consenting to this Notice &amp; Release below, you hereby release Alarm.com, its affiliates and their respective directors, officers, employees, contractors, and agents (collectively, “<u>Released Parties</u>”) from any and all claims, demands, and actions of every kind and nature, including injunctive or other equitable relief, with respect to any rights of privacy, publicity, defamation, or any other rights, whether or not now known or suspected, which you may have against the Released Parties arising out of a Released Party’s use of the Videos, or any other claim relating to this Notice &amp; Release. </p> <p><b>Governing Law; Enforceability</b></p> <p> This Notice &amp; Release shall be governed by and construed in accordance with the laws of the Commonwealth of Virginia, USA, without regard to the conflict of law principles thereof. If any part of this Notice &amp; Release is found to be illegal or unenforceable, then the remainder of the Notice &amp; Release shall remain in full force and effect, and the illegal or unenforceable provision shall be modified to preserve its intent to the fullest extent permitted by law. </p> <p><b>I agree to submit my Video to Alarm.com in accordance with the Notice &amp; Release.</b></p> </span>
+              </div>
+             </div>
+            </div>
+            <div class="modal-footer modal-footer-legal-agreement">
+             <input type="submit" name="ctl00$phBody$ClipDonationTerms$BtnAcceptLegalAgreement" value="Yes" id="ctl00_phBody_ClipDonationTerms_BtnAcceptLegalAgreement" class="btn btn-default space-button-footer video-analytics-accept-btn" />
+             <input type="submit" name="ctl00$phBody$ClipDonationTerms$BtnDeclineLegalAgreement" value="No" id="ctl00_phBody_ClipDonationTerms_BtnDeclineLegalAgreement" class="btn btn-default space-button-footer video-analytics-decline-btn" />
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div id="ctl00_pageLoadingSpinner" class="page-loading-spinner">
+     <i class="icon-spinner icon-spin icon-spin-2x"></i>
+    </div>
+   </div>
+   <div class="modal-wrapper-master-div">
+   </div>
+   <input type="submit" name="ctl00$butDoNothing" value="" onclick="return false;" id="ctl00_butDoNothing" style="display: none" />
+   <script type="text/javascript">
+            //<![CDATA[
+            AlarmDefaultButton.init();
+            (function() { var fn = function() { $get("ctl00_ScriptManager1_HiddenField").value = '';
+                    Sys.Application.remove_init(fn); };
+                Sys.Application.add_init(fn); })();
+            $(document).ready(function() { $('span[id="ctl00_phBody_AutomaticClipDonationSettings_ctl00"]').tooltip({ delay: 0, container: 'body', title: 'While this option is enabled, clips generated by this device will be automatically donated under ADC\'s Video Feedback program.' }); });
+            $(document).ready(function() { $('span[id="ctl00_phBody_ctl02"]').tooltip({ delay: 0, container: 'body', title: 'We control firmware upgrades through an automatic overnight rollout process. If there is a firmware update available and you would like to upgrade your device now, you can do so using the Update Firmware button.' }); });
+            $(document).ready(function() { $('span[id="ctl00_phBody_ctl16"]').tooltip({ delay: 0, container: 'body', title: 'This enables\/disables the doorbell chime inside the home.' }); });
+            $(document).ready(function() { $('span[id="ctl00_phBody_ctl17"]').tooltip({ delay: 0, container: 'body', title: 'This enables\/disables the doorbell chime outside the home.' }); });
+            $(document).ready(function() { $('span[id="ctl00_phBody_ctl20"]').tooltip({ delay: 0, container: 'body', title: 'This controls the volume of the camera\'s speaker for outdoor chimes. Smaller values translate to lower volume levels.' }); });
+
+            theForm.oldSubmit = theForm.submit;
+            theForm.submit = WebForm_SaveScrollPositionSubmit;
+
+            theForm.oldOnSubmit = theForm.onsubmit;
+            theForm.onsubmit = WebForm_SaveScrollPositionOnSubmit;
+            WebForm_AutoFocus('butDoNothing'); //]]>
+            </script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/js/adc-init.js?v=219303"></script>
+   <script type="text/javascript" src="/common/UIComponents/bootstrap3/js/bootstrap3-adc.min.js?v=220338"></script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/ErrorManager/errorManager.js?v=183611"></script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/js/adc-utils.js?v=205269"></script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/js/adc-components.js?v=217528"></script>
+   <script type="text/javascript" src="/common/UIComponents/slider/js/bootstrap-slider.js?v=108213"></script>
+   <script type="text/javascript">
+    $.systemDefaults.resources.settingsMainV2 = {};
+    $.systemDefaults.resources.settingsMainV2['locChimeLevelEnum_Off'] = "Off";
+    $.systemDefaults.resources.settingsMainV2['locChimeLevelEnum_Low'] = "Low";
+    $.systemDefaults.resources.settingsMainV2['locChimeLevelEnum_Medium'] = "Medium";
+    $.systemDefaults.resources.settingsMainV2['locChimeLevelEnum_High'] = "High";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_Unknown'] = "Unknown";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_VeryLow'] = "Very Low";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_Low'] = "Low";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_Medium'] = "Medium";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_High'] = "High";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_MediumBoosted'] = "Very High";
+    $.systemDefaults.resources.settingsMainV2['locMotionThreshold_ExtremelyHigh'] = "Extremely High";
+    var g_DeviceId = 2048;
+    var gNeedsFirmwareUpgrade = 'False' == 'True';
+    $.systemDefaults.resources.settingsMainV2['urlBeginUpgrade'] = "\/web\/WebServices\/Video\/DeviceCommands.asmx\/BeginFirmwareUpgrade";
+    $.systemDefaults.resources.settingsMainV2['urlFinishUpgrade'] = "\/web\/WebServices\/Video\/DeviceCommands.asmx\/FinishFirmwareUpgrade";
+    $.systemDefaults.resources.settingsMainV2['urlCheckUpgradeStatusAndMessage'] = "\/web\/WebServices\/Video\/DeviceCommands.asmx\/GetFirmwareUpgradeStatus";
+    $.systemDefaults.resources.settingsMainV2['urlCheckDeviceDdnsState'] = "\/web\/WebServices\/Video\/DeviceCommands.asmx\/HasDeviceDdnsedRecently";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeSuccessMessage'] = "FIRMWARE UPGRADE IS COMPLETE.";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeFailureMessage'] = "The firmware update failed. Please make sure the video device is powered on and connected to the internet before trying again.";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeStatusEnum_NotSet'] = "NotSet";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeStatusEnum_Fail'] = "Fail";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeStatusEnum_Success'] = "Success";
+    $.systemDefaults.resources.settingsMainV2['firmwareUpgradeStatusEnum_Upgrading'] = "Upgrading";
+    $.systemDefaults.resources.settingsMainV2['isOkToUpgradeFirmware'] = "False";
+    $.systemDefaults.resources.settingsMainV2['videoDeviceCannotUpgradeFirmware_Message'] = "Firmware upgrade is not supported to the firmware version selected.";
+    $.systemDefaults.resources.settingsMainV2['deleteDeviceWarning'] = "Warning: if you delete this Video Device, the complete \"Add A Video Device\" setup process must be repeated to add it back to your account. All recordings associated with this device will also be deleted. Custom settings, rules, and scheduled continuous recording associated with this device will also be deleted.  \n \nAre you sure you want to delete it?";
+    $.systemDefaults.resources.settingsMainV2['deleteDeviceWarningWithAgeLimit'] = "Warning: if you delete this Video Device, the complete \"Add A Video Device\" setup process must be repeated to add it back to your account. Also, this camera has a recorded clip limitation and all saved clips recorded from this camera will be deleted. All other recordings, custom settings, rules, and scheduled continuous recording associated with this device will also be deleted.   \n \nAre you sure you want to delete it?";
+    $.systemDefaults.resources.settingsMainV2['disablePanelCameraWarning'] = "Warning: if you disable this Video Device, the complete \"Add A Video Device\" setup process must be repeated to add it back to your account. All recordings associated with this device will be deleted. Custom settings, rules, and scheduled continuous recording associated with this device will also be deleted. \n \nDisabling the security panel\'s video camera will not remove the panel from the account. \n \nAre you sure you want to disable it?";
+    $.systemDefaults.resources.settingsMainV2['invalidPasswordMessage'] = "Password cannot contain the followi..";
+   </script>
+   <script type="text/javascript" src="/common/UIComponents/jquery-minicolors-master/jquery.minicolors.min.js?v=76175"></script>
+   <script type="text/javascript" src="ErrorManager.js?v=100436"></script>
+   <script type="text/javascript" src="SettingsMainV2.js?v=204515"></script>
+   <script type="text/javascript" src="FirmwareUpgradeController.js?v=166467"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/web/App_UserControls/Video/BridgeDeviceInfo.js?v=2"></script>
+   <script type="text/javascript" src="/web/App_UserControls/Video/WirelessSettings_V2.js?v=220004"></script>
+   <script type="text/javascript" src="/web/App_UserControls/Video/ClipDonationTerms.js?v=215306"></script>
+   <script type="text/javascript" src="/web/App_UserControls/Video/ClipDonationLegalAgreement.js?v=215306"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/web/App_UserControls/AdcSlider.js?v=123389"></script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/js/dotnet-overrides.js?v=90641"></script>
+   <script type="text/javascript" src="/web/Modern/modern.js?v=215436"></script>
+   <script type="text/javascript" src="/web/Modern/utils/common.js"></script>
+   <script type="text/javascript" src="/web/Modern/utils/dialogs.js"></script>
+   <script type="text/javascript" src="/common/UIComponents/adc-framework/js/dark-mode-listener.js"></script>
+   <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-140639-1']);
+    _gaq.push(['_trackPageview']);
+    _gaq.push(['_setCustomVar',
+        1, // This custom var is set to slot #1.  Required parameter.
+        'VisitorType', // The name of the custom variable.  Required parameter.
+        'Customer', // The value of the custom variable.  Required parameter.
+        //  (possible values might be Free, Bronze, Gold, and Platinum)
+        1 // Sets the scope to visitor-level.  Optional parameter.
+    ]);
+
+    (function() {
+        var ga = document.createElement('script');
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+  </form>
+ </body>
+</html>
