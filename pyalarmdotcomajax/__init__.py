@@ -10,8 +10,10 @@ import re
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
+from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
+from .devices import BaseDevice
 from .devices import Camera
 from .devices import DEVICE_URLS
 from .devices import DeviceType
@@ -34,7 +36,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.0-dev.3"
+__version__ = "0.3.0-dev.4"
 
 
 log = logging.getLogger(__name__)
@@ -428,35 +430,36 @@ class AlarmController:
 
     async def async_get_raw_server_responses(
         self,
+        device_types: list[
+            type[System]
+            | type[Partition]
+            | type[Sensor]
+            | type[Lock]
+            | type[GarageDoor]
+            | type[ImageSensor]
+            | type[Light]
+            | type[Camera]
+        ],
         include_image_sensor_b64: bool = False,
-        include_unsupported: bool = False,
-    ) -> str:
+    ) -> dict:
         """Get raw responses from Alarm.com device endpoints."""
 
-        return_str: str = ""
+        return_data: dict = {}
 
-        endpoints = [
-            (
-                device_type.name.replace("_", " ").title(),
-                DEVICE_URLS["endpoint"],
-            )
-            for device_type, DEVICE_URLS in DEVICE_URLS["supported"].items()
-        ]
+        endpoints = []
 
-        endpoints.append(("IMAGE_SENSORS_DATA", c.IMAGE_SENSOR_DATA_URL_TEMPLATE))
-
-        if include_unsupported:
-            endpoints += [
-                (
-                    device_type.name.replace("_", " ").title(),
-                    DEVICE_URLS["endpoint"],
+        for device_type, device_data in (
+            DEVICE_URLS["supported"] | DEVICE_URLS["unsupported"]
+        ).items():
+            if device_type in device_types:
+                endpoints.append(
+                    (slug_to_title(device_type.name), device_data["endpoint"])
                 )
-                for device_type, DEVICE_URLS in DEVICE_URLS["unsupported"].items()
-            ]
+
+        if ImageSensor in device_types:
+            endpoints.append(("Image Sensor Data", c.IMAGE_SENSOR_DATA_URL_TEMPLATE))
 
         for name, url_template in endpoints:
-
-            return_str += f"\n\n====[{name}]====\n\n"
 
             async with self._websession.get(
                 url=url_template.format(c.URL_BASE, ""),
@@ -465,11 +468,12 @@ class AlarmController:
                 try:
                     json_rsp = await (resp.json())
 
-                    if name == "IMAGE_SENSORS_DATA" and not include_image_sensor_b64:
+                    if name == "Image Sensor Data" and not include_image_sensor_b64:
                         for image in json_rsp["data"]:
                             del image["attributes"]["image"]
 
                     rsp_errors = json_rsp.get("errors", [])
+
                     if len(rsp_errors) != 0:
 
                         error_msg = (
@@ -492,15 +496,40 @@ class AlarmController:
                             # We'll get here if user doesn't have permission to access a specific device type.
                             pass
 
-                    return_str += json.dumps(json_rsp)
+                    return_data[slug_to_title(name)] = (
+                        "\n" + json.dumps(json_rsp) + "\n"
+                    )
 
                 except ContentTypeError:
                     if resp.status == 404:
-                        return_str += "Endpoint not found."
+                        return_data[slug_to_title(name)] = "Endpoint not found."
                     else:
-                        return_str += f"Unprocessable output:\n{resp.text}"
+                        return_data[
+                            slug_to_title(name)
+                        ] = f"\nUnprocessable output:\n{resp.text}\n"
 
-        return return_str
+        return return_data
+
+    def get_device_by_id(
+        self, device_id: str
+    ) -> BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera | None:
+        """Find device by its id."""
+
+        device: BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera
+        for device in (
+            *self.systems,
+            *self.partitions,
+            *self.sensors,
+            *self.locks,
+            *self.garage_doors,
+            *self.image_sensors,
+            *self.lights,
+            *self.cameras,
+        ):
+            if device.id_ == device_id:
+                return device
+
+        return None
 
     #
     #

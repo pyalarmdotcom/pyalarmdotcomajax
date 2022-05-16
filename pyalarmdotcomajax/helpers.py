@@ -50,3 +50,9 @@ def extract_field_value(field: Tag) -> str | None:
         raise UnexpectedDataStructure from err
 
     return value
+
+
+def slug_to_title(slug: str) -> str:
+    """Convert slug to title case."""
+
+    return slug.replace("_", " ").title()

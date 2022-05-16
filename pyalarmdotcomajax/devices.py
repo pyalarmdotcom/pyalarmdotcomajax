@@ -393,7 +393,7 @@ class BaseDevice:
 
         return None
 
-    async def async_change_setting(self, slug: str, updated_value: Any) -> None:
+    async def async_change_setting(self, slug: str, new_value: Any) -> None:
         """Update specified configuration setting via extension."""
 
         if not self._config_change_callback:
@@ -413,7 +413,7 @@ class BaseDevice:
 
         try:
             updated_option = await self._config_change_callback(
-                camera_name=self.name, slug=slug, updated_value=updated_value
+                camera_name=self.name, slug=slug, updated_value=new_value
             )
         except (
             asyncio.TimeoutError,
