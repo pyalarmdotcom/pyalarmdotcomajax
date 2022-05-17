@@ -274,6 +274,12 @@ class CameraSkybellControllerExtension(ControllerExtension):
         except KeyError as err:
             raise UnexpectedDataStructure("Slug not found.") from err
 
+        log.debug(
+            "CameraSkybellControllerExtension -> submit_change(): Changing %s to %s.",
+            field_name,
+            updated_value,
+        )
+
         #
         # Refresh settings data to prime submission payload.
         #
@@ -295,6 +301,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
         except KeyError as err:
             raise UnexpectedDataStructure("Field name error.") from err
 
+        log.debug(
+            "CameraSkybellControllerExtension -> submit_change(): POST payload is:\n%s",
+            payload,
+        )
+
         #
         # Submit payload and refresh data.
         #
@@ -304,7 +315,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
             ) as resp:
                 text = await resp.text()
 
-                log.debug("Response status from Alarm.com: %s", resp.status)
+                log.debug("Response status: %s", resp.status)
+                log.debug("Response body:\n%s", text)
+
                 tree = BeautifulSoup(text, "html.parser")
 
                 # Pull data for camera on current page

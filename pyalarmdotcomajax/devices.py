@@ -411,6 +411,15 @@ class BaseDevice:
         if not extension:
             raise InvalidConfigurationOption
 
+        log.debug(
+            "BaseDevice -> async_change_setting: Calling change setting function for %s"
+            " %s (%s) via extension %s.",
+            type(self).__name__,
+            self.name,
+            self.id_,
+            type(extension).__name__,
+        )
+
         try:
             updated_option = await self._config_change_callback(
                 camera_name=self.name, slug=slug, updated_value=new_value
