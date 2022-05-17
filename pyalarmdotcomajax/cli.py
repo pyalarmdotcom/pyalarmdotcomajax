@@ -401,10 +401,9 @@ async def cli() -> None:
                     f" {setting_slug}."
                 )
 
-            if device.settings.get(setting_slug, {}).get("current_value") in [
-                typed_new_value,
-                new_value,
-            ]:
+            if device.settings.get(setting_slug, {}).get("current_value") == str(
+                new_value
+            ):
                 cprint(
                     f"{config_option.get('name')} was successfully changed to"
                     f" {new_value} for {device.name}.",
