@@ -358,11 +358,13 @@ async def cli() -> None:
             try:
                 current_value_type: type = config_option["value_type"]
 
-                if current_value_type == bool and str(new_value).upper() in [
+                if current_value_type == bool and (
+                    str_command := str(new_value).upper()
+                ) in [
                     "TRUE",
                     "FALSE",
                 ]:
-                    typed_new_value = bool(new_value)
+                    typed_new_value = str_command == "TRUE"
                 elif current_value_type == bool:
                     cprint(
                         f"New value {new_value} is not of type {current_value_type}",
