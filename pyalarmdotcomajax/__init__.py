@@ -36,7 +36,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.0-dev.7"
+__version__ = "0.3.0-dev.8"
 
 
 log = logging.getLogger(__name__)

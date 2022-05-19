@@ -309,9 +309,15 @@ class CameraSkybellControllerExtension(ControllerExtension):
             if value is None:
                 payload[key] = ""
 
+        #
+        # Add static fields.
+        #
+
+        complete_payload = self._build_submit_payload(payload)
+
         log.debug(
             "CameraSkybellControllerExtension -> submit_change(): POST payload is:\n%s",
-            payload,
+            complete_payload,
         )
 
         #
@@ -320,12 +326,14 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         try:
             async with self._websession.post(
-                url=self.ENDPOINT, data=payload, headers=self._headers
+                url=self.ENDPOINT, data=complete_payload, headers=self._headers
             ) as resp:
                 text = await resp.text()
 
                 log.debug("Response status: %s", resp.status)
+                log.debug("\n\n======= HTTP RESPONSE BODY - BEGIN =======\n\n%s", text)
                 log.debug("Response body:\n%s", text)
+                log.debug("\n\n======= HTTP RESPONSE BODY - END =======\n\n%s", text)
 
                 tree = BeautifulSoup(text, "html.parser")
 
@@ -343,28 +351,32 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         return camera_return_data["settings"][slug]
 
-    # async def _build_submit_payload(  # pylint: disable = no-self-use
-    #     self, dynamic_form_data: dict
-    # ) -> dict:
-    #     """Build POST body for submitting settings changes or for getting data for a different camera."""
+    async def _build_submit_payload(  # pylint: disable = no-self-use
+        self, dynamic_form_data: dict
+    ) -> dict:
+        """Build POST body for submitting settings changes or for getting data for a different camera."""
 
-    #     # Pre-populate static fields.
-    #     form_data: dict = {
-    #         "__SCROLLPOSITIONX": "0",
-    #         "ctl00$phBody$CamSelector$ddlPage": "CameraInfo",
-    #         "ctl00$phBody$AutomaticClipDonationSettings$ShowClipDonationLegalAgreement": (
-    #             "1"
-    #         ),
-    #         "ctl00$phBody$tfSave": "Save",
-    #         "ctl00$phBody$bridgeInfo$wirelessSettings$rblEncryption": "MakeASelection",
-    #         "ctl00$phBody$bridgeInfo$wirelessSettings$rblAlgoritm": "MakeASelection",
-    #         "ctl00$phBody$fwUpgradeModalTailTextBox": "Firmware+upgrade+is+complete.+You+can+check+the+video+device+status+after+closing+this+dialog+box.",
-    #     }
+        # Pre-populate static fields.
+        form_data: dict = {
+            "__SCROLLPOSITIONX": "0",
+            "__SCROLLPOSITIONY": "0",
+            "ctl00$phBody$CamSelector$ddlPage": "CameraInfo",
+            "ctl00$phBody$AutomaticClipDonationSettings$ShowClipDonationLegalAgreement": (
+                "1"
+            ),
+            "ctl00$phBody$tfSave": "Save",
+            "ctl00$phBody$bridgeInfo$wirelessSettings$rblEncryption": "MakeASelection",
+            "ctl00$phBody$bridgeInfo$wirelessSettings$rblAlgoritm": "MakeASelection",
+            "ctl00$phBody$fwUpgradeModalTailTextBox": (
+                "Firmware upgrade is complete. You can check the video device status"
+                " after closing this dialog box."
+            ),
+        }
 
-    #     # Merge in dynamic fields with changed values.
-    #     form_data.update(dynamic_form_data)
+        # Merge in dynamic fields with changed values.
+        form_data.update(dynamic_form_data)
 
-    #     return form_data
+        return form_data
 
     def _extract_fields(
         self, config_id: str, tree: BeautifulSoup
