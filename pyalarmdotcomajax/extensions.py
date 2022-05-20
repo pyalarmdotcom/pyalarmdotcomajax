@@ -313,7 +313,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # Add static fields.
         #
 
-        complete_payload = self._build_submit_payload(payload)
+        complete_payload = await self._build_submit_payload(payload)
 
         log.debug(
             "CameraSkybellControllerExtension -> submit_change(): POST payload is:\n%s",
