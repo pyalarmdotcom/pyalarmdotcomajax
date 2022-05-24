@@ -5,7 +5,7 @@
 * Major refactoring with widespread breaking changes.
 * Added "controller extensions" to let controller retrieve data from additional endpoints.
 * Added support for Skybell HD video doorbells (settings only, not video).
-* Started building tests.
+* Created testing framework and started building tests.
 
 ## v0.2.10 - 2022-04025
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from enum import Enum
 import logging
 import platform
 import sys
@@ -32,6 +33,7 @@ from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import NagScreen
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 from pyalarmdotcomajax.extensions import ConfigurationOption
+from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 from pyalarmdotcomajax.helpers import slug_to_title
 from termcolor import colored
 from termcolor import cprint
@@ -352,38 +354,37 @@ async def cli() -> None:
                 )
                 sys.exit(0)
 
-            # Make sure existing and submitted types are compatible. Convert as needed.
+            #
+            # Convert user input into proper type
+            #
+            config_option_type = config_option["value_type"]
 
-            typed_new_value: Any
-            try:
-                current_value_type: type = config_option["value_type"]
-
-                if current_value_type == bool and (
-                    str_command := str(new_value).upper()
-                ) in [
-                    "TRUE",
-                    "FALSE",
-                ]:
-                    typed_new_value = str_command == "TRUE"
-                elif current_value_type == bool:
+            if config_option_type in [bool, str, int]:
+                try:
+                    typed_new_value = config_option_type(new_value)
+                except ValueError:
                     cprint(
-                        f"New value {new_value} is not of type {current_value_type}",
+                        f"Setting {setting_slug} must be {config_option_type.__name__}",
                         "red",
                     )
                     sys.exit(0)
 
-                elif current_value_type == int:
-                    typed_new_value = int(new_value)
+            elif issubclass(config_option_type, ExtendedEnumMixin):
+                try:
+                    typed_new_value = config_option_type.enum_from_key(new_value)
+                except ValueError:
+                    cprint(
+                        f"Acceptable valures for {setting_slug} are:"
+                        f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}",
+                        "red",
+                    )
+                    sys.exit(0)
 
-                elif current_value_type == str:
-                    typed_new_value = str(new_value)
-
-            except ValueError:
-                cprint(f"Could not convert {new_value} to integer.", "red")
+            else:
+                cprint("Unexpected value type. This is a bug.")
                 sys.exit(0)
 
             # Submit new value.
-
             try:
                 await device.async_change_setting(
                     slug=setting_slug, new_value=typed_new_value
@@ -402,10 +403,23 @@ async def cli() -> None:
                     "Couldn't load pyalarmdotcomajax configuration extension for"
                     f" {setting_slug}."
                 )
+            except TypeError as err:
+                cprint(str(err), "red")
+                sys.exit(0)
 
-            if device.settings.get(setting_slug, {}).get("current_value") == str(
-                new_value
+            # Check success
+            if issubclass(
+                device.settings.get(setting_slug, {}).get("value_type"), Enum
             ):
+                reported_value = str(
+                    device.settings.get(setting_slug, {}).get("current_value").name
+                ).upper()
+            else:
+                reported_value = device.settings.get(setting_slug, {}).get(
+                    "current_value"
+                )
+
+            if str(reported_value).upper() == str(new_value).upper():
                 cprint(
                     f"{config_option.get('name')} was successfully changed to"
                     f" {new_value} for {device.name}.",
@@ -540,7 +554,7 @@ def _print_element_tearsheet(
 
     output_str += "\n"
 
-    # SETTINGS
+    # SETTINGS / EXTENSIONS
 
     if element.settings:
 
@@ -549,10 +563,13 @@ def _print_element_tearsheet(
         config_option: ConfigurationOption
         for _, config_option in element.settings.items():
 
+            if isinstance(current_value := config_option["current_value"], Enum):
+                current_value = current_value.name.title()
+
             output_str += (
                 f'{{{{ {config_option["name"]} ({config_option["slug"]}) [Type:'
-                f' {config_option["option_type"].name.title()}] '
-                f'[State: {config_option["current_value"]}] }}}} '
+                f' {slug_to_title(config_option["option_type"].name)}] '
+                f"[State: {current_value}] }}}} "
             )
 
         output_str += "\n"

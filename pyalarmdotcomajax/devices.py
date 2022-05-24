@@ -313,7 +313,11 @@ class BaseDevice:
     def settings(self) -> dict:
         """Return user-changable settings."""
 
-        return self._settings
+        return {
+            config_option["slug"]: config_option
+            for _, config_option in self._settings.items()
+            if config_option["user_configurable"]
+        }
 
     @property
     def battery_low(self) -> bool | None:
@@ -417,12 +421,12 @@ class BaseDevice:
             type(self).__name__,
             self.name,
             self.id_,
-            type(extension).__name__,
+            extension,
         )
 
         try:
             updated_option = await self._config_change_callback(
-                camera_name=self.name, slug=slug, updated_value=new_value
+                camera_name=self.name, slug=slug, new_value=new_value
             )
         except (
             asyncio.TimeoutError,
@@ -812,6 +816,8 @@ class Sensor(BaseDevice):
         FREEZE_SENSOR = 8
         CO_DETECTOR = 6
         PANIC_BUTTON = 9
+        FIXED_PANIC = 10
+        SIREN = 14
         GLASS_BREAK_DETECTOR = 19
         PANEL_MOTION_SENSOR = 89
         PANEL_GLASS_BREAK_DETECTOR = 83

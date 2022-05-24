@@ -17,23 +17,50 @@ class ExtendedEnumMixin(Enum):
     @classmethod
     def has_value(cls, value: str) -> bool:
         """Return whether value exists in enum."""
-        return value in cls._value2member_map_
+
+        return str(value).upper() in [
+            str(item).upper() for item in cls._value2member_map_
+        ]
 
     @classmethod
-    def list(cls) -> list:
+    def has_key_(cls, key: str) -> Any:
+        """Return whether value exists in enum."""
+
+        return str(key).upper() in [str(item).upper() for item in cls._member_names_]
+
+    @classmethod
+    def enum_from_key(cls, key: str) -> Any:
+        """Return enum from key name."""
+
+        return_member = None
+
+        for member_name, member in cls._member_map_.items():
+            if str(key).upper() == str(member_name).upper():
+                return_member = member
+                break
+
+        if not return_member:
+            raise ValueError("Member not found.")
+
+        return return_member
+
+    @classmethod
+    def values(cls) -> list:
         """Return list of all enum members."""
 
-        def get_enum_value(enum_class: Enum) -> Any:
-            """Mypy choked when this was expressed as a lambda."""
-            return enum_class.value
+        return [key for key, _ in cls._value2member_map_]
 
-        return list(map(get_enum_value, cls))
+    @classmethod
+    def names(cls) -> list[str]:
+        """Return list of all enum members."""
+
+        return cls._member_names_
 
 
 def extract_field_value(field: Tag) -> str | None:
     """Extract value from BeautifulSoup4 text, checkbox, and dropdown fields."""
 
-    log.debug("Extracting field: %s", field)
+    # log.debug("Extracting field: %s", field)
 
     value: str | None = None
     try:

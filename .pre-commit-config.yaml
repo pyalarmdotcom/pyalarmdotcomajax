@@ -72,6 +72,7 @@ repos:
     rev: v0.20.0
     hooks:
       - id: toml-sort
+        args: []
   - repo: local
     hooks:
       - id: pylint

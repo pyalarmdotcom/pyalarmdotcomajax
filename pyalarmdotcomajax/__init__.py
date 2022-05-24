@@ -36,7 +36,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.0-dev.9"
+__version__ = "0.3.0"
 
 
 log = logging.getLogger(__name__)
@@ -664,7 +664,8 @@ class AlarmController:
             for extension_class in required_extensions:
 
                 extension_controller = extension_class(
-                    websession=self._websession, headers=self._ajax_headers
+                    websession=self._websession,
+                    headers=self._ajax_headers,
                 )
 
                 # Fetch from Alarm.com
@@ -868,7 +869,7 @@ class AlarmController:
             log.error("Connection error while fetching trouble conditions.")
             raise DataFetchFailed from err
 
-        except (KeyError) as err:
+        except KeyError as err:
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
 

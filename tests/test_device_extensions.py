@@ -29,8 +29,14 @@ async def test__extension_camera_skybellhd__fetch(
 
     assert configs[0]["device_name"] == "Front Doorbell"
     assert configs[0]["config_id"] == "2048"
-    assert configs[0]["settings"]["indoor_chime_on"]["current_value"] is True
-    assert configs[0]["settings"]["outdoor_chime_on"]["current_value"] is False
+    assert (
+        configs[0]["settings"]["indoor-chime"]["current_value"]
+        is CameraSkybellControllerExtension.ChimeOnOff.ON
+    )
+    assert (
+        configs[0]["settings"]["outdoor-chime"]["current_value"]
+        is CameraSkybellControllerExtension.ChimeAdjustableVolume.MEDIUM
+    )
     assert configs[0]["raw_attribs"]
 
 
@@ -49,11 +55,17 @@ async def test__extension_camera_skybellhd__via_alarm_controller(
     skybell = adc_client.cameras[0]
 
     assert skybell.name == "Front Doorbell"
-    assert skybell.settings["indoor_chime_on"]["current_value"] is True
-    assert skybell.settings["outdoor_chime_on"]["current_value"] is False
     assert (
-        skybell.settings["indoor_chime_on"]["option_type"]
-        is ConfigurationOptionType.CHIME
+        skybell.settings["indoor-chime"]["current_value"]
+        is CameraSkybellControllerExtension.ChimeOnOff.ON
+    )
+    assert (
+        skybell.settings["outdoor-chime"]["current_value"]
+        is CameraSkybellControllerExtension.ChimeAdjustableVolume.MEDIUM
+    )
+    assert (
+        skybell.settings["indoor-chime"]["option_type"]
+        is ConfigurationOptionType.BINARY_CHIME
     )
 
 
@@ -112,6 +124,11 @@ async def test__extension_camera_skybellhd__submit_change(
 
     camera: Camera = adc_client.cameras[0]
 
-    await camera.async_change_setting("indoor_chime_on", False)
+    await camera.async_change_setting(
+        "indoor-chime", CameraSkybellControllerExtension.ChimeOnOff.OFF
+    )
 
-    assert camera.settings["indoor_chime_on"]["current_value"] is False
+    assert (
+        camera.settings["indoor-chime"]["current_value"]
+        is CameraSkybellControllerExtension.ChimeOnOff.OFF
+    )
