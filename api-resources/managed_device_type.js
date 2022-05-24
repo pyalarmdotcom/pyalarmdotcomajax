@@ -1,89 +1,23 @@
 // https://www.alarm.com/web/system/assets/customer-ember/enums/ManagedDeviceType.js
 
-/**
- * @module
- */
-/**
- * @enum {number}
- */
-export const AudioDevice = 0;
-/**
- * @enum {number}
- */
-export const CarMonitor = 1;
-/**
- * @enum {number}
- */
-export const Detector = 2;
-/**
- * @enum {number}
- */
-export const GarageDoor = 3;
-/**
- * @enum {number}
- */
-export const ImageSensor = 4;
-/**
- * @enum {number}
- */
-export const Light = 5;
-/**
- * @enum {number}
- */
-export const Lock = 6;
-/**
- * @enum {number}
- */
-export const MobileDevice = 7;
-/**
- * @enum {number}
- */
-export const NoiseSensor = 8;
-/**
- * @enum {number}
- */
-export const Partition = 9;
-/**
- * @enum {number}
- */
-export const Sensor = 10;
-/**
- * @enum {number}
- */
-export const SmartChimeDevice = 11;
-/**
- * @enum {number}
- */
-export const TemperatureSensor = 12;
-/**
- * @enum {number}
- */
-export const Thermostat = 13;
-/**
- * @enum {number}
- */
-export const VideoDevice = 14;
-/**
- * @enum {number}
- */
-export const VoiceAssistanceDevice = 15;
-/**
- * @enum {number}
- */
-export const WaterSensor = 16;
-/**
- * @enum {number}
- */
-export const WaterValve = 17;
-/**
- * @enum {number}
- */
-export const WaterMeter = 18;
-/**
- * @enum {number}
- */
-export const WiFiRouter = 19;
-/**
- * @enum {number}
- */
-export const Unknown = -1;
+AudioDevice = 0
+CarMonitor = 1
+Detector = 2
+GarageDoor = 3
+ImageSensor = 4
+Light = 5
+Lock = 6
+MobileDevice = 7
+NoiseSensor = 8
+Partition = 9
+Sensor = 10
+SmartChimeDevice = 11
+TemperatureSensor = 12
+Thermostat = 13
+VideoDevice = 14
+VoiceAssistanceDevice = 15
+WaterSensor = 16
+WaterValve = 17
+WaterMeter = 18
+WiFiRouter = 19
+Unknown = -1

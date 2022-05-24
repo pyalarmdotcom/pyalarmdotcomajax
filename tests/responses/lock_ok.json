@@ -1,0 +1,112 @@
+{
+    "data": [
+        {
+            "id": "555555555-41",
+            "type": "devices/lock",
+            "attributes": {
+                "state": 2,
+                "desiredState": 2,
+                "maxUserCodeLength": 4,
+                "supportsScheduledUserCodes": true,
+                "supportsTemporaryUserCodes": true,
+                "supportsLatchControl": true,
+                "canEnableRemoteCommands": true,
+                "managedDeviceType": 6,
+                "canAccessWebSettings": true,
+                "webSettings": 1005,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": null,
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Back Door",
+                "deviceModelId": 9999,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 28
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": "555555555-42",
+            "type": "devices/lock",
+            "attributes": {
+                "state": 1,
+                "desiredState": 1,
+                "maxUserCodeLength": 4,
+                "supportsScheduledUserCodes": false,
+                "supportsTemporaryUserCodes": false,
+                "supportsLatchControl": true,
+                "canEnableRemoteCommands": true,
+                "managedDeviceType": 6,
+                "canAccessWebSettings": true,
+                "webSettings": 1005,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": true,
+                "canAccessAppSettings": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": null,
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Front Door",
+                "deviceModelId": 9999,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 28
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

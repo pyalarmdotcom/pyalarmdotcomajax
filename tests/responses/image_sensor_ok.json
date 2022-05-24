@@ -1,0 +1,29 @@
+{
+    "data": [
+        {
+            "id": 177,
+            "type": "image-sensor/image-sensor",
+            "attributes": {
+                "isImageSensorDeleted": false,
+                "supportPeekInNow": true,
+                "supportPeekInNextMotion": false,
+                "hidePeekInNextMotionButton": false,
+                "description": "Panel Camera",
+                "canViewImages": true,
+                "excludedFromVisualVerification": false
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

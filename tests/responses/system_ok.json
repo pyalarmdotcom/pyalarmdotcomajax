@@ -1,0 +1,270 @@
+{
+    "data": [
+        {
+            "id": 11111111,
+            "type": "systems/system",
+            "attributes": {
+                "description": "My Alarm System",
+                "hasSnapShotCameras": false,
+                "supportsSecureArming": true,
+                "remainingImageQuota": 399,
+                "systemGroupName": "",
+                "unitId": 555555555,
+                "accessControlCurrentSystemMode": 0,
+                "isInPartialLockdown": false,
+                "icon": "property-single"
+            },
+            "relationships": {
+                "partitions": {
+                    "data": [
+                        {
+                            "id": "555555555-127",
+                            "type": "devices/partition"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
+                "locks": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "accessControlAccessPointDevices": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "cameras": {
+                    "data": [
+                        {
+                            "id": "555555555-90",
+                            "type": "video/camera"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
+                "sdCardCameras": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "garageDoors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "waterValves": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "scenes": {
+                    "data": [
+                        {
+                            "id": "33333304",
+                            "type": "automation/scene"
+                        },
+                        {
+                            "id": "33333305",
+                            "type": "automation/scene"
+                        },
+                        {
+                            "id": "33333306",
+                            "type": "automation/scene"
+                        },
+                        {
+                            "id": "33333307",
+                            "type": "automation/scene"
+                        }
+                    ],
+                    "meta": {
+                        "count": "4"
+                    }
+                },
+                "sensors": {
+                    "data": [
+                        {
+                            "id": "555555555-11",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-12",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-13",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-14",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-15",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-16",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-17",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "555555555-177",
+                            "type": "devices/sensor"
+                        }
+                    ],
+                    "meta": {
+                        "count": "8"
+                    }
+                },
+                "waterSensors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "sumpPumps": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "waterMeters": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "lights": {
+                    "data": [
+                        {
+                            "id": "555555555-21",
+                            "type": "devices/light"
+                        },
+                        {
+                            "id": "555555555-22",
+                            "type": "devices/light"
+                        }
+                    ],
+                    "meta": {
+                        "count": "2"
+                    }
+                },
+                "x10Lights": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "smartChimeDevices": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "thermostats": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "remoteTemperatureSensors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "commercialTemperatureSensors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "valveSwitches": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "boilerControlSystem": {
+                    "data": null
+                },
+                "geoDevices": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "fences": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "imageSensors": {
+                    "data": [
+                        {
+                            "id": "177",
+                            "type": "image-sensor/image-sensor"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
+                "configuration": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/configuration"
+                    }
+                },
+                "shades": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "gates": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "switches": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "iqRouters": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "noiseSensors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

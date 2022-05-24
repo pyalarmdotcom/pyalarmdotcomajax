@@ -7,28 +7,38 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from enum import Enum
 import logging
 import platform
 import sys
+from typing import Any
 
 import aiohttp
 import pyalarmdotcomajax
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax import AuthResult
+from pyalarmdotcomajax.devices import Camera
+from pyalarmdotcomajax.devices import DEVICE_URLS
+from pyalarmdotcomajax.devices import DeviceType
+from pyalarmdotcomajax.devices import GarageDoor
+from pyalarmdotcomajax.devices import ImageSensor
+from pyalarmdotcomajax.devices import Light
+from pyalarmdotcomajax.devices import Lock
+from pyalarmdotcomajax.devices import Partition
+from pyalarmdotcomajax.devices import Sensor
+from pyalarmdotcomajax.devices import System
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
+from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import NagScreen
+from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.extensions import ConfigurationOption
+from pyalarmdotcomajax.helpers import ExtendedEnumMixin
+from pyalarmdotcomajax.helpers import slug_to_title
+from termcolor import colored
+from termcolor import cprint
 
-from . import ADCController
-from .const import AuthResult
-from .entities import ADCGarageDoor
-from .entities import ADCImageSensor
-from .entities import ADCLight
-from .entities import ADCLock
-from .entities import ADCPartition
-from .entities import ADCSensor
-from .entities import ADCSensorSubtype
-from .entities import ADCSystem
-
-CLI_CARD_BREAK = "--------"
+CLI_CARD_BREAK = ""  # "--------"
 
 
 async def cli() -> None:
@@ -37,57 +47,15 @@ async def cli() -> None:
     parser = argparse.ArgumentParser(
         prog="adc",
         description=(
-            "Basic command line debug interface for Alarm.com via pyalarmdotcomajax."
-            " Shows device states in various formats."
+            "basic command line debug interface for alarm.com via pyalarmdotcomajax."
+            " shows device states in various formats."
         ),
     )
-    parser.add_argument("-u", "--username", help="alarm.com username", required=True)
-    parser.add_argument("-p", "--password", help="alarm.com password", required=True)
-    parser.add_argument(
-        "-c",
-        "--cookie",
-        help=(
-            "two-factor authentication cookie. cannot be used with --one-time-password!"
-        ),
-        required=False,
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help=(
-            "show verbose output. -v returns server response for all devices except"
-            " systems and image sensor base64 images. -vv returns server response for"
-            " all devices."
-        ),
-        action="count",
-        default=0,
-        required=False,
-    )
-    parser.add_argument(
-        "-x",
-        "--include-unsupported",
-        help="when used with -v, returns data for all known unsupported devices.",
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "-o",
-        "--one-time-password",
-        help=(
-            "provide otp code for accounts that have two-factor authentication enabled."
-            " cannot be used with --cookie!"
-        ),
-        required=False,
-    )
-    parser.add_argument(
-        "-n",
-        "--device-name",
-        help=(
-            "registers a device with this name on alarm.com and requests the two-factor"
-            " authentication cookie for this device."
-        ),
-        required=False,
-    )
+
+    ##################
+    # BASE ARGUMENTS #
+    ##################
+
     parser.add_argument(
         "-d",
         "--debug",
@@ -99,21 +67,152 @@ async def cli() -> None:
     parser.add_argument(
         "-ver",
         "--version",
+        dest="version",
         action="version",
         version=f"%(prog)s {pyalarmdotcomajax.__version__}",
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help=(
+            "show verbose output. -vv returns base64 image data for image sensor"
+            " images."
+        ),
+        action="count",
+        default=0,
+        required=False,
+    )
+    parser.add_argument(
+        "-u", "--username", dest="username", help="alarm.com username", required=True
+    )
+    parser.add_argument(
+        "-p", "--password", dest="password", help="alarm.com password", required=True
+    )
+
+    parser.add_argument(
+        "-n",
+        "--device-name",
+        help=(
+            "registers a device with this name on alarm.com and requests the two-factor"
+            " authentication cookie for the device."
+        ),
+        required=False,
+    )
+
+    ##########
+    # GROUPS #
+    ##########
+
+    #
+    # OTP/Cookie Group
+    #
+
+    otp_group = parser.add_mutually_exclusive_group()
+
+    otp_group.add_argument(
+        "-c",
+        "--cookie",
+        help=(
+            "two-factor authentication cookie. cannot be used with --one-time-password!"
+        ),
+        required=False,
+    )
+    otp_group.add_argument(
+        "-o",
+        "--one-time-password",
+        help=(
+            "provide otp code for accounts that have two-factor authentication enabled."
+            " if not provided here, %(prog)s will prompt user for otp. cannot be used"
+            " with --cookie!"
+        ),
+        required=False,
+    )
+
+    ##############
+    # SUBPARSERS #
+    ##############
+
+    subparsers = parser.add_subparsers(title="actions", required=True, dest="action")
+
+    #
+    # Fetch Subparser
+    #
+
+    get_subparser = subparsers.add_parser(
+        "get",
+        description="get data from alarm.com",
+        help="get data from alarm.com. use '%(prog)s get --help' for parameters.",
+    )
+
+    get_subparser.add_argument(
+        "-x",
+        "--include-unsupported",
+        help=(
+            "return basic data for all known unsupported devices. always outputs in"
+            " verbose format."
+        ),
+        action="store_true",
+        required=False,
+    )
+
+    #
+    # Setting Subparser
+    #
+
+    set_subparser = subparsers.add_parser(
+        "set",
+        description="set device configuration option",
+        help=(
+            "set device configuration option. use '%(prog)s set --help' for parameters"
+        ),
+    )
+
+    set_subparser.add_argument(
+        "-i", "--device-id", help="Numeric Alarm.com device identifier.", required=True
+    )
+    set_subparser.add_argument(
+        "-s",
+        "--setting-slug",
+        help=(
+            "Identifier for setting. Appears in parenthesis after setting name in"
+            " %(prog)s human readable output."
+        ),
+    )
+    set_subparser.add_argument(
+        "-k",
+        "--new-value",
+        help="New value for setting.",
+    )
+
+    ##########
+    # SET UP #
+    ##########
+
     args = vars(parser.parse_args())
-
-    print(f"Logging in as {args.get('username')}.")
-
-    if args.get("cookie") is not None:
-        print(f"Using 2FA cookie {args.get('cookie')}.")
 
     if args.get("debug", 0) > 0:
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.ERROR)
+
+    ##########
+    # LOG IN #
+    ##########
+
+    cprint(
+        f"Logging in as {args.get('username')}.", "grey", "on_yellow", attrs=["bold"]
+    )
+
+    if args.get("cookie") is not None:
+        cprint(
+            f"Using 2FA cookie {args.get('cookie')}.",
+            "grey",
+            "on_yellow",
+            attrs=["bold"],
+        )
 
     async with aiohttp.ClientSession() as session:
-        alarm = ADCController(
+        alarm = pyalarmdotcomajax.AlarmController(
             username=args.get("username", ""),
             password=args.get("password", ""),
             websession=session,
@@ -125,9 +224,10 @@ async def cli() -> None:
         try:
             login_result = await alarm.async_login()
         except NagScreen:
-            print(
+            cprint(
                 "Unable to log in. Please set up two-factor authentication for this"
-                " account."
+                " account.",
+                "red",
             )
             sys.exit()
 
@@ -135,7 +235,10 @@ async def cli() -> None:
 
             code: str | None
             if not (code := args.get("one_time_password")):
-                print("Two factor authentication is enabled for this user.")
+                cprint(
+                    "Two factor authentication is enabled for this user.",
+                    attrs=["bold"],
+                )
                 code = input("Enter One-Time Password: ")
 
             if code:
@@ -143,152 +246,277 @@ async def cli() -> None:
                     code=code, device_name=args.get("device_name")
                 )
             else:
-                print(
+                cprint(
                     "Not enough information provided to make a decision regarding"
-                    " two-factor authentication."
+                    " two-factor authentication.",
+                    "red",
                 )
                 sys.exit()
 
         if login_result == AuthResult.ENABLE_TWO_FACTOR:
-            print(
+            cprint(
                 "Unable to log in. Please set up two-factor authentication for this"
-                " account."
+                " account.",
+                "red",
             )
             sys.exit()
 
+        ######################
+        # UPDATE DEVICE DATA #
+        ######################
+
         await alarm.async_update()
 
-        if args.get("verbose", 0) == 1:
-            await _async_machine_output(
-                alarm=alarm,
-                include_systems=False,
-                include_image_sensors=False,
-                include_unsupported=args.get("include_unsupported", False),
-            )
-        elif args.get("verbose", 0) > 1:
-            await _async_machine_output(
-                alarm=alarm,
-                include_systems=True,
-                include_image_sensors=True,
-                include_unsupported=args.get("include_unsupported", False),
-            )
-        else:
-            _human_readable_output(alarm, generated_2fa_cookie)
+        device_type_output: dict = {}
 
-        if generated_2fa_cookie:
-            print(f"\n2FA Cookie: {generated_2fa_cookie}\n")
+        ############################
+        # GET DEVICE DATA WORKFLOW #
+        ############################
+
+        if args.get("action") == "get":
+
+            # Built List of Device Types
+
+            supported_device_types = []
+            for device_type in DEVICE_URLS["supported"]:
+                supported_device_types.append(device_type)
+
+            unsupported_device_types = []
+            if include_unsupported := args.get("include_unsupported", False):
+                for device_type in DEVICE_URLS["unsupported"]:
+                    unsupported_device_types.append(device_type)
+
+            # Get & Add Machine Output
+
+            if (verbose := args.get("verbose", 0)) > 0 or include_unsupported:
+                device_type_output.update(
+                    await _async_machine_output(
+                        alarm=alarm,
+                        include_image_sensor_b64=(verbose > 1),
+                        device_types=supported_device_types + unsupported_device_types
+                        if verbose > 0
+                        else unsupported_device_types,
+                    )
+                )
+
+            # Get & Add Human Output
+
+            if verbose == 0:
+                device_type_output.update(_human_output(alarm))
+
+            # Print Account Info
+
+            print(f"\nProvider: {alarm.provider_name}")
+            print(f"Logged in as: {alarm.user_email} ({alarm.user_id})")
+            print("")
+
+            # Print Device Types
+
+            for device_type_name, device_type_body in sorted(
+                device_type_output.items()
+            ):
+                cprint(
+                    f"====[ {device_type_name} ]====",
+                    "grey",
+                    "on_yellow",
+                    attrs=["bold"],
+                )
+                print(device_type_body)
+                print("")
+
+            if generated_2fa_cookie:
+                cprint(f"\n2FA Cookie: {generated_2fa_cookie}\n", "green")
+
+        ############################
+        # SET DEVICE DATA WORKFLOW #
+        ############################
+
+        if args.get("action") == "set":
+
+            try:
+                device_id: str = args["device_id"]
+                setting_slug: str = args["setting_slug"]
+                new_value: Any = args["new_value"]
+            except AttributeError:
+                cprint("Missing set parameter.", "red")
+
+            if not (device := alarm.get_device_by_id(device_id)):
+                cprint(f"Unable to find a device with ID {device_id}.", "red")
+                sys.exit(0)
+
+            try:
+                config_option: ConfigurationOption = device.settings[setting_slug]
+            except KeyError:
+                cprint(
+                    f"{device.name} ({device_id}) does not have the setting"
+                    f" {setting_slug}.",
+                    "red",
+                )
+                sys.exit(0)
+
+            #
+            # Convert user input into proper type
+            #
+            config_option_type = config_option["value_type"]
+
+            if config_option_type in [bool, str, int]:
+                try:
+                    typed_new_value = config_option_type(new_value)
+                except ValueError:
+                    cprint(
+                        f"Setting {setting_slug} must be {config_option_type.__name__}",
+                        "red",
+                    )
+                    sys.exit(0)
+
+            elif issubclass(config_option_type, ExtendedEnumMixin):
+                try:
+                    typed_new_value = config_option_type.enum_from_key(new_value)
+                except ValueError:
+                    cprint(
+                        f"Acceptable valures for {setting_slug} are:"
+                        f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}",
+                        "red",
+                    )
+                    sys.exit(0)
+
+            else:
+                cprint("Unexpected value type. This is a bug.")
+                sys.exit(0)
+
+            # Submit new value.
+            try:
+                await device.async_change_setting(
+                    slug=setting_slug, new_value=typed_new_value
+                )
+            except asyncio.TimeoutError:
+                cprint("Timed out while connecting to Alarm.com.")
+            except (
+                aiohttp.ClientError,
+                asyncio.exceptions.CancelledError,
+            ):
+                cprint("Failed to connect to Alarm.com.")
+            except UnexpectedDataStructure:
+                cprint("Couldn't find settings on device configuration page.")
+            except InvalidConfigurationOption:
+                cprint(
+                    "Couldn't load pyalarmdotcomajax configuration extension for"
+                    f" {setting_slug}."
+                )
+            except TypeError as err:
+                cprint(str(err), "red")
+                sys.exit(0)
+
+            # Check success
+            if issubclass(
+                device.settings.get(setting_slug, {}).get("value_type"), Enum
+            ):
+                reported_value = str(
+                    device.settings.get(setting_slug, {}).get("current_value").name
+                ).upper()
+            else:
+                reported_value = device.settings.get(setting_slug, {}).get(
+                    "current_value"
+                )
+
+            if str(reported_value).upper() == str(new_value).upper():
+                cprint(
+                    f"{config_option.get('name')} was successfully changed to"
+                    f" {new_value} for {device.name}.",
+                    "green",
+                )
+            else:
+                cprint(
+                    f"Error changing {config_option.get('name')} for {device.name}.",
+                    "red",
+                )
+
+
+#############
+# FUNCTIONS #
+#############
 
 
 async def _async_machine_output(
-    alarm: ADCController,
-    include_systems: bool = False,
-    include_image_sensors: bool = False,
-    include_unsupported: bool = False,
-) -> None:
+    alarm: AlarmController,
+    device_types: list,
+    include_image_sensor_b64: bool = False,
+) -> dict:
     """Output raw server responses."""
 
     try:
-        print(
-            await alarm.async_get_raw_server_responses(
-                include_systems=include_systems,
-                include_image_sensors=include_image_sensors,
-                include_unsupported=include_unsupported,
-            )
+        responses = await alarm.async_get_raw_server_responses(
+            include_image_sensor_b64=include_image_sensor_b64, device_types=device_types
         )
     except PermissionError:
-        print("Permission error. Check that your credentials are correct.")
+        cprint("Permission error. Check that your credentials are correct.", "red")
     except DataFetchFailed:
-        print("Connection error.")
+        cprint("Connection error.", "red")
     except AuthenticationFailed:
-        print(
+        cprint(
             "Authentication error. Check that your two factor authentication cookie is"
-            " correct."
+            " correct.",
+            "red",
         )
 
+    return responses
 
-def _human_readable_output(
-    alarm: ADCController, generated_2fa_cookie: str | None = None
-) -> None:
+
+def _human_output(alarm: AlarmController) -> dict:
     """Output user-friendly list of devices and statuses."""
-    print(f"\nProvider: {alarm.provider_name}")
-    print(f"Logged in as: {alarm.user_email} ({alarm.user_id})")
 
-    print("\n*** SYSTEMS ***\n")
-    if len(alarm.systems) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for system in alarm.systems:
-            _print_element_tearsheet(system)
-            print(CLI_CARD_BREAK)
+    output = {}
 
-    print("\n*** PARTITIONS ***\n")
-    if len(alarm.partitions) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for partition in alarm.partitions:
-            _print_element_tearsheet(partition)
-            print(CLI_CARD_BREAK)
+    type_to_var: list[tuple[DeviceType, list]] = [
+        (DeviceType.SYSTEM, alarm.systems),
+        (DeviceType.PARTITION, alarm.partitions),
+        (DeviceType.SENSOR, alarm.sensors),
+        (DeviceType.LOCK, alarm.locks),
+        (DeviceType.GARAGE_DOOR, alarm.garage_doors),
+        (DeviceType.IMAGE_SENSOR, alarm.image_sensors),
+        (DeviceType.LIGHT, alarm.lights),
+        (DeviceType.CAMERA, alarm.cameras),
+    ]
 
-    print("\n*** SENSORS ***\n")
-    if len(alarm.sensors) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for sensor in alarm.sensors:
-            _print_element_tearsheet(sensor)
-            print(CLI_CARD_BREAK)
+    device_type: DeviceType
+    devices: list
+    for device_type, devices in type_to_var:
+        device_type_output: str = ""
+        if len(devices) == 0:
+            device_type_output += "\n(none found)\n"
+        else:
+            for device in sorted(devices, key=lambda device: str(device.name)):
+                device_type_output += _print_element_tearsheet(device)
 
-    print("\n*** LOCKS ***\n")
-    if len(alarm.locks) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for lock in alarm.locks:
-            _print_element_tearsheet(lock)
-            print(CLI_CARD_BREAK)
+        output[slug_to_title(device_type.name)] = device_type_output
 
-    print("\n*** GARAGE DOORS ***\n")
-    if len(alarm.garage_doors) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for garage_door in alarm.garage_doors:
-            _print_element_tearsheet(garage_door)
-            print(CLI_CARD_BREAK)
-
-    print("\n*** IMAGE SENSORS ***\n")
-    if len(alarm.image_sensors) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for image_sensor in alarm.image_sensors:
-            _print_element_tearsheet(image_sensor)
-            print(CLI_CARD_BREAK)
-
-    print("\n*** LIGHTS ***\n")
-    if len(alarm.lights) == 0:
-        print("(none found)")
-    else:
-        print(CLI_CARD_BREAK)
-        for light in alarm.lights:
-            _print_element_tearsheet(light)
-            print(CLI_CARD_BREAK)
-
-    print("\n")
+    return output
 
 
 def _print_element_tearsheet(
-    element: ADCGarageDoor
-    | ADCLock
-    | ADCPartition
-    | ADCSensor
-    | ADCSystem
-    | ADCLight
-    | ADCImageSensor,
-) -> None:
+    element: GarageDoor
+    | Lock
+    | Partition
+    | Sensor
+    | System
+    | Light
+    | ImageSensor
+    | Camera,
+) -> str:
 
+    output_str: str = ""
+
+    # DEVICE NAME
+    output_str += colored(
+        f"\n{element.name} ({element.id_})", attrs=["bold", "underline"]
+    )
+
+    if element.malfunction:
+        output_str += colored(" (MALFUNCTION)", "red", attrs=["bold"])
+
+    output_str += "\n"
+
+    # BATTERY
     if element.battery_critical:
         battery = "Critical"
     elif element.battery_low:
@@ -296,42 +524,66 @@ def _print_element_tearsheet(
     else:
         battery = "Normal"
 
-    subtype = (
-        f"\n        Sensor Type: {element.device_subtype.name}"
-        if isinstance(element.device_subtype, ADCSensorSubtype)
+    # DESIRED STATE
+    desired_str = (
+        f" (Desired: {element.desired_state.name})"
+        if isinstance(element, System) and element.desired_state
         else ""
     )
 
-    desired_str = (
-        f"(Desired: {element.desired_state})" if isinstance(element, ADCSystem) else ""
-    )
+    # ATTRIBUTES
+    output_str += "ATTRIBUTES: "
 
-    print(
-        f"""{element.name} ({element.id_}){subtype}
-        State: {element.state} {desired_str}
-        Battery: {battery}"""
-    )
+    if isinstance(element.device_subtype, Sensor.Subtype):
+        output_str += f'[Type: {element.device_subtype.name.title().replace("_"," ")}] '
+
+    if element.state:
+        output_str += f"[STATE: {element.state.name.title()}{desired_str}] "
+
+    output_str += f"[BATTERY: {battery}] "
 
     if element.read_only:
-        print(f"        Read Only: {element.read_only}")
+        output_str += f"[READ ONLY: {element.read_only}] "
 
-    if isinstance(element, ADCLight):
-
-        print(f"        Reports State: {element.supports_state_tracking}")
+    if isinstance(element, Light):
+        # Disabling. Boring stat.
+        # attribute_str += f"[REPORTS STATE: {element.supports_state_tracking}] "
 
         if element.brightness:
-            print(f"        Brightness: {element.brightness}%")
+            output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
-    if element.malfunction:
-        print("\n        ~~MALFUNCTION~~\n")
+    output_str += "\n"
 
-    for condition in element.trouble_conditions:
-        print(
-            f"""
-        ~~TROUBLE~~
-        {condition["title"]} ({condition["message_id"]})
-        {condition["body"]}"""
-        )
+    # SETTINGS / EXTENSIONS
+
+    if element.settings:
+
+        output_str += "SETTINGS: "
+
+        config_option: ConfigurationOption
+        for _, config_option in element.settings.items():
+
+            if isinstance(current_value := config_option["current_value"], Enum):
+                current_value = current_value.name.title()
+
+            output_str += (
+                f'{{{{ {config_option["name"]} ({config_option["slug"]}) [Type:'
+                f' {slug_to_title(config_option["option_type"].name)}] '
+                f"[State: {current_value}] }}}} "
+            )
+
+        output_str += "\n"
+
+    # TROUBLE
+
+    if element.trouble_conditions:
+        for condition in element.trouble_conditions:
+            output_str += colored("TROUBLE: ", "red", attrs=["bold"])
+            output_str += f"""[TITLE: {condition["title"]}] [MESSAGE ID: {condition["message_id"]}] [MESSAGE: {condition["body"]}] """
+
+        output_str += "\n"
+
+    return output_str
 
 
 def main() -> None:

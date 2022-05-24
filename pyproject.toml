@@ -9,7 +9,7 @@ tests = ["B103","B108","B306","B307","B313","B314","B315","B316","B317","B318","
 line-length = 88
 target-version = ["py39"]
 exclude = 'generated'
-experimental-string-processing = "True"
+preview = true
 
 [tool.mypy]
 python_version = "3.9"
@@ -131,12 +131,13 @@ norecursedirs = [
     ".git",
     "testing_config",
 ]
+asyncio_mode = "auto"
 
 [tool.tomlsort]
-all = false
-check = false
 ignore_case = true
 in_place = true
+all = false
+check = false
 no_header = false
 
 [tool.zimports]

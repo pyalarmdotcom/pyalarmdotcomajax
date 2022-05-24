@@ -1,0 +1,130 @@
+{
+    "data": [
+        {
+            "id": "555555555-90",
+            "type": "video/camera",
+            "attributes": {
+                "supportsSnapShot": false,
+                "canTakeSnapshot": false,
+                "canRequestRecording": false,
+                "canUploadClips": true,
+                "hasSvrSchedule": false,
+                "excludedFromVisualVerification": false,
+                "liveViewHdToggleEnabled": true,
+                "supports4MPStreaming": false,
+                "canPlaySiren": false,
+                "isSirenEnabled": false,
+                "isSirenOn": false,
+                "canPanTilt": false,
+                "maxPanTiltLevel": 0,
+                "canZoom": false,
+                "maxZoomLevel": 0,
+                "minZoomLevelForPanTilt": 0,
+                "panTiltPresets": [],
+                "preferredPanTiltPreset": null,
+                "isUnreachable": false,
+                "lastSuccessfulSupervision": null,
+                "canStreamToPanel": true,
+                "canChangeStreamToPanel": false,
+                "canStreamToPanelBeEnabled": true,
+                "isStreamToPanelEnabled": false,
+                "doorbellChimeType": 0,
+                "isBatteryCameraAndUsingGatewayForBackendAccess": false,
+                "supportsVmdSchedules": false,
+                "deviceImagePath": "/web/webimages/camera_images/SkyBellHD_64px.png?v=2",
+                "deviceModel": "SKYBELLHD",
+                "macAddress": "12:34:56:78:9A:BC",
+                "firmwareVersion": "1.5",
+                "publicIp": null,
+                "privateIp": null,
+                "port": null,
+                "httpsPort": null,
+                "shouldUseEntireImageForSnapshot": false,
+                "hasDdnsed": false,
+                "usageProtocolMapping": {
+                    "6": 1,
+                    "10": 1,
+                    "18": 3
+                },
+                "isVirtualCamera": false,
+                "isVarifocalCamera": false,
+                "hasSdRecordingSchedule": false,
+                "supportsLiveView": false,
+                "forcedAspectRatio": null,
+                "canBeSaved": false,
+                "canChangeDescription": false,
+                "description": "Front Doorbell",
+                "deviceModelId": 0,
+                "canConfirmStateChange": false,
+                "canReceiveCommands": false,
+                "remoteCommandsEnabled": false,
+                "hasPermissionToChangeState": false,
+                "deviceIcon": {
+                    "icon": 27
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": null
+            },
+            "relationships": {
+                "videoEvents": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "videoSource": {
+                    "data": {
+                        "id": "555555555-91",
+                        "type": "video/liveVideoSource"
+                    }
+                },
+                "videoSourceHd": {
+                    "data": {
+                        "id": "555555555-92",
+                        "type": "video/liveVideoHighestResSource"
+                    }
+                },
+                "svrVideoSource": {
+                    "data": {
+                        "id": "555555555-93",
+                        "type": "video/videoSources/svrVideoSource"
+                    }
+                },
+                "svrScrubberThumbnailEndpoint": {
+                    "data": {
+                        "id": "555555555-94",
+                        "type": "video/svrThumbnailEndpoint"
+                    }
+                },
+                "cameraSiren": {
+                    "data": null
+                },
+                "privacyZonesSetting": {
+                    "data": null
+                },
+                "snapshot": {
+                    "data": {
+                        "id": "555555555-95",
+                        "type": "video/snapshot"
+                    }
+                },
+                "system": {
+                    "data": {
+                        "id": "555555555-96",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

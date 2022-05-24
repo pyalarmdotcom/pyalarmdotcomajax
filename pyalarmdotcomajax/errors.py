@@ -32,3 +32,7 @@ class BadAccount(Exception):
 
 class DeviceTypeNotAuthorized(Exception):
     """Account does not have access to a specific device type."""
+
+
+class InvalidConfigurationOption(Exception):
+    """Configuration option is not valid."""

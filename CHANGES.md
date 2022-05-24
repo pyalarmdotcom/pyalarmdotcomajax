@@ -1,5 +1,12 @@
 # Changes
 
+## V0.3.0
+
+* Major refactoring with widespread breaking changes.
+* Added "controller extensions" to let controller retrieve data from additional endpoints.
+* Added support for Skybell HD video doorbells (settings only, not video).
+* Created testing framework and started building tests.
+
 ## v0.2.10 - 2022-04025
 
 * Fixes crash when encountering unknown device type with missing permissions.

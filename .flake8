@@ -3,7 +3,7 @@
 exclude = .venv,.git,.tox,docs,venv,bin,lib,deps,build
 doctests = True
 max-line-length = 88
-extend-ignore = E203
+; extend-ignore = E203
 # To work with Black
 # E501: line too long
 # W503: Line break occurred before a binary operator
@@ -23,5 +23,5 @@ ignore =
     N801,N802,N806,
     W503,W504
 import-order-style = google
-application-import-names = sqlalchemy,test
+application-import-names = sqlalchemy,test,pyalarmdotcomajax
 enable-extensions = G

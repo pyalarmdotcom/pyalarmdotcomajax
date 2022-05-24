@@ -1,15 +1,13 @@
 # Alarm.com Python Library
 
 **Author: Justin Wong**
+**Maintainer: Elahd Bar-Shai**
 
 ## Overview
 
 A Python library to asynchronously interface with Alarm.com.
 Forked from Daren Lord's pyalarmdotcom. Mainly built for use with Home Assistant.
 
-## BREAKING CHANGES
-
-v0.2 of pyalarmdotcomajax breaks just about all features available in v0.1. Be careful when updating.
 
 ## Installation / Usage
 
@@ -30,20 +28,23 @@ python setup.py install
 
 See `examples/basic_sensor_data.py` for a basic usage example.
 
-## Device Support
+## Device Support (Core Functions)
+
+Pyalarmdotcomajax supports core features (monitoring and using actions) of the device types listed below.
 
 - As of v0.2, multiples of all devices are supported.
 - All devices include the attributes: `name`, `id_`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
 
-| Device Type  | Notable Attributes                  | Actions                               |
-| ------------ | ----------------------------------- | ------------------------------------- |
-| System       | `unit_id`                           | (none)                                |
-| Partition    | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |
-| Sensor       | `device_subtype`                    | (none)                                |
-| Locks        | `desired_state`                     | lock, unlock                          |
-| Garage Door  | (none)                              | open, close                           |
-| Image Sensor | `images`                            | peek_in                               |
-| Light        | `brightness`                        | turn_on (with brightness), turn_off   |
+| Device Type  | Notable Attributes                  | Actions                               | Notes                                            |
+| ------------ | ----------------------------------- | ------------------------------------- | ------------------------------------------------ |
+| System       | `unit_id`                           | (none)                                |                                                  |
+| Partition    | `uncleared_issues`, `desired_state` | arm away, arm stay, arm night, disarm |                                                  |
+| Sensor       | `device_subtype`                    | (none)                                |                                                  |
+| Locks        | `desired_state`                     | lock, unlock                          |                                                  |
+| Garage Door  | (none)                              | open, close                           |                                                  |
+| Image Sensor | `images`                            | peek_in                               |                                                  |
+| Light        | `brightness`                        | turn_on (with brightness), turn_off   | No support for RGB/W, effects, temperature, etc. |
+
 
 ### Known Sensor deviceTypes
 
@@ -57,39 +58,67 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 | 6          | CO Detector                            |
 | 8          | Freeze Sensor                          |
 | 9          | Panic Button                           |
+| 10         | Fixed Panic Button                     |
+| 14         | Siren                                  |
 | 19         | Glass Break Detector                   |
 | 68         | Panel Image Sensor                     |
 | 69         | Mobile Phone (for Bluetooth Disarming) |
 | 83         | Panel Glass Break Sensor               |
 | 89         | Panel Motion Sensor                    |
 
+
+## Device Support (Configuration)
+
+Pyalarmdotcomajax supports changing configuration options for the devices listed below.
+
+### Skybell HD
+**Doorbell Camera**
+
+| Configuration Option      | Slug                 | Supported Values                     | Notes                      |
+| ------------------------- | -------------------- | ------------------------------------ | -------------------------- |
+| Indoor Chime              | `indoor-chime`       | `on`, `off`                          |                            |
+| Outdoor Chime             | `outdoor-chime`      | `off`, `low`, `medium`, `high`       |                            |
+| LED Brightness            | `led-brightness`     | 0-100                                |                            |
+| LED Color                 | `led-color`          | `#000000` - `#FFFFFF`                | Must include `#` at start. |
+| Motion Sensor Sensitivity | `motion-sensitivity` | `low`, `medium`, `high`, `very_high` |                            |
+
+
 ## Command Line Interface
 
-The CLI is available by running `adc` from anywhere in your terminal.
+The CLI is available by running `adc` from anywhere in your terminal. Use `adc --help`, `adc get --help`, and `adc set --help` for more information.
 
 ```bash
-usage: adc [-h] -u USERNAME -p PASSWORD [-c COOKIE] [-v] [-x] [-o ONE_TIME_PASSWORD] [-n DEVICE_NAME] [-d] [-ver]
+usage: adc [-h] [-d] [-ver] [-v] -u USERNAME -p PASSWORD [-n DEVICE_NAME] [-c COOKIE | -o ONE_TIME_PASSWORD] {get,set} ...
 
-Basic command line debug interface for Alarm.com via pyalarmdotcomajax. Shows device states in various formats.
+basic command line debug interface for alarm.com via pyalarmdotcomajax. shows device states in various formats.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
+  -d, --debug           show pyalarmdotcomajax's debug output.
+  -ver, --version       show program's version number and exit
+  -v, --verbose         show verbose output. -vv returns base64 image data for image sensor images.
   -u USERNAME, --username USERNAME
                         alarm.com username
   -p PASSWORD, --password PASSWORD
                         alarm.com password
+  -n DEVICE_NAME, --device-name DEVICE_NAME
+                        registers a device with this name on alarm.com and requests the two-factor authentication cookie for the device.
   -c COOKIE, --cookie COOKIE
                         two-factor authentication cookie. cannot be used with --one-time-password!
-  -v, --verbose         show verbose output. -v returns server response for all devices except systems. -vv returns server response for all devices.
-  -x, --include-unsupported
-                        when used with -v, returns data for cameras, lights, and thermostats.
   -o ONE_TIME_PASSWORD, --one-time-password ONE_TIME_PASSWORD
-                        provide otp code for accounts that have two-factor authentication enabled. cannot be used with --cookie!
-  -n DEVICE_NAME, --device-name DEVICE_NAME
-                        registers a device with this name on alarm.com and requests the two-factor authentication cookie for this device.
-  -d, --debug           show pyalarmdotcomajax's debug output.
-  -ver, --version       show program's version number and exit
+                        provide otp code for accounts that have two-factor authentication enabled. if not provided here, adc will prompt user for otp. cannot be used with --cookie!
+
+actions:
+  {get,set}
+    get                 get data from alarm.com. use 'adc get --help' for parameters.
+    set                 set device configuration option. use 'adc set --help' for parameters
 ```
+
+### Examples
+
+1. Get human-readable status (and device IDs) for all devices: `adc -u "your_username" -p "your_password" get`
+2. Get raw JSON output from Alarm.com for all devices: `adc -v -u "your_username" -p "your_password" get`
+3. Turn off Skybell HD indoor chime (assume Skybell device ID is 283431032-1520): `adc -u "your_username" -p "your_password" set -i "283431032-1520" -s "indoor-chime" -k "off"`
 
 ## Development
 

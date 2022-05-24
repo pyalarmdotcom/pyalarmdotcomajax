@@ -4,8 +4,8 @@ import asyncio
 import sys
 
 import aiohttp
-from pyalarmdotcomajax import ADCController
-from pyalarmdotcomajax.const import AuthResult
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax import AuthResult
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
 
@@ -21,7 +21,9 @@ async def main() -> None:
         # CREATE ALARM CONTROLLER
         #
 
-        alarm = ADCController(username=USERNAME, password=PASSWORD, websession=session)
+        alarm = AlarmController(
+            username=USERNAME, password=PASSWORD, websession=session
+        )
 
         #
         # LOG IN AND HANDLE TWO-FACTOR AUTHENTICATION
