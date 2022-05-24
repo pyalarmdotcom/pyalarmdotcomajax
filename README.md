@@ -1,6 +1,7 @@
 # Alarm.com Python Library
 
 **Author: Justin Wong**
+
 **Maintainer: Elahd Bar-Shai**
 
 ## Overview
