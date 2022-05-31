@@ -16,6 +16,7 @@ from dateutil import parser
 from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
+from pyalarmdotcomajax.extensions import ConfigurationOption
 from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
@@ -240,7 +241,7 @@ class BaseDevice:
         element_specific_data: ElementSpecificData | None = None,
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
-        settings: dict | None = None,  # device_id: ConfigurationOption
+        settings: dict | None = None,  # slug: ConfigurationOption
     ) -> None:
         """Initialize base element class."""
 
@@ -314,9 +315,10 @@ class BaseDevice:
         """Return user-changable settings."""
 
         return {
-            config_option["slug"]: config_option
-            for _, config_option in self._settings.items()
-            if config_option["user_configurable"]
+            config_option.slug: config_option
+            for config_option in self._settings.values()
+            if isinstance(config_option, ConfigurationOption)
+            and config_option.user_configurable
         }
 
     @property
@@ -408,9 +410,10 @@ class BaseDevice:
             )
             return
 
-        extension: CameraSkybellControllerExtension | None = self.settings.get(
-            slug, {}
-        ).get("extension")
+        config_option: ConfigurationOption | None = self.settings.get(slug)
+        extension: type[CameraSkybellControllerExtension] | None = (
+            config_option.extension if config_option else None
+        )
 
         if not extension:
             raise InvalidConfigurationOption
@@ -618,7 +621,7 @@ class Light(DesiredStateMixin, BaseDevice):
 
         await self._send_action_callback(
             device_type=DeviceType.LIGHT,
-            event=self.DeviceState.ON,
+            event=self.Command.ON,
             device_id=self.id_,
             msg_body=msg_body,
         )
@@ -628,7 +631,7 @@ class Light(DesiredStateMixin, BaseDevice):
 
         await self._send_action_callback(
             device_type=DeviceType.LIGHT,
-            event=self.DeviceState.OFF,
+            event=self.Command.OFF,
             device_id=self.id_,
         )
 
@@ -736,11 +739,15 @@ class Partition(DesiredStateMixin, BaseDevice):
         silent_arming: bool = False,
     ) -> None:
         """Arm stay alarm."""
+
+        log.debug("Calling arm stay.")
+
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
+            night_arming=False,
         )
 
     async def async_arm_away(
@@ -750,11 +757,15 @@ class Partition(DesiredStateMixin, BaseDevice):
         silent_arming: bool = False,
     ) -> None:
         """Arm stay alarm."""
+
+        log.debug("Calling arm away.")
+
         await self._async_arm(
             arm_type=self.Command.ARM_AWAY,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
+            night_arming=False,
         )
 
     async def async_arm_night(
@@ -764,6 +775,9 @@ class Partition(DesiredStateMixin, BaseDevice):
         silent_arming: bool = False,
     ) -> None:
         """Arm stay alarm."""
+
+        log.debug("Calling arm night.")
+
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
             force_bypass=force_bypass,
@@ -776,6 +790,8 @@ class Partition(DesiredStateMixin, BaseDevice):
         self,
     ) -> None:
         """Disarm alarm system."""
+
+        log.debug("Calling disarm.")
 
         await self._send_action_callback(
             device_type=DeviceType.PARTITION,

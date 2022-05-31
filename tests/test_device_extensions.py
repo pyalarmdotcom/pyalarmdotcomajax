@@ -27,17 +27,17 @@ async def test__extension_camera_skybellhd__fetch(
         )
         configs: list[ExtendedProperties] = await extension.fetch()
 
-    assert configs[0]["device_name"] == "Front Doorbell"
-    assert configs[0]["config_id"] == "2048"
+    assert configs[0].device_name == "Front Doorbell"
+    assert configs[0].config_id == "2048"
     assert (
-        configs[0]["settings"]["indoor-chime"]["current_value"]
+        configs[0].settings["indoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeOnOff.ON
     )
     assert (
-        configs[0]["settings"]["outdoor-chime"]["current_value"]
+        configs[0].settings["outdoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeAdjustableVolume.MEDIUM
     )
-    assert configs[0]["raw_attribs"]
+    assert configs[0].raw_attribs
 
 
 @pytest.mark.asyncio  # type: ignore
@@ -56,15 +56,15 @@ async def test__extension_camera_skybellhd__via_alarm_controller(
 
     assert skybell.name == "Front Doorbell"
     assert (
-        skybell.settings["indoor-chime"]["current_value"]
+        skybell.settings["indoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeOnOff.ON
     )
     assert (
-        skybell.settings["outdoor-chime"]["current_value"]
+        skybell.settings["outdoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeAdjustableVolume.MEDIUM
     )
     assert (
-        skybell.settings["indoor-chime"]["option_type"]
+        skybell.settings["indoor-chime"].option_type
         is ConfigurationOptionType.BINARY_CHIME
     )
 
@@ -129,6 +129,6 @@ async def test__extension_camera_skybellhd__submit_change(
     )
 
     assert (
-        camera.settings["indoor-chime"]["current_value"]
+        camera.settings["indoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeOnOff.OFF
     )

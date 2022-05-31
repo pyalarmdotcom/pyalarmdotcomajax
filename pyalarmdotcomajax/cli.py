@@ -357,7 +357,7 @@ async def cli() -> None:
             #
             # Convert user input into proper type
             #
-            config_option_type = config_option["value_type"]
+            config_option_type = config_option.value_type
 
             if config_option_type in [bool, str, int]:
                 try:
@@ -408,11 +408,9 @@ async def cli() -> None:
                 sys.exit(0)
 
             # Check success
-            if issubclass(
-                device.settings.get(setting_slug, {}).get("value_type"), Enum
-            ):
+            if issubclass(device.settings.get(setting_slug, {}).value_type, Enum):
                 reported_value = str(
-                    device.settings.get(setting_slug, {}).get("current_value").name
+                    device.settings.get(setting_slug, {}).current_value.name
                 ).upper()
             else:
                 reported_value = device.settings.get(setting_slug, {}).get(
@@ -421,13 +419,13 @@ async def cli() -> None:
 
             if str(reported_value).upper() == str(new_value).upper():
                 cprint(
-                    f"{config_option.get('name')} was successfully changed to"
+                    f"{config_option.name} was successfully changed to"
                     f" {new_value} for {device.name}.",
                     "green",
                 )
             else:
                 cprint(
-                    f"Error changing {config_option.get('name')} for {device.name}.",
+                    f"Error changing {config_option.name} for {device.name}.",
                     "red",
                 )
 
@@ -563,12 +561,12 @@ def _print_element_tearsheet(
         config_option: ConfigurationOption
         for _, config_option in element.settings.items():
 
-            if isinstance(current_value := config_option["current_value"], Enum):
+            if isinstance(current_value := config_option.current_value, Enum):
                 current_value = current_value.name.title()
 
             output_str += (
-                f'{{{{ {config_option["name"]} ({config_option["slug"]}) [Type:'
-                f' {slug_to_title(config_option["option_type"].name)}] '
+                f"{{{{ {config_option.name} ({config_option.slug}) [Type:"
+                f" {slug_to_title(config_option.option_type.name)}] "
                 f"[State: {current_value}] }}}} "
             )
 

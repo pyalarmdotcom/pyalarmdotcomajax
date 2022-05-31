@@ -1,6 +1,10 @@
 # Changes
 
-## V0.3.0
+## v0.3.1
+
+* Refactored some TypeDicts into data classes.
+
+## v0.3.0
 
 * Major refactoring with widespread breaking changes.
 * Added "controller extensions" to let controller retrieve data from additional endpoints.

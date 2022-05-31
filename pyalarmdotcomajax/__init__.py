@@ -36,7 +36,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 log = logging.getLogger(__name__)
@@ -400,7 +400,10 @@ class AlarmController:
                 msg_body["forceBypass"] = False
 
                 return await self.async_send_command(
-                    device_type, event, device_id, msg_body
+                    device_type=device_type,
+                    event=event,
+                    device_id=device_id,
+                    msg_body=msg_body,
                 )
             if resp.status == 403:
                 # May have been logged out, try again
@@ -675,11 +678,9 @@ class AlarmController:
 
                 # Match extended properties to devices by name, then add to device_settings storage.
                 for extended_property in extended_properties_list:
-                    if (
-                        device_name := extended_property.get("device_name")
-                    ) in name_id_map:
+                    if (device_name := extended_property.device_name) in name_id_map:
                         device_id = name_id_map[device_name]
-                        device_settings[device_id] = extended_property["settings"]
+                        device_settings[device_id] = extended_property.settings
 
             ##############################
             # PREPROCESS ADDITIONAL DATA #

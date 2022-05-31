@@ -4,12 +4,12 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 import asyncio
+from dataclasses import dataclass
 from enum import auto
 from enum import Enum
 import logging
 import re
 from typing import Any
-from typing import TypedDict
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -27,13 +27,14 @@ log = logging.getLogger(__name__)
 # #################
 
 
-class ExtendedProperties(TypedDict, total=False):
+@dataclass
+class ExtendedProperties:
     """Extended properties to be made available in device core."""
 
-    device_name: str
     config_id: str
     settings: dict[str, ConfigurationOption]  # Slug, ConfigurationOption
-    raw_attribs: dict
+    device_name: str | None = None
+    raw_attribs: dict | None = None
 
 
 class ConfigurationOptionType(Enum):
@@ -46,20 +47,22 @@ class ConfigurationOptionType(Enum):
     MOTION_SENSITIVITY = auto()
 
 
-class ConfigurationOption(TypedDict, total=False):
-    """Dictionary of metadata for configuration options."""
+@dataclass
+class ConfigurationOption:
+    """Class for configuration options."""
 
     name: str
     slug: str
-    current_value: Any
     option_type: ConfigurationOptionType
     value_type: type
-    value_min: int
-    value_max: int
-    value_regex: str
-    show_as_hex: bool
     extension: type[CameraSkybellControllerExtension]
     user_configurable: bool
+
+    current_value: Any | None = None
+    value_min: int | None = None
+    value_max: int | None = None
+    value_regex: str | None = None
+    show_as_hex: bool = False
 
 
 class ControllerExtension(ABC):
@@ -172,8 +175,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
         ("ctl00$phBody$tbCamName", "device_name"),
     ]
 
-    # _chime_onoff_get_to_set = {True: ChimeOnOff.ON, False: ChimeOnOff.OFF}
-
     def __init__(self, websession: aiohttp.ClientSession, headers: dict) -> None:
         """Initialize extension."""
 
@@ -187,82 +188,70 @@ class CameraSkybellControllerExtension(ControllerExtension):
             (
                 self._FORM_FIELD_INDOOR_CHIME_ONOFF,
                 ConfigurationOption(
-                    {
-                        "slug": "indoor-chime",
-                        "name": "Indoor Chime",
-                        "option_type": ConfigurationOptionType.BINARY_CHIME,
-                        "value_type": self.ChimeOnOff,
-                        "extension": self.__class__,
-                        "user_configurable": True,
-                    }
+                    slug="indoor-chime",
+                    name="Indoor Chime",
+                    option_type=ConfigurationOptionType.BINARY_CHIME,
+                    value_type=self.ChimeOnOff,
+                    extension=self.__class__,
+                    user_configurable=True,
                 ),
             ),
             (
                 self._FORM_FIELD_OUTDOOR_CHIME_VOLUME,
                 ConfigurationOption(
-                    {
-                        "slug": "outdoor-chime",
-                        "name": "Outdoor Chime",
-                        "option_type": ConfigurationOptionType.ADJUSTABLE_CHIME,
-                        "value_type": self.ChimeAdjustableVolume,
-                        "extension": self.__class__,
-                        "user_configurable": True,
-                    }
+                    slug="outdoor-chime",
+                    name="Outdoor Chime",
+                    option_type=ConfigurationOptionType.ADJUSTABLE_CHIME,
+                    value_type=self.ChimeAdjustableVolume,
+                    extension=self.__class__,
+                    user_configurable=True,
                 ),
             ),
             (
                 self._FORM_FIELD_OUTDOOR_CHIME_ONOFF,
                 ConfigurationOption(
-                    {
-                        "slug": "outdoor-chime-onoff",
-                        "name": "Outdoor Chime On/Off",
-                        "option_type": ConfigurationOptionType.BINARY_CHIME,
-                        "value_type": self.ChimeOnOff,
-                        "extension": self.__class__,
-                        "user_configurable": False,  # Outdoor chime on/off setting should be adjusted via volume setting ONLY.
-                    }
+                    slug="outdoor-chime-onoff",
+                    name="Outdoor Chime On/Off",
+                    option_type=ConfigurationOptionType.BINARY_CHIME,
+                    value_type=self.ChimeOnOff,
+                    extension=self.__class__,
+                    user_configurable=False,  # Outdoor chime on/off setting should be adjusted via volume setting ONLY.
                 ),
             ),
             (
                 self._FORM_FIELD_LED_BRIGHTNESS,
                 ConfigurationOption(
-                    {
-                        "slug": "led-brightness",
-                        "name": "LED Brightness",
-                        "option_type": ConfigurationOptionType.BRIGHTNESS,
-                        "value_type": int,
-                        "value_min": 0,
-                        "value_max": 100,
-                        "extension": self.__class__,
-                        "user_configurable": True,
-                    }
+                    slug="led-brightness",
+                    name="LED Brightness",
+                    option_type=ConfigurationOptionType.BRIGHTNESS,
+                    value_type=int,
+                    value_min=0,
+                    value_max=100,
+                    extension=self.__class__,
+                    user_configurable=True,
                 ),
             ),
             (
                 self._FORM_FIELD_LED_COLOR,
                 ConfigurationOption(
-                    {
-                        "slug": "led-color",
-                        "name": "LED Color",
-                        "option_type": ConfigurationOptionType.COLOR,
-                        "value_type": str,
-                        "value_regex": r"(#[0-9a-fA-F]{6})",
-                        "extension": self.__class__,
-                        "user_configurable": True,
-                    }
+                    slug="led-color",
+                    name="LED Color",
+                    option_type=ConfigurationOptionType.COLOR,
+                    value_type=str,
+                    value_regex=r"(#[0-9a-fA-F]{6})",
+                    extension=self.__class__,
+                    user_configurable=True,
                 ),
             ),
             (
                 self._FORM_FIELD_MOTION_SENSITIVITY,
                 ConfigurationOption(
-                    {
-                        "slug": "motion-sensitivity",
-                        "name": "Motion Sensitivity",
-                        "option_type": ConfigurationOptionType.MOTION_SENSITIVITY,
-                        "value_type": self.MotionSensitivity,
-                        "extension": self.__class__,
-                        "user_configurable": True,
-                    }
+                    slug="motion-sensitivity",
+                    name="Motion Sensitivity",
+                    option_type=ConfigurationOptionType.MOTION_SENSITIVITY,
+                    value_type=self.MotionSensitivity,
+                    extension=self.__class__,
+                    user_configurable=True,
                 ),
             ),
         ]
@@ -328,7 +317,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
             for config_id in additional_camera_config_ids:
                 # Build payload to request config page for next camera
-                postback_form_data = current_form_data["raw_attribs"]
+                postback_form_data = current_form_data.raw_attribs
+
+                if not postback_form_data:
+                    raise UnexpectedDataStructure
+
                 postback_form_data["__EVENTTARGET"] = "ctl00$phBody$CamSelector$ddlCams"
                 postback_form_data["ctl00$phBody$CamSelector$ddlCams"] = config_id
 
@@ -389,9 +382,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
 
             for config_option_field_name, config_option in self._form_field_settings:
-                if config_option["slug"] == slug:
+                if config_option.slug == slug:
                     field_name = config_option_field_name
-                    field_value_type = config_option["value_type"]
+                    field_value_type = config_option.value_type
                     field_config_options = config_option
 
         except KeyError as err:
@@ -416,11 +409,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
         if field_value_type == int:
             if (
                 (
-                    (value_max := field_config_options.get("value_max"))
+                    (value_max := field_config_options.value_max)
                     and new_value > value_max
                 )
                 or (
-                    (value_min := field_config_options.get("value_min"))
+                    (value_min := field_config_options.value_min)
                     and new_value < value_min
                 )
                 or not (isinstance(new_value, int))
@@ -431,7 +424,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         if field_value_type == str:
             if (
-                (value_regex := field_config_options.get("value_regex"))
+                (value_regex := field_config_options.value_regex)
                 and not re.search(value_regex, new_value)
             ) or not isinstance(new_value, str):
                 raise ValueError
@@ -448,8 +441,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
             camera_names=[camera_name],
         )
 
-        if not (payload := results[0].get("raw_attribs")) or not (
-            (config_id := results[0].get("config_id")) or not isinstance(payload, dict)
+        if not (payload := results[0].raw_attribs) or not (
+            (config_id := results[0].config_id) or not isinstance(payload, dict)
         ):
             raise UnexpectedDataStructure("Failed to refresh settings data for device.")
 
@@ -556,7 +549,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
             raise err
 
-        return camera_return_data["settings"][slug]
+        return camera_return_data.settings[slug]
 
     def _build_submit_payload(  # pylint: disable = no-self-use
         self, response_data: dict
@@ -591,10 +584,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
         """Extract data from camera config page."""
 
         raw_attribs: dict = {}
-        properties: ExtendedProperties = {
-            "config_id": config_id,
-            "settings": {},
-        }
+        properties = ExtendedProperties(
+            config_id=config_id,
+            settings={},
+        )
 
         try:
 
@@ -619,7 +612,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
                 raw_attribs[field_name] = value
-                properties[property_name] = value  # type: ignore
+                setattr(properties, property_name, value)
 
             for field_name, config_option in self._form_field_settings:
 
@@ -636,8 +629,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Convert raw values to enums for ConfigurationOption.current_value.
                 # Convert checked/unchecked to str(enum member name) for ConfigurationOption.raw_attribs.
 
-                config_value_type = config_option.get("value_type")
-                config_option_type = config_option.get("option_type")
+                config_value_type = config_option.value_type
+                config_option_type = config_option.option_type
 
                 # Conversions for ChimeOnOff values.
 
@@ -667,7 +660,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Preprocessing for colors
 
                 if config_option_type == ConfigurationOptionType.COLOR and (
-                    value_regex := config_option.get("value_regex")
+                    value_regex := config_option.value_regex
                 ):
 
                     if not value:
@@ -693,16 +686,14 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                 # Wrap Up
 
-                config_option.update(
-                    ConfigurationOption({"current_value": typed_value})
-                )
+                config_option.current_value = typed_value
 
-                properties["settings"][config_option.get("slug")] = config_option  # type: ignore
+                properties.settings[config_option.slug] = config_option
 
         except (KeyError, ValueError, UnexpectedDataStructure) as err:
             log.error("Unable to extract field. Failed on field %s.", field_name)
             raise UnexpectedDataStructure from err
 
-        properties["raw_attribs"] = raw_attribs
+        properties.raw_attribs = raw_attribs
 
         return properties
