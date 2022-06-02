@@ -3,4 +3,4 @@ pylint-strict-informational==0.1
 pytest==7.1.2
 # aioresponses==0.7.3
 pytest-asyncio==0.18.3
-deepdiff==5.8.0
+deepdiff==5.8.1
