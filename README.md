@@ -60,7 +60,7 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 | 10         | Fixed Panic Button                     |
 | 14         | Siren                                  |
 | 19         | Glass Break Detector                   |
-| 52         | Contact/Shock Sensor                   |
+| 52         | Contact/Shock Combination Sensor       |
 | 68         | Panel Image Sensor                     |
 | 69         | Mobile Phone (for Bluetooth Disarming) |
 | 83         | Panel Glass Break Sensor               |
