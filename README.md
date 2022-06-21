@@ -9,7 +9,6 @@
 A Python library to asynchronously interface with Alarm.com.
 Forked from Daren Lord's pyalarmdotcom. Mainly built for use with Home Assistant.
 
-
 ## Installation / Usage
 
 To install use pip:
@@ -46,7 +45,6 @@ Pyalarmdotcomajax supports core features (monitoring and using actions) of the d
 | Image Sensor | `images`                            | peek_in                               |                                                  |
 | Light        | `brightness`                        | turn_on (with brightness), turn_off   | No support for RGB/W, effects, temperature, etc. |
 
-
 ### Known Sensor deviceTypes
 
 This list identifies deviceTypes used in the alarm.com API and is incomplete. Please help by submitting missing values.
@@ -62,17 +60,18 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 | 10         | Fixed Panic Button                     |
 | 14         | Siren                                  |
 | 19         | Glass Break Detector                   |
+| 52         | Contact/Shock Sensor                   |
 | 68         | Panel Image Sensor                     |
 | 69         | Mobile Phone (for Bluetooth Disarming) |
 | 83         | Panel Glass Break Sensor               |
 | 89         | Panel Motion Sensor                    |
-
 
 ## Device Support (Configuration)
 
 Pyalarmdotcomajax supports changing configuration options for the devices listed below.
 
 ### Skybell HD
+
 **Doorbell Camera**
 
 | Configuration Option      | Slug                 | Supported Values                     | Notes                      |
@@ -82,7 +81,6 @@ Pyalarmdotcomajax supports changing configuration options for the devices listed
 | LED Brightness            | `led-brightness`     | 0-100                                |                            |
 | LED Color                 | `led-color`          | `#000000` - `#FFFFFF`                | Must include `#` at start. |
 | Motion Sensor Sensitivity | `motion-sensitivity` | `low`, `medium`, `high`, `very_high` |                            |
-
 
 ## Command Line Interface
 
