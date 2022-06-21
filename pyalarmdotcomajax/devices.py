@@ -835,6 +835,7 @@ class Sensor(BaseDevice):
         FIXED_PANIC = 10
         SIREN = 14
         GLASS_BREAK_DETECTOR = 19
+        CONTACT_SHOCK_SENSOR = 52
         PANEL_MOTION_SENSOR = 89
         PANEL_GLASS_BREAK_DETECTOR = 83
         PANEL_IMAGE_SENSOR = 68
