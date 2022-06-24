@@ -2,7 +2,7 @@
 <h1 align="center" border="1px solid black">pyalarmdotcomajax</h1>
 <h3 align="center">Asynchronous Python Library for Accessing Alarm.com Services</h3>
 <p align="center">This is an unofficial project that is not affiliated with Alarm.com.</p>
-<p align="center"><em>Forked from pyalarmdotcom by Daren Lord</em></p>
+<p align="center"><em>Forked from Daren Lord's pyalarmdotcom.</em></p>
 <br />
 <p align="center">
   <a href="https://github.com/uvjustin"><img src="https://img.shields.io/badge/Creator-Justin%20Wong%20(%40uvjustin)-blue" /></a>
