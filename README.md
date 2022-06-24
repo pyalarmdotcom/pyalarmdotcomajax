@@ -10,6 +10,7 @@
 </p>
 <p align="center">
   <a href="https://www.codacy.com/gh/pyalarmdotcom/pyalarmdotcomajax/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pyalarmdotcom/pyalarmdotcomajax&amp;utm_campaign=Badge_Grade"><img src="https://app.codacy.com/project/badge/Grade/c58b00c68f9542aea1554d160997e5cd"/></a>
+  <a href="https://www.codacy.com/gh/pyalarmdotcom/pyalarmdotcomajax/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pyalarmdotcom/pyalarmdotcomajax&amp;utm_campaign=Badge_Coverage"><img src="https://app.codacy.com/project/badge/Coverage/c58b00c68f9542aea1554d160997e5cd"/></a>
   <a href="https://results.pre-commit.ci/latest/github/pyalarmdotcom/pyalarmdotcomajax/master"><img src="https://results.pre-commit.ci/badge/github/pyalarmdotcom/pyalarmdotcomajax/master.svg" /></a>
   <a href="https://pypi.org/project/pyalarmdotcomajax/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pyalarmdotcomajax"></a>
   <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
