@@ -1,8 +1,21 @@
-# Alarm.com Python Library
-
-**Author: Justin Wong**
-
-**Maintainer: Elahd Bar-Shai**
+<p align="center"><img src="https://user-images.githubusercontent.com/466460/175575400-44ab6ed5-acb4-4a8c-b2ab-8b757675e900.png" height="200px"></p>
+<h1 align="center" border="1px solid black">pyalarmdotcomajax</h1>
+<h3 align="center">Asynchronous Python Library for Accessing Alarm.com Services</h3>
+<p align="center">This is an unofficial project that is not affiliated with Alarm.com.</p>
+<p align="center"><em>Forked from pyalarmdotcom by Daren Lord</em></p>
+<br />
+<p align="center">
+  <a href="https://github.com/uvjustin"><img src="https://img.shields.io/badge/Creator-Justin%20Wong%20(%40uvjustin)-blue" /></a>
+  <a href="https://github.com/elahd"><img src="https://img.shields.io/badge/Maintainer-Elahd%20Bar--Shai%20(%40elahd)-blue" /></a>
+</p>
+<p align="center">
+  <a href="https://www.codacy.com/gh/pyalarmdotcom/pyalarmdotcomajax/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pyalarmdotcom/pyalarmdotcomajax&amp;utm_campaign=Badge_Grade"><img src="https://app.codacy.com/project/badge/Grade/c58b00c68f9542aea1554d160997e5cd"/></a>
+  <a href="https://results.pre-commit.ci/latest/github/pyalarmdotcom/pyalarmdotcomajax/master"><img src="https://results.pre-commit.ci/badge/github/pyalarmdotcom/pyalarmdotcomajax/master.svg" /></a>
+  <a href="https://pypi.org/project/pyalarmdotcomajax/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pyalarmdotcomajax"></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+  <a href="https://github.com/PyCQA/pylint"><img src="https://img.shields.io/badge/linting-pylint-yellowgreen" /></a>
+  <a href="https://github.com/pyalarmdotcom/pyalarmdotcomajax/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/pyalarmdotcom/pyalarmdotcomajax"></a>
+</p>
 
 ## Overview
 
@@ -142,13 +155,3 @@ This repository includes a full development environment for VS Code:
 3. Add `debug_info` property to `ADCController` that returns aggregate of raw JSON from all endpoints. This will allow users to export the entity model of unsupported devices to help maintainers implement support in this library.
 4. Similar to above, proactively populate `unsupported_devices` property for `ADCBaseElement` to show users device id, device name, and device type for available but unsupported devices.
 5. More granular exception handling when logging in. Should report discrete error types for authentication failures due to wrong credentials, connection issues, or other.
-
-#### Housekeeping
-
-1. Testing framework
-
-[license-shield]: https://img.shields.io/github/license/uvjustin/pyalarmdotcomajax.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/uvjustin/pyalarmdotcomajax.svg?style=for-the-badge
-[releases]: https://github.com/uvjustin/pyalarmdotcomajax/releases
-[commits-shield]: https://img.shields.io/github/commit-activity/y/uvjustin/pyalarmdotcomajax.svg?style=for-the-badge
-[commits]: https://github.com/uvjustin/pyalarmdotcomajax/commits/master
