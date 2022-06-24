@@ -1,5 +1,8 @@
 # https://pypi.org/project/python-typing-update/ was causing trouble. Some of the below items seek to re-implement the typing-update flow.
 
+ci:
+  skip: [pylint]
+
 repos:
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.31.0
