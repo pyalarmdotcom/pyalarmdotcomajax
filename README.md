@@ -18,11 +18,6 @@
   <a href="https://github.com/pyalarmdotcom/pyalarmdotcomajax/blob/main/LICENSE"><img alt="GitHub" src="https://img.shields.io/github/license/pyalarmdotcom/pyalarmdotcomajax"></a>
 </p>
 
-## Overview
-
-A Python library to asynchronously interface with Alarm.com.
-Forked from Daren Lord's pyalarmdotcom. Mainly built for use with Home Assistant.
-
 ## Installation / Usage
 
 To install use pip:
