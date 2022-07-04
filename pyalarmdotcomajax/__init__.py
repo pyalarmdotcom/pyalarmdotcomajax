@@ -225,7 +225,6 @@ class AlarmController:
         """Request SMS/email OTP code from Alarm.com."""
 
         try:
-
             log.debug("Requesting OTP code...")
 
             request_url = (
@@ -258,7 +257,6 @@ class AlarmController:
 
         # Submit code
         try:
-
             log.debug("Submitting OTP code...")
 
             if not self._two_factor_method:
@@ -269,7 +267,7 @@ class AlarmController:
                 headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": self._two_factor_method.value},
             ) as resp:
-                json_rsp = await (resp.json())
+                json_rsp = await resp.json()
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
             log.error("Can not load 2FA submission page from Alarm.com")
@@ -294,7 +292,6 @@ class AlarmController:
         # Submit device name for "remember me" function.
         if json_rsp.get("value", {}).get("deviceName"):
             try:
-
                 log.debug("Registering device...")
 
                 async with self._websession.post(
@@ -304,7 +301,7 @@ class AlarmController:
                     headers=self._ajax_headers,
                     json={"deviceName": device_name},
                 ) as resp:
-                    json_rsp = await (resp.json())
+                    json_rsp = await resp.json()
             except (asyncio.TimeoutError, aiohttp.ClientError) as err:
                 log.error("Can not load device trust page from Alarm.com")
                 raise DataFetchFailed from err
@@ -329,7 +326,6 @@ class AlarmController:
         log.debug("Calling update on Alarm.com")
 
         try:
-
             await self._async_get_trouble_conditions()
 
             device_types: list[DeviceType] = (
@@ -371,7 +367,6 @@ class AlarmController:
         async with self._websession.post(
             url=url, json=msg_body, headers=self._ajax_headers
         ) as resp:
-
             log.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
@@ -463,13 +458,12 @@ class AlarmController:
             endpoints.append(("Image Sensor Data", c.IMAGE_SENSOR_DATA_URL_TEMPLATE))
 
         for name, url_template in endpoints:
-
             async with self._websession.get(
                 url=url_template.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
                 try:
-                    json_rsp = await (resp.json())
+                    json_rsp = await resp.json()
 
                     if name == "Image Sensor Data" and not include_image_sensor_b64:
                         for image in json_rsp["data"]:
@@ -478,7 +472,6 @@ class AlarmController:
                     rsp_errors = json_rsp.get("errors", [])
 
                     if len(rsp_errors) != 0:
-
                         error_msg = (
                             "async_get_raw_server_responses(): Failed to get data."
                             f" Response: {rsp_errors}"
@@ -515,7 +508,18 @@ class AlarmController:
 
     def get_device_by_id(
         self, device_id: str
-    ) -> BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera | None:
+    ) -> (
+        BaseDevice
+        | System
+        | Partition
+        | Sensor
+        | Lock
+        | GarageDoor
+        | ImageSensor
+        | Light
+        | Camera
+        | None
+    ):
         """Find device by its id."""
 
         device: BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera
@@ -549,7 +553,6 @@ class AlarmController:
         """Get data for the specified device types and build objects."""
 
         for device_type in device_types:
-
             #
             # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
             #
@@ -610,7 +613,6 @@ class AlarmController:
             additional_endpoint_raw_results: dict = {}
 
             try:
-
                 additional_endpoints: dict = DEVICE_URLS["supported"][device_type][
                     "additional_endpoints"
                 ]
@@ -621,7 +623,6 @@ class AlarmController:
                     ] = await self._async_get_items_and_subordinates(url=url)
 
             except KeyError:
-
                 pass
 
             ####################
@@ -665,7 +666,6 @@ class AlarmController:
             extension_controller: CameraSkybellControllerExtension | None = None
 
             for extension_class in required_extensions:
-
                 extension_controller = extension_class(
                     websession=self._websession,
                     headers=self._ajax_headers,
@@ -703,7 +703,6 @@ class AlarmController:
                             .get("id")
                         )
                     ):
-
                         element_specific_data.setdefault(
                             image_sensor_id, {}
                         ).setdefault("raw_recent_images", set()).add(image)
@@ -715,7 +714,6 @@ class AlarmController:
             temp_device_storage: list = []
 
             for device_raw_attribs, subordinates in devices:
-
                 entity_id = device_raw_attribs["id"]
 
                 entity_obj = device_class(
@@ -767,7 +765,7 @@ class AlarmController:
             ),
             headers=self._ajax_headers,
         ) as resp:
-            json_rsp = await (resp.json())
+            json_rsp = await resp.json()
 
         if (errors := json_rsp.get("errors")) and len(errors) > 0:
             for error in errors:
@@ -782,7 +780,7 @@ class AlarmController:
                         ),
                         headers=self._ajax_headers,
                     ) as resp:
-                        json_rsp = await (resp.json())
+                        json_rsp = await resp.json()
 
                         if isinstance(
                             factor_id := json_rsp.get("data", {}).get("id"), int
@@ -809,7 +807,7 @@ class AlarmController:
                 headers=self._ajax_headers,
                 cookies=self._two_factor_cookie,
             ) as resp:
-                json_rsp = await (resp.json())
+                json_rsp = await resp.json()
 
                 log.debug("Got identity info:\n%s", json.dumps(json_rsp))
 
@@ -841,7 +839,7 @@ class AlarmController:
                 url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
-                json_rsp = await (resp.json())
+                json_rsp = await resp.json()
 
                 log.debug("Got trouble conditions:\n%s", json_rsp)
 
@@ -901,7 +899,7 @@ class AlarmController:
             url=full_path.format(c.URL_BASE, ""),
             headers=self._ajax_headers,
         ) as resp:
-            json_rsp = await (resp.json())
+            json_rsp = await resp.json()
 
         return_items = []
 
@@ -911,7 +909,6 @@ class AlarmController:
 
         rsp_errors = json_rsp.get("errors", [])
         if len(rsp_errors) != 0:
-
             error_msg = (
                 "_async_get_items_and_subordinates(): Failed to get data for device"
                 f" type {device_type}. Response: {rsp_errors}. Errors: {json_rsp}."
@@ -983,12 +980,9 @@ class AlarmController:
                         DeviceType.SYSTEM,
                     ]:
                         for family_name, family_data in device["relationships"].items():
-
                             # TODO: Get list of unsupported devices to notify user of what has not been collected. Currently only collects known unknowns.
                             if DeviceType.has_value(family_name):
-
                                 for sub_device in family_data["data"]:
-
                                     subordinates.append(
                                         (sub_device["id"], sub_device["type"])
                                     )
@@ -1061,7 +1055,6 @@ class AlarmController:
                 },
                 cookies=self._two_factor_cookie,
             ) as resp:
-
                 if re.search("m=login_fail", str(resp.url)) is not None:
                     log.error("Login failed.")
                     log.error("\nResponse URL:\n%s\n", str(resp.url))

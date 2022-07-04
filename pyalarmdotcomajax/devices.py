@@ -368,7 +368,8 @@ class BaseDevice:
 
     @property
     def device_subtype(self) -> Enum | None:
-        """Return normalized device subtype constant. E.g.: contact, glass break, etc."""
+        """Return normalized device subtype constant. E.g.: contact, glass break, etc.
+        """
         try:
             return self.Subtype(self._attribs_raw["deviceType"])
         except (ValueError, KeyError):
@@ -696,7 +697,8 @@ class Partition(DesiredStateMixin, BaseDevice):
 
     @property
     def uncleared_issues(self) -> bool | None:
-        """Return whether user needs to clear device state from alarm or device malfunction."""
+        """Return whether user needs to clear device state from alarm or device malfunction.
+        """
         if isinstance(
             issues := self._attribs_raw.get("needsClearIssuesPrompt", None), bool
         ):

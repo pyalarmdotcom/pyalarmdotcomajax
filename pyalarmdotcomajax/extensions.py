@@ -286,7 +286,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 ).findChildren():
                     camera_config_id: str = child.attrs.get("value")
                     if child.attrs.get("selected") == "selected":
-
                         # Retrieve data for camera on current page.
                         current_form_data = self._extract_fields(camera_config_id, tree)
 
@@ -380,7 +379,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
         field_config_options: ConfigurationOption
 
         try:
-
             for config_option_field_name, config_option in self._form_field_settings:
                 if config_option.slug == slug:
                     field_name = config_option_field_name
@@ -554,7 +552,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
     def _build_submit_payload(  # pylint: disable = no-self-use
         self, response_data: dict
     ) -> dict:
-        """Build POST body for submitting settings changes or for getting data for a different camera."""
+        """Build POST body for submitting settings changes or for getting data for a different camera.
+        """
 
         # Pre-populate static fields.
         static_form_data: dict = {
@@ -590,9 +589,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         )
 
         try:
-
             for field_name in self._FORM_FIELDS_BYPASSABLE:
-
                 field = tree.find(attrs={"name": field_name})
 
                 if not field:
@@ -602,20 +599,17 @@ class CameraSkybellControllerExtension(ControllerExtension):
                     raw_attribs[field_name] = value
 
             for field_name in self._FORM_FIELDS_GENERIC:
-
                 field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
                 raw_attribs[field_name] = value
 
             for field_name, property_name in self._FORM_FIELDS_META:
-
                 field = tree.find(attrs={"name": field_name})
                 value = extract_field_value(field)
                 raw_attribs[field_name] = value
                 setattr(properties, property_name, value)
 
             for field_name, config_option in self._form_field_settings:
-
                 field = tree.find(attrs={"name": field_name})
 
                 value = extract_field_value(field)
@@ -635,7 +629,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Conversions for ChimeOnOff values.
 
                 if config_value_type == self.ChimeOnOff:
-
                     typed_value = self.ChimeOnOff.ON if value else self.ChimeOnOff.OFF
 
                     raw_attribs[field_name] = typed_value.value
@@ -662,7 +655,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 if config_option_type == ConfigurationOptionType.COLOR and (
                     value_regex := config_option.value_regex
                 ):
-
                     if not value:
                         raise ValueError
 
@@ -677,7 +669,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Ints
 
                 if config_value_type == int:
-
                     if not value:
                         raise ValueError
 
