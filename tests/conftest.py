@@ -146,3 +146,18 @@ def all_extension_ok_responses(response_mocker: aioresponses) -> None:
         status=200,
         body=responses.SKYBELL_CONFIG_PAGE,
     )
+
+
+@pytest.fixture  # type: ignore
+def skybell_missing_video_quality_field(response_mocker: aioresponses) -> None:
+    """Shortcut for including all mocked success responses."""
+
+    ##################
+    ### EXTENSIONS ###
+    ##################
+
+    response_mocker.get(
+        url=CameraSkybellControllerExtension.ENDPOINT,
+        status=200,
+        body=responses.SKYBELL_CONFIG_MISSING_VIDEO_QUALITY,
+    )

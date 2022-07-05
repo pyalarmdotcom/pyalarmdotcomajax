@@ -36,7 +36,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 
 log = logging.getLogger(__name__)
@@ -671,10 +671,13 @@ class AlarmController:
                     headers=self._ajax_headers,
                 )
 
-                # Fetch from Alarm.com
-                extended_properties_list: list[
-                    ExtendedProperties
-                ] = await extension_controller.fetch()
+                try:
+                    # Fetch from Alarm.com
+                    extended_properties_list: list[
+                        ExtendedProperties
+                    ] = await extension_controller.fetch()
+                except UnexpectedDataStructure:
+                    continue
 
                 # Match extended properties to devices by name, then add to device_settings storage.
                 for extended_property in extended_properties_list:
