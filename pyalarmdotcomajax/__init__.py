@@ -676,7 +676,7 @@ class AlarmController:
                     extended_properties_list: list[
                         ExtendedProperties
                     ] = await extension_controller.fetch()
-                except UnexpectedDataStructure as err:
+                except UnexpectedDataStructure:
                     continue
 
                 # Match extended properties to devices by name, then add to device_settings storage.
