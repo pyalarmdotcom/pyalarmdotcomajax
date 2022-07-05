@@ -106,7 +106,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
     _description = "Adjust indoor and outdoor chimes for Skybell HD video doorbells."
 
-    class ChimeAdjustableVolume(ExtendedEnumMixin, Enum):
+    class ChimeAdjustableVolume(ExtendedEnumMixin):
         """Doorbell chime levels for bells with configurable volume."""
 
         OFF = 0
@@ -114,13 +114,13 @@ class CameraSkybellControllerExtension(ControllerExtension):
         MEDIUM = 2
         HIGH = 3
 
-    class ChimeOnOff(ExtendedEnumMixin, Enum):
+    class ChimeOnOff(ExtendedEnumMixin):
         """Doorbell chime levels for bells with configurable volume."""
 
         OFF = "off"
         ON = "on"
 
-    class MotionSensitivity(ExtendedEnumMixin, Enum):
+    class MotionSensitivity(ExtendedEnumMixin):
         """Camera motion sensor sensitivity."""
 
         LOW = 1
