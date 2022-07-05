@@ -84,19 +84,13 @@ async def test__extension_camera_skybellhd__cli_tearsheet(
     _print_element_tearsheet(adc_client.cameras[0])
 
 
-@pytest.mark.asyncio  # type: ignore
-async def test__extension_camera_skybellhd__change_indoor_chime(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
-    adc_client: AlarmController,
-) -> None:
-    """_print_element_tearsheet will throw exception on failure."""
-
-    await adc_client.async_update()
-
-    assert adc_client.cameras[0]
-
-    _print_element_tearsheet(adc_client.cameras[0])
+# @pytest.mark.asyncio  # type: ignore
+# async def test__extension_camera_skybellhd__change_indoor_chime(
+#     all_base_ok_responses: pytest.fixture,
+#     all_extension_ok_responses: pytest.fixture,
+#     adc_client: AlarmController,
+# ) -> None:
+#     """_print_element_tearsheet will throw exception on failure."""
 
 
 @pytest.mark.asyncio  # type: ignore
@@ -131,4 +125,34 @@ async def test__extension_camera_skybellhd__submit_change(
     assert (
         camera.settings["indoor-chime"].current_value
         is CameraSkybellControllerExtension.ChimeOnOff.OFF
+    )
+
+
+@pytest.mark.asyncio  # type: ignore
+async def test__extension_camera_skybellhd__missing_field(
+    all_base_ok_responses: pytest.fixture,
+    skybell_missing_video_quality_field: pytest.fixture,
+    response_mocker: pytest.fixture,
+    adc_client: AlarmController,
+) -> None:
+    """Ensures that pyalarmdotcomajax skips loading data from Skybell HD if Skybell HD config page has unexpected structure."""
+
+    await adc_client.async_update()
+
+    assert adc_client.cameras[0]
+
+    skybell = adc_client.cameras[0]
+
+    assert skybell.name == "Front Doorbell"
+    assert (
+        skybell.settings["indoor-chime"].current_value
+        is CameraSkybellControllerExtension.ChimeOnOff.ON
+    )
+    assert (
+        skybell.settings["outdoor-chime"].current_value
+        is CameraSkybellControllerExtension.ChimeAdjustableVolume.MEDIUM
+    )
+    assert (
+        skybell.settings["indoor-chime"].option_type
+        is ConfigurationOptionType.BINARY_CHIME
     )

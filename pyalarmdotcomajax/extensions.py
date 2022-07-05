@@ -583,6 +583,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
     ) -> ExtendedProperties:
         """Extract data from camera config page."""
 
+        # To prevent a single Skybell error from throwing an exception, missing fields will have values set to empty strings.
+
         raw_attribs: dict = {}
         properties = ExtendedProperties(
             config_id=config_id,
@@ -598,19 +600,31 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 if not field:
                     raw_attribs[field_name] = ""
                 else:
-                    value = extract_field_value(field)
+                    try:
+                        value = extract_field_value(field)
+                    except UnexpectedDataStructure:
+                        log.warning("Couldn't find field %s", field)
+                        value = ""
                     raw_attribs[field_name] = value
 
             for field_name in self._FORM_FIELDS_GENERIC:
 
                 field = tree.find(attrs={"name": field_name})
-                value = extract_field_value(field)
+                try:
+                    value = extract_field_value(field)
+                except UnexpectedDataStructure:
+                    log.warning("Couldn't find field %s", field)
+                    value = ""
                 raw_attribs[field_name] = value
 
             for field_name, property_name in self._FORM_FIELDS_META:
 
                 field = tree.find(attrs={"name": field_name})
-                value = extract_field_value(field)
+                try:
+                    value = extract_field_value(field)
+                except UnexpectedDataStructure:
+                    log.warning("Couldn't find field %s", field)
+                    value = ""
                 raw_attribs[field_name] = value
                 setattr(properties, property_name, value)
 
@@ -618,7 +632,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                 field = tree.find(attrs={"name": field_name})
 
-                value = extract_field_value(field)
+                try:
+                    value = extract_field_value(field)
+                except UnexpectedDataStructure:
+                    log.warning("Couldn't find field %s", field)
+                    value = ""
 
                 typed_value: Any
 
