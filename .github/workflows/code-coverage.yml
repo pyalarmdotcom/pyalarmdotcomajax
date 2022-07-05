@@ -1,4 +1,4 @@
-name: Code Coverage
+name: PyTest & Code Coverage Report
 on: [workflow_dispatch, push, pull_request]
 jobs:
   run:
@@ -16,7 +16,7 @@ jobs:
         run: |
           pip install pytest-cov
           pip install -r requirements-dev.txt
-          pytest --cov=./ --cov-report=xml
+          pytest --cov=./ --cov-report=xml --cov-report=html
       - name: Run codacy-coverage-reporter
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
