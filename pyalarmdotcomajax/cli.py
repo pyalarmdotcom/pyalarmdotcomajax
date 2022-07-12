@@ -42,7 +42,8 @@ CLI_CARD_BREAK = ""  # "--------"
 
 
 async def cli() -> None:
-    """Support command-line development and testing. Not used in normal library operation."""
+    """Support command-line development and testing. Not used in normal library operation.
+    """
 
     parser = argparse.ArgumentParser(
         prog="adc",
@@ -232,7 +233,6 @@ async def cli() -> None:
             sys.exit()
 
         if login_result == AuthResult.OTP_REQUIRED:
-
             code: str | None
             if not (code := args.get("one_time_password")):
                 cprint(
@@ -274,7 +274,6 @@ async def cli() -> None:
         ############################
 
         if args.get("action") == "get":
-
             # Built List of Device Types
 
             supported_device_types = []
@@ -332,7 +331,6 @@ async def cli() -> None:
         ############################
 
         if args.get("action") == "set":
-
             try:
                 device_id: str = args["device_id"]
                 setting_slug: str = args["setting_slug"]
@@ -501,7 +499,6 @@ def _print_element_tearsheet(
     | ImageSensor
     | Camera,
 ) -> str:
-
     output_str: str = ""
 
     # DEVICE NAME
@@ -555,12 +552,10 @@ def _print_element_tearsheet(
     # SETTINGS / EXTENSIONS
 
     if element.settings:
-
         output_str += "SETTINGS: "
 
         config_option: ConfigurationOption
         for _, config_option in element.settings.items():
-
             if isinstance(current_value := config_option.current_value, Enum):
                 current_value = current_value.name.title()
 
