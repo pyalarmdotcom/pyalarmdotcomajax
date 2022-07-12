@@ -9,7 +9,7 @@ tests = ["B103","B108","B306","B307","B313","B314","B315","B316","B317","B318","
 line-length = 88
 target-version = ["py39"]
 exclude = 'generated'
-preview = true
+preview = "True"
 
 [tool.mypy]
 python_version = "3.9"
@@ -45,12 +45,13 @@ norecursedirs = [
 asyncio_mode = "auto"
 
 [tool.tomlsort]
-ignore_case = true
-in_place = true
 all = false
 check = false
+ignore_case = true
+in_place = true
 no_header = false
 
 [tool.zimports]
 black-line-length = 88
 keep-unused-type-checking = true
+application-import-names = ["pyalarmdotcomajax"]

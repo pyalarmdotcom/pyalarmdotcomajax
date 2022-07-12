@@ -42,8 +42,7 @@ CLI_CARD_BREAK = ""  # "--------"
 
 
 async def cli() -> None:
-    """Support command-line development and testing. Not used in normal library operation.
-    """
+    """Support CLI development and testing. Not used in normal library operation."""
 
     parser = argparse.ArgumentParser(
         prog="adc",

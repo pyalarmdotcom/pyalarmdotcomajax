@@ -36,3 +36,7 @@ class DeviceTypeNotAuthorized(Exception):
 
 class InvalidConfigurationOption(Exception):
     """Configuration option is not valid."""
+
+
+class UnsupportedAction(Exception):
+    """Device does not support requested action."""

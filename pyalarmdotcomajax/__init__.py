@@ -25,6 +25,7 @@ from .devices import Lock
 from .devices import Partition
 from .devices import Sensor
 from .devices import System
+from .devices import Thermostat
 from .devices import TroubleCondition
 from .errors import AuthenticationFailed
 from .errors import BadAccount
@@ -36,11 +37,12 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 
 log = logging.getLogger(__name__)
 
+# Map DeviceType enum to device class.
 DEVICE_CLASSES: dict = {
     DeviceType.CAMERA: Camera,
     DeviceType.GARAGE_DOOR: GarageDoor,
@@ -50,6 +52,7 @@ DEVICE_CLASSES: dict = {
     DeviceType.PARTITION: Partition,
     DeviceType.SENSOR: Sensor,
     DeviceType.SYSTEM: System,
+    DeviceType.THERMOSTAT: Thermostat,
 }
 
 
@@ -149,6 +152,7 @@ class AlarmController:
         self.image_sensors: list[ImageSensor] = []
         self.lights: list[Light] = []
         self.cameras: list[Camera] = []
+        self.thermostats: list[Thermostat] = []
 
     #
     #
@@ -346,7 +350,8 @@ class AlarmController:
         | Partition.Command
         | GarageDoor.Command
         | Light.Command
-        | ImageSensor.Command,
+        | ImageSensor.Command
+        | Thermostat.Command,
         device_id: str | None = None,  # ID corresponds to device_type
         msg_body: dict | None = None,  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
@@ -437,6 +442,7 @@ class AlarmController:
             | type[ImageSensor]
             | type[Light]
             | type[Camera]
+            | type[Thermostat]
         ],
         include_image_sensor_b64: bool = False,
     ) -> dict:
@@ -518,11 +524,12 @@ class AlarmController:
         | ImageSensor
         | Light
         | Camera
+        | Thermostat
         | None
     ):
         """Find device by its id."""
 
-        device: BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera
+        device: BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera | Thermostat
         for device in (
             *self.systems,
             *self.partitions,
@@ -532,6 +539,7 @@ class AlarmController:
             *self.image_sensors,
             *self.lights,
             *self.cameras,
+            *self.thermostats,
         ):
             if device.id_ == device_id:
                 return device
@@ -566,6 +574,7 @@ class AlarmController:
                     | type[Partition]
                     | type[System]
                     | type[Camera]
+                    | type[Thermostat]
                 ) = DEVICE_CLASSES[device_type]
 
             except KeyError as err:
@@ -751,6 +760,8 @@ class AlarmController:
                 self.image_sensors[:] = temp_device_storage
             elif device_class is Camera:
                 self.cameras[:] = temp_device_storage
+            elif device_class is Thermostat:
+                self.thermostats[:] = temp_device_storage
 
     #
     #

@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from enum import IntEnum
 import logging
 from typing import Any
+from typing import final
 from typing import Protocol
 from typing import TypedDict
 
@@ -42,6 +44,7 @@ class DeviceType(ExtendedEnumMixin):
     PARTITION = "partitions"
     SENSOR = "sensors"
     SYSTEM = "systems"
+    THERMOSTAT = "thermostats"
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
@@ -60,7 +63,6 @@ class DeviceType(ExtendedEnumMixin):
     SMART_CHIME = "smartChimeDevices"
     SUMP_PUMP = "sumpPumps"
     SWITCH = "switches"
-    THERMOSTAT = "thermostats"
     VALVE_SWITCH = "valveSwitches"
     WATER_METER = "waterMeters"
     WATER_SENSOR = "waterSensors"
@@ -106,6 +108,10 @@ DEVICE_URLS: dict = {
         DeviceType.SYSTEM: {
             "relationshipId": "systems/system",
             "endpoint": "{}web/api/systems/systems/{}",
+        },
+        DeviceType.THERMOSTAT: {
+            "relationshipId": "devices/thermostat",
+            "endpoint": "{}web/api/devices/thermostats/{}",
         },
     },
     "unsupported": {
@@ -169,10 +175,6 @@ DEVICE_URLS: dict = {
             "relationshipId": "devices/switch",
             "endpoint": "{}web/api/devices/switches/{}",
         },
-        DeviceType.THERMOSTAT: {
-            "relationshipId": "devices/thermostat",
-            "endpoint": "{}web/api/devices/thermostats/{}",
-        },
         DeviceType.VALVE_SWITCH: {
             "relationshipId": "valve-switch",
             "endpoint": "{}web/api/devices/valveSwitches/{}",
@@ -216,7 +218,7 @@ class DesiredStateMixin:
 
         try:
             state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
-        except ValueError:
+        except (ValueError, TypeError):
             return None
         else:
             return state
@@ -271,6 +273,65 @@ class BaseDevice:
         self.process_element_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
+
+    #
+    # Casting Functions
+    #
+    # Functions used for pulling data from _raw_attribs in standardized format.
+    @final
+    def _get_int(self, key: str) -> int | None:
+        """Cast raw value to int. Satisfies mypy."""
+
+        try:
+            return int(self._attribs_raw.get(key))  # type: ignore
+        except (ValueError, TypeError):
+            return None
+
+    def _get_str(self, key: str) -> str | None:
+        """Cast raw value to str. Satisfies mypy."""
+
+        try:
+            return str(self._attribs_raw.get(key))
+        except (ValueError, TypeError):
+            return None
+
+    def _get_bool(self, key: str) -> bool | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        if str(self._attribs_raw.get(key)).lower() == "true":
+            return True
+
+        if str(self._attribs_raw.get(key)).lower() == "false":
+            return False
+
+        return None
+
+    def _get_list(self, key: str, value_type: type) -> list | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        try:
+            duration_list: list = list(self._attribs_raw.get(key))  # type: ignore
+            for duration in duration_list:
+                value_type(duration)
+            return duration_list
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+    def _get_special(self, key: str, value_type: type) -> Any | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        try:
+            return value_type(self._attribs_raw.get(key))
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+    #
+    # Properties
+    #
 
     @property
     def read_only(self) -> bool | None:
@@ -359,7 +420,16 @@ class BaseDevice:
     @property
     def model_text(self) -> str | None:
         """Return device model as reported by ADC."""
-        return self._attribs_raw.get("deviceModel")
+        return (
+            reported_model
+            if (reported_model := self._attribs_raw.get("deviceModel"))
+            else self.DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
+        )
+
+    @property
+    def manufacturer(self) -> str | None:
+        """Return device model as reported by ADC."""
+        return self._attribs_raw.get("manufacturer")
 
     @property
     def debug_data(self) -> dict:
@@ -368,8 +438,7 @@ class BaseDevice:
 
     @property
     def device_subtype(self) -> Enum | None:
-        """Return normalized device subtype constant. E.g.: contact, glass break, etc.
-        """
+        """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
             return self.Subtype(self._attribs_raw["deviceType"])
         except (ValueError, KeyError):
@@ -390,6 +459,9 @@ class BaseDevice:
 
     class Subtype(Enum):
         """Hold device subtypes. To be overridden by children."""
+
+    # deviceModelId: {"manufacturer": str, "model": str}
+    DEVICE_MODELS: dict = {}
 
     @property
     def desired_state(self) -> Enum | None:
@@ -697,8 +769,7 @@ class Partition(DesiredStateMixin, BaseDevice):
 
     @property
     def uncleared_issues(self) -> bool | None:
-        """Return whether user needs to clear device state from alarm or device malfunction.
-        """
+        """Return whether user needs to clear device state on alarm.com."""
         if isinstance(
             issues := self._attribs_raw.get("needsClearIssuesPrompt", None), bool
         ):
@@ -869,3 +940,186 @@ class System(BaseDevice):
     def malfunction(self) -> bool | None:
         """Return whether device is malfunctioning."""
         return None
+
+
+class Thermostat(DesiredStateMixin, BaseDevice):
+    """Represent Alarm.com thermostat element."""
+
+    # fan duration of 0 is indefinite. otherwise value == hours.
+    # settable attributes: desiredRts (remote temp sensor), desiredLocalDisplayLockingMode,
+    # In identity info, check localizeTempUnitsToCelsius.
+
+    @dataclass
+    class ThermostatAttributes:
+        """Thermostat attributes."""
+
+        # Base
+        temp_average: int | None  # Temperature from thermostat and all remote sensors, averaged.
+        temp_at_tstat: int | None  # Temperature at thermostat only.
+        step_value: int | None
+        # Fan
+        support_fan_mode: bool | None
+        support_fan_indefinite: bool | None
+        support_fan_circulate_when_off: bool | None
+        support_fan_durations: list[int] | None
+        fan_mode: Thermostat.FanMode | None
+        fan_duration: int | None
+        # Temp
+        support_heat: bool | None
+        support_cool: bool | None
+        support_auto: bool | None
+        min_heat_setpoint: int | None
+        max_heat_setpoint: int | None
+        min_cool_setpoint: int | None
+        max_cool_setpoint: int | None
+        heat_setpoint: int | None
+        cool_setpoint: int | None
+        # Humidity
+        support_humidity: bool | None
+        humidity: int | None
+        # Schedules
+        support_schedules: bool | None
+        support_schedules_smart: bool | None
+        schedule_mode: Thermostat.ScheduleMode | None
+
+    class DeviceState(Enum):
+        """Enum of thermostat states."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatStatus.js
+
+        UNKNOWN = 0
+        OFF = 1
+        HEAT = 2
+        COOL = 3
+        AUTO = 4
+        AUX_HEAT = 5
+
+    class FanMode(Enum):
+        """Enum of thermostat fan modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatFanMode.js
+
+        AUTO_LOW = 0
+        ON_LOW = 1
+        AUTO_HIGH = 2
+        ON_HIGH = 3
+        AUTO_MEDIUM = 4
+        ON_MEDIUM = 5
+        CIRCULATE = 6
+        HUMIDITY = 7
+
+    class LockMode(Enum):
+        """Enum of thermostat lock modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatLock.js
+
+        DISABLED = 0
+        ENABLED = 1
+        PARTIAL = 2
+
+    class ScheduleMode(Enum):
+        """Enum of thermostat programming modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatProgrammingMode.js
+
+        MANUAL = 0
+        SCHEDULED = 1
+        SMART_SCHEDULES = 2
+
+    class SetpointType(Enum):
+        """Enum of thermostat setpoint types."""
+
+        FIXED = 0
+        AWAY = 1
+        HOME = 2
+        SLEEP = 3
+
+    class Command(Enum):
+        """Commands for ADC lights."""
+
+        SET_STATE = "setState"
+
+    DEVICE_MODELS = {4293: {"manufacturer": "Honeywell", "model": "T6 Pro"}}
+
+    @property
+    def available(self) -> bool:
+        """Return whether the light can be manipulated."""
+        return (
+            self._attribs_raw.get("canReceiveCommands", False)
+            and self._attribs_raw.get("remoteCommandsEnabled", False)
+            and self._attribs_raw.get("hasPermissionToChangeState", False)
+            and self.state is not self.DeviceState.UNKNOWN
+        )
+
+    @property
+    def attributes(self) -> ThermostatAttributes:
+        """Return thermostat attributes."""
+
+        return self.ThermostatAttributes(
+            temp_average=self._get_int("forwardingAmbientTemp"),
+            temp_at_tstat=self._get_int("ambientTemp"),
+            step_value=self._get_int("setpointOffset"),
+            support_fan_mode=self._get_bool("supportsFanMode"),
+            support_fan_indefinite=self._get_bool("supportsCirculateFanModeWhenOff"),
+            support_fan_circulate_when_off=self._get_bool(
+                "support_fan_circulate_when_off"
+            ),
+            support_fan_durations=self._get_list("supportedFanDurations", int),
+            fan_mode=self._get_special("supportedFanDurations", self.FanMode),
+            fan_duration=self._get_int("fanDuration"),
+            support_heat=self._get_bool("supportsHeatMode"),
+            support_cool=self._get_bool("supportsCoolMode"),
+            support_auto=self._get_bool("supportsAutoMode"),
+            min_heat_setpoint=self._get_int("minHeatSetpoint"),
+            min_cool_setpoint=self._get_int("minCoolSetpoint"),
+            max_heat_setpoint=self._get_int("maxHeatSetpoint"),
+            max_cool_setpoint=self._get_int("maxCoolSetpoint"),
+            heat_setpoint=self._get_int("heatSetpoint"),
+            cool_setpoint=self._get_int("coolSetpoint"),
+            support_humidity=self._get_bool("supportsHumidity"),
+            humidity=self._get_int("humidityLevel"),
+            support_schedules=self._get_bool("supportsSchedules"),
+            support_schedules_smart=self._get_bool("supportsSmartSchedules"),
+            schedule_mode=self._get_special("scheduleMode", self.ScheduleMode),
+        )
+
+    async def async_set_attribute(
+        self,
+        state: DeviceState | None = None,
+        fan: tuple[FanMode, int] | None = None,  # int = duration
+        cool_setpoint: int | None = None,
+        heat_setpoint: int | None = None,
+        schedule_mode: ScheduleMode | None = None,
+    ) -> None:
+        """Send turn on command with optional brightness."""
+
+        msg_body = {}
+
+        # Make sure we're only being asked to set one attribute at a time.
+        if (
+            attrib_list := [state, fan, cool_setpoint, heat_setpoint, schedule_mode]
+        ).count(None) < len(attrib_list):
+            raise UnexpectedDataStructure
+
+        # Build the request body.
+        if state:
+            msg_body = {"desiredState": state.value}
+        elif fan:
+            msg_body = {
+                "desiredFanMode": self.FanMode(fan[0]).value,
+                "desiredFanDuration": fan[1],
+            }
+        elif cool_setpoint:
+            msg_body = {"desiredCoolSetpoint": cool_setpoint}
+        elif heat_setpoint:
+            msg_body = {"desiredHeatSetpoint": heat_setpoint}
+        elif schedule_mode:
+            msg_body = {"desiredScheduleMode": schedule_mode.value}
+
+        # Send
+        await self._send_action_callback(
+            device_type=DeviceType.THERMOSTAT,
+            event=self.Command.SET_STATE,
+            device_id=self.id_,
+            msg_body=msg_body,
+        )

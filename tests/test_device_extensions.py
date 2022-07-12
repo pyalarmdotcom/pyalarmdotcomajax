@@ -8,9 +8,7 @@ from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
 from pyalarmdotcomajax.extensions import ConfigurationOptionType
 from pyalarmdotcomajax.extensions import ExtendedProperties
 import pytest
-from tests import responses
-
-# pylint: disable=protected-access, missing-class-docstring, no-self-use
+from tests.responses import get_http_body_html
 
 
 @pytest.mark.asyncio  # type: ignore
@@ -104,14 +102,14 @@ async def test__extension_camera_skybellhd__submit_change(
     response_mocker.get(
         url=CameraSkybellControllerExtension.ENDPOINT,
         status=200,
-        body=responses.SKYBELL_CONFIG_PAGE,
+        body=get_http_body_html("camera_settings_skybell"),
         repeat=True,
     )
 
     response_mocker.post(
         url=CameraSkybellControllerExtension.ENDPOINT,
         status=200,
-        body=responses.SKYBELL_CONFIG_PAGE_CHANGED,
+        body=get_http_body_html("camera_settings_skybell_changed"),
     )
 
     await adc_client.async_update()
