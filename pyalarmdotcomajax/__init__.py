@@ -14,19 +14,19 @@ from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
 from .devices import BaseDevice
-from .devices import Camera
 from .devices import DEVICE_URLS
 from .devices import DeviceType
 from .devices import ElementSpecificData
-from .devices import GarageDoor
-from .devices import ImageSensor
-from .devices import Light
-from .devices import Lock
-from .devices import Partition
-from .devices import Sensor
-from .devices import System
-from .devices import Thermostat
 from .devices import TroubleCondition
+from .devices.camera import Camera
+from .devices.garage_door import GarageDoor
+from .devices.image_sensor import ImageSensor
+from .devices.light import Light
+from .devices.lock import Lock
+from .devices.partition import Partition
+from .devices.sensor import Sensor
+from .devices.system import System
+from .devices.thermostat import Thermostat
 from .errors import AuthenticationFailed
 from .errors import BadAccount
 from .errors import DataFetchFailed

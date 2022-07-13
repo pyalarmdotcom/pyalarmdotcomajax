@@ -10,7 +10,7 @@ import sys
 
 import aiohttp
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.devices import Partition
+from pyalarmdotcomajax.devices.partition import Partition
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"

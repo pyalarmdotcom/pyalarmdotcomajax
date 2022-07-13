@@ -3,7 +3,7 @@
 import aiohttp
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.cli import _print_element_tearsheet
-from pyalarmdotcomajax.devices import Camera
+from pyalarmdotcomajax.devices.camera import Camera
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
 from pyalarmdotcomajax.extensions import ConfigurationOptionType
 from pyalarmdotcomajax.extensions import ExtendedProperties

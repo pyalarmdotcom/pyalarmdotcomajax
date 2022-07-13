@@ -3,6 +3,7 @@
 # pylint: disable=protected-access, missing-class-docstring, no-self-use
 
 import json
+
 import aiohttp
 from deepdiff import DeepDiff
 from pyalarmdotcomajax import AlarmController

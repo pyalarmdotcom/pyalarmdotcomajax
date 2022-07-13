@@ -17,16 +17,6 @@ import aiohttp
 import pyalarmdotcomajax
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax import AuthResult
-from pyalarmdotcomajax.devices import Camera
-from pyalarmdotcomajax.devices import DEVICE_URLS
-from pyalarmdotcomajax.devices import DeviceType
-from pyalarmdotcomajax.devices import GarageDoor
-from pyalarmdotcomajax.devices import ImageSensor
-from pyalarmdotcomajax.devices import Light
-from pyalarmdotcomajax.devices import Lock
-from pyalarmdotcomajax.devices import Partition
-from pyalarmdotcomajax.devices import Sensor
-from pyalarmdotcomajax.devices import System
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
 from pyalarmdotcomajax.errors import InvalidConfigurationOption
@@ -37,6 +27,17 @@ from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 from pyalarmdotcomajax.helpers import slug_to_title
 from termcolor import colored
 from termcolor import cprint
+
+from .devices import DEVICE_URLS
+from .devices import DeviceType
+from .devices.camera import Camera
+from .devices.garage_door import GarageDoor
+from .devices.image_sensor import ImageSensor
+from .devices.light import Light
+from .devices.lock import Lock
+from .devices.partition import Partition
+from .devices.sensor import Sensor
+from .devices.system import System
 
 CLI_CARD_BREAK = ""  # "--------"
 

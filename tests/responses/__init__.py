@@ -1,7 +1,6 @@
 """Load responses from JSON files."""
 
 from importlib import resources
-import json
 
 
 def get_http_body_json(name: str) -> str:
