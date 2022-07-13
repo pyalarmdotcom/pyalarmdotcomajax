@@ -1,35 +1,15 @@
-"""Alarm.com Thermostat"""
+"""Alarm.com thermostat."""
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from enum import IntEnum
 import logging
-from typing import Any
-from typing import final
-from typing import Protocol
-from typing import TypedDict
 
-import aiohttp
-from dateutil import parser
-from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
-from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
-from pyalarmdotcomajax.extensions import ConfigurationOption
-from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 
-from . import (
-    TroubleCondition,
-    DeviceType,
-    DEVICE_URLS,
-    DesiredStateProtocol,
-    DesiredStateMixin,
-    ElementSpecificData,
-    BaseDevice,
-)
+from . import BaseDevice
+from . import DesiredStateMixin
+from . import DeviceType
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +22,7 @@ class Thermostat(DesiredStateMixin, BaseDevice):
     # In identity info, check localizeTempUnitsToCelsius.
 
     @dataclass
-    class ThermostatAttributes:
+    class ThermostatAttributes(BaseDevice.DeviceAttributes):
         """Thermostat attributes."""
 
         # Base
@@ -50,16 +30,17 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         temp_at_tstat: int | None  # Temperature at thermostat only.
         step_value: int | None
         # Fan
-        support_fan_mode: bool | None
-        support_fan_indefinite: bool | None
-        support_fan_circulate_when_off: bool | None
-        support_fan_durations: list[int] | None
+        supports_fan_mode: bool | None
+        supports_fan_indefinite: bool | None
+        supports_fan_circulate_when_off: bool | None
+        supported_fan_durations: list[int] | None
         fan_mode: Thermostat.FanMode | None
         fan_duration: int | None
         # Temp
-        support_heat: bool | None
-        support_cool: bool | None
-        support_auto: bool | None
+        supports_heat: bool | None
+        supports_heat_aux: bool | None
+        supports_cool: bool | None
+        supports_auto: bool | None
         min_heat_setpoint: int | None
         max_heat_setpoint: int | None
         min_cool_setpoint: int | None
@@ -67,11 +48,11 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         heat_setpoint: int | None
         cool_setpoint: int | None
         # Humidity
-        support_humidity: bool | None
+        supports_humidity: bool | None
         humidity: int | None
         # Schedules
-        support_schedules: bool | None
-        support_schedules_smart: bool | None
+        supports_schedules: bool | None
+        supports_schedules_smart: bool | None
         schedule_mode: Thermostat.ScheduleMode | None
 
     class DeviceState(Enum):
@@ -144,34 +125,35 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         )
 
     @property
-    def attributes(self) -> ThermostatAttributes:
+    def attributes(self) -> ThermostatAttributes | None:
         """Return thermostat attributes."""
 
         return self.ThermostatAttributes(
             temp_average=self._get_int("forwardingAmbientTemp"),
             temp_at_tstat=self._get_int("ambientTemp"),
             step_value=self._get_int("setpointOffset"),
-            support_fan_mode=self._get_bool("supportsFanMode"),
-            support_fan_indefinite=self._get_bool("supportsCirculateFanModeWhenOff"),
-            support_fan_circulate_when_off=self._get_bool(
-                "support_fan_circulate_when_off"
+            supports_fan_mode=self._get_bool("supportsFanMode"),
+            supports_fan_indefinite=self._get_bool("supportsIndefiniteFanOn"),
+            supports_fan_circulate_when_off=self._get_bool(
+                "supportsCirculateFanModeWhenOff"
             ),
-            support_fan_durations=self._get_list("supportedFanDurations", int),
-            fan_mode=self._get_special("supportedFanDurations", self.FanMode),
+            supported_fan_durations=self._get_list("supportedFanDurations", int),
+            fan_mode=self._get_special("fanMode", self.FanMode),
             fan_duration=self._get_int("fanDuration"),
-            support_heat=self._get_bool("supportsHeatMode"),
-            support_cool=self._get_bool("supportsCoolMode"),
-            support_auto=self._get_bool("supportsAutoMode"),
+            supports_heat=self._get_bool("supportsHeatMode"),
+            supports_heat_aux=self._get_bool("supportsAuxHeatMode"),
+            supports_cool=self._get_bool("supportsCoolMode"),
+            supports_auto=self._get_bool("supportsAutoMode"),
             min_heat_setpoint=self._get_int("minHeatSetpoint"),
             min_cool_setpoint=self._get_int("minCoolSetpoint"),
             max_heat_setpoint=self._get_int("maxHeatSetpoint"),
             max_cool_setpoint=self._get_int("maxCoolSetpoint"),
             heat_setpoint=self._get_int("heatSetpoint"),
             cool_setpoint=self._get_int("coolSetpoint"),
-            support_humidity=self._get_bool("supportsHumidity"),
+            supports_humidity=self._get_bool("supportsHumidity"),
             humidity=self._get_int("humidityLevel"),
-            support_schedules=self._get_bool("supportsSchedules"),
-            support_schedules_smart=self._get_bool("supportsSmartSchedules"),
+            supports_schedules=self._get_bool("supportsSchedules"),
+            supports_schedules_smart=self._get_bool("supportsSmartSchedules"),
             schedule_mode=self._get_special("scheduleMode", self.ScheduleMode),
         )
 

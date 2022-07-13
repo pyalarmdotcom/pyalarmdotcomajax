@@ -1,6 +1,6 @@
 """Tests for main controller."""
 
-# pylint: disable=protected-access, missing-class-docstring, no-self-use
+# pylint: disable=protected-access
 
 import json
 

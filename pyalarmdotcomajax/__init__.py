@@ -433,17 +433,7 @@ class AlarmController:
 
     async def async_get_raw_server_responses(
         self,
-        device_types: list[
-            type[System]
-            | type[Partition]
-            | type[Sensor]
-            | type[Lock]
-            | type[GarageDoor]
-            | type[ImageSensor]
-            | type[Light]
-            | type[Camera]
-            | type[Thermostat]
-        ],
+        device_types: list[type[BaseDevice]],
         include_image_sensor_b64: bool = False,
     ) -> dict:
         """Get raw responses from Alarm.com device endpoints."""
@@ -512,24 +502,10 @@ class AlarmController:
 
         return return_data
 
-    def get_device_by_id(
-        self, device_id: str
-    ) -> (
-        BaseDevice
-        | System
-        | Partition
-        | Sensor
-        | Lock
-        | GarageDoor
-        | ImageSensor
-        | Light
-        | Camera
-        | Thermostat
-        | None
-    ):
+    def get_device_by_id(self, device_id: str) -> BaseDevice | None:
         """Find device by its id."""
 
-        device: BaseDevice | System | Partition | Sensor | Lock | GarageDoor | ImageSensor | Light | Camera | Thermostat
+        device: BaseDevice
         for device in (
             *self.systems,
             *self.partitions,
@@ -565,17 +541,7 @@ class AlarmController:
             # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
             #
             try:
-                device_class: (
-                    type[GarageDoor]
-                    | type[Lock]
-                    | type[Sensor]
-                    | type[ImageSensor]
-                    | type[Light]
-                    | type[Partition]
-                    | type[System]
-                    | type[Camera]
-                    | type[Thermostat]
-                ) = DEVICE_CLASSES[device_type]
+                device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type]
 
             except KeyError as err:
                 raise UnsupportedDevice from err
@@ -665,7 +631,6 @@ class AlarmController:
             #
 
             for device_json, subordinates in devices:
-                log.error(devices)
                 if name := device_json.get("attributes", {}).get("description"):
                     name_id_map[name] = device_json["id"]
 

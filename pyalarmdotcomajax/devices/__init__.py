@@ -4,9 +4,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
-from enum import IntEnum
 import logging
 from typing import Any
 from typing import final
@@ -14,7 +12,6 @@ from typing import Protocol
 from typing import TypedDict
 
 import aiohttp
-from dateutil import parser
 from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
@@ -233,6 +230,8 @@ class ElementSpecificData(TypedDict, total=False):
 class BaseDevice:
     """Contains properties shared by all ADC devices."""
 
+    DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
+
     def __init__(
         self,
         id_: str,
@@ -298,11 +297,8 @@ class BaseDevice:
     def _get_bool(self, key: str) -> bool | None:
         """Cast raw value to bool. Satisfies mypy."""
 
-        if str(self._attribs_raw.get(key)).lower() == "true":
-            return True
-
-        if str(self._attribs_raw.get(key)).lower() == "false":
-            return False
+        if self._attribs_raw.get(key) in [True, False]:
+            return self._attribs_raw.get(key)
 
         return None
 
@@ -460,8 +456,13 @@ class BaseDevice:
     class Subtype(Enum):
         """Hold device subtypes. To be overridden by children."""
 
-    # deviceModelId: {"manufacturer": str, "model": str}
-    DEVICE_MODELS: dict = {}
+    @dataclass
+    class DeviceAttributes:
+        """Hold non-primary device state attributes. To be overridden by children."""
+
+    @property
+    def attributes(self) -> DeviceAttributes | None:
+        """Hold non-primary device state attributes. To be overridden by children."""
 
     @property
     def desired_state(self) -> Enum | None:
