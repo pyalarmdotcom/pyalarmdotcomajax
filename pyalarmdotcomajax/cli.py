@@ -541,7 +541,9 @@ def _print_element_tearsheet(
     output_str += "\n"
 
     # ENTITIES WITH "ATTRIBUTES" PROPERTY
-    if hasattr(element, "attributes"):
+    if hasattr(element, "attributes") and isinstance(
+        element.attributes, BaseDevice.DeviceAttributes
+    ):
         for attribute in dataclasses.fields(element.attributes):
             output_str += f"[{str(attribute.name).upper()}: {attribute}] "
 
