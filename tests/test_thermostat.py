@@ -38,12 +38,14 @@ async def test__device_thermostat__ok(
     assert thermostat.attributes.supports_heat_aux is False
     assert thermostat.attributes.supports_cool is True
     assert thermostat.attributes.supports_auto is False
+    assert thermostat.attributes.setpoint_buffer == 3
     assert thermostat.attributes.min_heat_setpoint == 40
     assert thermostat.attributes.min_cool_setpoint == 50
     assert thermostat.attributes.max_heat_setpoint == 90
     assert thermostat.attributes.max_cool_setpoint == 99
     assert thermostat.attributes.heat_setpoint == 71
     assert thermostat.attributes.cool_setpoint == 74
+    assert thermostat.attributes.supports_setpoints is True
     assert thermostat.attributes.supports_humidity is False
     assert thermostat.attributes.humidity is None
     assert thermostat.attributes.supports_schedules is True

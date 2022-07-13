@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 class Thermostat(DesiredStateMixin, BaseDevice):
     """Represent Alarm.com thermostat element."""
 
-    # fan duration of 0 is indefinite. otherwise value == hours.
-    # settable attributes: desiredRts (remote temp sensor), desiredLocalDisplayLockingMode,
+    # Fan duration of 0 is indefinite. otherwise value == hours.
+    # TODO: desiredRts (remote temp sensor), desiredLocalDisplayLockingMode. Need user with remote sensors.
     # In identity info, check localizeTempUnitsToCelsius.
 
     @dataclass
@@ -41,12 +41,14 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         supports_heat_aux: bool | None
         supports_cool: bool | None
         supports_auto: bool | None
+        supports_setpoints: bool | None
         min_heat_setpoint: int | None
         max_heat_setpoint: int | None
         min_cool_setpoint: int | None
         max_cool_setpoint: int | None
         heat_setpoint: int | None
         cool_setpoint: int | None
+        setpoint_buffer: int | None
         # Humidity
         supports_humidity: bool | None
         humidity: int | None
@@ -74,11 +76,13 @@ class Thermostat(DesiredStateMixin, BaseDevice):
 
         AUTO_LOW = 0
         ON_LOW = 1
+        CIRCULATE = 6
+
+        # Not Used
         AUTO_HIGH = 2
         ON_HIGH = 3
         AUTO_MEDIUM = 4
         ON_MEDIUM = 5
-        CIRCULATE = 6
         HUMIDITY = 7
 
     class LockMode(Enum):
@@ -144,6 +148,8 @@ class Thermostat(DesiredStateMixin, BaseDevice):
             supports_heat_aux=self._get_bool("supportsAuxHeatMode"),
             supports_cool=self._get_bool("supportsCoolMode"),
             supports_auto=self._get_bool("supportsAutoMode"),
+            supports_setpoints=self._get_bool("supportsSetpoints"),
+            setpoint_buffer=self._get_bool("autoSetpointBuffer"),
             min_heat_setpoint=self._get_int("minHeatSetpoint"),
             min_cool_setpoint=self._get_int("minCoolSetpoint"),
             max_heat_setpoint=self._get_int("maxHeatSetpoint"),
