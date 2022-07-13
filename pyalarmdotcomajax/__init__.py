@@ -665,6 +665,7 @@ class AlarmController:
             #
 
             for device_json, subordinates in devices:
+                log.error(devices)
                 if name := device_json.get("attributes", {}).get("description"):
                     name_id_map[name] = device_json["id"]
 

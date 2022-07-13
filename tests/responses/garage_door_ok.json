@@ -49,7 +49,7 @@
         },
         {
             "id": "555555555-32",
-            "type": "devices/light",
+            "type": "devices/garage-door",
             "attributes": {
                 "state": 1,
                 "desiredState": 1,
