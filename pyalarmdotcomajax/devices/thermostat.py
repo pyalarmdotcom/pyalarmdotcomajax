@@ -149,7 +149,7 @@ class Thermostat(DesiredStateMixin, BaseDevice):
             supports_cool=self._get_bool("supportsCoolMode"),
             supports_auto=self._get_bool("supportsAutoMode"),
             supports_setpoints=self._get_bool("supportsSetpoints"),
-            setpoint_buffer=self._get_bool("autoSetpointBuffer"),
+            setpoint_buffer=self._get_int("autoSetpointBuffer"),
             min_heat_setpoint=self._get_int("minHeatSetpoint"),
             min_cool_setpoint=self._get_int("minCoolSetpoint"),
             max_heat_setpoint=self._get_int("maxHeatSetpoint"),
