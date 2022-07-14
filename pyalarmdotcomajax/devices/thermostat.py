@@ -79,11 +79,11 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         CIRCULATE = 6
 
         # Not Used
-        AUTO_HIGH = 2
-        ON_HIGH = 3
-        AUTO_MEDIUM = 4
-        ON_MEDIUM = 5
-        HUMIDITY = 7
+        # AUTO_HIGH = 2
+        # ON_HIGH = 3
+        # AUTO_MEDIUM = 4
+        # ON_MEDIUM = 5
+        # HUMIDITY = 7
 
     class LockMode(Enum):
         """Enum of thermostat lock modes."""
@@ -178,7 +178,7 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         # Make sure we're only being asked to set one attribute at a time.
         if (
             attrib_list := [state, fan, cool_setpoint, heat_setpoint, schedule_mode]
-        ).count(None) < len(attrib_list):
+        ).count(None) < len(attrib_list) - 1:
             raise UnexpectedDataStructure
 
         # Build the request body.
