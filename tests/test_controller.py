@@ -1,6 +1,6 @@
 """Tests for main controller."""
 
-# pylint: disable=protected-access, missing-class-docstring, no-self-use
+# pylint: disable=protected-access
 
 import json
 
@@ -9,7 +9,7 @@ from deepdiff import DeepDiff
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices import DeviceType
 import pytest
-from tests.responses import SENSORS_OK_RESPONSE_BODY
+from tests.responses import get_http_body_json
 
 
 def test_property__initial_state(adc_client: AlarmController) -> None:
@@ -44,7 +44,7 @@ async def test__async_get_items_and_subordinates__sensors(
 
         src_match = {}
 
-        for src_device in json.loads(SENSORS_OK_RESPONSE_BODY).get("data"):
+        for src_device in json.loads(get_http_body_json("sensor_ok")).get("data", {}):
             if src_device.get("id") == rsp_device.get("id"):
                 src_match = src_device
 

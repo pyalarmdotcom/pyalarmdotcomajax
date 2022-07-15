@@ -552,8 +552,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
     def _build_submit_payload(  # pylint: disable = no-self-use
         self, response_data: dict
     ) -> dict:
-        """Build POST body for submitting settings changes or for getting data for a different camera.
-        """
+        """Build POST for new setting submission or for getting other camera data."""
 
         # Pre-populate static fields.
         static_form_data: dict = {

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 from enum import Enum
 import logging
 import platform
@@ -17,16 +18,6 @@ import aiohttp
 import pyalarmdotcomajax
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax import AuthResult
-from pyalarmdotcomajax.devices import Camera
-from pyalarmdotcomajax.devices import DEVICE_URLS
-from pyalarmdotcomajax.devices import DeviceType
-from pyalarmdotcomajax.devices import GarageDoor
-from pyalarmdotcomajax.devices import ImageSensor
-from pyalarmdotcomajax.devices import Light
-from pyalarmdotcomajax.devices import Lock
-from pyalarmdotcomajax.devices import Partition
-from pyalarmdotcomajax.devices import Sensor
-from pyalarmdotcomajax.devices import System
 from pyalarmdotcomajax.errors import AuthenticationFailed
 from pyalarmdotcomajax.errors import DataFetchFailed
 from pyalarmdotcomajax.errors import InvalidConfigurationOption
@@ -38,12 +29,18 @@ from pyalarmdotcomajax.helpers import slug_to_title
 from termcolor import colored
 from termcolor import cprint
 
+from .devices import BaseDevice
+from .devices import DEVICE_URLS
+from .devices import DeviceType
+from .devices.light import Light
+from .devices.sensor import Sensor
+from .devices.system import System
+
 CLI_CARD_BREAK = ""  # "--------"
 
 
 async def cli() -> None:
-    """Support command-line development and testing. Not used in normal library operation.
-    """
+    """Support CLI development and testing. Not used in normal library operation."""
 
     parser = argparse.ArgumentParser(
         prog="adc",
@@ -472,6 +469,7 @@ def _human_output(alarm: AlarmController) -> dict:
         (DeviceType.IMAGE_SENSOR, alarm.image_sensors),
         (DeviceType.LIGHT, alarm.lights),
         (DeviceType.CAMERA, alarm.cameras),
+        (DeviceType.THERMOSTAT, alarm.thermostats),
     ]
 
     device_type: DeviceType
@@ -490,14 +488,7 @@ def _human_output(alarm: AlarmController) -> dict:
 
 
 def _print_element_tearsheet(
-    element: GarageDoor
-    | Lock
-    | Partition
-    | Sensor
-    | System
-    | Light
-    | ImageSensor
-    | Camera,
+    element: BaseDevice,
 ) -> str:
     output_str: str = ""
 
@@ -548,6 +539,13 @@ def _print_element_tearsheet(
             output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
     output_str += "\n"
+
+    # ENTITIES WITH "ATTRIBUTES" PROPERTY
+    if hasattr(element, "attributes") and isinstance(
+        element.attributes, BaseDevice.DeviceAttributes
+    ):
+        for attribute in dataclasses.fields(element.attributes):
+            output_str += f"[{str(attribute.name).upper()}: {attribute}] "
 
     # SETTINGS / EXTENSIONS
 

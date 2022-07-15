@@ -114,6 +114,17 @@
                         "count": "1"
                     }
                 },
+                "thermostats": {
+                    "data": [
+                        {
+                            "id": "555555555-51",
+                            "type": "devices/thermostat"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
                 "system": {
                     "data": {
                         "id": "11111111",

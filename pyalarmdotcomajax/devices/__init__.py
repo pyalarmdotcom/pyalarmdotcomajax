@@ -1,18 +1,17 @@
-"""Representations of devices."""
+"""Alarm.com device base devices."""
 from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime
+from dataclasses import dataclass
 from enum import Enum
-from enum import IntEnum
 import logging
 from typing import Any
+from typing import final
 from typing import Protocol
 from typing import TypedDict
 
 import aiohttp
-from dateutil import parser
 from pyalarmdotcomajax.errors import InvalidConfigurationOption
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
@@ -42,6 +41,7 @@ class DeviceType(ExtendedEnumMixin):
     PARTITION = "partitions"
     SENSOR = "sensors"
     SYSTEM = "systems"
+    THERMOSTAT = "thermostats"
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
@@ -60,7 +60,6 @@ class DeviceType(ExtendedEnumMixin):
     SMART_CHIME = "smartChimeDevices"
     SUMP_PUMP = "sumpPumps"
     SWITCH = "switches"
-    THERMOSTAT = "thermostats"
     VALVE_SWITCH = "valveSwitches"
     WATER_METER = "waterMeters"
     WATER_SENSOR = "waterSensors"
@@ -106,6 +105,10 @@ DEVICE_URLS: dict = {
         DeviceType.SYSTEM: {
             "relationshipId": "systems/system",
             "endpoint": "{}web/api/systems/systems/{}",
+        },
+        DeviceType.THERMOSTAT: {
+            "relationshipId": "devices/thermostat",
+            "endpoint": "{}web/api/devices/thermostats/{}",
         },
     },
     "unsupported": {
@@ -169,10 +172,6 @@ DEVICE_URLS: dict = {
             "relationshipId": "devices/switch",
             "endpoint": "{}web/api/devices/switches/{}",
         },
-        DeviceType.THERMOSTAT: {
-            "relationshipId": "devices/thermostat",
-            "endpoint": "{}web/api/devices/thermostats/{}",
-        },
         DeviceType.VALVE_SWITCH: {
             "relationshipId": "valve-switch",
             "endpoint": "{}web/api/devices/valveSwitches/{}",
@@ -216,7 +215,7 @@ class DesiredStateMixin:
 
         try:
             state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
-        except ValueError:
+        except (ValueError, TypeError):
             return None
         else:
             return state
@@ -230,6 +229,8 @@ class ElementSpecificData(TypedDict, total=False):
 
 class BaseDevice:
     """Contains properties shared by all ADC devices."""
+
+    DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
 
     def __init__(
         self,
@@ -271,6 +272,62 @@ class BaseDevice:
         self.process_element_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
+
+    #
+    # Casting Functions
+    #
+    # Functions used for pulling data from _raw_attribs in standardized format.
+    @final
+    def _get_int(self, key: str) -> int | None:
+        """Cast raw value to int. Satisfies mypy."""
+
+        try:
+            return int(self._attribs_raw.get(key))  # type: ignore
+        except (ValueError, TypeError):
+            return None
+
+    def _get_str(self, key: str) -> str | None:
+        """Cast raw value to str. Satisfies mypy."""
+
+        try:
+            return str(self._attribs_raw.get(key))
+        except (ValueError, TypeError):
+            return None
+
+    def _get_bool(self, key: str) -> bool | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        if self._attribs_raw.get(key) in [True, False]:
+            return self._attribs_raw.get(key)
+
+        return None
+
+    def _get_list(self, key: str, value_type: type) -> list | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        try:
+            duration_list: list = list(self._attribs_raw.get(key))  # type: ignore
+            for duration in duration_list:
+                value_type(duration)
+            return duration_list
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+    def _get_special(self, key: str, value_type: type) -> Any | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        try:
+            return value_type(self._attribs_raw.get(key))
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+    #
+    # Properties
+    #
 
     @property
     def read_only(self) -> bool | None:
@@ -359,7 +416,16 @@ class BaseDevice:
     @property
     def model_text(self) -> str | None:
         """Return device model as reported by ADC."""
-        return self._attribs_raw.get("deviceModel")
+        return (
+            reported_model
+            if (reported_model := self._attribs_raw.get("deviceModel"))
+            else self.DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
+        )
+
+    @property
+    def manufacturer(self) -> str | None:
+        """Return device model as reported by ADC."""
+        return self._attribs_raw.get("manufacturer")
 
     @property
     def debug_data(self) -> dict:
@@ -368,8 +434,7 @@ class BaseDevice:
 
     @property
     def device_subtype(self) -> Enum | None:
-        """Return normalized device subtype constant. E.g.: contact, glass break, etc.
-        """
+        """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
             return self.Subtype(self._attribs_raw["deviceType"])
         except (ValueError, KeyError):
@@ -390,6 +455,14 @@ class BaseDevice:
 
     class Subtype(Enum):
         """Hold device subtypes. To be overridden by children."""
+
+    @dataclass
+    class DeviceAttributes:
+        """Hold non-primary device state attributes. To be overridden by children."""
+
+    @property
+    def attributes(self) -> DeviceAttributes | None:
+        """Hold non-primary device state attributes. To be overridden by children."""
 
     @property
     def desired_state(self) -> Enum | None:
@@ -442,430 +515,3 @@ class BaseDevice:
             raise err
 
         self._settings["slug"] = updated_option
-
-
-class Camera(DesiredStateMixin, BaseDevice):
-    """Represent Alarm.com camera element."""
-
-    # Cameras do not have a state.
-
-    @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None
-
-
-class GarageDoor(DesiredStateMixin, BaseDevice):
-    """Represent Alarm.com garage door element."""
-
-    class DeviceState(Enum):
-        """Enum of garage door states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
-
-        UNKNOWN = 0
-        OPEN = 1
-        CLOSED = 2
-
-    class Command(Enum):
-        """Commands for ADC garage doors."""
-
-        OPEN = "open"
-        CLOSE = "close"
-
-    async def async_open(self) -> None:
-        """Send open command."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.GARAGE_DOOR,
-            event=self.Command.OPEN,
-            device_id=self.id_,
-        )
-
-    async def async_close(self) -> None:
-        """Send close command."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.GARAGE_DOOR,
-            event=self.Command.CLOSE,
-            device_id=self.id_,
-        )
-
-
-class ImageSensorImage(TypedDict):
-    """Holds metadata for image sensor images."""
-
-    id_: str
-    image_b64: str
-    image_src: str
-    description: str
-    timestamp: datetime
-
-
-class ImageSensor(BaseDevice):
-    """Represent Alarm.com image sensor element."""
-
-    class Command(Enum):
-        """Commands for ADC image sensors."""
-
-        PEEK_IN = "doPeekInNow"
-
-    _recent_images: list[ImageSensorImage] = []
-
-    def process_element_specific_data(self) -> None:
-        """Process recent images."""
-
-        if not (
-            raw_recent_images := self._element_specific_data.get("raw_recent_images")
-        ):
-            return
-
-        for image in raw_recent_images:
-            if (
-                isinstance(image, dict)
-                and str(
-                    image.get("relationships", {})
-                    .get("imageSensor", {})
-                    .get("data", {})
-                    .get("id")
-                )
-                == self.id_
-            ):
-                image_data: ImageSensorImage = {
-                    "id_": image["id"],
-                    "image_b64": image["attributes"]["image"],
-                    "image_src": image["attributes"]["imageSrc"],
-                    "description": image["attributes"]["description"],
-                    "timestamp": parser.parse(image["attributes"]["timestamp"]),
-                }
-                self._recent_images.append(image_data)
-
-    @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None
-
-    @property
-    def images(self) -> list[ImageSensorImage] | None:
-        """Get a list of images taken by the image sensor."""
-
-        return self._recent_images
-
-    async def async_peek_in(self) -> None:
-        """Send peek in command to take photo."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.IMAGE_SENSOR,
-            event=self.Command.PEEK_IN,
-            device_id=self.id_,
-        )
-
-
-class Light(DesiredStateMixin, BaseDevice):
-    """Represent Alarm.com light element."""
-
-    class DeviceState(Enum):
-        """Enum of light states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
-
-        OFFLINE = 0
-        NOSTATE = 1
-        ON = 2
-        OFF = 3
-        LEVELCHANGE = 4
-
-    class Command(Enum):
-        """Commands for ADC lights."""
-
-        ON = "turnOn"
-        OFF = "turnOff"
-
-    @property
-    def available(self) -> bool:
-        """Return whether the light can be manipulated."""
-        return (
-            self._attribs_raw.get("canReceiveCommands", False)
-            and self._attribs_raw.get("remoteCommandsEnabled", False)
-            and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state
-            in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
-        )
-
-    @property
-    def brightness(self) -> int | None:
-        """Return light's brightness."""
-        if not self._attribs_raw.get("isDimmer", False):
-            return None
-
-        if isinstance(level := self._attribs_raw.get("lightLevel", 0), int):
-            return level
-
-        return None
-
-    @property
-    def supports_state_tracking(self) -> bool | None:
-        """Return whether the light reports its current state."""
-
-        if isinstance(supports := self._attribs_raw.get("stateTrackingEnabled"), bool):
-            return supports
-
-        return None
-
-    async def async_turn_on(self, brightness: int | None = None) -> None:
-        """Send turn on command with optional brightness."""
-
-        msg_body: dict | None = None
-        if brightness:
-            msg_body = {}
-            msg_body["dimmerLevel"] = brightness
-
-        await self._send_action_callback(
-            device_type=DeviceType.LIGHT,
-            event=self.Command.ON,
-            device_id=self.id_,
-            msg_body=msg_body,
-        )
-
-    async def async_turn_off(self) -> None:
-        """Send turn off command."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.LIGHT,
-            event=self.Command.OFF,
-            device_id=self.id_,
-        )
-
-
-class Lock(DesiredStateMixin, BaseDevice):
-    """Represent Alarm.com sensor element."""
-
-    class DeviceState(Enum):
-        """Enum of lock states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/LockStatus.js
-
-        UNKNOWN = 0
-        LOCKED = 1
-        UNLOCKED = 2
-
-    class Command(Enum):
-        """Commands for ADC locks."""
-
-        LOCK = "lock"
-        UNLOCK = "unlock"
-
-    async def async_lock(self) -> None:
-        """Send lock command."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.LOCK,
-            event=self.Command.LOCK,
-            device_id=self.id_,
-        )
-
-    async def async_unlock(self) -> None:
-        """Send unlock command."""
-
-        await self._send_action_callback(
-            device_type=DeviceType.LOCK,
-            event=self.Command.UNLOCK,
-            device_id=self.id_,
-        )
-
-
-class Partition(DesiredStateMixin, BaseDevice):
-    """Represent Alarm.com partition element."""
-
-    class DeviceState(Enum):
-        """Enum of arming states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingState.js
-
-        UNKNOWN = 0
-        DISARMED = 1
-        ARMED_STAY = 2
-        ARMED_AWAY = 3
-        ARMED_NIGHT = 4
-
-    class Command(Enum):
-        """Commands for ADC partitions."""
-
-        DISARM = "disarm"
-        ARM_STAY = "armStay"
-        ARM_AWAY = "armAway"
-
-    @property
-    def uncleared_issues(self) -> bool | None:
-        """Return whether user needs to clear device state from alarm or device malfunction.
-        """
-        if isinstance(
-            issues := self._attribs_raw.get("needsClearIssuesPrompt", None), bool
-        ):
-            return issues
-
-        return None
-
-    async def _async_arm(
-        self,
-        arm_type: Command,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
-        night_arming: bool = False,
-    ) -> None:
-        """Arm alarm system."""
-
-        if arm_type == self.Command.DISARM:
-            log.error("Invalid arm type.")
-            return
-
-        msg_body = {
-            "forceBypass": force_bypass,
-            "noEntryDelay": no_entry_delay,
-            "silentArming": silent_arming,
-            "nightArming": night_arming,
-        }
-
-        await self._send_action_callback(
-            device_type=DeviceType.PARTITION,
-            event=arm_type,
-            device_id=self.id_,
-            msg_body=msg_body,
-        )
-
-    async def async_arm_stay(
-        self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
-    ) -> None:
-        """Arm stay alarm."""
-
-        log.debug("Calling arm stay.")
-
-        await self._async_arm(
-            arm_type=self.Command.ARM_STAY,
-            force_bypass=force_bypass,
-            no_entry_delay=no_entry_delay,
-            silent_arming=silent_arming,
-            night_arming=False,
-        )
-
-    async def async_arm_away(
-        self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
-    ) -> None:
-        """Arm stay alarm."""
-
-        log.debug("Calling arm away.")
-
-        await self._async_arm(
-            arm_type=self.Command.ARM_AWAY,
-            force_bypass=force_bypass,
-            no_entry_delay=no_entry_delay,
-            silent_arming=silent_arming,
-            night_arming=False,
-        )
-
-    async def async_arm_night(
-        self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
-    ) -> None:
-        """Arm stay alarm."""
-
-        log.debug("Calling arm night.")
-
-        await self._async_arm(
-            arm_type=self.Command.ARM_STAY,
-            force_bypass=force_bypass,
-            no_entry_delay=no_entry_delay,
-            silent_arming=silent_arming,
-            night_arming=True,
-        )
-
-    async def async_disarm(
-        self,
-    ) -> None:
-        """Disarm alarm system."""
-
-        log.debug("Calling disarm.")
-
-        await self._send_action_callback(
-            device_type=DeviceType.PARTITION,
-            event=self.Command.DISARM,
-            device_id=self.id_,
-        )
-
-
-class Sensor(BaseDevice):
-    """Represent Alarm.com system element."""
-
-    class DeviceState(Enum):
-        """Enum of sensor states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/SensorStatus.js
-
-        UNKNOWN = 0
-        CLOSED = 1
-        OPEN = 2
-        IDLE = 3
-        ACTIVE = 4
-        DRY = 5
-        WET = 6
-
-        # Below not currently supported.
-        # FULL = 7
-        # LOW = 8
-        # OPENED_CLOSED = 9
-        # ISSUE = 10
-        # OK = 11
-
-    class Subtype(IntEnum):
-        """Library of identified ADC device types."""
-
-        CONTACT_SENSOR = 1
-        MOTION_SENSOR = 2
-        SMOKE_DETECTOR = 5
-        FREEZE_SENSOR = 8
-        CO_DETECTOR = 6
-        PANIC_BUTTON = 9
-        FIXED_PANIC = 10
-        SIREN = 14
-        GLASS_BREAK_DETECTOR = 19
-        CONTACT_SHOCK_SENSOR = 52
-        PANEL_MOTION_SENSOR = 89
-        PANEL_GLASS_BREAK_DETECTOR = 83
-        PANEL_IMAGE_SENSOR = 68
-        MOBILE_PHONE = 69
-
-    @property
-    def read_only(self) -> None:
-        """Non-actionable object."""
-        return
-
-
-class System(BaseDevice):
-    """Represent Alarm.com system element."""
-
-    @property
-    def unit_id(self) -> str | None:
-        """Return device ID."""
-        if not (raw_id := self._attribs_raw.get("unitId")):
-            return str(raw_id)
-
-        return None
-
-    @property
-    def read_only(self) -> None:
-        """Non-actionable object."""
-        return
-
-    @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None

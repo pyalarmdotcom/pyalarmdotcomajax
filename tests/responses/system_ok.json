@@ -175,9 +175,14 @@
                     }
                 },
                 "thermostats": {
-                    "data": [],
+                    "data": [
+                        {
+                            "id": "555555555-51",
+                            "type": "devices/thermostat"
+                        }
+                    ],
                     "meta": {
-                        "count": "0"
+                        "count": "1"
                     }
                 },
                 "remoteTemperatureSensors": {

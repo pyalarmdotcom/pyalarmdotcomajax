@@ -1,0 +1,164 @@
+{
+    "data": [
+        {
+            "id": "555555555-51",
+            "type": "devices/thermostat",
+            "attributes": {
+                "requiresSetup": false,
+                "forwardingAmbientTemp": 77,
+                "minHeatSetpoint": 40,
+                "maxHeatSetpoint": 90,
+                "minCoolSetpoint": 50,
+                "maxCoolSetpoint": 99,
+                "minAuxHeatSetpoint": 40,
+                "maxAuxHeatSetpoint": 90,
+                "heatSetpoint": 71,
+                "desiredHeatSetpoint": 71,
+                "coolSetpoint": 74,
+                "desiredCoolSetpoint": 74,
+                "homeHeatSetpoint": 70,
+                "homeCoolSetpoint": 77,
+                "awayHeatSetpoint": 68,
+                "awayCoolSetpoint": 76,
+                "sleepHeatSetpoint": 72,
+                "sleepCoolSetpoint": 74,
+                "setpointOffset": 1,
+                "autoSetpointBuffer": 3,
+                "thirdPartySettingsUrlDesc": null,
+                "thirdPartySettingsUrl": null,
+                "state": 2,
+                "desiredState": 2,
+                "inferredState": 3,
+                "scheduleMode": 1,
+                "fanMode": 0,
+                "desiredFanMode": 0,
+                "fanDuration": null,
+                "localDisplayLockingMode": 0,
+                "desiredLocalDisplayLockingMode": null,
+                "hasRtsIssue": false,
+                "isControlled": false,
+                "supportsSetpoints": true,
+                "isPoolController": false,
+                "supportsOffMode": true,
+                "supportsHeatMode": true,
+                "supportsCoolMode": true,
+                "supportsAutoMode": false,
+                "supportsSmartSchedules": false,
+                "supportsAuxHeatMode": false,
+                "supportsSchedules": true,
+                "supportsFanMode": true,
+                "supportsIndefiniteFanOn": false,
+                "supportedFanDurations": [
+                    1, 2, 3, 24
+                ],
+                "supportsCirculateFanModeAlways": false,
+                "supportsCirculateFanModeWhenOff": true,
+                "supportsRts": null,
+                "supportsLocalDisplayLocking": false,
+                "supportsPartialLocalDisplayLocking": false,
+                "supportsHvacAnalytics": false,
+                "supportsThirdPartySettings": false,
+                "hasPendingTempModeChange": false,
+                "hasPendingSetpointChange": false,
+                "hasPendingHeatSetpointChange": false,
+                "hasPendingCoolSetpointChange": false,
+                "ambientTemp": 77,
+                "isPaired": false,
+                "supportsPairing": false,
+                "tempForwardingActive": true,
+                "supportsHumidity": false,
+                "humidityLevel": null,
+                "managedDeviceType": 15,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": true,
+                "webSettings": 1011,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": [],
+                "macAddress": "",
+                "manufacturer": "Honeywell",
+                "isOAuth": false,
+                "isZWave": true,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Upstairs Thermostat",
+                "deviceModelId": 4293,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 37
+                },
+                "batteryLevelNull": 95,
+                "lowBattery": false,
+                "criticalBattery": false
+            },
+            "relationships": {
+                "ruleSuggestions": {
+                    "data": [
+                        {
+                            "id": "1202_1",
+                            "type": "automation/rules/ruleSuggestion"
+                        }, {
+                            "id": "1202_5",
+                            "type": "automation/rules/ruleSuggestion"
+                        }
+                    ],
+                    "meta": {
+                        "count": "2"
+                    }
+                },
+                "thermostatSettingsTemplate": {
+                    "data": null
+                },
+                "remoteTemperatureSensors": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "boilerControlSystem": {
+                    "data": null
+                },
+                "valveSwitches": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "peakProtect": {
+                    "data": {
+                        "id": "555556555-31",
+                        "type": "automation/peak-protect"
+                    }
+                },
+                "controlledThermostats": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
+                    }
+                },
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": null
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

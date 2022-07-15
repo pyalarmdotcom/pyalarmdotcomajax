@@ -13,7 +13,9 @@ from pyalarmdotcomajax.devices import DEVICE_URLS
 from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
 import pytest
-from tests import responses
+
+from .responses import get_http_body_html
+from .responses import get_http_body_json
 
 
 @pytest.fixture  # type: ignore
@@ -48,12 +50,12 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
     response_mocker.get(
         url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
         status=200,
-        body=responses.TROUBLE_CONDITIONS_OK_RESPONSE_BODY,
+        body=get_http_body_json("trouble_condition_ok"),
     )
     response_mocker.get(
         url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
         status=200,
-        body=responses.IDENTITYS_OK_RESPONSE_BODY,
+        body=get_http_body_json("identity_ok"),
     )
 
     ###############
@@ -65,7 +67,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.SENSORS_OK_RESPONSE_BODY,
+        body=get_http_body_json("sensor_ok"),
     )
 
     response_mocker.get(
@@ -73,7 +75,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.CAMERAS_OK_RESPONSE_BODY,
+        body=get_http_body_json("camera_ok"),
     )
 
     response_mocker.get(
@@ -81,7 +83,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.GARAGE_DOORS_OK_RESPONSE_BODY,
+        body=get_http_body_json("garage_door_ok"),
     )
 
     response_mocker.get(
@@ -89,7 +91,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.IMAGE_SENSORS_OK_RESPONSE_BODY,
+        body=get_http_body_json("image_sensor_ok"),
     )
 
     response_mocker.get(
@@ -97,7 +99,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             "recent_images"
         ].format(c.URL_BASE, ""),
         status=200,
-        body=responses.IMAGE_SENSORS_DATA_OK_RESPONSE_BODY,
+        body=get_http_body_json("image_sensor_data_ok"),
     )
 
     response_mocker.get(
@@ -105,7 +107,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.LIGHTS_OK_RESPONSE_BODY,
+        body=get_http_body_json("light_ok"),
     )
 
     response_mocker.get(
@@ -113,7 +115,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.LOCKS_OK_RESPONSE_BODY,
+        body=get_http_body_json("lock_ok"),
     )
 
     response_mocker.get(
@@ -121,7 +123,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.PARTITIONS_OK_RESPONSE_BODY,
+        body=get_http_body_json("partition_ok"),
     )
 
     response_mocker.get(
@@ -129,7 +131,15 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
             c.URL_BASE, ""
         ),
         status=200,
-        body=responses.SYSTEMS_OK_RESPONSE_BODY,
+        body=get_http_body_json("system_ok"),
+    )
+
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.THERMOSTAT]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("thermostat_ok"),
     )
 
 
@@ -144,7 +154,7 @@ def all_extension_ok_responses(response_mocker: aioresponses) -> None:
     response_mocker.get(
         url=CameraSkybellControllerExtension.ENDPOINT,
         status=200,
-        body=responses.SKYBELL_CONFIG_PAGE,
+        body=get_http_body_html("camera_settings_skybell"),
     )
 
 
@@ -159,5 +169,5 @@ def skybell_missing_video_quality_field(response_mocker: aioresponses) -> None:
     response_mocker.get(
         url=CameraSkybellControllerExtension.ENDPOINT,
         status=200,
-        body=responses.SKYBELL_CONFIG_MISSING_VIDEO_QUALITY,
+        body=get_http_body_html("camera_settings_skybell_missing_video_quality_field"),
     )
