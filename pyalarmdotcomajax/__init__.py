@@ -37,7 +37,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.4"
+__version__ = "0.4.1"
 
 
 log = logging.getLogger(__name__)
@@ -843,6 +843,15 @@ class AlarmController:
                     trouble_all_devices[device_id] = trouble_single_device
 
                 self._trouble_conditions = trouble_all_devices
+
+        except aiohttp.ContentTypeError as err:
+            log.error(
+                "Server returned wrong content type. Response: %s\n\nResponse"
+                " Text:\n\n%s\n\n",
+                resp,
+                resp.text(),
+            )
+            raise DataFetchFailed from err
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
             log.error("Connection error while fetching trouble conditions.")
