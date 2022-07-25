@@ -29,6 +29,8 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
     assert not adc_client.garage_doors
     assert not adc_client.image_sensors
     assert not adc_client.lights
+    assert not adc_client.thermostats
+    assert not adc_client.cameras
 
 
 @pytest.mark.asyncio  # type: ignore
@@ -64,3 +66,24 @@ async def test___async_get_and_build_devices__sensors(
     await adc_client._async_get_and_build_devices([DeviceType.SENSOR])
 
     assert adc_client.sensors
+
+
+@pytest.mark.asyncio  # type: ignore
+async def test___async_update__ok(
+    all_base_ok_responses: pytest.fixture,
+    all_extension_ok_responses: pytest.fixture,
+    adc_client: AlarmController,
+) -> None:
+    """Test whether pyalarmdotcomajax sensor objects are built."""
+
+    await adc_client.async_update()
+
+    assert adc_client.systems
+    assert adc_client.partitions
+    assert adc_client.sensors
+    assert adc_client.locks
+    assert adc_client.garage_doors
+    assert adc_client.image_sensors
+    assert adc_client.lights
+    assert adc_client.thermostats
+    assert adc_client.cameras

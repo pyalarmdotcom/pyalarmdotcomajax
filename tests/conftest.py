@@ -171,3 +171,16 @@ def skybell_missing_video_quality_field(response_mocker: aioresponses) -> None:
         status=200,
         body=get_http_body_html("camera_settings_skybell_missing_video_quality_field"),
     )
+
+
+@pytest.fixture  # type: ignore
+def camera_no_permissions(response_mocker: aioresponses) -> None:
+    """Shortcut for including all mocked success responses."""
+
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("camera_no_permissions"),
+    )
