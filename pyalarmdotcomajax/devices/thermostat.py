@@ -26,29 +26,30 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         """Thermostat attributes."""
 
         # Base
-        temp_average: int | None  # Temperature from thermostat and all remote sensors, averaged.
-        temp_at_tstat: int | None  # Temperature at thermostat only.
-        step_value: int | None
+        temp_average: float | None  # Temperature from thermostat and all remote sensors, averaged.
+        temp_at_tstat: float | None  # Temperature at thermostat only.
+        setpoint_offset: float | None
+        inferred_mode: Thermostat.DeviceState | None  # Indicates what thermostat is actually doing (cooling vs heating) if mode = auto.
         # Fan
         supports_fan_mode: bool | None
         supports_fan_indefinite: bool | None
         supports_fan_circulate_when_off: bool | None
         supported_fan_durations: list[int] | None
         fan_mode: Thermostat.FanMode | None
-        fan_duration: int | None
+        # fan_duration: int | None # Fan duration is not updated in server response, even when fan is turned on for specific amount of time.
         # Temp
         supports_heat: bool | None
         supports_heat_aux: bool | None
         supports_cool: bool | None
         supports_auto: bool | None
         supports_setpoints: bool | None
-        min_heat_setpoint: int | None
-        max_heat_setpoint: int | None
-        min_cool_setpoint: int | None
-        max_cool_setpoint: int | None
-        heat_setpoint: int | None
-        cool_setpoint: int | None
-        setpoint_buffer: int | None
+        min_heat_setpoint: float | None
+        max_heat_setpoint: float | None
+        min_cool_setpoint: float | None
+        max_cool_setpoint: float | None
+        heat_setpoint: float | None
+        cool_setpoint: float | None
+        setpoint_buffer: float | None
         # Humidity
         supports_humidity: bool | None
         humidity: int | None
@@ -74,15 +75,15 @@ class Thermostat(DesiredStateMixin, BaseDevice):
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatFanMode.js
 
-        AUTO_LOW = 0
-        ON_LOW = 1
-        CIRCULATE = 6
+        AUTO = 0
+        ON = 1
 
         # Not Used
         # AUTO_HIGH = 2
         # ON_HIGH = 3
         # AUTO_MEDIUM = 4
         # ON_MEDIUM = 5
+        # CIRCULATE = 6
         # HUMIDITY = 7
 
     class LockMode(Enum):
@@ -116,7 +117,10 @@ class Thermostat(DesiredStateMixin, BaseDevice):
 
         SET_STATE = "setState"
 
-    DEVICE_MODELS = {4293: {"manufacturer": "Honeywell", "model": "T6 Pro"}}
+    DEVICE_MODELS = {
+        4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
+        10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},
+    }
 
     @property
     def available(self) -> bool:
@@ -133,9 +137,10 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         """Return thermostat attributes."""
 
         return self.ThermostatAttributes(
-            temp_average=self._get_int("forwardingAmbientTemp"),
-            temp_at_tstat=self._get_int("ambientTemp"),
-            step_value=self._get_int("setpointOffset"),
+            temp_average=self._get_float("forwardingAmbientTemp"),
+            temp_at_tstat=self._get_float("ambientTemp"),
+            inferred_mode=self._get_special("inferredMode", self.DeviceState),
+            setpoint_offset=self._get_float("setpointOffset"),
             supports_fan_mode=self._get_bool("supportsFanMode"),
             supports_fan_indefinite=self._get_bool("supportsIndefiniteFanOn"),
             supports_fan_circulate_when_off=self._get_bool(
@@ -143,19 +148,18 @@ class Thermostat(DesiredStateMixin, BaseDevice):
             ),
             supported_fan_durations=self._get_list("supportedFanDurations", int),
             fan_mode=self._get_special("fanMode", self.FanMode),
-            fan_duration=self._get_int("fanDuration"),
             supports_heat=self._get_bool("supportsHeatMode"),
             supports_heat_aux=self._get_bool("supportsAuxHeatMode"),
             supports_cool=self._get_bool("supportsCoolMode"),
             supports_auto=self._get_bool("supportsAutoMode"),
             supports_setpoints=self._get_bool("supportsSetpoints"),
-            setpoint_buffer=self._get_int("autoSetpointBuffer"),
-            min_heat_setpoint=self._get_int("minHeatSetpoint"),
-            min_cool_setpoint=self._get_int("minCoolSetpoint"),
-            max_heat_setpoint=self._get_int("maxHeatSetpoint"),
-            max_cool_setpoint=self._get_int("maxCoolSetpoint"),
-            heat_setpoint=self._get_int("heatSetpoint"),
-            cool_setpoint=self._get_int("coolSetpoint"),
+            setpoint_buffer=self._get_float("autoSetpointBuffer"),
+            min_heat_setpoint=self._get_float("minHeatSetpoint"),
+            min_cool_setpoint=self._get_float("minCoolSetpoint"),
+            max_heat_setpoint=self._get_float("maxHeatSetpoint"),
+            max_cool_setpoint=self._get_float("maxCoolSetpoint"),
+            heat_setpoint=self._get_float("heatSetpoint"),
+            cool_setpoint=self._get_float("coolSetpoint"),
             supports_humidity=self._get_bool("supportsHumidity"),
             humidity=self._get_int("humidityLevel"),
             supports_schedules=self._get_bool("supportsSchedules"),
@@ -167,13 +171,13 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         self,
         state: DeviceState | None = None,
         fan: tuple[FanMode, int] | None = None,  # int = duration
-        cool_setpoint: int | None = None,
-        heat_setpoint: int | None = None,
+        cool_setpoint: float | None = None,
+        heat_setpoint: float | None = None,
         schedule_mode: ScheduleMode | None = None,
     ) -> None:
         """Send turn on command with optional brightness."""
 
-        msg_body = {}
+        msg_body: dict[str, float | int] = {}
 
         # Make sure we're only being asked to set one attribute at a time.
         if (
@@ -187,7 +191,9 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         elif fan:
             msg_body = {
                 "desiredFanMode": self.FanMode(fan[0]).value,
-                "desiredFanDuration": fan[1],
+                "desiredFanDuration": 0
+                if self.FanMode(fan[0]) == self.FanMode.AUTO
+                else fan[1],
             }
         elif cool_setpoint:
             msg_body = {"desiredCoolSetpoint": cool_setpoint}
