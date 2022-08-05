@@ -22,32 +22,30 @@ async def test__device_thermostat__ok(
     thermostat = adc_client.thermostats[0]
 
     assert thermostat is not None
-    assert thermostat.name == "Upstairs Thermostat"
+    assert thermostat.name == "Upstairs"
 
     assert thermostat.attributes is not None
-    assert thermostat.attributes.temp_at_tstat == 77
-    assert thermostat.attributes.temp_average == 77
-    assert thermostat.attributes.step_value == 1
+    assert thermostat.attributes.temp_at_tstat == 72
+    assert thermostat.attributes.temp_average == 72
     assert thermostat.attributes.supports_fan_mode is True
     assert thermostat.attributes.supports_fan_indefinite is False
-    assert thermostat.attributes.supports_fan_circulate_when_off is True
+    assert thermostat.attributes.supports_fan_circulate_when_off is False
     assert thermostat.attributes.supported_fan_durations == [1, 2, 3, 24]
-    assert thermostat.attributes.fan_mode == Thermostat.FanMode.AUTO_LOW
-    assert thermostat.attributes.fan_duration is None
+    assert thermostat.attributes.fan_mode == Thermostat.FanMode.AUTO
     assert thermostat.attributes.supports_heat is True
     assert thermostat.attributes.supports_heat_aux is False
     assert thermostat.attributes.supports_cool is True
-    assert thermostat.attributes.supports_auto is False
-    assert thermostat.attributes.setpoint_buffer == 3
-    assert thermostat.attributes.min_heat_setpoint == 40
-    assert thermostat.attributes.min_cool_setpoint == 50
-    assert thermostat.attributes.max_heat_setpoint == 90
-    assert thermostat.attributes.max_cool_setpoint == 99
-    assert thermostat.attributes.heat_setpoint == 71
-    assert thermostat.attributes.cool_setpoint == 74
+    assert thermostat.attributes.supports_auto is True
+    assert thermostat.attributes.setpoint_buffer == 6.0
+    assert thermostat.attributes.min_heat_setpoint == 45
+    assert thermostat.attributes.min_cool_setpoint == 65
+    assert thermostat.attributes.max_heat_setpoint == 79
+    assert thermostat.attributes.max_cool_setpoint == 92
+    assert thermostat.attributes.heat_setpoint == 68
+    assert thermostat.attributes.cool_setpoint == 73
     assert thermostat.attributes.supports_setpoints is True
     assert thermostat.attributes.supports_humidity is False
-    assert thermostat.attributes.humidity is None
+    assert thermostat.attributes.humidity == 69
     assert thermostat.attributes.supports_schedules is True
     assert thermostat.attributes.supports_schedules_smart is False
     assert thermostat.attributes.schedule_mode == Thermostat.ScheduleMode.SCHEDULED

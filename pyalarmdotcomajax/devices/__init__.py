@@ -286,6 +286,16 @@ class BaseDevice:
         except (ValueError, TypeError):
             return None
 
+    @final
+    def _get_float(self, key: str) -> int | None:
+        """Cast raw value to int. Satisfies mypy."""
+
+        try:
+            return float(self._attribs_raw.get(key))  # type: ignore
+        except (ValueError, TypeError):
+            return None
+
+    @final
     def _get_str(self, key: str) -> str | None:
         """Cast raw value to str. Satisfies mypy."""
 
@@ -294,6 +304,7 @@ class BaseDevice:
         except (ValueError, TypeError):
             return None
 
+    @final
     def _get_bool(self, key: str) -> bool | None:
         """Cast raw value to bool. Satisfies mypy."""
 
@@ -302,6 +313,7 @@ class BaseDevice:
 
         return None
 
+    @final
     def _get_list(self, key: str, value_type: type) -> list | None:
         """Cast raw value to bool. Satisfies mypy."""
 
@@ -315,6 +327,7 @@ class BaseDevice:
 
         return None
 
+    @final
     def _get_special(self, key: str, value_type: type) -> Any | None:
         """Cast raw value to bool. Satisfies mypy."""
 
