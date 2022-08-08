@@ -789,7 +789,8 @@ class AlarmController:
             ) as resp:
                 json_rsp = await resp.json()
 
-                log.debug("Got identity info:\n%s", json.dumps(json_rsp))
+                # This is a verbose response. Uncommend when needed.
+                # log.debug("Got identity info:\n%s", json.dumps(json_rsp))
 
                 self._user_id = json_rsp["data"][0]["id"]
                 self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
