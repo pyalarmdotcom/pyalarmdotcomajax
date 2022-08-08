@@ -553,6 +553,7 @@ class AlarmController:
             #
             # GET ALL DEVICES WITHIN SPECIFIED CLASS
             #
+            devices = []
             try:
                 devices = await self._async_get_items_and_subordinates(
                     device_type=device_type
@@ -562,8 +563,15 @@ class AlarmController:
                 # Indicates fatal account error.
                 raise PermissionError from err
 
-            if not devices:
-                pass
+            except DataFetchFailed as err:
+                log.error(
+                    "Encountered data error while fetching %ss. Skipping this device"
+                    " type.",
+                    device_type.name,
+                )
+
+            if len(devices) == 0:
+                continue
 
             #
             # PURGE UNSUPPORTED CAMERAS
@@ -881,12 +889,20 @@ class AlarmController:
         #
         # Request data for device type
         #
-
-        async with self._websession.get(
-            url=full_path.format(c.URL_BASE, ""),
-            headers=self._ajax_headers,
-        ) as resp:
-            json_rsp = await resp.json()
+        try:
+            async with self._websession.get(
+                url=full_path.format(c.URL_BASE, ""),
+                headers=self._ajax_headers,
+            ) as resp:
+                json_rsp = await resp.json()
+        except (ContentTypeError, json.JSONDecodeError) as err:
+            error_msg = (
+                "Could not fetch data for"
+                f" {device_type.name if device_type is not None else url}. Server"
+                f" responded with status {resp.status}."
+            )
+            log.warning(error_msg)
+            raise DataFetchFailed(error_msg) from err
 
         return_items = []
 

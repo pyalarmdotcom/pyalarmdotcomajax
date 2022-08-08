@@ -69,10 +69,10 @@ class DeviceType(ExtendedEnumMixin):
 
 DEVICE_URLS: dict = {
     "supported": {
-        # DeviceType.CAMERA: {
-        #     "relationshipId": "video/camera",
-        #     "endpoint": "{}web/api/video/cameras/{}",
-        # },
+        DeviceType.CAMERA: {
+            "relationshipId": "video/camera",
+            "endpoint": "{}web/api/video/devices/cameras/{}",
+        },
         DeviceType.GARAGE_DOOR: {
             "relationshipId": "devices/garage-door",
             "endpoint": "{}web/api/devices/garageDoors/{}",
@@ -118,7 +118,7 @@ DEVICE_URLS: dict = {
         },
         DeviceType.CAMERA_SD: {
             "relationshipId": "video/sd-card-camera",
-            "endpoint": "{}web/api/video/sdCardCameras/{}",
+            "endpoint": "{}web/api/video/devices/sdCardCameras/{}",
         },
         DeviceType.CAR_MONITOR: {
             "relationshipId": "devices/car-monitor",

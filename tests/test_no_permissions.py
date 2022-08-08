@@ -35,7 +35,7 @@ async def test___async_get_and_build_devices__cameras(
 
 @pytest.mark.asyncio  # type: ignore
 async def test___async_update__no_permissions(
-    all_base_ok_responses: pytest.fixture,
+    all_base_ok_camera_403: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
@@ -51,4 +51,4 @@ async def test___async_update__no_permissions(
     assert adc_client.image_sensors
     assert adc_client.lights
     assert adc_client.thermostats
-    assert adc_client.cameras
+    assert not adc_client.cameras
