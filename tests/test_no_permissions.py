@@ -3,7 +3,6 @@
 # pylint: disable=protected-access
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.devices import DeviceType
 import pytest
 
 
