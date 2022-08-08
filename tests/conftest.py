@@ -70,13 +70,13 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         body=get_http_body_json("sensor_ok"),
     )
 
-    response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
-        status=200,
-        body=get_http_body_json("camera_ok"),
-    )
+    # response_mocker.get(
+    #     url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
+    #         c.URL_BASE, ""
+    #     ),
+    #     status=200,
+    #     body=get_http_body_json("camera_ok"),
+    # )
 
     response_mocker.get(
         url=DEVICE_URLS["supported"][DeviceType.GARAGE_DOOR]["endpoint"].format(
@@ -173,14 +173,14 @@ def skybell_missing_video_quality_field(response_mocker: aioresponses) -> None:
     )
 
 
-@pytest.fixture  # type: ignore
-def camera_no_permissions(response_mocker: aioresponses) -> None:
-    """Shortcut for including all mocked success responses."""
+# @pytest.fixture  # type: ignore
+# def camera_no_permissions(response_mocker: aioresponses) -> None:
+#     """Shortcut for including all mocked success responses."""
 
-    response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
-        status=200,
-        body=get_http_body_json("camera_no_permissions"),
-    )
+#     response_mocker.get(
+#         url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
+#             c.URL_BASE, ""
+#         ),
+#         status=200,
+#         body=get_http_body_json("camera_no_permissions"),
+#     )
