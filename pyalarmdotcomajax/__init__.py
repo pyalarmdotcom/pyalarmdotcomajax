@@ -37,7 +37,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.4.5-beta.0"
+__version__ = "0.4.6-beta"
 
 
 log = logging.getLogger(__name__)
@@ -872,7 +872,10 @@ class AlarmController:
 
     # Takes EITHER url (without base) or device_type.
     async def _async_get_items_and_subordinates(
-        self, device_type: DeviceType | None = None, url: str | None = None
+        self,
+        device_type: DeviceType | None = None,
+        url: str | None = None,
+        retry_on_failure: bool = True,
     ) -> list:
         """Get attributes, metadata, and child devices for an ADC device class."""
 
@@ -936,13 +939,27 @@ class AlarmController:
                 # All requests for those device types will return 403.
                 #
                 # On some providers, 403 may mean that the user has been logged out.
-                # For now, we'll ignore this case.
+                # Try logging in again, then give up by pretending that we couldn't find any devices of this type.
 
-                log.debug(
-                    "Got 403 status when fetching data for device type %s.", device_type
+                log.error("Error fetching data from Alarm.com.")
+
+                if not retry_on_failure:
+                    log.debug(
+                        "Got 403 status when fetching data for device type %s. Logging"
+                        " in again didn't help.",
+                        device_type,
+                    )
+
+                    return list([])
+
+                log.error("Trying to refresh auth tokens by logging in again.")
+
+                await self.async_login()
+
+                return await self._async_get_items_and_subordinates(
+                    device_type=device_type,
+                    retry_on_failure=False,
                 )
-
-                return list([])
 
             if (
                 rsp_errors[0].get("status") == "409"
