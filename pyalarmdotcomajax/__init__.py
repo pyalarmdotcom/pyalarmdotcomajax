@@ -390,7 +390,7 @@ class AlarmController:
                 and (msg_body.get("forceBypass") is True)
             ):
                 # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
-                log.warning(
+                log.debug(
                     "Error executing %s, trying again without force bypass...",
                     event.value,
                 )
