@@ -562,7 +562,7 @@ class AlarmController:
                 # Indicates fatal account error.
                 raise PermissionError from err
 
-            except DataFetchFailed as err:
+            except DataFetchFailed:
                 log.error(
                     "Encountered data error while fetching %ss. Skipping this device"
                     " type.",
