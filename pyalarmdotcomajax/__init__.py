@@ -37,7 +37,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.4.6"
+__version__ = "0.4.7"
 
 log = logging.getLogger(__name__)
 
@@ -96,8 +96,6 @@ class AlarmController:
     LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
     LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
     LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
-
-    IDENTITIES_2FA_NAG_URL_TEMPLATE = "{}system-install/api/identity"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
@@ -1079,7 +1077,10 @@ class AlarmController:
                     raise AuthenticationFailed("Invalid username and password.")
 
                 # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.
-                if re.search("system-install", str(resp.url)) is not None:
+                if (
+                    re.search("concurrent-two-factor-authentication", str(resp.url))
+                    is not None
+                ):
                     raise NagScreen("Encountered 2FA nag screen.")
 
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value

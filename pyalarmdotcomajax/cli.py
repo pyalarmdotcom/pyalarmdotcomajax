@@ -584,6 +584,6 @@ def main() -> None:
     if platform.system() == "Windows" and hasattr(
         asyncio, "WindowsSelectorEventLoopPolicy"
     ):
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # type: ignore
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     asyncio.run(cli())
