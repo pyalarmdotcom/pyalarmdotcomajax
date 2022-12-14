@@ -56,9 +56,18 @@
                     }
                 },
                 "garageDoors": {
-                    "data": [],
+                    "data": [
+                        {
+                            "id": "555555555-31",
+                            "type": "devices/garage-door"
+                        },
+                        {
+                            "id": "555555555-32",
+                            "type": "devices/garage-door"
+                        }
+                    ],
                     "meta": {
-                        "count": "0"
+                        "count": "2"
                     }
                 },
                 "waterValves": {
@@ -242,9 +251,18 @@
                     }
                 },
                 "gates": {
-                    "data": [],
+                    "data": [
+                        {
+                            "id": "555555555-33",
+                            "type": "devices/gate"
+                        },
+                        {
+                            "id": "555555555-34",
+                            "type": "devices/gate"
+                        }
+                    ],
                     "meta": {
-                        "count": "0"
+                        "count": "2"
                     }
                 },
                 "switches": {

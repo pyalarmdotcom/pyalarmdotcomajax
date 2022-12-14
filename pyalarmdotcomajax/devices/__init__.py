@@ -35,6 +35,7 @@ class DeviceType(ExtendedEnumMixin):
 
     # Supported
     GARAGE_DOOR = "garageDoors"
+    GATE = "gates"
     IMAGE_SENSOR = "imageSensors"
     LIGHT = "lights"
     LOCK = "locks"
@@ -51,7 +52,6 @@ class DeviceType(ExtendedEnumMixin):
     COMMERCIAL_TEMP = "commercialTemperatureSensors"
     # CONFIGURATION = "configuration"
     # FENCE = "fences"
-    GATE = "gates"
     GEO_DEVICE = "geoDevices"
     IQ_ROUTER = "iqRouters"
     REMOTE_TEMP = "remoteTemperatureSensors"
@@ -76,6 +76,10 @@ DEVICE_URLS: dict = {
         DeviceType.GARAGE_DOOR: {
             "relationshipId": "devices/garage-door",
             "endpoint": "{}web/api/devices/garageDoors/{}",
+        },
+        DeviceType.GATE: {
+            "relationshipId": "devices/gate",
+            "endpoint": "{}web/api/devices/gates/{}",
         },
         DeviceType.IMAGE_SENSOR: {
             "relationshipId": "image-sensor/image-sensor",
@@ -136,10 +140,6 @@ DEVICE_URLS: dict = {
         #     "relationshipId": "",
         #     "endpoint": "{}web/api/geolocation/fences/{}",
         # },
-        DeviceType.GATE: {
-            "relationshipId": "devices/gate",
-            "endpoint": "{}web/api/devices/gates/{}",
-        },
         DeviceType.GEO_DEVICE: {
             "relationshipId": "geolocation/geo-device",
             "endpoint": "{}web/api/geolocation/geoDevices/{}",

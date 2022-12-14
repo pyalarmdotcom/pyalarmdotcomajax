@@ -114,6 +114,36 @@
                         "count": "1"
                     }
                 },
+                "garageDoors": {
+                    "data": [
+                        {
+                            "id": "555555555-31",
+                            "type": "devices/garage-door"
+                        },
+                        {
+                            "id": "555555555-32",
+                            "type": "devices/garage-door"
+                        }
+                    ],
+                    "meta": {
+                        "count": "2"
+                    }
+                },
+                "gates": {
+                    "data": [
+                        {
+                            "id": "555555555-33",
+                            "type": "devices/gate"
+                        },
+                        {
+                            "id": "555555555-34",
+                            "type": "devices/gate"
+                        }
+                    ],
+                    "meta": {
+                        "count": "2"
+                    }
+                },
                 "thermostats": {
                     "data": [
                         {

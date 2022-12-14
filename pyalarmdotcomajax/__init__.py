@@ -20,6 +20,7 @@ from .devices import ElementSpecificData
 from .devices import TroubleCondition
 from .devices.camera import Camera
 from .devices.garage_door import GarageDoor
+from .devices.gate import Gate
 from .devices.image_sensor import ImageSensor
 from .devices.light import Light
 from .devices.lock import Lock
@@ -37,7 +38,7 @@ from .extensions import CameraSkybellControllerExtension
 from .extensions import ConfigurationOption
 from .extensions import ExtendedProperties
 
-__version__ = "0.4.7"
+__version__ = "0.4.8"
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ log = logging.getLogger(__name__)
 DEVICE_CLASSES: dict = {
     DeviceType.CAMERA: Camera,
     DeviceType.GARAGE_DOOR: GarageDoor,
+    DeviceType.GATE: Gate,
     DeviceType.IMAGE_SENSOR: ImageSensor,
     DeviceType.LIGHT: Light,
     DeviceType.LOCK: Lock,
@@ -146,6 +148,7 @@ class AlarmController:
         self.sensors: list[Sensor] = []
         self.locks: list[Lock] = []
         self.garage_doors: list[GarageDoor] = []
+        self.gates: list[Gate] = []
         self.image_sensors: list[ImageSensor] = []
         self.lights: list[Light] = []
         self.cameras: list[Camera] = []
@@ -346,6 +349,7 @@ class AlarmController:
         event: Lock.Command
         | Partition.Command
         | GarageDoor.Command
+        | Gate.Command
         | Light.Command
         | ImageSensor.Command
         | Thermostat.Command,
@@ -509,6 +513,7 @@ class AlarmController:
             *self.sensors,
             *self.locks,
             *self.garage_doors,
+            *self.gates,
             *self.image_sensors,
             *self.lights,
             *self.cameras,
@@ -723,6 +728,8 @@ class AlarmController:
                 self.sensors[:] = temp_device_storage
             elif device_class is GarageDoor:
                 self.garage_doors[:] = temp_device_storage
+            elif device_class is Gate:
+                self.gates[:] = temp_device_storage
             elif device_class is Lock:
                 self.locks[:] = temp_device_storage
             elif device_class is Light:
