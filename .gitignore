@@ -155,3 +155,4 @@ test.py
 *.ignore.*
 temp/
 node_modules/
+hassfest/

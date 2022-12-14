@@ -67,7 +67,7 @@
                         }
                     ],
                     "meta": {
-                        "count": "2"
+                        "count": "1"
                     }
                 },
                 "waterValves": {
@@ -255,14 +255,10 @@
                         {
                             "id": "555555555-33",
                             "type": "devices/gate"
-                        },
-                        {
-                            "id": "555555555-34",
-                            "type": "devices/gate"
                         }
                     ],
                     "meta": {
-                        "count": "2"
+                        "count": "1"
                     }
                 },
                 "switches": {
