@@ -3,7 +3,6 @@
 import asyncio
 
 import aiohttp
-
 from pyalarmdotcomajax import AlarmController
 
 USERNAME = "ENTER YOUR USERNAME"
