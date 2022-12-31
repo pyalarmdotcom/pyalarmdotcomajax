@@ -360,7 +360,7 @@ def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
         status=200,
         body=get_http_body_json("gate_ok"),
     )
-    
+
     response_mocker.get(
         url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
             c.URL_BASE, ""

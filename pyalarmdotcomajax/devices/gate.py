@@ -1,10 +1,10 @@
 """Alarm.com gate."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum
 import logging
 
-from dataclasses import dataclass
 from . import BaseDevice
 from . import DesiredStateMixin
 from . import DeviceType
@@ -56,7 +56,10 @@ class Gate(DesiredStateMixin, BaseDevice):
     async def async_close(self) -> None:
         """Send close command."""
 
-        if not self.attributes.supports_remote_close:
+        if (
+            hasattr(self.attributes, "supports_remote_close")
+            and not self.attributes.supports_remote_close
+        ):
             raise NotImplementedError("Gate does not support remote close.")
 
         await self._send_action_callback(
