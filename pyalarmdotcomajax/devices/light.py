@@ -1,8 +1,8 @@
 """Alarm.com light."""
 from __future__ import annotations
 
-import logging
 from enum import Enum
+import logging
 
 from . import BaseDevice, DesiredStateMixin, DeviceType
 
