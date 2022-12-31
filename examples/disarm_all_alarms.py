@@ -5,10 +5,11 @@
 # #
 
 import asyncio
-from multiprocessing import AuthenticationError
 import sys
+from multiprocessing import AuthenticationError
 
 import aiohttp
+
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices.partition import Partition
 
@@ -22,7 +23,6 @@ TWOFACTOR = (  # Required if two factor authentication is enabled on your accoun
 async def main() -> None:
     """Request Alarm.com sensor data."""
     async with aiohttp.ClientSession() as session:
-
         alarm = AlarmController(
             username=USERNAME,
             password=PASSWORD,
