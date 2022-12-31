@@ -4,6 +4,7 @@ import asyncio
 import sys
 
 import aiohttp
+
 from pyalarmdotcomajax import AlarmController, AuthResult
 from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 

@@ -2,9 +2,10 @@
 
 # pylint: disable=protected-access
 
+import pytest
+
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices import DeviceType
-import pytest
 
 
 @pytest.mark.asyncio  # type: ignore
