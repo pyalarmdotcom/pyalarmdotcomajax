@@ -2,20 +2,21 @@
 from __future__ import annotations
 
 import asyncio
-from enum import Enum
 import json
 import logging
 import re
+from enum import Enum
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
+
 from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
 from .devices import (
-    BaseDevice,
     DEVICE_URLS,
+    BaseDevice,
     DeviceType,
     ElementSpecificData,
     TroubleCondition,
