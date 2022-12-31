@@ -8,13 +8,15 @@ from __future__ import annotations
 import argparse
 import asyncio
 import dataclasses
-from enum import Enum
 import logging
 import platform
 import sys
+from enum import Enum
 from typing import Any
 
 import aiohttp
+from termcolor import colored, cprint
+
 import pyalarmdotcomajax
 from pyalarmdotcomajax import AlarmController, AuthResult
 from pyalarmdotcomajax.errors import (
@@ -26,9 +28,8 @@ from pyalarmdotcomajax.errors import (
 )
 from pyalarmdotcomajax.extensions import ConfigurationOption
 from pyalarmdotcomajax.helpers import ExtendedEnumMixin, slug_to_title
-from termcolor import colored, cprint
 
-from .devices import BaseDevice, DEVICE_URLS, DeviceType
+from .devices import DEVICE_URLS, BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
 from .devices.system import System
