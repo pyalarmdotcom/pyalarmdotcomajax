@@ -8,30 +8,28 @@ from __future__ import annotations
 import argparse
 import asyncio
 import dataclasses
-from enum import Enum
 import logging
 import platform
 import sys
+from enum import Enum
 from typing import Any
 
 import aiohttp
-import pyalarmdotcomajax
-from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax import AuthResult
-from pyalarmdotcomajax.errors import AuthenticationFailed
-from pyalarmdotcomajax.errors import DataFetchFailed
-from pyalarmdotcomajax.errors import InvalidConfigurationOption
-from pyalarmdotcomajax.errors import NagScreen
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
-from pyalarmdotcomajax.extensions import ConfigurationOption
-from pyalarmdotcomajax.helpers import ExtendedEnumMixin
-from pyalarmdotcomajax.helpers import slug_to_title
-from termcolor import colored
-from termcolor import cprint
+from termcolor import colored, cprint
 
-from .devices import BaseDevice
-from .devices import DEVICE_URLS
-from .devices import DeviceType
+import pyalarmdotcomajax
+from pyalarmdotcomajax import AlarmController, AuthResult
+from pyalarmdotcomajax.errors import (
+    AuthenticationFailed,
+    DataFetchFailed,
+    InvalidConfigurationOption,
+    NagScreen,
+    UnexpectedDataStructure,
+)
+from pyalarmdotcomajax.extensions import ConfigurationOption
+from pyalarmdotcomajax.helpers import ExtendedEnumMixin, slug_to_title
+
+from .devices import DEVICE_URLS, BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
 from .devices.system import System
@@ -223,8 +221,10 @@ async def cli() -> None:
             login_result = await alarm.async_login()
         except NagScreen:
             cprint(
-                "Unable to log in. Please set up two-factor authentication for this"
-                " account.",
+                (
+                    "Unable to log in. Please set up two-factor authentication for this"
+                    " account."
+                ),
                 "red",
             )
             sys.exit()
@@ -244,16 +244,20 @@ async def cli() -> None:
                 )
             else:
                 cprint(
-                    "Not enough information provided to make a decision regarding"
-                    " two-factor authentication.",
+                    (
+                        "Not enough information provided to make a decision regarding"
+                        " two-factor authentication."
+                    ),
                     "red",
                 )
                 sys.exit()
 
         if login_result == AuthResult.ENABLE_TWO_FACTOR:
             cprint(
-                "Unable to log in. Please set up two-factor authentication for this"
-                " account.",
+                (
+                    "Unable to log in. Please set up two-factor authentication for this"
+                    " account."
+                ),
                 "red",
             )
             sys.exit()
@@ -343,8 +347,10 @@ async def cli() -> None:
                 config_option: ConfigurationOption = device.settings[setting_slug]
             except KeyError:
                 cprint(
-                    f"{device.name} ({device_id}) does not have the setting"
-                    f" {setting_slug}.",
+                    (
+                        f"{device.name} ({device_id}) does not have the setting"
+                        f" {setting_slug}."
+                    ),
                     "red",
                 )
                 sys.exit(0)
@@ -369,8 +375,10 @@ async def cli() -> None:
                     typed_new_value = config_option_type.enum_from_key(new_value)
                 except ValueError:
                     cprint(
-                        f"Acceptable valures for {setting_slug} are:"
-                        f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}",
+                        (
+                            f"Acceptable valures for {setting_slug} are:"
+                            f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}"
+                        ),
                         "red",
                     )
                     sys.exit(0)
@@ -414,8 +422,10 @@ async def cli() -> None:
 
             if str(reported_value).upper() == str(new_value).upper():
                 cprint(
-                    f"{config_option.name} was successfully changed to"
-                    f" {new_value} for {device.name}.",
+                    (
+                        f"{config_option.name} was successfully changed to"
+                        f" {new_value} for {device.name}."
+                    ),
                     "green",
                 )
             else:
@@ -447,8 +457,10 @@ async def _async_machine_output(
         cprint("Connection error.", "red")
     except AuthenticationFailed:
         cprint(
-            "Authentication error. Check that your two factor authentication cookie is"
-            " correct.",
+            (
+                "Authentication error. Check that your two factor authentication cookie"
+                " is correct."
+            ),
             "red",
         )
 
