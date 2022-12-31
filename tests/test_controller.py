@@ -5,11 +5,10 @@
 import json
 
 import aiohttp
-import pytest
 from deepdiff import DeepDiff
-
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices import DeviceType
+import pytest
 from tests.responses import get_http_body_json
 
 
