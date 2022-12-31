@@ -1,17 +1,16 @@
 """Configuration option extensions."""
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import asyncio
+from dataclasses import dataclass
+from enum import auto, Enum
 import logging
 import re
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from enum import Enum, auto
 from typing import Any
 
 import aiohttp
 from bs4 import BeautifulSoup, Tag
-
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 
