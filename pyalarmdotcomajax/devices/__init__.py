@@ -2,15 +2,17 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Protocol, TypedDict, final
+import logging
+from typing import Any, final, Protocol, TypedDict
 
 import aiohttp
-
-from pyalarmdotcomajax.errors import InvalidConfigurationOption, UnexpectedDataStructure
+from pyalarmdotcomajax.errors import (
+    InvalidConfigurationOption,
+    UnexpectedDataStructure,
+)
 from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
