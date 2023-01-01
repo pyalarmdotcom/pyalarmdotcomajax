@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from bs4 import Tag
+
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 
 log = logging.getLogger(__name__)

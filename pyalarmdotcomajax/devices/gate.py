@@ -5,9 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 
-from . import BaseDevice
-from . import DesiredStateMixin
-from . import DeviceType
+from . import BaseDevice, DesiredStateMixin, DeviceType
 
 log = logging.getLogger(__name__)
 

@@ -9,6 +9,7 @@ from multiprocessing import AuthenticationError
 import sys
 
 import aiohttp
+
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices.partition import Partition
 
