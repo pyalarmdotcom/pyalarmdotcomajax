@@ -481,7 +481,7 @@ class BaseDevice:
     def desired_state(self) -> Enum | None:
         """Return state. To be overridden by children."""
 
-    def process_element_specific_data(self) -> None:  # pylint: disable=no-self-use
+    def process_element_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""
 
         return None
@@ -491,10 +491,8 @@ class BaseDevice:
 
         if not self._config_change_callback:
             log.error(
-                (
-                    "async_change_setting called for %s, which does not have a"
-                    " config_change_callback set."
-                ),
+                "async_change_setting called for %s, which does not have a"
+                " config_change_callback set.",
                 self.name,
             )
             return
@@ -508,10 +506,8 @@ class BaseDevice:
             raise InvalidConfigurationOption
 
         log.debug(
-            (
-                "BaseDevice -> async_change_setting: Calling change setting function"
-                " for %s %s (%s) via extension %s."
-            ),
+            "BaseDevice -> async_change_setting: Calling change setting function"
+            " for %s %s (%s) via extension %s.",
             type(self).__name__,
             self.name,
             self.id_,

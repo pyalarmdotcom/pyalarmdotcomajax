@@ -567,10 +567,8 @@ class AlarmController:
 
             except DataFetchFailed:
                 log.error(
-                    (
-                        "Encountered data error while fetching %ss. Skipping this"
-                        " device type."
-                    ),
+                    "Encountered data error while fetching %ss. Skipping this"
+                    " device type.",
                     device_type.name,
                 )
 
@@ -861,10 +859,8 @@ class AlarmController:
 
         except aiohttp.ContentTypeError as err:
             log.error(
-                (
-                    "Server returned wrong content type. Response: %s\n\nResponse"
-                    " Text:\n\n%s\n\n"
-                ),
+                "Server returned wrong content type. Response: %s\n\nResponse"
+                " Text:\n\n%s\n\n",
                 resp,
                 resp.text(),
             )
@@ -931,11 +927,9 @@ class AlarmController:
 
             if rsp_errors[0].get("status") == "423":
                 log.debug(
-                    (
-                        "Error fetching data from Alarm.com. This account either"
-                        " doesn't have permission to %s, is on a plan that does not"
-                        " support %s, or is part of a system with %s turned off."
-                    ),
+                    "Error fetching data from Alarm.com. This account either"
+                    " doesn't have permission to %s, is on a plan that does not"
+                    " support %s, or is part of a system with %s turned off.",
                     device_type,
                     device_type,
                     device_type,
@@ -955,10 +949,8 @@ class AlarmController:
 
                 if not retry_on_failure:
                     log.debug(
-                        (
-                            "Got 403 status when fetching data for device type %s."
-                            " Logging in again didn't help."
-                        ),
+                        "Got 403 status when fetching data for device type %s."
+                        " Logging in again didn't help.",
                         device_type,
                     )
 

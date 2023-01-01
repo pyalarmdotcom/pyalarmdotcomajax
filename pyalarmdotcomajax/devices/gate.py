@@ -57,7 +57,8 @@ class Gate(DesiredStateMixin, BaseDevice):
         """Send close command."""
 
         if (
-            hasattr(self.attributes, "supports_remote_close")
+            self.attributes is not None
+            and hasattr(self.attributes, "supports_remote_close")
             and not self.attributes.supports_remote_close
         ):
             raise NotImplementedError("Gate does not support remote close.")
