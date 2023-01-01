@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from . import BaseDevice
-from . import DesiredStateMixin
+from . import BaseDevice, DesiredStateMixin
 
 log = logging.getLogger(__name__)
 

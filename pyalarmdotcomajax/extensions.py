@@ -1,24 +1,21 @@
 """Configuration option extensions."""
 from __future__ import annotations
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import asyncio
 from dataclasses import dataclass
-from enum import auto
-from enum import Enum
+from enum import Enum, auto
 import logging
 import re
 from typing import Any
 
 import aiohttp
-from bs4 import BeautifulSoup
-from bs4 import Tag
+from bs4 import BeautifulSoup, Tag
+
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 
-from .helpers import ExtendedEnumMixin
-from .helpers import extract_field_value
+from .helpers import ExtendedEnumMixin, extract_field_value
 
 log = logging.getLogger(__name__)
 
