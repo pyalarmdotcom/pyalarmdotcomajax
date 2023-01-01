@@ -1,20 +1,24 @@
 """Configuration option extensions."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 import asyncio
 from dataclasses import dataclass
-from enum import auto, Enum
+from enum import auto
+from enum import Enum
 import logging
 import re
 from typing import Any
 
 import aiohttp
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
+from bs4 import Tag
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 
-from .helpers import ExtendedEnumMixin, extract_field_value
+from .helpers import ExtendedEnumMixin
+from .helpers import extract_field_value
 
 log = logging.getLogger(__name__)
 
@@ -549,9 +553,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         return camera_return_data.settings[slug]
 
-    def _build_submit_payload(  # pylint: disable = no-self-use
-        self, response_data: dict
-    ) -> dict:
+    def _build_submit_payload(self, response_data: dict) -> dict:
         """Build POST for new setting submission or for getting other camera data."""
 
         # Pre-populate static fields.
@@ -591,9 +593,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         try:
             for field_name in self._FORM_FIELDS_BYPASSABLE:
-                field = tree.find(attrs={"name": field_name})
-
-                if not field:
+                if not (field := tree.find(attrs={"name": field_name})):
                     raw_attribs[field_name] = ""
                 else:
                     try:

@@ -6,17 +6,16 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Any, final, Protocol, TypedDict
+from typing import Any
+from typing import final
+from typing import Protocol
+from typing import TypedDict
 
 import aiohttp
-from pyalarmdotcomajax.errors import (
-    InvalidConfigurationOption,
-    UnexpectedDataStructure,
-)
-from pyalarmdotcomajax.extensions import (
-    CameraSkybellControllerExtension,
-    ConfigurationOption,
-)
+from pyalarmdotcomajax.errors import InvalidConfigurationOption
+from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
+from pyalarmdotcomajax.extensions import ConfigurationOption
 from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
@@ -482,7 +481,7 @@ class BaseDevice:
     def desired_state(self) -> Enum | None:
         """Return state. To be overridden by children."""
 
-    def process_element_specific_data(self) -> None:  # pylint: disable=no-self-use
+    def process_element_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""
 
         return None

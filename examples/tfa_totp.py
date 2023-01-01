@@ -4,8 +4,10 @@ import asyncio
 import sys
 
 import aiohttp
-from pyalarmdotcomajax import AlarmController, AuthResult
-from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax import AuthResult
+from pyalarmdotcomajax.errors import AuthenticationFailed
+from pyalarmdotcomajax.errors import DataFetchFailed
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -32,9 +34,8 @@ async def main() -> None:
 
             if login_result == AuthResult.OTP_REQUIRED:
                 print("Two factor authentication is enabled for this user.")
-                code = input("Enter One-Time Password: ")
 
-                if not code:
+                if not (code := input("Enter One-Time Password: ")):
                     sys.exit("Requested OTP was not entered.")
 
                 await alarm.async_submit_otp(code=code)
