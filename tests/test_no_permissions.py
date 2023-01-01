@@ -39,7 +39,8 @@ async def test___async_update__no_permissions(
     all_extension_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
-    """Test that 403 for one device type doesn't impede downstream device types from loading."""
+    """Test that 403 for one device type doesn't impede downstream device types from loading.
+    """
 
     await adc_client.async_update()
 
@@ -60,7 +61,8 @@ async def test___async_update__invalid_endpoint(
     all_extension_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
-    """Test that 403 for one device type doesn't impede downstream device types from loading."""
+    """Test that 403 for one device type doesn't impede downstream device types from loading.
+    """
 
     await adc_client.async_update()
 

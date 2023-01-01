@@ -13,11 +13,13 @@ from bs4 import BeautifulSoup
 from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
-from .devices import BaseDevice
-from .devices import DEVICE_URLS
-from .devices import DeviceType
-from .devices import ElementSpecificData
-from .devices import TroubleCondition
+from .devices import (
+    BaseDevice,
+    DEVICE_URLS,
+    DeviceType,
+    ElementSpecificData,
+    TroubleCondition,
+)
 from .devices.camera import Camera
 from .devices.garage_door import GarageDoor
 from .devices.gate import Gate
@@ -28,15 +30,19 @@ from .devices.partition import Partition
 from .devices.sensor import Sensor
 from .devices.system import System
 from .devices.thermostat import Thermostat
-from .errors import AuthenticationFailed
-from .errors import BadAccount
-from .errors import DataFetchFailed
-from .errors import NagScreen
-from .errors import UnexpectedDataStructure
-from .errors import UnsupportedDevice
-from .extensions import CameraSkybellControllerExtension
-from .extensions import ConfigurationOption
-from .extensions import ExtendedProperties
+from .errors import (
+    AuthenticationFailed,
+    BadAccount,
+    DataFetchFailed,
+    NagScreen,
+    UnexpectedDataStructure,
+    UnsupportedDevice,
+)
+from .extensions import (
+    CameraSkybellControllerExtension,
+    ConfigurationOption,
+    ExtendedProperties,
+)
 
 __version__ = "0.4.8-beta"
 
@@ -567,8 +573,10 @@ class AlarmController:
 
             except DataFetchFailed:
                 log.error(
-                    "Encountered data error while fetching %ss. Skipping this device"
-                    " type.",
+                    (
+                        "Encountered data error while fetching %ss. Skipping this"
+                        " device type."
+                    ),
                     device_type.name,
                 )
 
@@ -859,8 +867,10 @@ class AlarmController:
 
         except aiohttp.ContentTypeError as err:
             log.error(
-                "Server returned wrong content type. Response: %s\n\nResponse"
-                " Text:\n\n%s\n\n",
+                (
+                    "Server returned wrong content type. Response: %s\n\nResponse"
+                    " Text:\n\n%s\n\n"
+                ),
                 resp,
                 resp.text(),
             )
@@ -927,9 +937,11 @@ class AlarmController:
 
             if rsp_errors[0].get("status") == "423":
                 log.debug(
-                    "Error fetching data from Alarm.com. This account either doesn't"
-                    " have permission to %s, is on a plan that does not support %s, or"
-                    " is part of a system with %s turned off.",
+                    (
+                        "Error fetching data from Alarm.com. This account either"
+                        " doesn't have permission to %s, is on a plan that does not"
+                        " support %s, or is part of a system with %s turned off."
+                    ),
                     device_type,
                     device_type,
                     device_type,
@@ -949,8 +961,10 @@ class AlarmController:
 
                 if not retry_on_failure:
                     log.debug(
-                        "Got 403 status when fetching data for device type %s. Logging"
-                        " in again didn't help.",
+                        (
+                            "Got 403 status when fetching data for device type %s."
+                            " Logging in again didn't help."
+                        ),
                         device_type,
                     )
 

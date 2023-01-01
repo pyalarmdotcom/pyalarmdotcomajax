@@ -55,3 +55,4 @@ no_header = false
 black-line-length = 88
 keep-unused-type-checking = true
 application-import-names = ["pyalarmdotcomajax"]
+multi-imports = true

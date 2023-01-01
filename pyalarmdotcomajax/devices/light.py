@@ -4,9 +4,7 @@ from __future__ import annotations
 from enum import Enum
 import logging
 
-from . import BaseDevice
-from . import DesiredStateMixin
-from . import DeviceType
+from . import BaseDevice, DesiredStateMixin, DeviceType
 
 log = logging.getLogger(__name__)
 
@@ -67,8 +65,7 @@ class Light(DesiredStateMixin, BaseDevice):
 
         msg_body: dict | None = None
         if brightness:
-            msg_body = {}
-            msg_body["dimmerLevel"] = brightness
+            msg_body = {"dimmerLevel": brightness}
 
         await self._send_action_callback(
             device_type=DeviceType.LIGHT,
