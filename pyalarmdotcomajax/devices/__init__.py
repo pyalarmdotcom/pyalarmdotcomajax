@@ -490,10 +490,8 @@ class BaseDevice:
 
         if not self._config_change_callback:
             log.error(
-                (
-                    "async_change_setting called for %s, which does not have a"
-                    " config_change_callback set."
-                ),
+                "async_change_setting called for %s, which does not have a"
+                " config_change_callback set.",
                 self.name,
             )
             return
@@ -507,10 +505,8 @@ class BaseDevice:
             raise InvalidConfigurationOption
 
         log.debug(
-            (
-                "BaseDevice -> async_change_setting: Calling change setting function"
-                " for %s %s (%s) via extension %s."
-            ),
+            "BaseDevice -> async_change_setting: Calling change setting function"
+            " for %s %s (%s) via extension %s.",
             type(self).__name__,
             self.name,
             self.id_,
