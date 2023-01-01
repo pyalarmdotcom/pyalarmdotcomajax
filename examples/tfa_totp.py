@@ -4,10 +4,9 @@ import asyncio
 import sys
 
 import aiohttp
-from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax import AuthResult
-from pyalarmdotcomajax.errors import AuthenticationFailed
-from pyalarmdotcomajax.errors import DataFetchFailed
+
+from pyalarmdotcomajax import AlarmController, AuthResult
+from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"

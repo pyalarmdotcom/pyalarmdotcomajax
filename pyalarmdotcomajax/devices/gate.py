@@ -1,13 +1,11 @@
 """Alarm.com gate."""
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum
-import logging
 
-from . import BaseDevice
-from . import DesiredStateMixin
-from . import DeviceType
+from . import BaseDevice, DesiredStateMixin, DeviceType
 
 log = logging.getLogger(__name__)
 

@@ -2,20 +2,19 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-import logging
-from typing import Any
-from typing import final
-from typing import Protocol
-from typing import TypedDict
+from typing import Any, Protocol, TypedDict, final
 
 import aiohttp
-from pyalarmdotcomajax.errors import InvalidConfigurationOption
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
-from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
-from pyalarmdotcomajax.extensions import ConfigurationOption
+
+from pyalarmdotcomajax.errors import InvalidConfigurationOption, UnexpectedDataStructure
+from pyalarmdotcomajax.extensions import (
+    CameraSkybellControllerExtension,
+    ConfigurationOption,
+)
 from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
@@ -491,8 +490,10 @@ class BaseDevice:
 
         if not self._config_change_callback:
             log.error(
-                "async_change_setting called for %s, which does not have a"
-                " config_change_callback set.",
+                (
+                    "async_change_setting called for %s, which does not have a"
+                    " config_change_callback set."
+                ),
                 self.name,
             )
             return
@@ -506,8 +507,10 @@ class BaseDevice:
             raise InvalidConfigurationOption
 
         log.debug(
-            "BaseDevice -> async_change_setting: Calling change setting function"
-            " for %s %s (%s) via extension %s.",
+            (
+                "BaseDevice -> async_change_setting: Calling change setting function"
+                " for %s %s (%s) via extension %s."
+            ),
             type(self).__name__,
             self.name,
             self.id_,

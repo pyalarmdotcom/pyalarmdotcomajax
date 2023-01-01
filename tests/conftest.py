@@ -2,20 +2,18 @@
 
 # pylint: disable = redefined-outer-name
 
-from collections.abc import AsyncGenerator
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 
 import aiohttp
+import pytest
 from aioresponses import aioresponses
+
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax import const as c
-from pyalarmdotcomajax.devices import DEVICE_URLS
-from pyalarmdotcomajax.devices import DeviceType
+from pyalarmdotcomajax.devices import DEVICE_URLS, DeviceType
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
-import pytest
 
-from .responses import get_http_body_html
-from .responses import get_http_body_json
+from .responses import get_http_body_html, get_http_body_json
 
 
 @pytest.fixture  # type: ignore
