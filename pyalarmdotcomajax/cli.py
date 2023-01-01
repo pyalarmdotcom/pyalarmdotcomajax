@@ -221,8 +221,10 @@ async def cli() -> None:
             login_result = await alarm.async_login()
         except NagScreen:
             cprint(
-                "Unable to log in. Please set up two-factor authentication for this"
-                " account.",
+                (
+                    "Unable to log in. Please set up two-factor authentication for this"
+                    " account."
+                ),
                 "red",
             )
             sys.exit()
@@ -242,16 +244,20 @@ async def cli() -> None:
                 )
             else:
                 cprint(
-                    "Not enough information provided to make a decision regarding"
-                    " two-factor authentication.",
+                    (
+                        "Not enough information provided to make a decision regarding"
+                        " two-factor authentication."
+                    ),
                     "red",
                 )
                 sys.exit()
 
         if login_result == AuthResult.ENABLE_TWO_FACTOR:
             cprint(
-                "Unable to log in. Please set up two-factor authentication for this"
-                " account.",
+                (
+                    "Unable to log in. Please set up two-factor authentication for this"
+                    " account."
+                ),
                 "red",
             )
             sys.exit()
@@ -341,8 +347,10 @@ async def cli() -> None:
                 config_option: ConfigurationOption = device.settings[setting_slug]
             except KeyError:
                 cprint(
-                    f"{device.name} ({device_id}) does not have the setting"
-                    f" {setting_slug}.",
+                    (
+                        f"{device.name} ({device_id}) does not have the setting"
+                        f" {setting_slug}."
+                    ),
                     "red",
                 )
                 sys.exit(0)
@@ -367,8 +375,10 @@ async def cli() -> None:
                     typed_new_value = config_option_type.enum_from_key(new_value)
                 except ValueError:
                     cprint(
-                        f"Acceptable valures for {setting_slug} are:"
-                        f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}",
+                        (
+                            f"Acceptable valures for {setting_slug} are:"
+                            f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}"
+                        ),
                         "red",
                     )
                     sys.exit(0)
@@ -412,8 +422,10 @@ async def cli() -> None:
 
             if str(reported_value).upper() == str(new_value).upper():
                 cprint(
-                    f"{config_option.name} was successfully changed to"
-                    f" {new_value} for {device.name}.",
+                    (
+                        f"{config_option.name} was successfully changed to"
+                        f" {new_value} for {device.name}."
+                    ),
                     "green",
                 )
             else:
@@ -445,8 +457,10 @@ async def _async_machine_output(
         cprint("Connection error.", "red")
     except AuthenticationFailed:
         cprint(
-            "Authentication error. Check that your two factor authentication cookie"
-            " is correct.",
+            (
+                "Authentication error. Check that your two factor authentication cookie"
+                " is correct."
+            ),
             "red",
         )
 
