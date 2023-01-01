@@ -1,14 +1,15 @@
 """Alarm.com image sensor."""
 from __future__ import annotations
 
-import logging
 from datetime import datetime
 from enum import Enum
+import logging
 from typing import TypedDict
 
 from dateutil import parser
 
-from . import BaseDevice, DeviceType
+from . import BaseDevice
+from . import DeviceType
 
 log = logging.getLogger(__name__)
 

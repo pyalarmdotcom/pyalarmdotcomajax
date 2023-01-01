@@ -1,13 +1,10 @@
 """Test device extensions."""
 
 import aiohttp
-import pytest
-
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.extensions import (
-    CameraSkybellControllerExtension,
-    ExtendedProperties,
-)
+from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
+from pyalarmdotcomajax.extensions import ExtendedProperties
+import pytest
 
 
 @pytest.mark.asyncio  # type: ignore

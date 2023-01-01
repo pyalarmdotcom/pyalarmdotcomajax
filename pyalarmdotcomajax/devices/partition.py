@@ -1,10 +1,12 @@
 """Alarm.com partition."""
 from __future__ import annotations
 
-import logging
 from enum import Enum
+import logging
 
-from . import BaseDevice, DesiredStateMixin, DeviceType
+from . import BaseDevice
+from . import DesiredStateMixin
+from . import DeviceType
 
 log = logging.getLogger(__name__)
 
