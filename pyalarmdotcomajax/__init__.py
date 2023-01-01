@@ -23,6 +23,7 @@ from .devices import (
 )
 from .devices.camera import Camera
 from .devices.garage_door import GarageDoor
+from .devices.gate import Gate
 from .devices.image_sensor import ImageSensor
 from .devices.light import Light
 from .devices.lock import Lock
@@ -44,7 +45,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.7"
+__version__ = "0.4.8-beta"
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ log = logging.getLogger(__name__)
 DEVICE_CLASSES: dict = {
     DeviceType.CAMERA: Camera,
     DeviceType.GARAGE_DOOR: GarageDoor,
+    DeviceType.GATE: Gate,
     DeviceType.IMAGE_SENSOR: ImageSensor,
     DeviceType.LIGHT: Light,
     DeviceType.LOCK: Lock,
@@ -153,6 +155,7 @@ class AlarmController:
         self.sensors: list[Sensor] = []
         self.locks: list[Lock] = []
         self.garage_doors: list[GarageDoor] = []
+        self.gates: list[Gate] = []
         self.image_sensors: list[ImageSensor] = []
         self.lights: list[Light] = []
         self.cameras: list[Camera] = []
@@ -353,6 +356,7 @@ class AlarmController:
         event: Lock.Command
         | Partition.Command
         | GarageDoor.Command
+        | Gate.Command
         | Light.Command
         | ImageSensor.Command
         | Thermostat.Command,
@@ -516,6 +520,7 @@ class AlarmController:
             *self.sensors,
             *self.locks,
             *self.garage_doors,
+            *self.gates,
             *self.image_sensors,
             *self.lights,
             *self.cameras,
@@ -569,10 +574,8 @@ class AlarmController:
 
             except DataFetchFailed:
                 log.error(
-                    (
-                        "Encountered data error while fetching %ss. Skipping this"
-                        " device type."
-                    ),
+                    "Encountered data error while fetching %ss. Skipping this"
+                    " device type.",
                     device_type.name,
                 )
 
@@ -731,6 +734,8 @@ class AlarmController:
                 self.sensors[:] = temp_device_storage
             elif device_class is GarageDoor:
                 self.garage_doors[:] = temp_device_storage
+            elif device_class is Gate:
+                self.gates[:] = temp_device_storage
             elif device_class is Lock:
                 self.locks[:] = temp_device_storage
             elif device_class is Light:
@@ -860,10 +865,8 @@ class AlarmController:
 
         except aiohttp.ContentTypeError as err:
             log.error(
-                (
-                    "Server returned wrong content type. Response: %s\n\nResponse"
-                    " Text:\n\n%s\n\n"
-                ),
+                "Server returned wrong content type. Response: %s\n\nResponse"
+                " Text:\n\n%s\n\n",
                 resp,
                 resp.text(),
             )
@@ -930,11 +933,9 @@ class AlarmController:
 
             if rsp_errors[0].get("status") == "423":
                 log.debug(
-                    (
-                        "Error fetching data from Alarm.com. This account either"
-                        " doesn't have permission to %s, is on a plan that does not"
-                        " support %s, or is part of a system with %s turned off."
-                    ),
+                    "Error fetching data from Alarm.com. This account either"
+                    " doesn't have permission to %s, is on a plan that does not"
+                    " support %s, or is part of a system with %s turned off.",
                     device_type,
                     device_type,
                     device_type,
@@ -954,10 +955,8 @@ class AlarmController:
 
                 if not retry_on_failure:
                     log.debug(
-                        (
-                            "Got 403 status when fetching data for device type %s."
-                            " Logging in again didn't help."
-                        ),
+                        "Got 403 status when fetching data for device type %s."
+                        " Logging in again didn't help.",
                         device_type,
                     )
 

@@ -65,7 +65,8 @@ class Light(DesiredStateMixin, BaseDevice):
 
         msg_body: dict | None = None
         if brightness:
-            msg_body = {"dimmerLevel": brightness}
+            msg_body = {}
+            msg_body["dimmerLevel"] = brightness
 
         await self._send_action_callback(
             device_type=DeviceType.LIGHT,

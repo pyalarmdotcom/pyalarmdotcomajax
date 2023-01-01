@@ -1,0 +1,64 @@
+{
+    "data": [
+        {
+            "id": "555555555-33",
+            "type": "devices/gate",
+            "attributes": {
+                "state": 2,
+                "desiredState": 2,
+                "supportsRemoteClose": true,
+                "managedDeviceType": 5,
+                "hasState": true,
+                "canBeRenamed": true,
+                "canBeDeleted": false,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": true,
+                "webSettings": 1004,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "addDeviceResource": 0,
+                "canBeAssociatedToVideoDevice": false,
+                "associatedCameraDeviceIds": {},
+                "macAddress": "",
+                "manufacturer": "Chamberlain",
+                "isAssignedToCareReceiver": false,
+                "isOAuth": true,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Driveway Gate",
+                "deviceModelId": 9475,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 305
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "11111111",
+                        "type": "systems/system"
+                    }
+                },
+                "stateInfo": {
+                    "data": {
+                        "id": "555555555-33-2",
+                        "type": "devices/state-info"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "1.1"
+    }
+}

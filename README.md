@@ -51,6 +51,7 @@ Pyalarmdotcomajax supports core features (monitoring and using actions) of the d
 | Sensor       | `device_subtype`                                                                                                                                                                                                                                                                                                                                                                                                                                                          | (none)                                |                                                  |
 | Locks        | `desired_state`                                                                                                                                                                                                                                                                                                                                                                                                                                                           | lock, unlock                          |                                                  |
 | Garage Door  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | open, close                           |                                                  |
+| Gate         | `supports_remote_close`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | open, close                           |                                                  |
 | Image Sensor | `images`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | peek_in                               |                                                  |
 | Light        | `brightness`                                                                                                                                                                                                                                                                                                                                                                                                                                                              | turn_on (with brightness), turn_off   | No support for RGB/W, effects, temperature, etc. |
 | Thermostat   | `temp_average`, `temp_at_tstat`, `step_value`, `supports_fan_mode`, `supports_fan_indefinite`, `supports_fan_circulate_when_off`, `supported_fan_durations`, `fan_mode`, `supports_heat`, `supports_heat_aux`, `supports_cool`, `supports_auto`, `min_heat_setpoint`, `min_cool_setpoint`, `max_heat_setpoint`, `max_cool_setpoint`, `heat_setpoint`, `cool_setpoint`, `supports_humidity`, `humidity`, `supports_schedules`, `supports_schedules_smart`, `schedule_mode` | set_attribute                         |                                                  |
@@ -82,7 +83,7 @@ Pyalarmdotcomajax supports changing configuration options for the devices listed
 
 ### Skybell HD
 
-**Doorbell Camera**
+#### Doorbell Camera
 
 | Configuration Option      | Slug                 | Supported Values                     | Notes                      |
 | ------------------------- | -------------------- | ------------------------------------ | -------------------------- |
@@ -121,6 +122,20 @@ actions:
   {get,set}
     get                 get data from alarm.com. use 'adc get --help' for parameters.
     set                 set device configuration option. use 'adc set --help' for parameters
+
+get options:
+  -h, --help            show this help message and exit
+  -x, --include-unsupported
+                        return basic data for all known unsupported devices. always outputs in verbose format.
+
+set options:
+  -h, --help            show this help message and exit
+  -i DEVICE_ID, --device-id DEVICE_ID
+                        Numeric Alarm.com device identifier.
+  -s SETTING_SLUG, --setting-slug SETTING_SLUG
+                        Identifier for setting. Appears in parenthesis after setting name in adc set human readable output.
+  -k NEW_VALUE, --new-value NEW_VALUE
+                        New value for setting.
 ```
 
 ### Examples

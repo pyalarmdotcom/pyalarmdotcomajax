@@ -34,6 +34,7 @@ class DeviceType(ExtendedEnumMixin):
 
     # Supported
     GARAGE_DOOR = "garageDoors"
+    GATE = "gates"
     IMAGE_SENSOR = "imageSensors"
     LIGHT = "lights"
     LOCK = "locks"
@@ -50,7 +51,6 @@ class DeviceType(ExtendedEnumMixin):
     COMMERCIAL_TEMP = "commercialTemperatureSensors"
     # CONFIGURATION = "configuration"
     # FENCE = "fences"
-    GATE = "gates"
     GEO_DEVICE = "geoDevices"
     IQ_ROUTER = "iqRouters"
     REMOTE_TEMP = "remoteTemperatureSensors"
@@ -75,6 +75,10 @@ DEVICE_URLS: dict = {
         DeviceType.GARAGE_DOOR: {
             "relationshipId": "devices/garage-door",
             "endpoint": "{}web/api/devices/garageDoors/{}",
+        },
+        DeviceType.GATE: {
+            "relationshipId": "devices/gate",
+            "endpoint": "{}web/api/devices/gates/{}",
         },
         DeviceType.IMAGE_SENSOR: {
             "relationshipId": "image-sensor/image-sensor",
@@ -135,10 +139,6 @@ DEVICE_URLS: dict = {
         #     "relationshipId": "",
         #     "endpoint": "{}web/api/geolocation/fences/{}",
         # },
-        DeviceType.GATE: {
-            "relationshipId": "devices/gate",
-            "endpoint": "{}web/api/devices/gates/{}",
-        },
         DeviceType.GEO_DEVICE: {
             "relationshipId": "geolocation/geo-device",
             "endpoint": "{}web/api/geolocation/geoDevices/{}",
@@ -490,10 +490,8 @@ class BaseDevice:
 
         if not self._config_change_callback:
             log.error(
-                (
-                    "async_change_setting called for %s, which does not have a"
-                    " config_change_callback set."
-                ),
+                "async_change_setting called for %s, which does not have a"
+                " config_change_callback set.",
                 self.name,
             )
             return
@@ -507,10 +505,8 @@ class BaseDevice:
             raise InvalidConfigurationOption
 
         log.debug(
-            (
-                "BaseDevice -> async_change_setting: Calling change setting function"
-                " for %s %s (%s) via extension %s."
-            ),
+            "BaseDevice -> async_change_setting: Calling change setting function"
+            " for %s %s (%s) via extension %s.",
             type(self).__name__,
             self.name,
             self.id_,

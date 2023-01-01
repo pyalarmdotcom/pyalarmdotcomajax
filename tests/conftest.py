@@ -84,6 +84,14 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
     )
 
     response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("gate_ok"),
+    )
+
+    response_mocker.get(
         url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
             c.URL_BASE, ""
         ),
@@ -231,6 +239,14 @@ def all_base_ok_camera_403(response_mocker: aioresponses) -> None:
     )
 
     response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("gate_ok"),
+    )
+
+    response_mocker.get(
         url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
             c.URL_BASE, ""
         ),
@@ -332,6 +348,14 @@ def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("garage_door_ok"),
+    )
+
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("gate_ok"),
     )
 
     response_mocker.get(
