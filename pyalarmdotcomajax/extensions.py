@@ -360,8 +360,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # For volume adjustable chimes (outdoor),  When on, either 1 for low, 2 for medium, 3 for high, or 0 for off.
 
         log.debug(
-            "CameraSkybellControllerExtension -> submit_change(): Requested change"
-            " for %s: %s to %s.",
+            (
+                "CameraSkybellControllerExtension -> submit_change(): Requested change"
+                " for %s: %s to %s."
+            ),
             camera_name,
             slug,
             new_value,
@@ -513,8 +515,10 @@ class CameraSkybellControllerExtension(ControllerExtension):
         debug_payload.pop("__VIEWSTATE")
 
         log.debug(
-            "======= POST PAYLOAD - BEGIN =======\n\n%s\n\n======= POST"
-            " PAYLOAD - END =======",
+            (
+                "======= POST PAYLOAD - BEGIN =======\n\n%s\n\n======= POST"
+                " PAYLOAD - END ======="
+            ),
             debug_payload,
         )
 
