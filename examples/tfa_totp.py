@@ -4,8 +4,10 @@ import asyncio
 import sys
 
 import aiohttp
-from pyalarmdotcomajax import AlarmController, AuthResult
-from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax import AuthResult
+from pyalarmdotcomajax.errors import AuthenticationFailed
+from pyalarmdotcomajax.errors import DataFetchFailed
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -14,6 +16,7 @@ PASSWORD = "ENTER YOUR PASSWORD"
 async def main() -> None:
     """Request Alarm.com sensor data."""
     async with aiohttp.ClientSession() as session:
+
         #
         # CREATE ALARM CONTROLLER
         #
@@ -28,6 +31,7 @@ async def main() -> None:
         #
 
         try:
+
             login_result = await alarm.async_login()
 
             if login_result == AuthResult.OTP_REQUIRED:
