@@ -1,12 +1,10 @@
 """Alarm.com garage door."""
 from __future__ import annotations
 
-from enum import Enum
 import logging
+from enum import Enum
 
-from . import BaseDevice
-from . import DesiredStateMixin
-from . import DeviceType
+from . import BaseDevice, DesiredStateMixin, DeviceType
 
 log = logging.getLogger(__name__)
 

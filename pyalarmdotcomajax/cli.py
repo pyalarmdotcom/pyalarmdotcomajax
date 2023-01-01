@@ -8,30 +8,28 @@ from __future__ import annotations
 import argparse
 import asyncio
 import dataclasses
-from enum import Enum
 import logging
 import platform
 import sys
+from enum import Enum
 from typing import Any
 
 import aiohttp
-import pyalarmdotcomajax
-from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax import AuthResult
-from pyalarmdotcomajax.errors import AuthenticationFailed
-from pyalarmdotcomajax.errors import DataFetchFailed
-from pyalarmdotcomajax.errors import InvalidConfigurationOption
-from pyalarmdotcomajax.errors import NagScreen
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
-from pyalarmdotcomajax.extensions import ConfigurationOption
-from pyalarmdotcomajax.helpers import ExtendedEnumMixin
-from pyalarmdotcomajax.helpers import slug_to_title
-from termcolor import colored
-from termcolor import cprint
+from termcolor import colored, cprint
 
-from .devices import BaseDevice
-from .devices import DEVICE_URLS
-from .devices import DeviceType
+import pyalarmdotcomajax
+from pyalarmdotcomajax import AlarmController, AuthResult
+from pyalarmdotcomajax.errors import (
+    AuthenticationFailed,
+    DataFetchFailed,
+    InvalidConfigurationOption,
+    NagScreen,
+    UnexpectedDataStructure,
+)
+from pyalarmdotcomajax.extensions import ConfigurationOption
+from pyalarmdotcomajax.helpers import ExtendedEnumMixin, slug_to_title
+
+from .devices import DEVICE_URLS, BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
 from .devices.system import System
