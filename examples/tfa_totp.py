@@ -16,7 +16,6 @@ PASSWORD = "ENTER YOUR PASSWORD"
 async def main() -> None:
     """Request Alarm.com sensor data."""
     async with aiohttp.ClientSession() as session:
-
         #
         # CREATE ALARM CONTROLLER
         #
@@ -31,7 +30,6 @@ async def main() -> None:
         #
 
         try:
-
             login_result = await alarm.async_login()
 
             if login_result == AuthResult.OTP_REQUIRED:

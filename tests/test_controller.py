@@ -43,7 +43,6 @@ async def test__async_get_items_and_subordinates__sensors(
     items = await adc_client._async_get_items_and_subordinates(DeviceType.SENSOR)
 
     for rsp_device, _ in items:
-
         src_match = {}
 
         for src_device in json.loads(get_http_body_json("sensor_ok")).get("data", {}):
