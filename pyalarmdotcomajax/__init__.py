@@ -13,13 +13,11 @@ from bs4 import BeautifulSoup
 from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
-from .devices import (
-    BaseDevice,
-    DEVICE_URLS,
-    DeviceType,
-    ElementSpecificData,
-    TroubleCondition,
-)
+from .devices import BaseDevice
+from .devices import DEVICE_URLS
+from .devices import DeviceType
+from .devices import ElementSpecificData
+from .devices import TroubleCondition
 from .devices.camera import Camera
 from .devices.garage_door import GarageDoor
 from .devices.gate import Gate
@@ -30,19 +28,15 @@ from .devices.partition import Partition
 from .devices.sensor import Sensor
 from .devices.system import System
 from .devices.thermostat import Thermostat
-from .errors import (
-    AuthenticationFailed,
-    BadAccount,
-    DataFetchFailed,
-    NagScreen,
-    UnexpectedDataStructure,
-    UnsupportedDevice,
-)
-from .extensions import (
-    CameraSkybellControllerExtension,
-    ConfigurationOption,
-    ExtendedProperties,
-)
+from .errors import AuthenticationFailed
+from .errors import BadAccount
+from .errors import DataFetchFailed
+from .errors import NagScreen
+from .errors import UnexpectedDataStructure
+from .errors import UnsupportedDevice
+from .extensions import CameraSkybellControllerExtension
+from .extensions import ConfigurationOption
+from .extensions import ExtendedProperties
 
 __version__ = "0.4.8-beta"
 
