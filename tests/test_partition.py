@@ -1,6 +1,7 @@
 """Test partition device."""
 
 from collections import Counter
+
 import pytest
 
 from pyalarmdotcomajax import AlarmController
