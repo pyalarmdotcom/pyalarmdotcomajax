@@ -314,7 +314,7 @@ class BaseDevice:
 
     @final
     def _get_list(self, key: str, value_type: type) -> list | None:
-        """Cast raw value to bool. Satisfies mypy."""
+        """Cast raw value to list. Satisfies mypy."""
 
         try:
             duration_list: list = list(self._attribs_raw.get(key))  # type: ignore
