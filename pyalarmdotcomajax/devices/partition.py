@@ -1,6 +1,7 @@
 """Alarm.com partition."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum
 import logging
 
@@ -11,6 +12,32 @@ log = logging.getLogger(__name__)
 
 class Partition(DesiredStateMixin, BaseDevice):
     """Represent Alarm.com partition element."""
+
+    @dataclass
+    class ExtendedArmingMapping:
+        """Map of which extended arming states apply to which arming types."""
+
+        disarmed: list[Partition.ExtendedArmingOption] | None
+        armed_stay: list[Partition.ExtendedArmingOption] | None
+        armed_away: list[Partition.ExtendedArmingOption] | None
+        armed_night: list[Partition.ExtendedArmingOption] | None
+
+    @dataclass
+    class PartitionAttributes(BaseDevice.DeviceAttributes):
+        """Partition attributes."""
+
+        extended_arming_options: Partition.ExtendedArmingMapping | None  # List of extended arming options
+
+    class ExtendedArmingOption(Enum):
+        """Enum of extended arming options."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingOption.js
+
+        BYPASS_SENSORS = 0
+        NO_ENTRY_DELAY = 1
+        SILENT_ARMING = 2
+        NIGHT_ARMING = 3
+        SELECTIVE_BYPASS = 4
 
     class DeviceState(Enum):
         """Enum of arming states."""
@@ -58,8 +85,11 @@ class Partition(DesiredStateMixin, BaseDevice):
             "forceBypass": force_bypass,
             "noEntryDelay": no_entry_delay,
             "silentArming": silent_arming,
-            "nightArming": night_arming,
         }
+
+        # Sending nightArming when false causes trouble.
+        if night_arming:
+            msg_body.update({"nightArming": night_arming})
 
         await self._send_action_callback(
             device_type=DeviceType.PARTITION,
@@ -133,4 +163,36 @@ class Partition(DesiredStateMixin, BaseDevice):
             device_type=DeviceType.PARTITION,
             event=self.Command.DISARM,
             device_id=self.id_,
+        )
+
+    def _get_extended_arming_options(
+        self, options_list: list
+    ) -> list[Partition.ExtendedArmingOption]:
+        """Convert raw extended arming options to ExtendedArmingOption."""
+
+        return [self.ExtendedArmingOption(option) for option in options_list]
+
+    @property
+    def attributes(self) -> PartitionAttributes | None:
+        """Return partition attributes."""
+
+        extended_arming_options = dict(
+            self._attribs_raw.get("extendedArmingOptions", {})
+        )
+
+        return self.PartitionAttributes(
+            extended_arming_options=self.ExtendedArmingMapping(
+                disarmed=self._get_extended_arming_options(
+                    extended_arming_options.get("Disarmed", [])
+                ),
+                armed_stay=self._get_extended_arming_options(
+                    extended_arming_options.get("ArmedStay", [])
+                ),
+                armed_away=self._get_extended_arming_options(
+                    extended_arming_options.get("ArmedAway", [])
+                ),
+                armed_night=self._get_extended_arming_options(
+                    extended_arming_options.get("ArmedNight", [])
+                ),
+            )
         )

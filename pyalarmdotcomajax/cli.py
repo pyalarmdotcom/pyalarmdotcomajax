@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import dataclasses
+from dataclasses import asdict
 from enum import Enum
 import logging
 import platform
@@ -553,11 +553,9 @@ def _print_element_tearsheet(
     output_str += "\n"
 
     # ENTITIES WITH "ATTRIBUTES" PROPERTY
-    if hasattr(element, "attributes") and isinstance(
-        element.attributes, BaseDevice.DeviceAttributes
-    ):
-        for attribute in dataclasses.fields(element.attributes):
-            output_str += f"[{str(attribute.name).upper()}: {attribute}] "
+    if isinstance(element.attributes, BaseDevice.DeviceAttributes):
+        for name, value in asdict(element.attributes).items():
+            output_str += f"[{str(name).upper()}: {value}] "
 
     # SETTINGS / EXTENSIONS
 

@@ -87,4 +87,4 @@ async def test___async_update__ok(
     assert adc_client.image_sensors
     assert adc_client.lights
     assert adc_client.thermostats
-    # assert adc_client.cameras
+    assert adc_client.cameras
