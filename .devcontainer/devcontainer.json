@@ -41,7 +41,7 @@
     "python.linting.mypyPath": "/usr/local/bin/mypy",
     "python.linting.pycodestylePath": "/usr/local/bin/pycodestyle",
     "python.linting.pylintPath": "/usr/local/bin/pylint",
-    "isort.path": "/usr/local/bin/isort",
+    "isort.path": ["/usr/local/bin/isort"],
     "python.linting.banditEnabled": true
   }
 }
