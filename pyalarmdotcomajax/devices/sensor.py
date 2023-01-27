@@ -51,8 +51,3 @@ class Sensor(BaseDevice):
         PANEL_GLASS_BREAK_DETECTOR = 83
         PANEL_IMAGE_SENSOR = 68
         MOBILE_PHONE = 69
-
-    @property
-    def read_only(self) -> None:
-        """Non-actionable object."""
-        return
