@@ -42,6 +42,7 @@ class DeviceType(ExtendedEnumMixin):
     SENSOR = "sensors"
     SYSTEM = "systems"
     THERMOSTAT = "thermostats"
+    WATER_SENSOR = "waterSensors"
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
@@ -61,7 +62,6 @@ class DeviceType(ExtendedEnumMixin):
     SWITCH = "switches"
     VALVE_SWITCH = "valveSwitches"
     WATER_METER = "waterMeters"
-    WATER_SENSOR = "waterSensors"
     WATER_VALVE = "waterValves"
     X10_LIGHT = "x10Lights"
 
@@ -112,6 +112,10 @@ DEVICE_URLS: dict = {
         DeviceType.THERMOSTAT: {
             "relationshipId": "devices/thermostat",
             "endpoint": "{}web/api/devices/thermostats/{}",
+        },
+        DeviceType.WATER_SENSOR: {
+            "relationshipId": "devices/water-sensor",
+            "endpoint": "{}web/api/devices/waterSensors/{}",
         },
     },
     "unsupported": {
@@ -178,10 +182,6 @@ DEVICE_URLS: dict = {
         DeviceType.WATER_METER: {
             "relationshipId": "devices/water-meter",
             "endpoint": "{}web/api/devices/waterMeters/{}",
-        },
-        DeviceType.WATER_SENSOR: {
-            "relationshipId": "devices/water-sensor",
-            "endpoint": "{}web/api/devices/waterSensors/{}",
         },
         DeviceType.WATER_VALVE: {
             "relationshipId": "devices/water-valve",

@@ -147,6 +147,14 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         body=get_http_body_json("thermostat_ok"),
     )
 
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("water_sensor_ok"),
+    )
+
 
 @pytest.fixture  # type: ignore
 def all_extension_ok_responses(response_mocker: aioresponses) -> None:
@@ -302,6 +310,14 @@ def all_base_ok_camera_403(response_mocker: aioresponses) -> None:
         body=get_http_body_json("thermostat_ok"),
     )
 
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("water_sensor_ok"),
+    )
+
 
 @pytest.fixture  # type: ignore
 def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
@@ -412,4 +428,12 @@ def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("thermostat_ok"),
+    )
+
+    response_mocker.get(
+        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
+            c.URL_BASE, ""
+        ),
+        status=200,
+        body=get_http_body_json("water_sensor_ok"),
     )

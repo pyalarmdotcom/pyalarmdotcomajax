@@ -10,12 +10,10 @@
                 "extendedArmingOptions": {
                     "Disarmed": [],
                     "ArmedStay": [
-                        2,
-                        1
+                        2, 1
                     ],
                     "ArmedAway": [
-                        2,
-                        1
+                        2, 1
                     ],
                     "ArmedNight": []
                 },
@@ -81,20 +79,16 @@
                         {
                             "id": "555555555-14",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-15",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-16",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-17",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-177",
                             "type": "devices/sensor"
                         }
@@ -119,8 +113,7 @@
                         {
                             "id": "555555555-31",
                             "type": "devices/garage-door"
-                        },
-                        {
+                        }, {
                             "id": "555555555-32",
                             "type": "devices/garage-door"
                         }
@@ -155,6 +148,20 @@
                     "data": {
                         "id": "11111111",
                         "type": "systems/system"
+                    }
+                },
+                "waterSensors": {
+                    "data": [
+                        {
+                            "id": "555555555-211",
+                            "type": "devices/water-sensor"
+                        }, {
+                            "id": "555555555-212",
+                            "type": "devices/water-sensor"
+                        }
+                    ],
+                    "meta": {
+                        "count": "2"
                     }
                 },
                 "stateInfo": {

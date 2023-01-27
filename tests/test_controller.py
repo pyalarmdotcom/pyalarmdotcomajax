@@ -33,6 +33,7 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
     assert not adc_client.lights
     assert not adc_client.thermostats
     assert not adc_client.cameras
+    assert not adc_client.water_sensors
 
 
 @pytest.mark.asyncio  # type: ignore
@@ -88,3 +89,4 @@ async def test___async_update__ok(
     assert adc_client.lights
     assert adc_client.thermostats
     assert adc_client.cameras
+    assert adc_client.water_sensors

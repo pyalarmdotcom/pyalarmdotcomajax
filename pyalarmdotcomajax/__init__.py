@@ -31,6 +31,7 @@ from .devices.partition import Partition
 from .devices.sensor import Sensor
 from .devices.system import System
 from .devices.thermostat import Thermostat
+from .devices.water_sensor import WaterSensor
 from .errors import (
     AuthenticationFailed,
     BadAccount,
@@ -45,7 +46,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.9"
+__version__ = "0.4.10-beta"
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ DEVICE_CLASSES: dict = {
     DeviceType.SENSOR: Sensor,
     DeviceType.SYSTEM: System,
     DeviceType.THERMOSTAT: Thermostat,
+    DeviceType.WATER_SENSOR: WaterSensor,
 }
 
 
@@ -160,6 +162,7 @@ class AlarmController:
         self.lights: list[Light] = []
         self.cameras: list[Camera] = []
         self.thermostats: list[Thermostat] = []
+        self.water_sensors: list[WaterSensor] = []
 
     #
     #
@@ -525,6 +528,7 @@ class AlarmController:
             *self.lights,
             *self.cameras,
             *self.thermostats,
+            *self.water_sensors,
         ):
             if device.id_ == device_id:
                 return device
@@ -748,6 +752,8 @@ class AlarmController:
                 self.cameras[:] = temp_device_storage
             elif device_class is Thermostat:
                 self.thermostats[:] = temp_device_storage
+            elif device_class is WaterSensor:
+                self.water_sensors[:] = temp_device_storage
 
     #
     #
