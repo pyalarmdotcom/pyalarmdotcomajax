@@ -1,5 +1,6 @@
 {
   "image": "ludeeus/container:python-base-debian",
+  "file_version": "2023.01.27",
   "postCreateCommand": "pip install -r requirements-dev.txt && pre-commit install && pre-commit install-hooks && pip install --editable .",
   "extensions": [
 	"ms-python.vscode-pylance",
@@ -40,12 +41,7 @@
     "python.linting.mypyPath": "/usr/local/bin/mypy",
     "python.linting.pycodestylePath": "/usr/local/bin/pycodestyle",
     "python.linting.pylintPath": "/usr/local/bin/pylint",
-    "python.sortImports.path": "/usr/local/bin/isort",
-    "python.linting.banditEnabled": true,
-    "typescript.tsc.autoDetect": "off",
-    "grunt.autoDetect": "off",
-    "jake.autoDetect": "off",
-    "gulp.autoDetect": "off",
-    "npm.autoDetect": "off"
+    "isort.path": "/usr/local/bin/isort",
+    "python.linting.banditEnabled": true
   }
 }
