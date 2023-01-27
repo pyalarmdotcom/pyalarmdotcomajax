@@ -53,6 +53,7 @@ async def test___async_update__no_permissions(
     assert adc_client.image_sensors
     assert adc_client.lights
     assert adc_client.thermostats
+    assert adc_client.water_sensors
     assert not adc_client.cameras
 
 
@@ -75,4 +76,5 @@ async def test___async_update__invalid_endpoint(
     assert adc_client.image_sensors
     assert adc_client.lights
     assert adc_client.thermostats
+    assert adc_client.water_sensors
     assert not adc_client.cameras

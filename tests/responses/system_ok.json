@@ -60,8 +60,7 @@
                         {
                             "id": "555555555-31",
                             "type": "devices/garage-door"
-                        },
-                        {
+                        }, {
                             "id": "555555555-32",
                             "type": "devices/garage-door"
                         }
@@ -81,16 +80,13 @@
                         {
                             "id": "33333304",
                             "type": "automation/scene"
-                        },
-                        {
+                        }, {
                             "id": "33333305",
                             "type": "automation/scene"
-                        },
-                        {
+                        }, {
                             "id": "33333306",
                             "type": "automation/scene"
-                        },
-                        {
+                        }, {
                             "id": "33333307",
                             "type": "automation/scene"
                         }
@@ -116,20 +112,16 @@
                         {
                             "id": "555555555-14",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-15",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-16",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-17",
                             "type": "devices/sensor"
-                        },
-                        {
+                        }, {
                             "id": "555555555-177",
                             "type": "devices/sensor"
                         }
@@ -139,9 +131,17 @@
                     }
                 },
                 "waterSensors": {
-                    "data": [],
+                    "data": [
+                        {
+                            "id": "555555555-211",
+                            "type": "devices/water-sensor"
+                        }, {
+                            "id": "555555555-212",
+                            "type": "devices/water-sensor"
+                        }
+                    ],
                     "meta": {
-                        "count": "0"
+                        "count": "2"
                     }
                 },
                 "sumpPumps": {
@@ -161,8 +161,7 @@
                         {
                             "id": "555555555-21",
                             "type": "devices/light"
-                        },
-                        {
+                        }, {
                             "id": "555555555-22",
                             "type": "devices/light"
                         }
