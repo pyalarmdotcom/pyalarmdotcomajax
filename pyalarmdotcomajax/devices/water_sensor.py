@@ -1,7 +1,7 @@
 """Alarm.com water sensor."""
 from __future__ import annotations
 
-from enum import Enum, IntEnum
+from enum import Enum
 import logging
 
 from . import BaseDevice
@@ -9,7 +9,6 @@ from . import BaseDevice
 log = logging.getLogger(__name__)
 
 # Water sensors are just sensors by another name.
-# Keep this file up to date with sensor.py.
 
 
 class WaterSensor(BaseDevice):
@@ -34,21 +33,3 @@ class WaterSensor(BaseDevice):
         # OPENED_CLOSED = 9
         # ISSUE = 10
         # OK = 11
-
-    class Subtype(IntEnum):
-        """Library of identified ADC device types."""
-
-        CONTACT_SENSOR = 1
-        MOTION_SENSOR = 2
-        SMOKE_DETECTOR = 5
-        FREEZE_SENSOR = 8
-        CO_DETECTOR = 6
-        PANIC_BUTTON = 9
-        FIXED_PANIC = 10
-        SIREN = 14
-        GLASS_BREAK_DETECTOR = 19
-        CONTACT_SHOCK_SENSOR = 52
-        PANEL_MOTION_SENSOR = 89
-        PANEL_GLASS_BREAK_DETECTOR = 83
-        PANEL_IMAGE_SENSOR = 68
-        MOBILE_PHONE = 69

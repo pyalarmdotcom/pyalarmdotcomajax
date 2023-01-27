@@ -8,9 +8,6 @@ from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
-# Water sensors are just sensors by another name.
-# Keep this file up to date with water_sensor.py.
-
 
 class Sensor(BaseDevice):
     """Represent Alarm.com sensor element."""
