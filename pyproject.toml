@@ -76,7 +76,6 @@ warn_unreachable = true
 pretty = true
 show_absolute_path = true
 show_error_context = true
-no_untyped_call = false
 
 [tool.pylint.BASIC]
 class-const-naming-style = "any"
