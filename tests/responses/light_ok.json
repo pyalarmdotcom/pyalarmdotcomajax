@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-21",
+            "id": "id-light-balcony",
             "type": "devices/light",
             "attributes": {
                 "state": 2,
@@ -60,20 +60,20 @@
                 },
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },
                 "stateInfo": {
                     "data": {
-                        "id": "555555555-21-3",
+                        "id": "id-stateinfo-light-balcony",
                         "type": "devices/state-info"
                     }
                 }
             }
         },
         {
-            "id": "555555555-22",
+            "id": "id-light-upstairs",
             "type": "devices/light",
             "attributes": {
                 "state": 3,
@@ -132,7 +132,7 @@
                 },
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },

@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-33",
+            "id": "id-gate-driveway",
             "type": "devices/gate",
             "attributes": {
                 "state": 2,
@@ -44,13 +44,13 @@
             "relationships": {
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },
                 "stateInfo": {
                     "data": {
-                        "id": "555555555-33-2",
+                        "id": "id-gate-driveway-2",
                         "type": "devices/state-info"
                     }
                 }

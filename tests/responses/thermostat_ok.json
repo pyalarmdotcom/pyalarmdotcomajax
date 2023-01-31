@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-51",
+            "id": "id-tstat-upstairs",
             "type": "devices/thermostat",
             "attributes": {
                 "requiresSetup": false,
@@ -127,7 +127,7 @@
                 },
                 "peakProtect": {
                     "data": {
-                        "id": "103238342-2207",
+                        "id": "id-auto-peak-protect-tstat-upstairs",
                         "type": "automation/peak-protect"
                     }
                 },
@@ -139,7 +139,7 @@
                 },
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },

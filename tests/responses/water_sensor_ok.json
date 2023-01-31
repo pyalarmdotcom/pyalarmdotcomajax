@@ -1,7 +1,7 @@
 {
     "data":[
        {
-          "id":"555555555-211",
+          "id":"id-water-kitchen",
           "type":"devices/water-sensor",
           "attributes":{
              "deviceType":null,
@@ -50,20 +50,20 @@
           "relationships":{
              "system":{
                 "data":{
-                   "id":"11111111",
+                   "id":"id-system",
                    "type":"systems/system"
                 }
              },
              "stateInfo":{
                 "data":{
-                   "id":"555555555-211-2",
+                   "id":"id-stateinfo-water-kitchen",
                    "type":"devices/state-info"
                 }
              }
           }
        },
        {
-          "id":"555555555-212",
+          "id":"id-water-basement",
           "type":"devices/water-sensor",
           "attributes":{
              "deviceType":null,
@@ -112,13 +112,13 @@
           "relationships":{
              "system":{
                 "data":{
-                   "id":"11111111",
+                   "id":"id-system",
                    "type":"systems/system"
                 }
              },
              "stateInfo":{
                 "data":{
-                   "id":"555555555-212-2",
+                   "id":"id-stateinfo-water-basement",
                    "type":"devices/state-info"
                 }
              }
