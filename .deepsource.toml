@@ -1,10 +1,11 @@
-# File Version: 2023.01.27
+# File Version: 2023.02.14
 
 version = 1
+test_patterns = ["tests/**"]
+exclude_patterns = ["/pylint/**"]
 
 [[analyzers]]
 name = "python"
-enabled = true
 
 [analyzers.meta]
 runtime_version = "3.x.x"
