@@ -216,8 +216,8 @@ class DesiredStateMixin:
             state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
         except (ValueError, TypeError):
             return None
-        else:
-            return state
+
+        return state
 
 
 class ElementSpecificData(TypedDict, total=False):
@@ -376,8 +376,8 @@ class BaseDevice:
             state = self.DeviceState(self._attribs_raw.get("state"))
         except ValueError:
             return None
-        else:
-            return state
+
+        return state
 
     @property
     def settings(self) -> dict:
