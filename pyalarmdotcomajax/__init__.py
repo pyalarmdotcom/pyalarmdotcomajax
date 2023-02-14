@@ -46,7 +46,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.10"
+__version__ = "0.4.11"
 
 log = logging.getLogger(__name__)
 
