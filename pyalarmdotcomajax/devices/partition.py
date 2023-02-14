@@ -17,16 +17,16 @@ class Partition(DesiredStateMixin, BaseDevice):
     class ExtendedArmingMapping:
         """Map of which extended arming states apply to which arming types."""
 
-        disarmed: list[Partition.ExtendedArmingOption] | None
-        armed_stay: list[Partition.ExtendedArmingOption] | None
-        armed_away: list[Partition.ExtendedArmingOption] | None
-        armed_night: list[Partition.ExtendedArmingOption] | None
+        disarm: list[Partition.ExtendedArmingOption | None]
+        arm_stay: list[Partition.ExtendedArmingOption | None]
+        arm_away: list[Partition.ExtendedArmingOption | None]
+        arm_night: list[Partition.ExtendedArmingOption | None]
 
     @dataclass
     class PartitionAttributes(BaseDevice.DeviceAttributes):
         """Partition attributes."""
 
-        extended_arming_options: Partition.ExtendedArmingMapping | None  # List of extended arming options
+        extended_arming_options: Partition.ExtendedArmingMapping  # List of extended arming options
 
     class ExtendedArmingOption(Enum):
         """Enum of extended arming options."""
@@ -70,10 +70,11 @@ class Partition(DesiredStateMixin, BaseDevice):
     async def _async_arm(
         self,
         arm_type: Command,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
-        night_arming: bool = False,
+        extended_arming_options: list[Partition.ExtendedArmingOption | None],
+        force_bypass: bool | None = None,
+        no_entry_delay: bool | None = None,
+        silent_arming: bool | None = None,
+        night_arming: bool | None = None,
     ) -> None:
         """Arm alarm system."""
 
@@ -81,14 +82,30 @@ class Partition(DesiredStateMixin, BaseDevice):
             log.error("Invalid arm type.")
             return
 
-        msg_body = {
-            "forceBypass": force_bypass,
-            "noEntryDelay": no_entry_delay,
-            "silentArming": silent_arming,
-        }
+        msg_body = {}
 
-        # Sending nightArming when false causes trouble.
-        if night_arming:
+        if (
+            force_bypass
+            and Partition.ExtendedArmingOption.BYPASS_SENSORS in extended_arming_options
+        ):
+            msg_body.update({"forceBypass": force_bypass})
+
+        if (
+            no_entry_delay
+            and Partition.ExtendedArmingOption.NO_ENTRY_DELAY in extended_arming_options
+        ):
+            msg_body.update({"noEntryDelay": no_entry_delay})
+
+        if (
+            silent_arming
+            and Partition.ExtendedArmingOption.SILENT_ARMING in extended_arming_options
+        ):
+            msg_body.update({"silentArming": silent_arming})
+
+        if (
+            night_arming
+            and Partition.ExtendedArmingOption.NIGHT_ARMING in extended_arming_options
+        ):
             msg_body.update({"nightArming": night_arming})
 
         await self._send_action_callback(
@@ -98,11 +115,23 @@ class Partition(DesiredStateMixin, BaseDevice):
             msg_body=msg_body,
         )
 
+    @property
+    def supports_night_arming(self) -> bool | None:
+        """Return whether night arming is supported."""
+
+        if (
+            Partition.ExtendedArmingOption.NIGHT_ARMING
+            in self.attributes.extended_arming_options.arm_night
+        ):
+            return True
+
+        return False
+
     async def async_arm_stay(
         self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
+        force_bypass: bool | None = None,
+        no_entry_delay: bool | None = None,
+        silent_arming: bool | None = None,
     ) -> None:
         """Arm stay alarm."""
 
@@ -110,17 +139,17 @@ class Partition(DesiredStateMixin, BaseDevice):
 
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
+            extended_arming_options=self.attributes.extended_arming_options.arm_stay,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
-            night_arming=False,
         )
 
     async def async_arm_away(
         self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
+        force_bypass: bool | None = None,
+        no_entry_delay: bool | None = None,
+        silent_arming: bool | None = None,
     ) -> None:
         """Arm stay alarm."""
 
@@ -128,17 +157,17 @@ class Partition(DesiredStateMixin, BaseDevice):
 
         await self._async_arm(
             arm_type=self.Command.ARM_AWAY,
+            extended_arming_options=self.attributes.extended_arming_options.arm_away,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
-            night_arming=False,
         )
 
     async def async_arm_night(
         self,
-        force_bypass: bool = False,
-        no_entry_delay: bool = False,
-        silent_arming: bool = False,
+        force_bypass: bool | None = None,
+        no_entry_delay: bool | None = None,
+        silent_arming: bool | None = None,
     ) -> None:
         """Arm stay alarm."""
 
@@ -146,6 +175,7 @@ class Partition(DesiredStateMixin, BaseDevice):
 
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
+            extended_arming_options=self.attributes.extended_arming_options.arm_night,
             force_bypass=force_bypass,
             no_entry_delay=no_entry_delay,
             silent_arming=silent_arming,
@@ -167,13 +197,13 @@ class Partition(DesiredStateMixin, BaseDevice):
 
     def _get_extended_arming_options(
         self, options_list: list
-    ) -> list[Partition.ExtendedArmingOption]:
+    ) -> list[Partition.ExtendedArmingOption | None]:
         """Convert raw extended arming options to ExtendedArmingOption."""
 
         return [self.ExtendedArmingOption(option) for option in options_list]
 
     @property
-    def attributes(self) -> PartitionAttributes | None:
+    def attributes(self) -> PartitionAttributes:
         """Return partition attributes."""
 
         extended_arming_options = dict(
@@ -182,16 +212,16 @@ class Partition(DesiredStateMixin, BaseDevice):
 
         return self.PartitionAttributes(
             extended_arming_options=self.ExtendedArmingMapping(
-                disarmed=self._get_extended_arming_options(
+                disarm=self._get_extended_arming_options(
                     extended_arming_options.get("Disarmed", [])
                 ),
-                armed_stay=self._get_extended_arming_options(
+                arm_stay=self._get_extended_arming_options(
                     extended_arming_options.get("ArmedStay", [])
                 ),
-                armed_away=self._get_extended_arming_options(
+                arm_away=self._get_extended_arming_options(
                     extended_arming_options.get("ArmedAway", [])
                 ),
-                armed_night=self._get_extended_arming_options(
+                arm_night=self._get_extended_arming_options(
                     extended_arming_options.get("ArmedNight", [])
                 ),
             )

@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-90",
+            "id": "id-camera-skybell",
             "type": "video/camera",
             "attributes": {
                 "supportsSnapShot": false,

@@ -361,6 +361,7 @@ class BaseDevice:
     @property
     def name(self) -> None | str:
         """Return user-assigned device name."""
+
         return self._attribs_raw.get("description", None)
 
     @property

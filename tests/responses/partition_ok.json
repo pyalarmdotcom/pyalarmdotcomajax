@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-127",
+            "id": "id-partition-house",
             "type": "devices/partition",
             "attributes": {
                 "partitionId": 1,
@@ -10,10 +10,16 @@
                 "extendedArmingOptions": {
                     "Disarmed": [],
                     "ArmedStay": [
-                        2, 1
+                        2,
+                        1,
+                        0,
+                        4
                     ],
                     "ArmedAway": [
-                        2, 1
+                        2,
+                        1,
+                        0,
+                        4
                     ],
                     "ArmedNight": []
                 },
@@ -46,7 +52,7 @@
                 "isMalfunctioning": false,
                 "canBeSaved": true,
                 "canChangeDescription": true,
-                "description": "Alarm",
+                "description": "House",
                 "deviceModelId": 9609,
                 "canConfirmStateChange": true,
                 "canReceiveCommands": true,
@@ -65,42 +71,50 @@
                 "sensors": {
                     "data": [
                         {
-                            "id": "555555555-11",
+                            "id": "id-sensor-backdoor",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-12",
+                            "id": "id-sensor-bsmt_hallway_glass",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-13",
+                            "id": "id-sensor-kids_left_window",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-14",
+                            "id": "id-sensor-dad_iphone",
                             "type": "devices/sensor"
-                        }, {
-                            "id": "555555555-15",
+                        },
+                        {
+                            "id": "id-sensor-carbon_monoxide",
                             "type": "devices/sensor"
-                        }, {
-                            "id": "555555555-16",
+                        },
+                        {
+                            "id": "id-sensor-smoke-inter",
                             "type": "devices/sensor"
-                        }, {
-                            "id": "555555555-17",
+                        },
+                        {
+                            "id": "id-sensor-smoke-laundry",
                             "type": "devices/sensor"
-                        }, {
-                            "id": "555555555-177",
+                        },
+                        {
+                            "id": "id-sensor-camera-panel",
+                            "type": "devices/sensor"
+                        },
+                        {
+                            "id": "id-sensor-shared",
                             "type": "devices/sensor"
                         }
                     ],
                     "meta": {
-                        "count": "8"
+                        "count": "9"
                     }
                 },
                 "cameras": {
                     "data": [
                         {
-                            "id": "555555555-90",
+                            "id": "id-camera-skybell",
                             "type": "video/camera"
                         }
                     ],
@@ -111,10 +125,11 @@
                 "garageDoors": {
                     "data": [
                         {
-                            "id": "555555555-31",
+                            "id": "id-garage-right",
                             "type": "devices/garage-door"
-                        }, {
-                            "id": "555555555-32",
+                        },
+                        {
+                            "id": "id-garage-left",
                             "type": "devices/garage-door"
                         }
                     ],
@@ -125,7 +140,7 @@
                 "gates": {
                     "data": [
                         {
-                            "id": "555555555-33",
+                            "id": "id-gate-driveway",
                             "type": "devices/gate"
                         }
                     ],
@@ -136,7 +151,7 @@
                 "thermostats": {
                     "data": [
                         {
-                            "id": "555555555-51",
+                            "id": "id-tstat-upstairs",
                             "type": "devices/thermostat"
                         }
                     ],
@@ -146,17 +161,18 @@
                 },
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },
                 "waterSensors": {
                     "data": [
                         {
-                            "id": "555555555-211",
+                            "id": "id-water-kitchen",
                             "type": "devices/water-sensor"
-                        }, {
-                            "id": "555555555-212",
+                        },
+                        {
+                            "id": "id-water-basement",
                             "type": "devices/water-sensor"
                         }
                     ],
@@ -166,15 +182,109 @@
                 },
                 "stateInfo": {
                     "data": {
-                        "id": "555555555-127-4",
+                        "id": "id-stateinfo-partition-house",
                         "type": "devices/state-info"
                     }
                 }
             }
+        },
+        {
+            "id": "id-partition-detached_garage",
+            "type": "devices/partition",
+            "attributes": {
+                "partitionId": 2,
+                "state": 1,
+                "desiredState": 1,
+                "extendedArmingOptions": {
+                    "Disarmed": [],
+                    "ArmedStay": [
+                        2,
+                        1
+                    ],
+                    "ArmedAway": [
+                        2,
+                        1
+                    ],
+                    "ArmedNight": []
+                },
+                "invalidExtendedArmingOptions": {
+                    "Disarmed": [],
+                    "ArmedStay": [],
+                    "ArmedAway": [],
+                    "ArmedNight": []
+                },
+                "needsClearIssuesPrompt": false,
+                "canEnableAlexa": false,
+                "isAlexaEnabled": false,
+                "canAccessPanelWifi": true,
+                "canScanForWifi": true,
+                "sensorNamingFormat": 3,
+                "managedDeviceType": 9,
+                "canBeRenamed": true,
+                "canAccessWebSettings": true,
+                "canAccessAppSettings": true,
+                "webSettings": 1002,
+                "hasState": true,
+                "canBeDeleted": false,
+                "canAccessTroubleshootingWizard": false,
+                "troubleshootingWizard": null,
+                "macAddress": "",
+                "manufacturer": "",
+                "isOAuth": false,
+                "isZWave": false,
+                "supportsCommandClassBasic": false,
+                "isMalfunctioning": false,
+                "canBeSaved": true,
+                "canChangeDescription": true,
+                "description": "Detached Garage",
+                "deviceModelId": 9609,
+                "canConfirmStateChange": true,
+                "canReceiveCommands": true,
+                "remoteCommandsEnabled": true,
+                "hasPermissionToChangeState": true,
+                "deviceIcon": {
+                    "icon": 184
+                },
+                "batteryLevelNull": null,
+                "lowBattery": false,
+                "criticalBattery": false,
+                "canBeLinkedToVideoDevice": false,
+                "videoDeviceLinkDeviceIds": []
+            },
+            "relationships": {
+                "sensors": {
+                    "data": [
+                        {
+                            "id": "id-sensor-shared",
+                            "type": "devices/sensor"
+                        }
+                    ],
+                    "meta": {
+                        "count": "1"
+                    }
+                },
+                    "garageDoors": {
+                        "data": [
+                            {
+                                "id": "id-garage-detached",
+                                "type": "devices/garage-door"
+                            }
+                        ],
+                        "meta": {
+                            "count": "1"
+                        }
+                    },
+                    "stateInfo": {
+                        "data": {
+                            "id": "id-stateinfo-partition-detached_garage",
+                            "type": "devices/state-info"
+                        }
+                    }
+                }
+            }
+        ],
+        "included": [],
+        "meta": {
+            "transformer_version": "1.1"
         }
-    ],
-    "included": [],
-    "meta": {
-        "transformer_version": "1.1"
     }
-}

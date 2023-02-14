@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": 11111111,
+            "id": "id-system",
             "type": "systems/system",
             "attributes": {
                 "description": "My Alarm System",
@@ -18,12 +18,16 @@
                 "partitions": {
                     "data": [
                         {
-                            "id": "555555555-127",
+                            "id": "id-partition-house",
+                            "type": "devices/partition"
+                        },
+                        {
+                            "id": "id-partition-detache_garage",
                             "type": "devices/partition"
                         }
                     ],
                     "meta": {
-                        "count": "1"
+                        "count": "2"
                     }
                 },
                 "locks": {
@@ -41,7 +45,7 @@
                 "cameras": {
                     "data": [
                         {
-                            "id": "555555555-90",
+                            "id": "id-camera-skybell",
                             "type": "video/camera"
                         }
                     ],
@@ -58,10 +62,10 @@
                 "garageDoors": {
                     "data": [
                         {
-                            "id": "555555555-31",
+                            "id": "id-garage-right",
                             "type": "devices/garage-door"
                         }, {
-                            "id": "555555555-32",
+                            "id": "id-garage-left",
                             "type": "devices/garage-door"
                         }
                     ],
@@ -98,31 +102,31 @@
                 "sensors": {
                     "data": [
                         {
-                            "id": "555555555-11",
+                            "id": "id-sensor-backdoor",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-12",
+                            "id": "id-sensor-bsmt_hallway_glass",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-13",
+                            "id": "id-sensor-kids_left_window",
                             "type": "devices/sensor"
                         },
                         {
-                            "id": "555555555-14",
+                            "id": "id-sensor-dad_iphone",
                             "type": "devices/sensor"
                         }, {
-                            "id": "555555555-15",
+                            "id": "id-sensor-carbon_monoxide",
                             "type": "devices/sensor"
                         }, {
-                            "id": "555555555-16",
+                            "id": "id-sensor-smoke-inter",
                             "type": "devices/sensor"
                         }, {
-                            "id": "555555555-17",
+                            "id": "id-sensor-smoke-laundry",
                             "type": "devices/sensor"
                         }, {
-                            "id": "555555555-177",
+                            "id": "id-sensor-camera-panel",
                             "type": "devices/sensor"
                         }
                     ],
@@ -133,10 +137,10 @@
                 "waterSensors": {
                     "data": [
                         {
-                            "id": "555555555-211",
+                            "id": "id-water-kitchen",
                             "type": "devices/water-sensor"
                         }, {
-                            "id": "555555555-212",
+                            "id": "id-water-basement",
                             "type": "devices/water-sensor"
                         }
                     ],
@@ -159,10 +163,10 @@
                 "lights": {
                     "data": [
                         {
-                            "id": "555555555-21",
+                            "id": "id-light-balcony",
                             "type": "devices/light"
                         }, {
-                            "id": "555555555-22",
+                            "id": "id-light-upstairs",
                             "type": "devices/light"
                         }
                     ],
@@ -185,7 +189,7 @@
                 "thermostats": {
                     "data": [
                         {
-                            "id": "555555555-51",
+                            "id": "id-tstat-upstairs",
                             "type": "devices/thermostat"
                         }
                     ],
@@ -239,7 +243,7 @@
                 },
                 "configuration": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/configuration"
                     }
                 },
@@ -252,7 +256,7 @@
                 "gates": {
                     "data": [
                         {
-                            "id": "555555555-33",
+                            "id": "id-gate-driveway",
                             "type": "devices/gate"
                         }
                     ],

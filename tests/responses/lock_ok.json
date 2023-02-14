@@ -1,7 +1,7 @@
 {
     "data": [
         {
-            "id": "555555555-41",
+            "id": "id-lock-back",
             "type": "devices/lock",
             "attributes": {
                 "state": 2,
@@ -46,14 +46,14 @@
             "relationships": {
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 }
             }
         },
         {
-            "id": "555555555-42",
+            "id": "id-lock-front",
             "type": "devices/lock",
             "attributes": {
                 "state": 1,
@@ -98,7 +98,7 @@
             "relationships": {
                 "system": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 }

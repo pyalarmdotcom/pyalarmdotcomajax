@@ -107,7 +107,7 @@
                 },
                 "accountInformation": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "settings/account-management/account-information/account-information"
                     }
                 },
@@ -215,7 +215,7 @@
                 },
                 "clipDonationAgreement": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "video/clipDonationAgreement"
                     }
                 },
@@ -224,7 +224,7 @@
                 },
                 "selectedSystem": {
                     "data": {
-                        "id": "11111111",
+                        "id": "id-system",
                         "type": "systems/system"
                     }
                 },
