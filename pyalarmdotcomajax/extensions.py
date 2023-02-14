@@ -313,9 +313,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
             for config_id in additional_camera_config_ids:
                 # Build payload to request config page for next camera
-                postback_form_data = current_form_data.raw_attribs
 
-                if not postback_form_data:
+                if not (postback_form_data := current_form_data.raw_attribs):
                     raise UnexpectedDataStructure
 
                 postback_form_data["__EVENTTARGET"] = "ctl00$phBody$CamSelector$ddlCams"

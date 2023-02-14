@@ -358,9 +358,8 @@ async def cli() -> None:
             #
             # Convert user input into proper type
             #
-            config_option_type = config_option.value_type
 
-            if config_option_type in [bool, str, int]:
+            if (config_option_type := config_option.value_type) in [bool, str, int]:
                 try:
                     typed_new_value = config_option_type(new_value)
                 except ValueError:

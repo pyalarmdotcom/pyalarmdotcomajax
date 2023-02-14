@@ -1,11 +1,8 @@
 """Test sensor devices."""
 
-from collections import Counter
-
 import pytest
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.cli import _print_element_tearsheet
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
 
