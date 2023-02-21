@@ -1054,7 +1054,6 @@ class AlarmController:
                         DeviceType.SYSTEM,
                     ]:
                         for family_name, family_data in device["relationships"].items():
-                            # TODO: Get list of unsupported devices to notify user of what has not been collected. Currently only collects known unknowns.
                             if DeviceType.has_value(family_name):
                                 for sub_device in family_data["data"]:
                                     subordinates.append(

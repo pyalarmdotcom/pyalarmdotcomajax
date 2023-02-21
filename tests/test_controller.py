@@ -65,7 +65,7 @@ async def test___async_build_device_list__sensors(
 ) -> None:
     """Test whether pyalarmdotcomajax sensor objects are built."""
 
-    await adc_client._async_build_device_list(DeviceType.SENSOR)
+    await adc_client.async_update(DeviceType.SENSOR)
 
     assert adc_client.sensors
 
