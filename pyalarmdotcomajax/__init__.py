@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta
 from enum import Enum
 import json
 import logging
 import re
+from typing import Optional
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
@@ -46,7 +48,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.12"
+__version__ = "0.4.13-alpha"
 
 log = logging.getLogger(__name__)
 
@@ -100,13 +102,13 @@ class AlarmController:
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
-    LOGIN_2FA_POST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/verifyTwoFactorCode"
+    LOGIN_2FA_POST_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/verifyTwoFactorCode"
     LOGIN_2FA_DETAIL_URL_TEMPLATE = (
-        "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}"
+        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}"
     )
-    LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
-    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
-    LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
+    LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
+    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
     VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
@@ -149,6 +151,9 @@ class AlarmController:
 
         # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
         self._partition_map: dict = {}
+
+        # List of device types that are present in a user's environment. We'll use this to cut down on the number of API calls made.
+        self._installed_device_types: set[DeviceType] = set()
 
         self._trouble_conditions: dict = {}
 
@@ -339,19 +344,240 @@ class AlarmController:
 
         log.debug("Calling update on Alarm.com")
 
-        try:
-            await self._async_get_trouble_conditions()
+        await self._async_get_trouble_conditions()
 
-            device_types: list[DeviceType] = (
-                [DeviceType.SYSTEM, device_type]
-                if device_type
-                else list(DEVICE_URLS["supported"].keys())
-            )
+        # Need to fetch system data before other devices to populate list of installed device types.
 
-            await self._async_get_and_build_devices(device_types)
+        device_types: list[DeviceType] = (
+            list({DeviceType.SYSTEM, device_type})
+            if device_type
+            else [DeviceType.SYSTEM] + [type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM]
+        )
 
-        except (PermissionError, UnexpectedDataStructure) as err:
-            raise err
+        log.debug("Refreshing data for device types: %s", device_types)
+
+        for device_type_i in device_types:
+            #
+            # PASS ON DEVICE TYPES NOT INSTALLED IN USER ENVIRONMENT
+            #
+            if device_type_i not in {DeviceType.SYSTEM}.union(self._installed_device_types):
+                log.debug("Skipping %s. Not installed in user environment.", device_type_i.name)
+                continue
+
+            #
+            # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
+            #
+            try:
+                device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type_i]
+
+            except KeyError as err:
+                raise UnsupportedDevice from err
+
+            #############################
+            # FETCH DATA FROM ALARM.COM #
+            #############################
+
+            #
+            # GET ALL DEVICES WITHIN SPECIFIED CLASS
+            #
+            devices = []
+            try:
+                devices = await self._async_build_device_list(
+                    device_type=device_type_i
+                )
+
+            except BadAccount as err:
+                # Indicates fatal account error.
+                raise PermissionError from err
+
+            except DataFetchFailed:
+                log.error(
+                    (
+                        "Encountered data error while fetching %ss. Skipping this"
+                        " device type."
+                    ),
+                    device_type_i.name,
+                )
+
+            if len(devices) == 0:
+                continue
+
+            #
+            # PURGE UNSUPPORTED CAMERAS
+            #
+            # This is a hack. We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
+            if device_type_i == DeviceType.CAMERA:
+                skybells: list = []
+                for device_json, _ in devices:
+                    if (
+                        device_json.get("attributes", {}).get("deviceModel")
+                        == "SKYBELLHD"
+                    ):
+                        skybells.append((device_json, None))
+
+                if not (devices := skybells):
+                    pass
+
+            #
+            # MAKE ADDITIONAL CALLS IF REQUIRED FOR DEVICE TYPE
+            #
+            additional_endpoint_raw_results: dict = {}
+
+            try:
+                additional_endpoints: dict = DEVICE_URLS["supported"][device_type_i][
+                    "additional_endpoints"
+                ]
+
+                for name, url in additional_endpoints.items():
+                    additional_endpoint_raw_results[
+                        name
+                    ] = await self._async_build_device_list(url=url)
+
+            except KeyError:
+                pass
+
+            ####################
+            # QUERY EXTENSIONS #
+            ####################
+
+            #
+            # Check whether any devices have extensions.
+            #
+
+            required_extensions: list[type[CameraSkybellControllerExtension]] = []
+            device_settings: dict[
+                str, dict[str, ConfigurationOption]
+            ] = {}  # device_id {slug: ConfigurationOption}
+            name_id_map: dict[str, str] = {}
+
+            #
+            # Camera Skybell HD Extension
+            # Skybell HD extension pulls data for all cameras at once. We can stop searching at the first hit since we only care if we have at least one.
+            if device_type_i == DeviceType.CAMERA:
+                for device_json, _ in devices:
+                    if (
+                        device_json.get("attributes", {}).get("deviceModel")
+                        == "SKYBELLHD"
+                    ):
+                        required_extensions.append(CameraSkybellControllerExtension)
+                        break
+
+            #
+            # Build map of device names -> device ids.
+            #
+
+            for device_json, subordinates in devices:
+                if name := device_json.get("attributes", {}).get("description"):
+                    name_id_map[name] = device_json["id"]
+
+            #
+            # Retrieve data for extensions
+            #
+
+            extension_controller: CameraSkybellControllerExtension | None = None
+
+            for extension_class in required_extensions:
+                extension_controller = extension_class(
+                    websession=self._websession,
+                    headers=self._ajax_headers,
+                )
+
+                try:
+                    # Fetch from Alarm.com
+                    extended_properties_list: list[
+                        ExtendedProperties
+                    ] = await extension_controller.fetch()
+                except UnexpectedDataStructure:
+                    continue
+
+                # Match extended properties to devices by name, then add to device_settings storage.
+                for extended_property in extended_properties_list:
+                    if (device_name := extended_property.device_name) in name_id_map:
+                        device_id = name_id_map[device_name]
+                        device_settings[device_id] = extended_property.settings
+
+            ##############################
+            # PREPROCESS ADDITIONAL DATA #
+            ##############################
+
+            #
+            # PREPROCESSING FOR SYSTEMS
+            #
+            # Extract device types installed in user's environment.
+
+            if device_type_i == DeviceType.SYSTEM:
+                self._installed_device_types = {DeviceType(child_family) for _, children in devices for _, child_family in children}
+
+            log.debug("Installed device types: %s", self._installed_device_types)
+
+            #
+            # PREPROCESSING FOR IMAGE SENSORS
+            #
+            # Extract recent images from image sensors
+
+            element_specific_data: dict[str, ElementSpecificData] = {}
+
+            if device_class is ImageSensor:
+                for image in additional_endpoint_raw_results["recent_images"]:
+                    if isinstance(image, dict) and (
+                        image_sensor_id := str(
+                            image.get("relationships", {})
+                            .get("imageSensor", {})
+                            .get("data", {})
+                            .get("id")
+                        )
+                    ):
+                        element_specific_data.setdefault(
+                            image_sensor_id, {}
+                        ).setdefault("raw_recent_images", set()).add(image)
+
+            ###################
+            # BASE PROCESSING #
+            ###################
+
+            temp_device_storage: list = []
+
+            for device_raw_attribs, subordinates in devices:
+                entity_id = device_raw_attribs["id"]
+
+                entity_obj = device_class(
+                    id_=entity_id,
+                    raw_device_data=device_raw_attribs,
+                    subordinates=subordinates,
+                    element_specific_data=element_specific_data.get(entity_id),
+                    send_action_callback=self.async_send_command,
+                    config_change_callback=extension_controller.submit_change
+                    if extension_controller
+                    else None,
+                    trouble_conditions=self._trouble_conditions.get(entity_id),
+                    partition_id=self._partition_map.get(entity_id),
+                    settings=device_settings.get(entity_id),
+                )
+
+                temp_device_storage.append(entity_obj)
+
+            if device_class is System:
+                self.systems[:] = temp_device_storage
+            elif device_class is Partition:
+                self.partitions[:] = temp_device_storage
+            elif device_class is Sensor:
+                self.sensors[:] = temp_device_storage
+            elif device_class is GarageDoor:
+                self.garage_doors[:] = temp_device_storage
+            elif device_class is Gate:
+                self.gates[:] = temp_device_storage
+            elif device_class is Lock:
+                self.locks[:] = temp_device_storage
+            elif device_class is Light:
+                self.lights[:] = temp_device_storage
+            elif device_class is ImageSensor:
+                self.image_sensors[:] = temp_device_storage
+            elif device_class is Camera:
+                self.cameras[:] = temp_device_storage
+            elif device_class is Thermostat:
+                self.thermostats[:] = temp_device_storage
+            elif device_class is WaterSensor:
+                self.water_sensors[:] = temp_device_storage
 
     async def async_send_command(
         self,
@@ -543,217 +769,17 @@ class AlarmController:
     #
     # Help process data returned by the API
 
-    async def _async_get_and_build_devices(
-        self,
-        device_types: list[DeviceType],
-    ) -> None:
-        """Get data for the specified device types and build objects."""
+    async def _is_logged_in(self) -> bool:
+        """Check if we are logged in."""
 
-        for device_type in device_types:
-            #
-            # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
-            #
-            try:
-                device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type]
+        async with self._websession.get(
+            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
+            headers=self._ajax_headers,
+        ) as resp:
+            text_rsp = await resp.text()
 
-            except KeyError as err:
-                raise UnsupportedDevice from err
+        return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
 
-            #############################
-            # FETCH DATA FROM ALARM.COM #
-            #############################
-
-            #
-            # GET ALL DEVICES WITHIN SPECIFIED CLASS
-            #
-            devices = []
-            try:
-                devices = await self._async_get_items_and_subordinates(
-                    device_type=device_type
-                )
-
-            except BadAccount as err:
-                # Indicates fatal account error.
-                raise PermissionError from err
-
-            except DataFetchFailed:
-                log.error(
-                    (
-                        "Encountered data error while fetching %ss. Skipping this"
-                        " device type."
-                    ),
-                    device_type.name,
-                )
-
-            if len(devices) == 0:
-                continue
-
-            #
-            # PURGE UNSUPPORTED CAMERAS
-            #
-            # This is a hack. We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
-            if device_type == DeviceType.CAMERA:
-                skybells: list = []
-                for device_json, _ in devices:
-                    if (
-                        device_json.get("attributes", {}).get("deviceModel")
-                        == "SKYBELLHD"
-                    ):
-                        skybells.append((device_json, None))
-
-                if not (devices := skybells):
-                    pass
-
-            #
-            # MAKE ADDITIONAL CALLS IF REQUIRED FOR DEVICE TYPE
-            #
-            additional_endpoint_raw_results: dict = {}
-
-            try:
-                additional_endpoints: dict = DEVICE_URLS["supported"][device_type][
-                    "additional_endpoints"
-                ]
-
-                for name, url in additional_endpoints.items():
-                    additional_endpoint_raw_results[
-                        name
-                    ] = await self._async_get_items_and_subordinates(url=url)
-
-            except KeyError:
-                pass
-
-            ####################
-            # QUERY EXTENSIONS #
-            ####################
-
-            #
-            # Check whether any devices have extensions.
-            #
-
-            required_extensions: list[type[CameraSkybellControllerExtension]] = []
-            device_settings: dict[
-                str, dict[str, ConfigurationOption]
-            ] = {}  # device_id {slug: ConfigurationOption}
-            name_id_map: dict[str, str] = {}
-
-            #
-            # Camera Skybell HD Extension
-            # Skybell HD extension pulls data for all cameras at once. We can stop searching at the first hit since we only care if we have at least one.
-            if device_type == DeviceType.CAMERA:
-                for device_json, _ in devices:
-                    if (
-                        device_json.get("attributes", {}).get("deviceModel")
-                        == "SKYBELLHD"
-                    ):
-                        required_extensions.append(CameraSkybellControllerExtension)
-                        break
-
-            #
-            # Build map of device names -> device ids.
-            #
-
-            for device_json, subordinates in devices:
-                if name := device_json.get("attributes", {}).get("description"):
-                    name_id_map[name] = device_json["id"]
-
-            #
-            # Retrieve data for extensions
-            #
-
-            extension_controller: CameraSkybellControllerExtension | None = None
-
-            for extension_class in required_extensions:
-                extension_controller = extension_class(
-                    websession=self._websession,
-                    headers=self._ajax_headers,
-                )
-
-                try:
-                    # Fetch from Alarm.com
-                    extended_properties_list: list[
-                        ExtendedProperties
-                    ] = await extension_controller.fetch()
-                except UnexpectedDataStructure:
-                    continue
-
-                # Match extended properties to devices by name, then add to device_settings storage.
-                for extended_property in extended_properties_list:
-                    if (device_name := extended_property.device_name) in name_id_map:
-                        device_id = name_id_map[device_name]
-                        device_settings[device_id] = extended_property.settings
-
-            ##############################
-            # PREPROCESS ADDITIONAL DATA #
-            ##############################
-
-            #
-            # PREPROCESSING FOR IMAGE SENSORS
-            #
-            # Extract recent images from image sensors
-
-            element_specific_data: dict[str, ElementSpecificData] = {}
-
-            if device_class is ImageSensor:
-                for image in additional_endpoint_raw_results["recent_images"]:
-                    if isinstance(image, dict) and (
-                        image_sensor_id := str(
-                            image.get("relationships", {})
-                            .get("imageSensor", {})
-                            .get("data", {})
-                            .get("id")
-                        )
-                    ):
-                        element_specific_data.setdefault(
-                            image_sensor_id, {}
-                        ).setdefault("raw_recent_images", set()).add(image)
-
-            ###################
-            # BASE PROCESSING #
-            ###################
-
-            temp_device_storage: list = []
-
-            for device_raw_attribs, subordinates in devices:
-                entity_id = device_raw_attribs["id"]
-
-                entity_obj = device_class(
-                    id_=entity_id,
-                    raw_device_data=device_raw_attribs,
-                    subordinates=subordinates,
-                    element_specific_data=element_specific_data.get(entity_id),
-                    send_action_callback=self.async_send_command,
-                    config_change_callback=extension_controller.submit_change
-                    if extension_controller
-                    else None,
-                    trouble_conditions=self._trouble_conditions.get(entity_id),
-                    partition_id=self._partition_map.get(entity_id),
-                    settings=device_settings.get(entity_id),
-                )
-
-                temp_device_storage.append(entity_obj)
-
-            if device_class is System:
-                self.systems[:] = temp_device_storage
-            elif device_class is Partition:
-                self.partitions[:] = temp_device_storage
-            elif device_class is Sensor:
-                self.sensors[:] = temp_device_storage
-            elif device_class is GarageDoor:
-                self.garage_doors[:] = temp_device_storage
-            elif device_class is Gate:
-                self.gates[:] = temp_device_storage
-            elif device_class is Lock:
-                self.locks[:] = temp_device_storage
-            elif device_class is Light:
-                self.lights[:] = temp_device_storage
-            elif device_class is ImageSensor:
-                self.image_sensors[:] = temp_device_storage
-            elif device_class is Camera:
-                self.cameras[:] = temp_device_storage
-            elif device_class is Thermostat:
-                self.thermostats[:] = temp_device_storage
-            elif device_class is WaterSensor:
-                self.water_sensors[:] = temp_device_storage
 
     #
     #
@@ -890,14 +916,16 @@ class AlarmController:
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
 
-    # Takes EITHER url (without base) or device_type.
-    async def _async_get_items_and_subordinates(
+
+    async def _async_build_device_list(
         self,
         device_type: DeviceType | None = None,
         url: str | None = None,
         retry_on_failure: bool = True,
     ) -> list:
-        """Get attributes, metadata, and child devices for an ADC device class."""
+        """Get attributes, metadata, and child devices for an ADC device class.
+           Takes EITHER url (without base) or device_type.
+        """
 
         #
         # Determine URL
@@ -936,7 +964,7 @@ class AlarmController:
         rsp_errors = json_rsp.get("errors", [])
         if len(rsp_errors) != 0:
             error_msg = (
-                "_async_get_items_and_subordinates(): Failed to get data for device"
+                "_async_build_device_list(): Failed to get data for device"
                 f" type {device_type}. Response: {rsp_errors}. Errors: {json_rsp}."
             )
             log.debug(error_msg)
@@ -956,34 +984,40 @@ class AlarmController:
                 return []
 
             if rsp_errors[0].get("status") == "403":
-                # User likely has an account without access to this class of device.
-                # I.e. Surety's "Surety Home" plan is alarm only; no cameras, lights, etc.
-                # All requests for those device types will return 403.
-                #
-                # On some providers, 403 may mean that the user has been logged out.
-                # Try logging in again, then give up by pretending that we couldn't find any devices of this type.
-
-                log.error("Error fetching data from Alarm.com.")
+                # 403 means that either the user doesn't have access to this class of device or that the user has logged out.
+                # Unsupported device types should be stripped out in async_update(), so assume logged out.
+                # If logged out, try logging in again, then give up by pretending that we couldn't find any devices of this type.
 
                 if not retry_on_failure:
-                    log.debug(
+                    log.error(
                         (
-                            "Got 403 status when fetching data for device type %s."
-                            " Logging in again didn't help."
+                            "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. Logging in again didn't help. Giving up on device type."
                         ),
                         device_type,
                     )
+                    return []
 
-                    return list([])
+                if not self._is_logged_in():
+                    log.debug(
+                        (
+                            "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. Trying to refresh auth tokens by logging in again."
+                        ),
+                        device_type,
+                    )
+                    await self.async_login()
+                    return await self._async_build_device_list(
+                        device_type=device_type,
+                        retry_on_failure=False,
+                    )
 
-                log.error("Trying to refresh auth tokens by logging in again.")
-
-                await self.async_login()
-
-                return await self._async_get_items_and_subordinates(
-                    device_type=device_type,
-                    retry_on_failure=False,
+                log.error(
+                    (
+                        "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. User is already logged in. Giving up on device type."
+                    ),
+                    device_type,
                 )
+                log.debug("Server response: %s", json_rsp)
+                return []
 
             if (
                 rsp_errors[0].get("status") == "409"
@@ -1024,7 +1058,7 @@ class AlarmController:
                             if DeviceType.has_value(family_name):
                                 for sub_device in family_data["data"]:
                                     subordinates.append(
-                                        (sub_device["id"], sub_device["type"])
+                                        (sub_device["id"], family_name)
                                     )
 
                                     if device_type == DeviceType.PARTITION:

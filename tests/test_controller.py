@@ -37,13 +37,13 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
 
 
 @pytest.mark.asyncio  # type: ignore
-async def test__async_get_items_and_subordinates__sensors(
+async def test__async_build_device_list__sensors(
     all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Test for function that fetches item metadata from Alarm.com API."""
 
-    items = await adc_client._async_get_items_and_subordinates(DeviceType.SENSOR)
+    items = await adc_client._async_build_device_list(DeviceType.SENSOR)
 
     for rsp_device, _ in items:
         src_match = {}
@@ -59,13 +59,13 @@ async def test__async_get_items_and_subordinates__sensors(
 
 
 @pytest.mark.asyncio  # type: ignore
-async def test___async_get_and_build_devices__sensors(
+async def test___async_build_device_list__sensors(
     all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Test whether pyalarmdotcomajax sensor objects are built."""
 
-    await adc_client._async_get_and_build_devices([DeviceType.SENSOR])
+    await adc_client._async_build_device_list(DeviceType.SENSOR)
 
     assert adc_client.sensors
 
