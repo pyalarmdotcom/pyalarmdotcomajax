@@ -31,9 +31,18 @@
                     }
                 },
                 "locks": {
-                    "data": [],
+                    "data": [
+                        {
+                            "id": "id-lock-front",
+                            "type": "devices/lock"
+                        },
+                        {
+                            "id": "id-lock-back",
+                            "type": "devices/lock"
+                        }
+                    ],
                     "meta": {
-                        "count": "0"
+                        "count": "2"
                     }
                 },
                 "accessControlAccessPointDevices": {
