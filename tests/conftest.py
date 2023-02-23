@@ -9,7 +9,7 @@ from aioresponses import aioresponses
 import pytest
 
 from pyalarmdotcomajax import AlarmController, const as c
-from pyalarmdotcomajax.devices import DEVICE_URLS, DeviceType
+from pyalarmdotcomajax.devices import DEVICE_ENDPOINTS, DeviceType
 from pyalarmdotcomajax.extensions import CameraSkybellControllerExtension
 
 from .responses import get_http_body_html, get_http_body_json
@@ -60,47 +60,37 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
     ###############
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.CAMERA]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("camera_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GARAGE_DOOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GARAGE_DOOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("garage_door_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GATE]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("gate_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("image_sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["additional_endpoints"][
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["additional"][
             "recent_images"
         ].format(c.URL_BASE, ""),
         status=200,
@@ -108,49 +98,37 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LIGHT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LIGHT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("light_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LOCK]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LOCK]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("lock_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.PARTITION]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.PARTITION]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("partition_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SYSTEM]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SYSTEM]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("system_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.THERMOSTAT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.THERMOSTAT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("thermostat_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.WATER_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("water_sensor_ok"),
     )
@@ -191,9 +169,7 @@ def camera_no_permissions(response_mocker: aioresponses) -> None:
     """No permissions for camera."""
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.CAMERA]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("camera_no_permissions"),
     )
@@ -223,47 +199,37 @@ def all_base_ok_camera_403(response_mocker: aioresponses) -> None:
     ###############
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.CAMERA]["primary"].format(c.URL_BASE, ""),
         status=403,
         body=get_http_body_html("404"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GARAGE_DOOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GARAGE_DOOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("garage_door_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GATE]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("gate_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("image_sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["additional_endpoints"][
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["additional"][
             "recent_images"
         ].format(c.URL_BASE, ""),
         status=200,
@@ -271,49 +237,37 @@ def all_base_ok_camera_403(response_mocker: aioresponses) -> None:
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LIGHT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LIGHT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("light_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LOCK]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LOCK]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("lock_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.PARTITION]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.PARTITION]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("partition_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SYSTEM]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SYSTEM]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("system_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.THERMOSTAT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.THERMOSTAT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("thermostat_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.WATER_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("water_sensor_ok"),
     )
@@ -343,47 +297,37 @@ def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
     ###############
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.CAMERA]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.CAMERA]["primary"].format(c.URL_BASE, ""),
         status=404,
         body=get_http_body_html("404"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GARAGE_DOOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GARAGE_DOOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("garage_door_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.GATE]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.GATE]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("gate_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("image_sensor_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.IMAGE_SENSOR]["additional_endpoints"][
+        url=DEVICE_ENDPOINTS[DeviceType.IMAGE_SENSOR]["additional"][
             "recent_images"
         ].format(c.URL_BASE, ""),
         status=200,
@@ -391,49 +335,37 @@ def all_base_ok_camera_404(response_mocker: aioresponses) -> None:
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LIGHT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LIGHT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("light_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.LOCK]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.LOCK]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("lock_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.PARTITION]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.PARTITION]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("partition_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.SYSTEM]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.SYSTEM]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("system_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.THERMOSTAT]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.THERMOSTAT]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("thermostat_ok"),
     )
 
     response_mocker.get(
-        url=DEVICE_URLS["supported"][DeviceType.WATER_SENSOR]["endpoint"].format(
-            c.URL_BASE, ""
-        ),
+        url=DEVICE_ENDPOINTS[DeviceType.WATER_SENSOR]["primary"].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("water_sensor_ok"),
     )

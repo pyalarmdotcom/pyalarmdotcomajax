@@ -48,8 +48,7 @@ async def test__extension_camera_skybellhd__via_alarm_controller(
     all_extension_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
-    """Test whether pyalarmdotcomajax camera objects are properly built when encountering Skybell HD cameras.
-    """
+    """Test whether pyalarmdotcomajax camera objects are properly built when encountering Skybell HD cameras."""
 
     await adc_client.async_update()
 
@@ -138,8 +137,7 @@ async def test__extension_camera_skybellhd__missing_field(
     response_mocker: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
-    """Ensures that pyalarmdotcomajax skips loading data from Skybell HD if Skybell HD config page has unexpected structure.
-    """
+    """Ensures that pyalarmdotcomajax skips loading data from Skybell HD if Skybell HD config page has unexpected structure."""
 
     await adc_client.async_update()
 

@@ -20,7 +20,7 @@ from termcolor import colored, cprint
 import pyalarmdotcomajax
 
 from . import AlarmController, AuthResult
-from .devices import DEVICE_URLS, BaseDevice, DeviceType
+from .devices import DEVICE_SUPPORT_STATUS, BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
 from .devices.system import System
@@ -278,12 +278,12 @@ async def cli() -> None:
             # Built List of Device Types
 
             supported_device_types = []
-            for device_type in DEVICE_URLS["supported"]:
+            for device_type in DEVICE_SUPPORT_STATUS["supported"]:
                 supported_device_types.append(device_type)
 
             unsupported_device_types = []
             if include_unsupported := args.get("include_unsupported", False):
-                for device_type in DEVICE_URLS["unsupported"]:
+                for device_type in DEVICE_SUPPORT_STATUS["unsupported"]:
                     unsupported_device_types.append(device_type)
 
             # Get & Add Machine Output
@@ -293,9 +293,11 @@ async def cli() -> None:
                     await _async_machine_output(
                         alarm=alarm,
                         include_image_sensor_b64=(verbose > 1),
-                        device_types=supported_device_types + unsupported_device_types
-                        if verbose > 0
-                        else unsupported_device_types,
+                        device_types=(
+                            supported_device_types + unsupported_device_types
+                            if verbose > 0
+                            else unsupported_device_types
+                        ),
                     )
                 )
 

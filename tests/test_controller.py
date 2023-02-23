@@ -67,6 +67,8 @@ async def test___async_build_device_list__sensors(
 
     await adc_client.async_update(DeviceType.SENSOR)
 
+    print(adc_client.sensors)
+
     assert adc_client.sensors
 
 

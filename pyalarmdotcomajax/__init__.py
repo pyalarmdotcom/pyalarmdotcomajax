@@ -17,7 +17,8 @@ from pyalarmdotcomajax.helpers import slug_to_title
 
 from . import const as c
 from .devices import (
-    DEVICE_URLS,
+    DEVICE_ENDPOINTS,
+    DEVICE_SUPPORT_STATUS,
     BaseDevice,
     DeviceType,
     ElementSpecificData,
@@ -53,6 +54,7 @@ __version__ = "0.4.13-alpha"
 log = logging.getLogger(__name__)
 
 # Map DeviceType enum to device class.
+# Must be kept in /__init__.py to avoid circular reference errors.
 DEVICE_CLASSES: dict = {
     DeviceType.CAMERA: Camera,
     DeviceType.GARAGE_DOOR: GarageDoor,
@@ -66,7 +68,6 @@ DEVICE_CLASSES: dict = {
     DeviceType.THERMOSTAT: Thermostat,
     DeviceType.WATER_SENSOR: WaterSensor,
 }
-
 
 class AuthResult(Enum):
     """Standard for reporting results of login attempt."""
@@ -347,11 +348,10 @@ class AlarmController:
         await self._async_get_trouble_conditions()
 
         # Need to fetch system data before other devices to populate list of installed device types.
-
-        device_types: list[DeviceType] = (
-            list({DeviceType.SYSTEM, device_type})
-            if device_type
-            else [DeviceType.SYSTEM] + [type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM]
+        # Fetch system + user submitted type (if present), otherwise get system + all supported types.
+        device_types: list[DeviceType] = [DeviceType.SYSTEM] + (
+            [param_type for param_type in (device_type,) if param_type != DeviceType.SYSTEM] if device_type
+            else [supported_type for supported_type in DEVICE_SUPPORT_STATUS["supported"] if supported_type != DeviceType.SYSTEM]
         )
 
         log.debug("Refreshing data for device types: %s", device_types)
@@ -424,8 +424,8 @@ class AlarmController:
             additional_endpoint_raw_results: dict = {}
 
             try:
-                additional_endpoints: dict = DEVICE_URLS["supported"][device_type_i][
-                    "additional_endpoints"
+                additional_endpoints: dict = DEVICE_ENDPOINTS[device_type_i][
+                    "additional"
                 ]
 
                 for name, url in additional_endpoints.items():
@@ -602,7 +602,7 @@ class AlarmController:
         msg_body["statePollOnly"] = False
 
         url = (
-            f"{DEVICE_URLS['supported'][device_type]['endpoint'].format(c.URL_BASE, device_id)}/{event.value}"
+            f"{DEVICE_ENDPOINTS[device_type]['primary'].format(c.URL_BASE, device_id)}/{event.value}"
         )
         log.debug("Url %s", url)
 
@@ -670,7 +670,7 @@ class AlarmController:
 
     async def async_get_raw_server_responses(
         self,
-        device_types: list[type[BaseDevice]],
+        device_types: list[DeviceType],
         include_image_sensor_b64: bool = False,
     ) -> dict:
         """Get raw responses from Alarm.com device endpoints."""
@@ -679,15 +679,13 @@ class AlarmController:
 
         endpoints = []
 
-        for device_type, device_data in (
-            DEVICE_URLS["supported"] | DEVICE_URLS["unsupported"]
-        ).items():
+        for device_type, device_data in DEVICE_ENDPOINTS.items():
             if device_type in device_types:
                 endpoints.append(
-                    (slug_to_title(device_type.name), device_data["endpoint"])
+                    (slug_to_title(device_type.name), device_data["primary"])
                 )
 
-        if ImageSensor in device_types:
+        if DeviceType.IMAGE_SENSOR in device_types:
             endpoints.append(("Image Sensor Data", c.IMAGE_SENSOR_DATA_URL_TEMPLATE))
 
         for name, url_template in endpoints:
@@ -792,7 +790,7 @@ class AlarmController:
     async def _async_requires_2fa(self) -> bool | None:
         """Check whether two factor authentication is enabled on the account."""
         async with self._websession.get(
-            url=DEVICE_URLS["supported"][DeviceType.SYSTEM]["endpoint"].format(
+            url=DEVICE_ENDPOINTS[DeviceType.SYSTEM]["primary"].format(
                 c.URL_BASE, ""
             ),
             headers=self._ajax_headers,
@@ -934,8 +932,11 @@ class AlarmController:
             raise ValueError
 
         full_path = (
-            DEVICE_URLS["supported"][device_type]["endpoint"] if device_type else url
+            DEVICE_ENDPOINTS[device_type]["primary"] if device_type else url
         )
+
+        if not full_path:
+            raise ValueError
 
         #
         # Request data for device type

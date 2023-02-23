@@ -19,6 +19,65 @@ class Thermostat(DesiredStateMixin, BaseDevice):
     # TODO: desiredRts (remote temp sensor), desiredLocalDisplayLockingMode. Need user with remote sensors.
     # In identity info, check localizeTempUnitsToCelsius.
 
+    class FanMode(Enum):
+        """Enum of thermostat fan modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatFanMode.js
+
+        AUTO = 0
+        ON = 1
+
+        # Not Used
+        # AUTO_HIGH = 2
+        # ON_HIGH = 3
+        # AUTO_MEDIUM = 4
+        # ON_MEDIUM = 5
+        # CIRCULATE = 6
+        # HUMIDITY = 7
+
+    class DeviceState(Enum):
+        """Enum of thermostat states."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatStatus.js
+
+        UNKNOWN = 0
+        OFF = 1
+        HEAT = 2
+        COOL = 3
+        AUTO = 4
+        AUX_HEAT = 5
+
+    class LockMode(Enum):
+        """Enum of thermostat lock modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatLock.js
+
+        DISABLED = 0
+        ENABLED = 1
+        PARTIAL = 2
+
+    class ScheduleMode(Enum):
+        """Enum of thermostat programming modes."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatProgrammingMode.js
+
+        MANUAL = 0
+        SCHEDULED = 1
+        SMART_SCHEDULES = 2
+
+    class SetpointType(Enum):
+        """Enum of thermostat setpoint types."""
+
+        FIXED = 0
+        AWAY = 1
+        HOME = 2
+        SLEEP = 3
+
+    class Command(Enum):
+        """Commands for ADC lights."""
+
+        SET_STATE = "setState"
+
     @dataclass
     class ThermostatAttributes(BaseDevice.DeviceAttributes):
         """Thermostat attributes."""
@@ -55,65 +114,6 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         supports_schedules: bool | None
         supports_schedules_smart: bool | None
         schedule_mode: Thermostat.ScheduleMode | None
-
-    class DeviceState(Enum):
-        """Enum of thermostat states."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatStatus.js
-
-        UNKNOWN = 0
-        OFF = 1
-        HEAT = 2
-        COOL = 3
-        AUTO = 4
-        AUX_HEAT = 5
-
-    class FanMode(Enum):
-        """Enum of thermostat fan modes."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatFanMode.js
-
-        AUTO = 0
-        ON = 1
-
-        # Not Used
-        # AUTO_HIGH = 2
-        # ON_HIGH = 3
-        # AUTO_MEDIUM = 4
-        # ON_MEDIUM = 5
-        # CIRCULATE = 6
-        # HUMIDITY = 7
-
-    class LockMode(Enum):
-        """Enum of thermostat lock modes."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatLock.js
-
-        DISABLED = 0
-        ENABLED = 1
-        PARTIAL = 2
-
-    class ScheduleMode(Enum):
-        """Enum of thermostat programming modes."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatProgrammingMode.js
-
-        MANUAL = 0
-        SCHEDULED = 1
-        SMART_SCHEDULES = 2
-
-    class SetpointType(Enum):
-        """Enum of thermostat setpoint types."""
-
-        FIXED = 0
-        AWAY = 1
-        HOME = 2
-        SLEEP = 3
-
-    class Command(Enum):
-        """Commands for ADC lights."""
-
-        SET_STATE = "setState"
 
     DEVICE_MODELS = {
         4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
@@ -189,9 +189,9 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         elif fan:
             msg_body = {
                 "desiredFanMode": self.FanMode(fan[0]).value,
-                "desiredFanDuration": 0
-                if self.FanMode(fan[0]) == self.FanMode.AUTO
-                else fan[1],
+                "desiredFanDuration": (
+                    0 if self.FanMode(fan[0]) == self.FanMode.AUTO else fan[1]
+                ),
             }
         elif cool_setpoint:
             msg_body = {"desiredCoolSetpoint": cool_setpoint}

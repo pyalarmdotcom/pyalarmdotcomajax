@@ -20,19 +20,11 @@ from pyalarmdotcomajax.helpers import ExtendedEnumMixin
 log = logging.getLogger(__name__)
 
 
-class TroubleCondition(TypedDict):
-    """Alarm.com alert / trouble condition."""
-
-    message_id: str
-    title: str
-    body: str
-    device_id: str
-
-
 class DeviceType(ExtendedEnumMixin):
     """Enum of devices using ADC ids."""
 
     # Supported
+    CAMERA = "cameras"
     GARAGE_DOOR = "garageDoors"
     GATE = "gates"
     IMAGE_SENSOR = "imageSensors"
@@ -46,7 +38,6 @@ class DeviceType(ExtendedEnumMixin):
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
-    CAMERA = "cameras"
     CAMERA_SD = "sdCardCameras"
     CAR_MONITOR = "carMonitors"
     COMMERCIAL_TEMP = "commercialTemperatureSensors"
@@ -66,133 +57,158 @@ class DeviceType(ExtendedEnumMixin):
     X10_LIGHT = "x10Lights"
 
 
-DEVICE_URLS: dict = {
-    "supported": {
-        DeviceType.CAMERA: {
-            "relationshipId": "video/camera",
-            "endpoint": "{}web/api/video/devices/cameras/{}",
+class DeviceUrlMetadata(TypedDict, total=False):
+    """Stores device URL metadata."""
+
+    primary: str
+    additional: dict[str, str]
+
+
+DEVICE_ENDPOINTS: dict[DeviceType, DeviceUrlMetadata] = {
+    DeviceType.CAMERA: DeviceUrlMetadata(primary="{}web/api/video/devices/cameras/{}"),
+    DeviceType.GARAGE_DOOR: DeviceUrlMetadata(
+        primary="{}web/api/devices/garageDoors/{}"
+    ),
+    DeviceType.GATE: DeviceUrlMetadata(primary="{}web/api/devices/gates/{}"),
+    DeviceType.IMAGE_SENSOR: DeviceUrlMetadata(
+        primary="{}web/api/imageSensor/imageSensors/{}",
+        additional={
+            "recent_images": (
+                "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
+            )
         },
-        DeviceType.GARAGE_DOOR: {
-            "relationshipId": "devices/garage-door",
-            "endpoint": "{}web/api/devices/garageDoors/{}",
-        },
-        DeviceType.GATE: {
-            "relationshipId": "devices/gate",
-            "endpoint": "{}web/api/devices/gates/{}",
-        },
-        DeviceType.IMAGE_SENSOR: {
-            "relationshipId": "image-sensor/image-sensor",
-            "endpoint": "{}web/api/imageSensor/imageSensors/{}",
-            "additional_endpoints": {
-                "recent_images": (
-                    "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
-                )
-            },
-        },
-        DeviceType.LIGHT: {
-            "relationshipId": "devices/light",
-            "endpoint": "{}web/api/devices/lights/{}",
-        },
-        DeviceType.LOCK: {
-            "relationshipId": "devices/lock",
-            "endpoint": "{}web/api/devices/locks/{}",
-        },
-        DeviceType.PARTITION: {
-            "relationshipId": "devices/partition",
-            "endpoint": "{}web/api/devices/partitions/{}",
-        },
-        DeviceType.SENSOR: {
-            "relationshipId": "devices/sensor",
-            "endpoint": "{}web/api/devices/sensors/{}",
-        },
-        DeviceType.SYSTEM: {
-            "relationshipId": "systems/system",
-            "endpoint": "{}web/api/systems/systems/{}",
-        },
-        DeviceType.THERMOSTAT: {
-            "relationshipId": "devices/thermostat",
-            "endpoint": "{}web/api/devices/thermostats/{}",
-        },
-        DeviceType.WATER_SENSOR: {
-            "relationshipId": "devices/water-sensor",
-            "endpoint": "{}web/api/devices/waterSensors/{}",
-        },
-    },
-    "unsupported": {
-        DeviceType.ACCESS_CONTROL: {
-            "relationshipId": "devices/access-control-access-point-device",
-            "endpoint": "{}web/api/devices/accessControlAccessPointDevices/{}",
-        },
-        DeviceType.CAMERA_SD: {
-            "relationshipId": "video/sd-card-camera",
-            "endpoint": "{}web/api/video/devices/sdCardCameras/{}",
-        },
-        DeviceType.CAR_MONITOR: {
-            "relationshipId": "devices/car-monitor",
-            "endpoint": "{}web/api/devices/carMonitors{}",
-        },
-        DeviceType.COMMERCIAL_TEMP: {
-            "relationshipId": "devices/commercial-temperature-sensor",
-            "endpoint": "{}web/api/devices/commercialTemperatureSensors/{}",
-        },
-        # DeviceType.CONFIGURATION: {
-        #     "relationshipId": "configuration",
-        #     "endpoint": "{}web/api/systems/configurations/{}",
-        # },
-        # DeviceType.FENCE: {
-        #     "relationshipId": "",
-        #     "endpoint": "{}web/api/geolocation/fences/{}",
-        # },
-        DeviceType.GEO_DEVICE: {
-            "relationshipId": "geolocation/geo-device",
-            "endpoint": "{}web/api/geolocation/geoDevices/{}",
-        },
-        DeviceType.IQ_ROUTER: {
-            "relationshipId": "devices/iq-router",
-            "endpoint": "{}web/api/devices/iqRouters/{}",
-        },
-        DeviceType.REMOTE_TEMP: {
-            "relationshipId": "devices/remote-temperature-sensor",
-            "endpoint": "{}web/api/devices/remoteTemperatureSensors/{}",
-        },
-        DeviceType.SCENE: {
-            "relationshipId": "automation/scene",
-            "endpoint": "{}web/api/automation/scenes/{}",
-        },
-        DeviceType.SHADE: {
-            "relationshipId": "devices/shade",
-            "endpoint": "{}web/api/devices/shades/{}",
-        },
-        DeviceType.SMART_CHIME: {
-            "relationshipId": "devices/smart-chime-device",
-            "endpoint": "{}web/api/devices/smartChimeDevices/{}",
-        },
-        DeviceType.SUMP_PUMP: {
-            "relationshipId": "devices/sump-pump",
-            "endpoint": "{}web/api/devices/sumpPumps/{}",
-        },
-        DeviceType.SWITCH: {
-            "relationshipId": "devices/switch",
-            "endpoint": "{}web/api/devices/switches/{}",
-        },
-        DeviceType.VALVE_SWITCH: {
-            "relationshipId": "valve-switch",
-            "endpoint": "{}web/api/devices/valveSwitches/{}",
-        },
-        DeviceType.WATER_METER: {
-            "relationshipId": "devices/water-meter",
-            "endpoint": "{}web/api/devices/waterMeters/{}",
-        },
-        DeviceType.WATER_VALVE: {
-            "relationshipId": "devices/water-valve",
-            "endpoint": "{}web/api/devices/waterValves/{}",
-        },
-        DeviceType.X10_LIGHT: {
-            "relationshipId": "devices/x10light",
-            "endpoint": "{}web/api/devices/x10Lights/{}",
-        },
-    },
+    ),
+    DeviceType.LIGHT: DeviceUrlMetadata(primary="{}web/api/devices/lights/{}"),
+    DeviceType.LOCK: DeviceUrlMetadata(primary="{}web/api/devices/locks/{}"),
+    DeviceType.PARTITION: DeviceUrlMetadata(primary="{}web/api/devices/partitions/{}"),
+    DeviceType.SENSOR: DeviceUrlMetadata(primary="{}web/api/devices/sensors/{}"),
+    DeviceType.SYSTEM: DeviceUrlMetadata(primary="{}web/api/systems/systems/{}"),
+    DeviceType.THERMOSTAT: DeviceUrlMetadata(
+        primary="{}web/api/devices/thermostats/{}"
+    ),
+    DeviceType.WATER_SENSOR: DeviceUrlMetadata(
+        primary="{}web/api/devices/waterSensors/{}"
+    ),
+    DeviceType.ACCESS_CONTROL: DeviceUrlMetadata(
+        primary="{}web/api/devices/accessControlAccessPointDevices/{}"
+    ),
+    DeviceType.CAMERA_SD: DeviceUrlMetadata(
+        primary="{}web/api/video/devices/sdCardCameras/{}"
+    ),
+    DeviceType.CAR_MONITOR: DeviceUrlMetadata(
+        primary="{}web/api/devices/carMonitors/{}"
+    ),
+    DeviceType.COMMERCIAL_TEMP: DeviceUrlMetadata(
+        primary="{}web/api/devices/commercialTemperatureSensors/{}"
+    ),
+    # DeviceType.CONFIGURATION: DeviceUrlMetadata(primary="{}web/api/systems/configurations/{}"),
+    # DeviceType.FENCE: DeviceUrlMetadata(primary="{}web/api/geolocation/fences/{}"),
+    DeviceType.GEO_DEVICE: DeviceUrlMetadata(
+        primary="{}web/api/geolocation/geoDevices/{}"
+    ),
+    DeviceType.IQ_ROUTER: DeviceUrlMetadata(primary="{}web/api/devices/iqRouters/{}"),
+    DeviceType.REMOTE_TEMP: DeviceUrlMetadata(
+        primary="{}web/api/devices/remoteTemperatureSensors/{}"
+    ),
+    DeviceType.SCENE: DeviceUrlMetadata(primary="{}web/api/automation/scenes/{}"),
+    DeviceType.SHADE: DeviceUrlMetadata(primary="{}web/api/devices/shades/{}"),
+    DeviceType.SMART_CHIME: DeviceUrlMetadata(
+        primary="{}web/api/devices/smartChimeDevices/{}"
+    ),
+    DeviceType.SUMP_PUMP: DeviceUrlMetadata(primary="{}web/api/devices/sumpPumps/{}"),
+    DeviceType.SWITCH: DeviceUrlMetadata(primary="{}web/api/devices/switches/{}"),
+    DeviceType.VALVE_SWITCH: DeviceUrlMetadata(
+        primary="{}web/api/devices/valveSwitches/{}"
+    ),
+    DeviceType.WATER_METER: DeviceUrlMetadata(
+        primary="{}web/api/devices/waterMeters/{}"
+    ),
+    DeviceType.WATER_VALVE: DeviceUrlMetadata(
+        primary="{}web/api/devices/waterValves/{}"
+    ),
+    DeviceType.X10_LIGHT: DeviceUrlMetadata(primary="{}web/api/devices/x10Lights/{}"),
 }
+
+DEVICE_REL_IDS: dict = {
+    DeviceType.CAMERA: "video/camera",
+    DeviceType.GARAGE_DOOR: "devices/garage-door",
+    DeviceType.GATE: "devices/gate",
+    DeviceType.IMAGE_SENSOR: "image-sensor/image-sensor",
+    DeviceType.LIGHT: "devices/light",
+    DeviceType.LOCK: "devices/lock",
+    DeviceType.PARTITION: "devices/partition",
+    DeviceType.SENSOR: "devices/sensor",
+    DeviceType.SYSTEM: "systems/system",
+    DeviceType.THERMOSTAT: "devices/thermostat",
+    DeviceType.WATER_SENSOR: "devices/water-sensor",
+    DeviceType.ACCESS_CONTROL: "devices/access-control-access-point-device",
+    DeviceType.CAMERA_SD: "video/sd-card-camera",
+    DeviceType.CAR_MONITOR: "devices/car-monitor",
+    DeviceType.COMMERCIAL_TEMP: "devices/commercial-temperature-sensor",
+    # DeviceType.CONFIGURATION: "configuration",
+    # DeviceType.FENCE: "",
+    DeviceType.GEO_DEVICE: "geolocation/geo-device",
+    DeviceType.IQ_ROUTER: "devices/iq-router",
+    DeviceType.REMOTE_TEMP: "devices/remote-temperature-sensor",
+    DeviceType.SCENE: "automation/scene",
+    DeviceType.SHADE: "devices/shade",
+    DeviceType.SMART_CHIME: "devices/smart-chime-device",
+    DeviceType.SUMP_PUMP: "devices/sump-pump",
+    DeviceType.SWITCH: "devices/switch",
+    DeviceType.VALVE_SWITCH: "valve-switch",
+    DeviceType.WATER_METER: "devices/water-meter",
+    DeviceType.WATER_VALVE: "devices/water-valve",
+    DeviceType.X10_LIGHT: "devices/x10-light",
+}
+
+DEVICE_SUPPORT_STATUS: dict = {
+    "supported": [
+        DeviceType.CAMERA,
+        DeviceType.GARAGE_DOOR,
+        DeviceType.GATE,
+        DeviceType.IMAGE_SENSOR,
+        DeviceType.LIGHT,
+        DeviceType.LOCK,
+        DeviceType.PARTITION,
+        DeviceType.SENSOR,
+        DeviceType.SYSTEM,
+        DeviceType.THERMOSTAT,
+        DeviceType.WATER_SENSOR,
+    ],
+    "unsupported": [
+        DeviceType.ACCESS_CONTROL,
+        DeviceType.CAMERA_SD,
+        DeviceType.CAR_MONITOR,
+        DeviceType.COMMERCIAL_TEMP,
+        # DeviceType.CONFIGURATION,
+        # DeviceType.FENCE,
+        DeviceType.GEO_DEVICE,
+        DeviceType.IQ_ROUTER,
+        DeviceType.REMOTE_TEMP,
+        DeviceType.SCENE,
+        DeviceType.SHADE,
+        DeviceType.SMART_CHIME,
+        DeviceType.SUMP_PUMP,
+        DeviceType.SWITCH,
+        DeviceType.VALVE_SWITCH,
+        DeviceType.WATER_METER,
+        DeviceType.WATER_VALVE,
+        DeviceType.X10_LIGHT,
+    ],
+}
+
+ALL_DEVICE_TYPES = list(DEVICE_SUPPORT_STATUS["supported"]) + list(
+    DEVICE_SUPPORT_STATUS["unsupported"]
+)
+
+
+class TroubleCondition(TypedDict):
+    """Alarm.com alert / trouble condition."""
+
+    message_id: str
+    title: str
+    body: str
+    device_id: str
 
 
 class DesiredStateProtocol(Protocol):

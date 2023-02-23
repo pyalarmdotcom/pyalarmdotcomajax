@@ -13,6 +13,17 @@ log = logging.getLogger(__name__)
 class Partition(DesiredStateMixin, BaseDevice):
     """Represent Alarm.com partition element."""
 
+    class ExtendedArmingOption(Enum):
+        """Enum of extended arming options."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingOption.js
+
+        BYPASS_SENSORS = 0
+        NO_ENTRY_DELAY = 1
+        SILENT_ARMING = 2
+        NIGHT_ARMING = 3
+        SELECTIVE_BYPASS = 4
+
     @dataclass
     class ExtendedArmingMapping:
         """Map of which extended arming states apply to which arming types."""
@@ -27,17 +38,6 @@ class Partition(DesiredStateMixin, BaseDevice):
         """Partition attributes."""
 
         extended_arming_options: Partition.ExtendedArmingMapping  # List of extended arming options
-
-    class ExtendedArmingOption(Enum):
-        """Enum of extended arming options."""
-
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingOption.js
-
-        BYPASS_SENSORS = 0
-        NO_ENTRY_DELAY = 1
-        SILENT_ARMING = 2
-        NIGHT_ARMING = 3
-        SELECTIVE_BYPASS = 4
 
     class DeviceState(Enum):
         """Enum of arming states."""
