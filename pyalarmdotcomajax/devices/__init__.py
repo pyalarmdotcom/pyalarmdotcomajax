@@ -15,7 +15,7 @@ from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
 )
-from pyalarmdotcomajax.helpers import ExtendedEnumMixin
+from pyalarmdotcomajax.helpers import CastingMixin, ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
 
@@ -242,7 +242,7 @@ class ElementSpecificData(TypedDict, total=False):
     raw_recent_images: set[dict]
 
 
-class BaseDevice:
+class BaseDevice(CastingMixin):
     """Contains properties shared by all ADC devices."""
 
     DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
@@ -287,71 +287,6 @@ class BaseDevice:
         self.process_element_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
-
-    #
-    # Casting Functions
-    #
-    # Functions used for pulling data from _raw_attribs in standardized format.
-    @final
-    def _get_int(self, key: str) -> int | None:
-        """Cast raw value to int. Satisfies mypy."""
-
-        try:
-            return int(self._attribs_raw.get(key))  # type: ignore
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_float(self, key: str) -> int | None:
-        """Cast raw value to int. Satisfies mypy."""
-
-        try:
-            return float(self._attribs_raw.get(key))  # type: ignore
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_str(self, key: str) -> str | None:
-        """Cast raw value to str. Satisfies mypy."""
-
-        try:
-            return str(self._attribs_raw.get(key))
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_bool(self, key: str) -> bool | None:
-        """Cast raw value to bool. Satisfies mypy."""
-
-        if self._attribs_raw.get(key) in [True, False]:
-            return self._attribs_raw.get(key)
-
-        return None
-
-    @final
-    def _get_list(self, key: str, value_type: type) -> list | None:
-        """Cast raw value to list. Satisfies mypy."""
-
-        try:
-            duration_list: list = list(self._attribs_raw.get(key))  # type: ignore
-            for duration in duration_list:
-                value_type(duration)
-            return duration_list
-        except (ValueError, TypeError):
-            pass
-
-        return None
-
-    @final
-    def _get_special(self, key: str, value_type: type) -> Any | None:
-        """Cast raw value to bool. Satisfies mypy."""
-
-        try:
-            return value_type(self._attribs_raw.get(key))
-        except (ValueError, TypeError):
-            pass
-
-        return None
 
     #
     # Properties
@@ -548,3 +483,33 @@ class BaseDevice:
             raise err
 
         self._settings["slug"] = updated_option
+
+    # #
+    # CASTING FUNCTIONS
+    # #
+
+    # Override CastingMixin functions to automatically pass in _raw_attribs dict.
+
+    def _get_int(self, key: str) -> int | None:
+        """Return int value from _attribs_raw."""
+        return super()._safe_int_from_dict(self._attribs_raw, key)
+
+    def _get_float(self, key: str) -> float | None:
+        """Return float value from _attribs_raw."""
+        return super()._safe_float_from_dict(self._attribs_raw, key)
+
+    def _get_str(self, key: str) -> str | None:
+        """Return str value from _attribs_raw."""
+        return super()._safe_str_from_dict(self._attribs_raw, key)
+
+    def _get_bool(self, key: str) -> bool | None:
+        """Return bool value from _attribs_raw."""
+        return super()._safe_bool_from_dict(self._attribs_raw, key)
+
+    def _get_list(self, key: str, value_type: type) -> list | None:
+        """Return list value from _attribs_raw."""
+        return super()._safe_list_from_dict(self._attribs_raw, key, value_type)
+
+    def _get_special(self, key: str, value_type: type) -> Any | None:
+        """Return specified type value from _attribs_raw."""
+        return super()._safe_special_from_dict(self._attribs_raw, key, value_type)

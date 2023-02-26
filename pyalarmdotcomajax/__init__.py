@@ -2,18 +2,20 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 import json
 import logging
 import re
-from typing import Optional
+from typing import NamedTuple, Optional, TypedDict
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
 
 from pyalarmdotcomajax.helpers import slug_to_title
+from pyalarmdotcomajax.websocket import WebSocketClient
 
 from . import const as c
 from .devices import (
@@ -87,6 +89,21 @@ class OtpType(Enum):
     SMS = 2
     EMAIL = 4
 
+@dataclass
+class DeviceStore:
+    """Stores devices by type."""
+
+    DeviceType.CAMERA.value: dict[str, Camera]
+    DeviceType.GARAGE_DOOR: dict[str, GarageDoor]
+    DeviceType.GATE: dict[str, Gate]
+    DeviceType.IMAGE_SENSOR: dict[str, ImageSensor]
+    DeviceType.LIGHT: dict[str, Light]
+    DeviceType.LOCK: dict[str, Lock]
+    DeviceType.PARTITION: dict[str, Partition]
+    DeviceType.SENSOR: dict[str, Sensor]
+    DeviceType.SYSTEM: dict[str, System]
+    DeviceType.THERMOSTAT: dict[str, Thermostat]
+    DeviceType.WATER_SENSOR: dict[str, WaterSensor]
 
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
@@ -158,17 +175,31 @@ class AlarmController:
 
         self._trouble_conditions: dict = {}
 
-        self.systems: list[System] = []
-        self.partitions: list[Partition] = []
-        self.sensors: list[Sensor] = []
-        self.locks: list[Lock] = []
-        self.garage_doors: list[GarageDoor] = []
-        self.gates: list[Gate] = []
-        self.image_sensors: list[ImageSensor] = []
-        self.lights: list[Light] = []
-        self.cameras: list[Camera] = []
-        self.thermostats: list[Thermostat] = []
-        self.water_sensors: list[WaterSensor] = []
+        # self.systems: dict[str, System] = {}
+        # self.partitions: list[Partition] = []
+        # self.sensors: list[Sensor] = []
+        # self.locks: list[Lock] = []
+        # self.garage_doors: list[GarageDoor] = []
+        # self.gates: list[Gate] = []
+        # self.image_sensors: list[ImageSensor] = []
+        # self.lights: list[Light] = []
+        # self.cameras: list[Camera] = []
+        # self.thermostats: list[Thermostat] = []
+        # self.water_sensors: list[WaterSensor] = []
+
+        self.devices: dict[DeviceType, dict[str, BaseDevice]] = {
+            DeviceType.SYSTEM: {},
+            DeviceType.PARTITION: {},
+            DeviceType.SENSOR: {},
+            DeviceType.LOCK: {},
+            DeviceType.GARAGE_DOOR: {},
+            DeviceType.GATE: {},
+            DeviceType.IMAGE_SENSOR: {},
+            DeviceType.LIGHT: {},
+            DeviceType.CAMERA: {},
+            DeviceType.THERMOSTAT: {},
+            DeviceType.WATER_SENSOR: {},
+        }
 
     #
     #
@@ -557,7 +588,7 @@ class AlarmController:
                 temp_device_storage.append(entity_obj)
 
             if device_class is System:
-                self.systems[:] = temp_device_storage
+                self.systems.update({entity_id: temp_device_storage})
             elif device_class is Partition:
                 self.partitions[:] = temp_device_storage
             elif device_class is Sensor:
@@ -759,6 +790,11 @@ class AlarmController:
 
         return None
 
+    def get_websocket_client(self) -> WebSocketClient:
+        """Construct and return a websocket client."""
+
+        return WebSocketClient(self._websession, self._ajax_headers)
+
     #
     #
     #####################
@@ -828,6 +864,8 @@ class AlarmController:
 
         log.debug("Does not require 2FA.")
         return False
+
+
 
     async def _async_get_identity_info(self) -> None:
         """Get user id, email address, provider name, etc."""

@@ -12,6 +12,69 @@ from pyalarmdotcomajax.errors import UnexpectedDataStructure
 log = logging.getLogger(__name__)
 
 
+class CastingMixin:
+    """Functions used for pulling data from JSON in standardized format."""
+
+    def _safe_int_from_dict(self, src_dict: dict, key: str) -> int | None:
+        """Cast raw value to int. Satisfies mypy."""
+
+        try:
+            return int(src_dict.get(key))  # type: ignore
+        except (ValueError, TypeError):
+            return None
+
+    def _safe_float_from_dict(self, src_dict: dict, key: str) -> float | None:
+        """Cast raw value to int. Satisfies mypy."""
+
+        try:
+            return float(src_dict.get(key))  # type: ignore
+        except (ValueError, TypeError):
+            return None
+
+    def _safe_str_from_dict(self, src_dict: dict, key: str) -> str | None:
+        """Cast raw value to str. Satisfies mypy."""
+
+        try:
+            return str(src_dict.get(key))
+        except (ValueError, TypeError):
+            return None
+
+    def _safe_bool_from_dict(self, src_dict: dict, key: str) -> bool | None:
+        """Cast raw value to bool. Satisfies mypy."""
+
+        if src_dict.get(key) in [True, False]:
+            return src_dict.get(key)
+
+        return None
+
+    def _safe_list_from_dict(
+        self, src_dict: dict, key: str, value_type: type
+    ) -> list | None:
+        """Cast raw value to list. Satisfies mypy."""
+
+        try:
+            extracted_list: list = list(src_dict.get(key))  # type: ignore
+            for duration in extracted_list:
+                value_type(duration)
+            return extracted_list
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+    def _safe_special_from_dict(
+        self, src_dict: dict, key: str, value_type: type
+    ) -> Any | None:
+        """Cast raw value to specified type. Satisfies mypy."""
+
+        try:
+            return value_type(src_dict.get(key))
+        except (ValueError, TypeError):
+            pass
+
+        return None
+
+
 class ExtendedEnumMixin(Enum):
     """Search and export-list functions to enums."""
 
