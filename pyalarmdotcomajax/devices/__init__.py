@@ -161,6 +161,7 @@ DEVICE_REL_IDS: dict = {
     DeviceType.X10_LIGHT: "devices/x10-light",
 }
 
+
 DEVICE_SUPPORT_STATUS: dict = {
     "supported": [
         DeviceType.CAMERA,

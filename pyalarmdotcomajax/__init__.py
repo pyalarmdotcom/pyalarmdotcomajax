@@ -21,6 +21,7 @@ from . import const as c
 from .devices import (
     DEVICE_ENDPOINTS,
     DEVICE_SUPPORT_STATUS,
+    SUPPORTED_DEVICE_TYPES,
     BaseDevice,
     DeviceType,
     ElementSpecificData,
@@ -89,21 +90,22 @@ class OtpType(Enum):
     SMS = 2
     EMAIL = 4
 
-@dataclass
-class DeviceStore:
+class DeviceStore(TypedDict, total=False):
     """Stores devices by type."""
 
-    DeviceType.CAMERA.value: dict[str, Camera]
-    DeviceType.GARAGE_DOOR: dict[str, GarageDoor]
-    DeviceType.GATE: dict[str, Gate]
-    DeviceType.IMAGE_SENSOR: dict[str, ImageSensor]
-    DeviceType.LIGHT: dict[str, Light]
-    DeviceType.LOCK: dict[str, Lock]
-    DeviceType.PARTITION: dict[str, Partition]
-    DeviceType.SENSOR: dict[str, Sensor]
-    DeviceType.SYSTEM: dict[str, System]
-    DeviceType.THERMOSTAT: dict[str, Thermostat]
-    DeviceType.WATER_SENSOR: dict[str, WaterSensor]
+    # Names must be kept in sync with DeviceType enum.
+
+    cameras: dict[str, Camera]
+    garageDoors: dict[str, GarageDoor]
+    gates: dict[str, Gate]
+    imageSensors: dict[str, ImageSensor]
+    lights: dict[str, Light]
+    locks: dict[str, Lock]
+    partitions: dict[str, Partition]
+    sensors: dict[str, Sensor]
+    systems: dict[str, System]
+    thermostats: dict[str, Thermostat]
+    waterSensors: dict[str, WaterSensor]
 
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
@@ -175,31 +177,31 @@ class AlarmController:
 
         self._trouble_conditions: dict = {}
 
-        # self.systems: dict[str, System] = {}
-        # self.partitions: list[Partition] = []
-        # self.sensors: list[Sensor] = []
-        # self.locks: list[Lock] = []
-        # self.garage_doors: list[GarageDoor] = []
-        # self.gates: list[Gate] = []
-        # self.image_sensors: list[ImageSensor] = []
-        # self.lights: list[Light] = []
-        # self.cameras: list[Camera] = []
-        # self.thermostats: list[Thermostat] = []
-        # self.water_sensors: list[WaterSensor] = []
-
-        self.devices: dict[DeviceType, dict[str, BaseDevice]] = {
-            DeviceType.SYSTEM: {},
-            DeviceType.PARTITION: {},
-            DeviceType.SENSOR: {},
-            DeviceType.LOCK: {},
-            DeviceType.GARAGE_DOOR: {},
-            DeviceType.GATE: {},
-            DeviceType.IMAGE_SENSOR: {},
-            DeviceType.LIGHT: {},
-            DeviceType.CAMERA: {},
-            DeviceType.THERMOSTAT: {},
-            DeviceType.WATER_SENSOR: {},
+        self.devices: DeviceStore = {
+            "cameras": {},
+            "garageDoors": {},
+            "gates": {},
+            "imageSensors": {},
+            "lights": {},
+            "locks": {},
+            "partitions": {},
+            "sensors": {},
+            "systems": {},
+            "thermostats": {},
+            "waterSensors": {}
         }
+
+        # self.systems: dict[str, System] = {}
+        # self.partitions: dict[str, Partition] = {}
+        # self.sensors: dict[str, Sensor] = {}
+        # self.locks: dict[str, Lock] = {}
+        # self.garage_doors: dict[str, GarageDoor] = {}
+        # self.gates: dict[str, Gate] = {}
+        # self.image_sensors: dict[str, ImageSensor] = {}
+        # self.lights: dict[str, Light] = {}
+        # self.cameras: dict[str, Camera] = {}
+        # self.thermostats: dict[str, Thermostat] = {}
+        # self.water_sensors: dict[str, WaterSensor] = {}
 
     #
     #
@@ -587,28 +589,11 @@ class AlarmController:
 
                 temp_device_storage.append(entity_obj)
 
-            if device_class is System:
-                self.systems.update({entity_id: temp_device_storage})
-            elif device_class is Partition:
-                self.partitions[:] = temp_device_storage
-            elif device_class is Sensor:
-                self.sensors[:] = temp_device_storage
-            elif device_class is GarageDoor:
-                self.garage_doors[:] = temp_device_storage
-            elif device_class is Gate:
-                self.gates[:] = temp_device_storage
-            elif device_class is Lock:
-                self.locks[:] = temp_device_storage
-            elif device_class is Light:
-                self.lights[:] = temp_device_storage
-            elif device_class is ImageSensor:
-                self.image_sensors[:] = temp_device_storage
-            elif device_class is Camera:
-                self.cameras[:] = temp_device_storage
-            elif device_class is Thermostat:
-                self.thermostats[:] = temp_device_storage
-            elif device_class is WaterSensor:
-                self.water_sensors[:] = temp_device_storage
+
+            try:
+                self.devices[device_type_i.value].update({entity_id: temp_device_storage}) # type: ignore
+            except KeyError:
+                pass
 
     async def async_send_command(
         self,
@@ -771,24 +756,20 @@ class AlarmController:
     def get_device_by_id(self, device_id: str) -> BaseDevice | None:
         """Find device by its id."""
 
-        device: BaseDevice
-        for device in (
-            *self.systems,
-            *self.partitions,
-            *self.sensors,
-            *self.locks,
-            *self.garage_doors,
-            *self.gates,
-            *self.image_sensors,
-            *self.lights,
-            *self.cameras,
-            *self.thermostats,
-            *self.water_sensors,
-        ):
-            if device.id_ == device_id:
-                return device
-
-        return None
+        devices: dict[str, BaseDevice] = {
+            **self.systems,
+            **self.partitions,
+            **self.sensors,
+            **self.locks,
+            **self.garage_doors,
+            **self.gates,
+            **self.image_sensors,
+            **self.lights,
+            **self.cameras,
+            **self.thermostats,
+            **self.water_sensors,
+        }
+        return devices.get(device_id)
 
     def get_websocket_client(self) -> WebSocketClient:
         """Construct and return a websocket client."""
