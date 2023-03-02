@@ -13,8 +13,8 @@ from typing import NamedTuple, Optional, TypedDict
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
-
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+
 from pyalarmdotcomajax.helpers import slug_to_title
 from pyalarmdotcomajax.websocket import WebSocketClient
 
