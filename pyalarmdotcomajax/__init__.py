@@ -14,6 +14,7 @@ import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
 
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from pyalarmdotcomajax.helpers import slug_to_title
 from pyalarmdotcomajax.websocket import WebSocketClient
 
@@ -378,7 +379,10 @@ class AlarmController:
 
         log.debug("Calling update on Alarm.com")
 
-        await self._async_get_trouble_conditions()
+        try:
+            await self._async_get_trouble_conditions()
+        except DataFetchFailed as err:
+            raise ConfigEntryNotReady from err
 
         # Need to fetch system data before other devices to populate list of installed device types.
         # Fetch system + user submitted type (if present), otherwise get system + all supported types.
