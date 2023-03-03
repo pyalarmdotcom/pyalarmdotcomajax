@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 import json
 import logging
 import re
-from typing import Optional, Type
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
@@ -376,7 +375,7 @@ class AlarmController:
             try:
                 device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type_i]
             except KeyError as err:
-                raise UnsupportedDevice from err
+                raise UnsupportedDevice(f"Device type {device_type_i} is not supported.") from err
 
             #############################
             # FETCH DATA FROM ALARM.COM #
