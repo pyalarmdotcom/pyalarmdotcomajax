@@ -1,6 +1,6 @@
 {
   "image": "ludeeus/container:python-base-debian",
-  "file_version": "2023.02.14",
+  "file_version": "2023.3.6",
   "postCreateCommand": "pip install -r requirements-dev.txt && pre-commit install && pre-commit install-hooks && pip install --editable .",
   "customizations": {
     "vscode": {
@@ -14,7 +14,8 @@
         "bungcip.better-toml",
         "donjayamanne.python-extension-pack",
         "marklarah.pre-commit-vscode",
-        "jrebocho.vscode-random"
+        "jrebocho.vscode-random",
+        "charliermarsh.ruff"
       ],
       "settings": {
         "files.eol": "\n",
@@ -42,6 +43,9 @@
         "python.formatting.blackPath": "/usr/local/python/bin/black",
         "python.linting.banditPath": "/usr/local/python/bin/bandit",
         "python.linting.flake8Path": "/usr/local/python/bin/flake8",
+        "python.linting.ruff.path": [
+          "/usr/local/python/bin/ruff"
+        ],
         "python.linting.mypyPath": "/usr/local/python/bin/mypy",
         "python.linting.pycodestylePath": "/usr/local/python/bin/pycodestyle",
         "python.linting.pylintPath": "/usr/local/python/bin/pylint",

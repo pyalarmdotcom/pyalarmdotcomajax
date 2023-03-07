@@ -48,11 +48,13 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("trouble_condition_ok"),
+        repeat=True,
     )
     response_mocker.get(
         url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("identity_ok"),
+        repeat=True,
     )
 
     ###############
@@ -65,6 +67,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("sensor_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -73,6 +76,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("camera_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -81,6 +85,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("garage_door_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -89,6 +94,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("gate_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -97,6 +103,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("image_sensor_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -105,6 +112,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ].format(c.URL_BASE, ""),
         status=200,
         body=get_http_body_json("image_sensor_data_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -113,6 +121,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("light_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -121,6 +130,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("lock_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -129,6 +139,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("partition_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -137,6 +148,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("system_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -145,6 +157,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("thermostat_ok"),
+        repeat=True,
     )
 
     response_mocker.get(
@@ -153,6 +166,7 @@ def all_base_ok_responses(response_mocker: aioresponses) -> None:
         ),
         status=200,
         body=get_http_body_json("water_sensor_ok"),
+        repeat=True,
     )
 
 

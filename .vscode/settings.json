@@ -1,5 +1,5 @@
 {
-  "file_version": "2023.02.15",
+  "file_version": "2023.3.6",
   "files.eol": "\n",
   "editor.tabSize": 4,
   "terminal.integrated.defaultProfile.linux": "bash",
@@ -26,6 +26,9 @@
   "python.linting.pycodestylePath": "/usr/local/python/bin/pycodestyle",
   "python.linting.pylintPath": "/usr/local/python/bin/pylint",
   "python.linting.ignorePatterns": ["tests/**"],
+  "ruff.path": [
+    "/usr/local/python/bin/ruff"
+  ],
   "isort.path": ["/usr/local/python/bin/isort"],
   "python.analysis.extraPaths": ["/workspaces/pyalarmdotcomajax"],
   "npm.autoDetect": "off",

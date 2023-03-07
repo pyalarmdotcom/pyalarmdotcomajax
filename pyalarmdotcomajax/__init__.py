@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from datetime import datetime
 from enum import Enum
 import json
@@ -268,8 +269,7 @@ class AlarmController:
     async def async_submit_otp(
         self, code: str, device_name: str | None = None
     ) -> str | None:
-        """
-        Submit two factor authentication code.
+        """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
         """
@@ -341,23 +341,24 @@ class AlarmController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_update(self, device_type: DeviceType | None = None) -> None:
+    async def async_update(self, device_type: DeviceType | None = None) -> None:  # noqa: C901
         """Fetch latest device data."""
 
         log.debug("Calling update on Alarm.com")
 
-        try:
+        with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
             await self._async_get_trouble_conditions()
-        except (DataFetchFailed, UnexpectedDataStructure):
-            pass
 
-        # Need to fetch system data before other devices to populate list of installed device types.
+        # Fetch system data before other devices to populate list of installed device types.
 
-        device_types: list[DeviceType] = (
-            list({DeviceType.SYSTEM, device_type})
-            if device_type
-            else [DeviceType.SYSTEM] + [type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM]
-        )
+        device_types: list[DeviceType]
+
+        if device_type is DeviceType.SYSTEM:
+            device_types = [DeviceType.SYSTEM]
+        elif device_type:
+            device_types = [DeviceType.SYSTEM, device_type]
+        else:
+            device_types = [DeviceType.SYSTEM] + [type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM]
 
         log.debug("Refreshing data for device types: %s", device_types)
 
@@ -473,7 +474,7 @@ class AlarmController:
             # Build map of device names -> device ids.
             #
 
-            for device_json, subordinates in devices:
+            for device_json, _subordinates in devices:
                 if name := device_json.get("attributes", {}).get("description"):
                     name_id_map[name] = device_json["id"]
 
@@ -735,7 +736,7 @@ class AlarmController:
                         ):
                             raise AuthenticationFailed(error_msg)
 
-                        if not (rsp_errors[0].get("status") in ["423"]):
+                        if rsp_errors[0].get("status") not in ["423"]:
                             # We'll get here if user doesn't have permission to access a specific device type.
                             pass
 
@@ -957,9 +958,7 @@ class AlarmController:
         url: str | None = None,
         retry_on_failure: bool = True,
     ) -> list:
-        """Get attributes, metadata, and child devices for an ADC device class.
-           Takes EITHER url (without base) or device_type.
-        """
+        """Get attributes, metadata, and child devices for an ADC device class. Takes EITHER url (without base) or device_type."""
 
         #
         # Determine URL

@@ -1,8 +1,10 @@
-"""
-pyalarmdotcomajax CLI.
+"""pyalarmdotcomajax CLI.
 
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
+
+# ruff: noqa: T201
+
 from __future__ import annotations
 
 import argparse
@@ -293,9 +295,11 @@ async def cli() -> None:
                     await _async_machine_output(
                         alarm=alarm,
                         include_image_sensor_b64=(verbose > 1),
-                        device_types=supported_device_types + unsupported_device_types
-                        if verbose > 0
-                        else unsupported_device_types,
+                        device_types=(
+                            supported_device_types + unsupported_device_types
+                            if verbose > 0
+                            else unsupported_device_types
+                        ),
                     )
                 )
 
