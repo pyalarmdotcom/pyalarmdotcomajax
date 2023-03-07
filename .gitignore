@@ -157,3 +157,4 @@ test.py
 *.ignore.*
 temp/
 node_modules/
+.ruff_cache
