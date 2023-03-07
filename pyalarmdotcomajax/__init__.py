@@ -802,7 +802,7 @@ class AlarmController:
         if resp.cookies and (token := resp.cookies.get("afg")) and token.value != "":
             self._ajax_headers["ajaxrequestuniquekey"] = token.value
         else:
-            log.debug("AlarmController._update_antiforgery_token(): Anti-forgery token NOT found in response.\nHeaders:\n%s\nBody:\n%s", resp.headers, resp.text)
+            log.debug("AlarmController._update_antiforgery_token(): Anti-forgery token NOT found in response. Cookies: %s. URL: %s", resp.cookies, resp.url)
 
 
     #
