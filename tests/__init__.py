@@ -1,4 +1,4 @@
-"""Tests for pyalarmdotcomajax"""
+"""Tests for pyalarmdotcomajax."""
 
 #
 # TESTING RESOURCES
