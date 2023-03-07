@@ -37,7 +37,7 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
 
 
 @pytest.mark.asyncio  # type: ignore
-async def test__async_build_device_list__sensors(
+async def test__async_build_device_list__sensor_metadata(
     all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
