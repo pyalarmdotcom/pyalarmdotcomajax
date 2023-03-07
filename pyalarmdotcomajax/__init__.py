@@ -98,7 +98,7 @@ class AlarmController:
     # LOGIN & SESSION: BEGIN
     LOGIN_TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
-    LOGIN_PASSWORD_FIELD = "txtPassword"  # nosec
+    LOGIN_PASSWORD_FIELD = "txtPassword"  # noqa: S105
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
