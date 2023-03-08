@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 import logging
-from typing import Any, Protocol, TypedDict, final
+from typing import Any, Protocol, TypedDict
 
 import aiohttp
 
@@ -162,45 +162,41 @@ DEVICE_REL_IDS: dict = {
 }
 
 
-DEVICE_SUPPORT_STATUS: dict = {
-    "supported": [
-        DeviceType.CAMERA,
-        DeviceType.GARAGE_DOOR,
-        DeviceType.GATE,
-        DeviceType.IMAGE_SENSOR,
-        DeviceType.LIGHT,
-        DeviceType.LOCK,
-        DeviceType.PARTITION,
-        DeviceType.SENSOR,
-        DeviceType.SYSTEM,
-        DeviceType.THERMOSTAT,
-        DeviceType.WATER_SENSOR,
-    ],
-    "unsupported": [
-        DeviceType.ACCESS_CONTROL,
-        DeviceType.CAMERA_SD,
-        DeviceType.CAR_MONITOR,
-        DeviceType.COMMERCIAL_TEMP,
-        # DeviceType.CONFIGURATION,
-        # DeviceType.FENCE,
-        DeviceType.GEO_DEVICE,
-        DeviceType.IQ_ROUTER,
-        DeviceType.REMOTE_TEMP,
-        DeviceType.SCENE,
-        DeviceType.SHADE,
-        DeviceType.SMART_CHIME,
-        DeviceType.SUMP_PUMP,
-        DeviceType.SWITCH,
-        DeviceType.VALVE_SWITCH,
-        DeviceType.WATER_METER,
-        DeviceType.WATER_VALVE,
-        DeviceType.X10_LIGHT,
-    ],
-}
+SUPPORTED_DEVICES = [
+    DeviceType.CAMERA,
+    DeviceType.GARAGE_DOOR,
+    DeviceType.GATE,
+    DeviceType.IMAGE_SENSOR,
+    DeviceType.LIGHT,
+    DeviceType.LOCK,
+    DeviceType.PARTITION,
+    DeviceType.SENSOR,
+    DeviceType.SYSTEM,
+    DeviceType.THERMOSTAT,
+    DeviceType.WATER_SENSOR,
+]
+UNSUPPORTED_DEVICES = [
+    DeviceType.ACCESS_CONTROL,
+    DeviceType.CAMERA_SD,
+    DeviceType.CAR_MONITOR,
+    DeviceType.COMMERCIAL_TEMP,
+    # DeviceType.CONFIGURATION,
+    # DeviceType.FENCE,
+    DeviceType.GEO_DEVICE,
+    DeviceType.IQ_ROUTER,
+    DeviceType.REMOTE_TEMP,
+    DeviceType.SCENE,
+    DeviceType.SHADE,
+    DeviceType.SMART_CHIME,
+    DeviceType.SUMP_PUMP,
+    DeviceType.SWITCH,
+    DeviceType.VALVE_SWITCH,
+    DeviceType.WATER_METER,
+    DeviceType.WATER_VALVE,
+    DeviceType.X10_LIGHT,
+]
 
-ALL_DEVICE_TYPES = list(DEVICE_SUPPORT_STATUS["supported"]) + list(
-    DEVICE_SUPPORT_STATUS["unsupported"]
-)
+ALL_DEVICE_TYPES = SUPPORTED_DEVICES + UNSUPPORTED_DEVICES
 
 
 class TroubleCondition(TypedDict):

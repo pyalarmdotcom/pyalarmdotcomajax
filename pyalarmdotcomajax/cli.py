@@ -1,8 +1,10 @@
-"""
-pyalarmdotcomajax CLI.
+"""pyalarmdotcomajax CLI.
 
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
+
+# ruff: noqa: T201
+
 from __future__ import annotations
 
 import argparse

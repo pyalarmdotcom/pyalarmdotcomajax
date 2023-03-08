@@ -76,3 +76,35 @@ async def test___async_update__invalid_endpoint(
     assert adc_client.thermostats
     assert adc_client.water_sensors
     assert not adc_client.cameras
+
+
+@pytest.mark.asyncio  # type: ignore
+async def test___async_update__lock_refresh_failure(
+    successful_init_lock_refresh_fail: pytest.fixture,
+    adc_client: AlarmController,
+) -> None:
+    """Test for when devices initialize but fail to refresh. Ensure that devices are wiped on update failure."""
+
+    await adc_client.async_update()
+
+    assert adc_client.systems
+    assert adc_client.partitions
+    assert adc_client.sensors
+    assert adc_client.locks
+    assert adc_client.garage_doors
+    assert adc_client.image_sensors
+    assert adc_client.lights
+    assert adc_client.thermostats
+    assert adc_client.water_sensors
+
+    await adc_client.async_update()
+
+    assert adc_client.systems
+    assert adc_client.partitions
+    assert adc_client.sensors
+    assert not adc_client.locks
+    assert adc_client.garage_doors
+    assert adc_client.image_sensors
+    assert adc_client.lights
+    assert adc_client.thermostats
+    assert adc_client.water_sensors

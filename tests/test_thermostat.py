@@ -11,7 +11,6 @@ from pyalarmdotcomajax.devices.thermostat import Thermostat
 async def test__device_thermostat__ok(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
-    response_mocker: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Ensures that thermostats load correctly."""

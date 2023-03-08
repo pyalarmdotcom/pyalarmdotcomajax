@@ -2,18 +2,16 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+import contextlib
+from datetime import datetime
 from enum import Enum
 import json
 import logging
 import re
-from typing import NamedTuple, Optional, TypedDict
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from pyalarmdotcomajax.helpers import slug_to_title
 from pyalarmdotcomajax.websocket import WebSocketClient
@@ -21,8 +19,7 @@ from pyalarmdotcomajax.websocket import WebSocketClient
 from . import const as c
 from .devices import (
     DEVICE_ENDPOINTS,
-    DEVICE_SUPPORT_STATUS,
-    SUPPORTED_DEVICE_TYPES,
+    SUPPORTED_DEVICES,
     BaseDevice,
     DeviceType,
     ElementSpecificData,
@@ -53,7 +50,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.13"
+__version__ = "0.4.14-alpha"
 
 log = logging.getLogger(__name__)
 
@@ -91,22 +88,7 @@ class OtpType(Enum):
     SMS = 2
     EMAIL = 4
 
-class DeviceStore(TypedDict, total=False):
-    """Stores devices by type."""
 
-    # Names must be kept in sync with DeviceType enum.
-
-    cameras: dict[str, Camera]
-    garageDoors: dict[str, GarageDoor]
-    gates: dict[str, Gate]
-    imageSensors: dict[str, ImageSensor]
-    lights: dict[str, Light]
-    locks: dict[str, Lock]
-    partitions: dict[str, Partition]
-    sensors: dict[str, Sensor]
-    systems: dict[str, System]
-    thermostats: dict[str, Thermostat]
-    waterSensors: dict[str, WaterSensor]
 
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
@@ -119,7 +101,7 @@ class AlarmController:
     # LOGIN & SESSION: BEGIN
     LOGIN_TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
-    LOGIN_PASSWORD_FIELD = "txtPassword"  # nosec
+    LOGIN_PASSWORD_FIELD = "txtPassword"  # noqa: S105
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
@@ -191,18 +173,6 @@ class AlarmController:
             "thermostats": {},
             "waterSensors": {}
         }
-
-        # self.systems: dict[str, System] = {}
-        # self.partitions: dict[str, Partition] = {}
-        # self.sensors: dict[str, Sensor] = {}
-        # self.locks: dict[str, Lock] = {}
-        # self.garage_doors: dict[str, GarageDoor] = {}
-        # self.gates: dict[str, Gate] = {}
-        # self.image_sensors: dict[str, ImageSensor] = {}
-        # self.lights: dict[str, Light] = {}
-        # self.cameras: dict[str, Camera] = {}
-        # self.thermostats: dict[str, Thermostat] = {}
-        # self.water_sensors: dict[str, WaterSensor] = {}
 
     #
     #
@@ -291,6 +261,7 @@ class AlarmController:
                 url=request_url.format(c.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
             ) as resp:
+                self._update_antiforgery_token(resp)
                 if resp.status != 200:
                     raise DataFetchFailed("Failed to request 2FA code.")
 
@@ -303,8 +274,7 @@ class AlarmController:
     async def async_submit_otp(
         self, code: str, device_name: str | None = None
     ) -> str | None:
-        """
-        Submit two factor authentication code.
+        """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
         """
@@ -321,6 +291,7 @@ class AlarmController:
                 headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": self._two_factor_method.value},
             ) as resp:
+                self._update_antiforgery_token(resp)
                 json_rsp = await resp.json()
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
@@ -355,6 +326,7 @@ class AlarmController:
                     headers=self._ajax_headers,
                     json={"deviceName": device_name},
                 ) as resp:
+                    self._update_antiforgery_token(resp)
                     json_rsp = await resp.json()
             except (asyncio.TimeoutError, aiohttp.ClientError) as err:
                 log.error("Can not load device trust page from Alarm.com")
@@ -374,22 +346,26 @@ class AlarmController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_update(self, device_type: DeviceType | None = None) -> None:
+    async def async_update(self, device_type: DeviceType | None = None) -> None:  # noqa: C901
         """Fetch latest device data."""
+
+        # TO-DO: This function has turned into spaghetti. Needs to be broken down into components.
 
         log.debug("Calling update on Alarm.com")
 
-        try:
+        with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
             await self._async_get_trouble_conditions()
-        except DataFetchFailed as err:
-            raise ConfigEntryNotReady from err
 
-        # Need to fetch system data before other devices to populate list of installed device types.
-        # Fetch system + user submitted type (if present), otherwise get system + all supported types.
-        device_types: list[DeviceType] = [DeviceType.SYSTEM] + (
-            [param_type for param_type in (device_type,) if param_type != DeviceType.SYSTEM] if device_type
-            else [supported_type for supported_type in DEVICE_SUPPORT_STATUS["supported"] if supported_type != DeviceType.SYSTEM]
-        )
+        # Fetch system data before other devices to populate list of installed device types.
+
+        device_types: list[DeviceType]
+
+        if device_type is DeviceType.SYSTEM:
+            device_types = [DeviceType.SYSTEM]
+        elif device_type:
+            device_types = [DeviceType.SYSTEM, device_type]
+        else:
+            device_types = [DeviceType.SYSTEM] + [type for type in SUPPORTED_DEVICES if type != DeviceType.SYSTEM]
 
         log.debug("Refreshing data for device types: %s", device_types)
 
@@ -406,9 +382,8 @@ class AlarmController:
             #
             try:
                 device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type_i]
-
             except KeyError as err:
-                raise UnsupportedDevice from err
+                raise UnsupportedDevice(f"Device type {device_type_i} is not supported.") from err
 
             #############################
             # FETCH DATA FROM ALARM.COM #
@@ -424,10 +399,16 @@ class AlarmController:
                 )
 
             except BadAccount as err:
+                with contextlib.suppress(KeyError):
+                    self.devices[device_type_i.value] = {} # type: ignore
+
                 # Indicates fatal account error.
                 raise PermissionError from err
 
             except DataFetchFailed:
+                with contextlib.suppress(KeyError):
+                    self.devices[device_type_i.value] = {} # type: ignore
+
                 log.error(
                     (
                         "Encountered data error while fetching %ss. Skipping this"
@@ -437,6 +418,9 @@ class AlarmController:
                 )
 
             if len(devices) == 0:
+                with contextlib.suppress(KeyError):
+                    self.devices[device_type_i.value] = {} # type: ignore
+
                 continue
 
             #
@@ -503,7 +487,7 @@ class AlarmController:
             # Build map of device names -> device ids.
             #
 
-            for device_json, subordinates in devices:
+            for device_json, _subordinates in devices:
                 if name := device_json.get("attributes", {}).get("description"):
                     name_id_map[name] = device_json["id"]
 
@@ -597,6 +581,7 @@ class AlarmController:
             try:
                 self.devices[device_type_i.value].update({entity_id: temp_device_storage}) # type: ignore
             except KeyError:
+                log.warn("Tried to store unsupported device type %s", device_type_i)
                 pass
 
     async def async_send_command(
@@ -629,6 +614,7 @@ class AlarmController:
         async with self._websession.post(
             url=url, json=msg_body, headers=self._ajax_headers
         ) as resp:
+            self._update_antiforgery_token(resp)
             log.debug("Response from Alarm.com %s", resp.status)
             if resp.status == 200:
                 # Update alarm.com status after calling state change.
@@ -713,6 +699,7 @@ class AlarmController:
                 url=url_template.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
+                self._update_antiforgery_token(resp)
                 try:
                     json_rsp = await resp.json()
 
@@ -739,7 +726,7 @@ class AlarmController:
                         ):
                             raise AuthenticationFailed(error_msg)
 
-                        if not (rsp_errors[0].get("status") in ["423"]):
+                        if rsp_errors[0].get("status") not in ["423"]:
                             # We'll get here if user doesn't have permission to access a specific device type.
                             pass
 
@@ -757,23 +744,23 @@ class AlarmController:
 
         return return_data
 
-    def get_device_by_id(self, device_id: str) -> BaseDevice | None:
-        """Find device by its id."""
+    # def get_device_by_id(self, device_id: str) -> BaseDevice | None:
+    #     """Find device by its id."""
 
-        devices: dict[str, BaseDevice] = {
-            **self.systems,
-            **self.partitions,
-            **self.sensors,
-            **self.locks,
-            **self.garage_doors,
-            **self.gates,
-            **self.image_sensors,
-            **self.lights,
-            **self.cameras,
-            **self.thermostats,
-            **self.water_sensors,
-        }
-        return devices.get(device_id)
+    #     devices: dict[str, BaseDevice] = {
+    #         **self.systems,
+    #         **self.partitions,
+    #         **self.sensors,
+    #         **self.locks,
+    #         **self.garage_doors,
+    #         **self.gates,
+    #         **self.image_sensors,
+    #         **self.lights,
+    #         **self.cameras,
+    #         **self.thermostats,
+    #         **self.water_sensors,
+    #     }
+    #     return devices.get(device_id)
 
     def get_websocket_client(self) -> WebSocketClient:
         """Construct and return a websocket client."""
@@ -795,9 +782,18 @@ class AlarmController:
             url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
             headers=self._ajax_headers,
         ) as resp:
+            self._update_antiforgery_token(resp)
             text_rsp = await resp.text()
 
         return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
+
+    def _update_antiforgery_token(self, resp: aiohttp.ClientResponse) -> None:
+        """Update the anti-forgery token."""
+
+        if resp.cookies and (token := resp.cookies.get("afg")) and token.value != "":
+            self._ajax_headers["ajaxrequestuniquekey"] = token.value
+        else:
+            log.debug("AlarmController._update_antiforgery_token(): Anti-forgery token NOT found in response. Cookies: %s. URL: %s", resp.cookies, resp.url)
 
 
     #
@@ -816,6 +812,7 @@ class AlarmController:
             ),
             headers=self._ajax_headers,
         ) as resp:
+            self._update_antiforgery_token(resp)
             json_rsp = await resp.json()
 
         if (errors := json_rsp.get("errors")) and len(errors) > 0:
@@ -831,6 +828,7 @@ class AlarmController:
                         ),
                         headers=self._ajax_headers,
                     ) as resp:
+                        self._update_antiforgery_token(resp)
                         json_rsp = await resp.json()
 
                         if isinstance(
@@ -860,6 +858,8 @@ class AlarmController:
                 headers=self._ajax_headers,
                 cookies=self._two_factor_cookie,
             ) as resp:
+                self._update_antiforgery_token(resp)
+
                 json_rsp = await resp.json()
 
                 # This is a verbose response. Uncommend when needed.
@@ -888,11 +888,15 @@ class AlarmController:
 
     async def _async_get_trouble_conditions(self) -> None:
         """Get trouble conditions for all devices."""
+
+        # TODO: Trouble condition dict should be flagged, not None, when library encounters an error retrieving trouble conditions.
+
         try:
             async with self._websession.get(
                 url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
+                self._update_antiforgery_token(resp)
                 json_rsp = await resp.json()
 
                 log.debug("Trouble condition response:\n%s", json_rsp)
@@ -919,6 +923,7 @@ class AlarmController:
                 self._trouble_conditions = trouble_all_devices
 
         except aiohttp.ContentTypeError as err:
+            self._trouble_conditions = {}
             log.error(
                 (
                     "Server returned wrong content type. Response: %s\n\nResponse"
@@ -930,10 +935,12 @@ class AlarmController:
             raise DataFetchFailed from err
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+            self._trouble_conditions = {}
             log.error("Connection error while fetching trouble conditions.")
             raise DataFetchFailed from err
 
         except KeyError as err:
+            self._trouble_conditions = {}
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
 
@@ -944,9 +951,7 @@ class AlarmController:
         url: str | None = None,
         retry_on_failure: bool = True,
     ) -> list:
-        """Get attributes, metadata, and child devices for an ADC device class.
-           Takes EITHER url (without base) or device_type.
-        """
+        """Get attributes, metadata, and child devices for an ADC device class. Takes EITHER url (without base) or device_type."""
 
         #
         # Determine URL
@@ -969,6 +974,7 @@ class AlarmController:
                 url=full_path.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
+                self._update_antiforgery_token(resp)
                 json_rsp = await resp.json()
         except (ContentTypeError, json.JSONDecodeError) as err:
             error_msg = (
@@ -1167,6 +1173,7 @@ class AlarmController:
                 ):
                     raise NagScreen("Encountered 2FA nag screen.")
 
+                # Update anti-forgery cookie
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:

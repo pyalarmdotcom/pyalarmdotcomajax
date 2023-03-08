@@ -134,7 +134,6 @@ async def test__extension_camera_skybellhd__submit_change(
 async def test__extension_camera_skybellhd__missing_field(
     all_base_ok_responses: pytest.fixture,
     skybell_missing_video_quality_field: pytest.fixture,
-    response_mocker: pytest.fixture,
     adc_client: AlarmController,
 ) -> None:
     """Ensures that pyalarmdotcomajax skips loading data from Skybell HD if Skybell HD config page has unexpected structure."""
