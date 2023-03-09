@@ -6,6 +6,12 @@
       "problemMatcher": [],
       "type": "shell"
     },
+    {
+      "command": "pytest",
+      "label": "Run integration tests.",
+      "problemMatcher": [],
+      "type": "shell"
+    },
   ],
   "version": "2.0.0"
 }
