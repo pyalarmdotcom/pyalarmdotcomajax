@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-from datetime import datetime
-from enum import Enum
 import json
 import logging
 import re
+from datetime import datetime
+from enum import Enum
 
 import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
@@ -341,7 +341,9 @@ class AlarmController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_update(self, device_type: DeviceType | None = None) -> None:  # noqa: C901
+    async def async_update(
+        self, device_type: DeviceType | None = None
+    ) -> None:  # noqa: C901
         """Fetch latest device data."""
 
         log.debug("Calling update on Alarm.com")
@@ -358,7 +360,9 @@ class AlarmController:
         elif device_type:
             device_types = [DeviceType.SYSTEM, device_type]
         else:
-            device_types = [DeviceType.SYSTEM] + [type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM]
+            device_types = [DeviceType.SYSTEM] + [
+                type for type in DEVICE_URLS["supported"] if type != DeviceType.SYSTEM
+            ]
 
         log.debug("Refreshing data for device types: %s", device_types)
 
@@ -366,8 +370,13 @@ class AlarmController:
             #
             # PASS ON DEVICE TYPES NOT INSTALLED IN USER ENVIRONMENT
             #
-            if device_type_i not in {DeviceType.SYSTEM}.union(self._installed_device_types):
-                log.debug("Skipping %s. Not installed in user environment.", device_type_i.name)
+            if device_type_i not in {DeviceType.SYSTEM}.union(
+                self._installed_device_types
+            ):
+                log.debug(
+                    "Skipping %s. Not installed in user environment.",
+                    device_type_i.name,
+                )
                 continue
 
             #
@@ -376,7 +385,9 @@ class AlarmController:
             try:
                 device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type_i]
             except KeyError as err:
-                raise UnsupportedDevice(f"Device type {device_type_i} is not supported.") from err
+                raise UnsupportedDevice(
+                    f"Device type {device_type_i} is not supported."
+                ) from err
 
             #############################
             # FETCH DATA FROM ALARM.COM #
@@ -387,9 +398,7 @@ class AlarmController:
             #
             devices = []
             try:
-                devices = await self._async_build_device_list(
-                    device_type=device_type_i
-                )
+                devices = await self._async_build_device_list(device_type=device_type_i)
 
             except BadAccount as err:
                 self._store_devices(device_class, [])
@@ -437,9 +446,9 @@ class AlarmController:
                 ]
 
                 for name, url in additional_endpoints.items():
-                    additional_endpoint_raw_results[
-                        name
-                    ] = await self._async_build_device_list(url=url)
+                    additional_endpoint_raw_results[name] = (
+                        await self._async_build_device_list(url=url)
+                    )
 
             except KeyError:
                 pass
@@ -453,9 +462,9 @@ class AlarmController:
             #
 
             required_extensions: list[type[CameraSkybellControllerExtension]] = []
-            device_settings: dict[
-                str, dict[str, ConfigurationOption]
-            ] = {}  # device_id {slug: ConfigurationOption}
+            device_settings: dict[str, dict[str, ConfigurationOption]] = (
+                {}
+            )  # device_id {slug: ConfigurationOption}
             name_id_map: dict[str, str] = {}
 
             #
@@ -492,9 +501,9 @@ class AlarmController:
 
                 try:
                     # Fetch from Alarm.com
-                    extended_properties_list: list[
-                        ExtendedProperties
-                    ] = await extension_controller.fetch()
+                    extended_properties_list: list[ExtendedProperties] = (
+                        await extension_controller.fetch()
+                    )
                 except UnexpectedDataStructure:
                     continue
 
@@ -514,7 +523,11 @@ class AlarmController:
             # Extract device types installed in user's environment.
 
             if device_type_i == DeviceType.SYSTEM:
-                self._installed_device_types = {DeviceType(child_family) for _, children in devices for _, child_family in children}
+                self._installed_device_types = {
+                    DeviceType(child_family)
+                    for _, children in devices
+                    for _, child_family in children
+                }
 
             log.debug("Installed device types: %s", self._installed_device_types)
 
@@ -554,9 +567,11 @@ class AlarmController:
                     subordinates=subordinates,
                     element_specific_data=element_specific_data.get(entity_id),
                     send_action_callback=self.async_send_command,
-                    config_change_callback=extension_controller.submit_change
-                    if extension_controller
-                    else None,
+                    config_change_callback=(
+                        extension_controller.submit_change
+                        if extension_controller
+                        else None
+                    ),
                     trouble_conditions=self._trouble_conditions.get(entity_id),
                     partition_id=self._partition_map.get(entity_id),
                     settings=device_settings.get(entity_id),
@@ -748,9 +763,9 @@ class AlarmController:
                     if resp.status == 404:
                         return_data[slug_to_title(name)] = "Endpoint not found."
                     else:
-                        return_data[
-                            slug_to_title(name)
-                        ] = f"\nUnprocessable output:\n{resp.text}\n"
+                        return_data[slug_to_title(name)] = (
+                            f"\nUnprocessable output:\n{resp.text}\n"
+                        )
 
         return return_data
 
@@ -788,7 +803,9 @@ class AlarmController:
         """Check if we are logged in."""
 
         async with self._websession.get(
-            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
+            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(
+                c.URL_BASE, int(round(datetime.now().timestamp()))
+            ),
             headers=self._ajax_headers,
         ) as resp:
             self._update_antiforgery_token(resp)
@@ -802,8 +819,14 @@ class AlarmController:
         if resp.cookies and (token := resp.cookies.get("afg")) and token.value != "":
             self._ajax_headers["ajaxrequestuniquekey"] = token.value
         else:
-            log.debug("AlarmController._update_antiforgery_token(): Anti-forgery token NOT found in response. Cookies: %s. URL: %s", resp.cookies, resp.url)
-
+            log.debug(
+                (
+                    "AlarmController._update_antiforgery_token(): Anti-forgery token"
+                    " NOT found in response. Cookies: %s. URL: %s"
+                ),
+                resp.cookies,
+                resp.url,
+            )
 
     #
     #
@@ -910,17 +933,16 @@ class AlarmController:
 
                 trouble_all_devices: dict = {}
                 for condition in json_rsp.get("data", []):
+                    device_id = condition.get("attributes", {}).get("emberDeviceId")
                     new_trouble: TroubleCondition = {
                         "message_id": condition.get("id"),
                         "title": condition.get("attributes", {}).get("description"),
-                        "body": condition.get("attributes", {})
-                        .get("extraData", {})
-                        .get("description"),
-                        "device_id": (
-                            device_id := condition.get("attributes", {}).get(
-                                "emberDeviceId"
-                            )
+                        "body": (
+                            condition.get("attributes", {})
+                            .get("extraData", {})
+                            .get("description")
                         ),
+                        "device_id": device_id,
                     }
 
                     trouble_single_device: list = trouble_all_devices.get(device_id, [])
@@ -950,7 +972,6 @@ class AlarmController:
             self._trouble_conditions = {}
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
-
 
     async def _async_build_device_list(
         self,
@@ -1025,7 +1046,9 @@ class AlarmController:
                 if not retry_on_failure:
                     log.error(
                         (
-                            "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. Logging in again didn't help. Giving up on device type."
+                            "Error fetching data from Alarm.com. Got 403 status when"
+                            " fetching data for device type %s. Logging in again didn't"
+                            " help. Giving up on device type."
                         ),
                         device_type,
                     )
@@ -1034,7 +1057,9 @@ class AlarmController:
                 if not self._is_logged_in():
                     log.debug(
                         (
-                            "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. Trying to refresh auth tokens by logging in again."
+                            "Error fetching data from Alarm.com. Got 403 status when"
+                            " fetching data for device type %s. Trying to refresh auth"
+                            " tokens by logging in again."
                         ),
                         device_type,
                     )
@@ -1046,7 +1071,9 @@ class AlarmController:
 
                 log.error(
                     (
-                        "Error fetching data from Alarm.com. Got 403 status when fetching data for device type %s. User is already logged in. Giving up on device type."
+                        "Error fetching data from Alarm.com. Got 403 status when"
+                        " fetching data for device type %s. User is already logged in."
+                        " Giving up on device type."
                     ),
                     device_type,
                 )
@@ -1090,9 +1117,7 @@ class AlarmController:
                         for family_name, family_data in device["relationships"].items():
                             if DeviceType.has_value(family_name):
                                 for sub_device in family_data["data"]:
-                                    subordinates.append(
-                                        (sub_device["id"], family_name)
-                                    )
+                                    subordinates.append((sub_device["id"], family_name))
 
                                     if device_type == DeviceType.PARTITION:
                                         self._partition_map[sub_device["id"]] = device[
