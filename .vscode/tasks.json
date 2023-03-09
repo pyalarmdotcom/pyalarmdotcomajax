@@ -1,24 +1,17 @@
 {
-  "version": "2.0.0",
-  "file_version": "2023.01.27",
   "tasks": [
     {
-      "label": "Run pre-commit checks.",
-      "type": "shell",
       "command": "pre-commit run --all-files",
-      "problemMatcher": []
+      "label": "Run pre-commit checks.",
+      "problemMatcher": [],
+      "type": "shell"
     },
     {
-      "label": "Run pre-commit: mypy.",
-      "type": "shell",
-      "command": "pre-commit run mypy --all-files",
-      "problemMatcher": []
+      "command": "pytest",
+      "label": "Run integration tests.",
+      "problemMatcher": [],
+      "type": "shell"
     },
-    {
-      "label": "Run tests w/ coverage report.",
-      "type": "shell",
-      "command": "coverage run --source pylaundry -m pytest --verbose && coverage report --show-missing",
-      "problemMatcher": []
-    }
-  ]
+  ],
+  "version": "2.0.0"
 }

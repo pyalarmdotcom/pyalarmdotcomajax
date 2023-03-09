@@ -189,9 +189,9 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         elif fan:
             msg_body = {
                 "desiredFanMode": self.FanMode(fan[0]).value,
-                "desiredFanDuration": 0
-                if self.FanMode(fan[0]) == self.FanMode.AUTO
-                else fan[1],
+                "desiredFanDuration": (
+                    0 if self.FanMode(fan[0]) == self.FanMode.AUTO else fan[1]
+                ),
             }
         elif cool_setpoint:
             msg_body = {"desiredCoolSetpoint": cool_setpoint}
