@@ -13,6 +13,7 @@ preview = "True"
 [tool.mypy]
 python_version = "3.10"
 show_error_codes = true
+# follow_imports = "silent"
 ignore_missing_imports = true
 strict_equality = true
 warn_incomplete_stub = true
@@ -82,9 +83,6 @@ fixture-parentheses = false
 
 [tool.ruff.mccabe]
 max-complexity = 25
-
-[tool.ruff.per-file-ignores]
-"tests/*" = ["S101"] # Assert
 
 [tool.ruff.pyupgrade]
 keep-runtime-typing = true
