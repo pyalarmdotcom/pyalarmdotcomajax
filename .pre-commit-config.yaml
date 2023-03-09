@@ -1,6 +1,5 @@
-# File Version: 2023.3.6
-
-# https://pypi.org/project/python-typing-update/ doesn't work with python 3.10. Some of the below items seek to re-implement the typing-update flow.
+default_language_version:
+  python: python3.10
 
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
@@ -25,15 +24,10 @@ repos:
           - --skip="./.*,*.csv,*.json",*.html
           - --quiet-level=2
         exclude_types: [csv, json]
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.7.1
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: mixed-line-ending
-        args: ["--fix=lf"]
-      - id: check-json
-        exclude: (.vscode|.devcontainer)
+      - id: prettier
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.1
     hooks:
