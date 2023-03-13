@@ -2,13 +2,15 @@
 
 # pylint: disable=protected-access
 
+from collections.abc import Callable
+
 import pytest
 
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices import DeviceType
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__async_build_device_list__cameras(
     camera_no_permissions: pytest.fixture,
     all_base_ok_responses: pytest.fixture,
@@ -21,7 +23,7 @@ async def test__async_build_device_list__cameras(
     assert items == []
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_build_device_list__cameras(
     camera_no_permissions: pytest.fixture,
     all_base_ok_responses: pytest.fixture,
@@ -31,10 +33,10 @@ async def test___async_build_device_list__cameras(
 
     await adc_client._async_build_device_list(DeviceType.CAMERA)
 
-    assert adc_client.cameras == []
+    assert adc_client.devices.cameras == {}
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_update__no_permissions(
     all_base_ok_camera_403: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -44,19 +46,19 @@ async def test___async_update__no_permissions(
 
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.water_sensors
-    assert not adc_client.cameras
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.water_sensors.values()
+    assert not adc_client.devices.cameras.values()
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_update__invalid_endpoint(
     all_base_ok_camera_404: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -66,19 +68,19 @@ async def test___async_update__invalid_endpoint(
 
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.water_sensors
-    assert not adc_client.cameras
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.water_sensors.values()
+    assert not adc_client.devices.cameras.values()
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_update__lock_refresh_failure(
     successful_init_lock_refresh_fail: pytest.fixture,
     adc_client: AlarmController,
@@ -87,24 +89,24 @@ async def test___async_update__lock_refresh_failure(
 
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.water_sensors
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.water_sensors.values()
 
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert not adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.water_sensors
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert not adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.water_sensors.values()

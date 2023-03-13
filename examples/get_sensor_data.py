@@ -26,7 +26,7 @@ async def main() -> None:
         await alarm.async_login()
         await alarm.async_update()
 
-        for sensor in alarm.sensors:
+        for sensor in alarm.devices.sensors.values():
             print(
                 f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State:"
                 f" {sensor.state}"

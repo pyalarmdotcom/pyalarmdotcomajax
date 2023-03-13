@@ -1,14 +1,16 @@
 """Alarm.com image sensor."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import Enum
-import logging
 from typing import TypedDict
 
 from dateutil import parser
 
-from . import BaseDevice, DeviceType
+from pyalarmdotcomajax.devices import DeviceType
+
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 

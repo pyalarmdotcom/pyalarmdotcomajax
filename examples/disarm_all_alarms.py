@@ -43,7 +43,7 @@ async def main() -> None:
             )
             sys.exit()
 
-        for partition in alarm.partitions:
+        for partition in alarm.devices.partitions.values():
             if isinstance(partition.state, Partition.DeviceState) is True and (
                 Partition.DeviceState(partition.state) != Partition.DeviceState.DISARMED
             ):

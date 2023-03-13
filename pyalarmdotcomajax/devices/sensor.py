@@ -1,8 +1,8 @@
 """Alarm.com sensor."""
 from __future__ import annotations
 
-from enum import Enum, IntEnum
 import logging
+from enum import Enum, IntEnum
 
 from . import BaseDevice
 

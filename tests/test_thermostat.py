@@ -1,5 +1,7 @@
 """Test thermostat device."""
 
+from collections.abc import Callable
+
 import pytest
 
 from pyalarmdotcomajax import AlarmController
@@ -7,7 +9,7 @@ from pyalarmdotcomajax.cli import _print_element_tearsheet
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__device_thermostat__ok(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -17,9 +19,9 @@ async def test__device_thermostat__ok(
 
     await adc_client.async_update()
 
-    assert adc_client.thermostats[0]
+    assert adc_client.devices.thermostats["id-tstat-upstairs"]
 
-    thermostat = adc_client.thermostats[0]
+    thermostat = adc_client.devices.thermostats["id-tstat-upstairs"]
 
     assert thermostat is not None
     assert thermostat.name == "Upstairs"
@@ -51,7 +53,7 @@ async def test__device_thermostat__ok(
     assert thermostat.attributes.schedule_mode == Thermostat.ScheduleMode.SCHEDULED
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__device_thermostat__cli_tearsheet(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -61,6 +63,6 @@ async def test__device_thermostat__cli_tearsheet(
 
     await adc_client.async_update()
 
-    assert adc_client.thermostats[0]
+    assert adc_client.devices.thermostats["id-tstat-upstairs"]
 
-    _print_element_tearsheet(adc_client.thermostats[0])
+    _print_element_tearsheet(adc_client.devices.thermostats["id-tstat-upstairs"])

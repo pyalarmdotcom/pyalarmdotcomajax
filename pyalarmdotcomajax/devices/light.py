@@ -1,10 +1,12 @@
 """Alarm.com light."""
 from __future__ import annotations
 
-from enum import Enum
 import logging
+from enum import Enum
 
-from . import BaseDevice, DesiredStateMixin, DeviceType
+from pyalarmdotcomajax.devices import DeviceType
+
+from . import BaseDevice, DesiredStateMixin
 
 log = logging.getLogger(__name__)
 

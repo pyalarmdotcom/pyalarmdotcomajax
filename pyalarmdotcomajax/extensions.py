@@ -1,12 +1,12 @@
 """Configuration option extensions."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import asyncio
-from dataclasses import dataclass
-from enum import Enum, auto
 import logging
 import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any
 
 import aiohttp

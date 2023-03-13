@@ -1,14 +1,17 @@
 """Functions for communicating with Alarm.com over WebSockets."""
+
+# noqa: T201
+
 from __future__ import annotations
 
-from enum import Enum
 import logging
+from enum import Enum
 
 import aiohttp
 from aiohttp import ClientSession
 
-from .. import const as c
-from ..errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax import const as c
+from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +28,7 @@ class WebSocketClient:
     """Class for communicating with Alarm.com over WebSockets."""
 
     WEBSOCKET_ENDPOINT_TEMPLATE = "wss://webskt.alarm.com:8443/?auth={}"
-    WEBSOCKET_TOKEN_REQUEST_TEMPLATE = "{}web/api/websockets/token"
+    WEBSOCKET_TOKEN_REQUEST_TEMPLATE = "{}web/api/websockets/token"  # noqa: S105
 
     def __init__(self, websession: ClientSession, ajax_headers: dict) -> None:
         """Initialize."""

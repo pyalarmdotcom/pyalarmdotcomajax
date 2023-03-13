@@ -16,7 +16,7 @@ class WebSocketClient:
     """Class for communicating with Alarm.com over WebSockets."""
 
     WEBSOCKET_ENDPOINT_TEMPLATE = "wss://webskt.alarm.com:8443/?auth={}"
-    WEBSOCKET_TOKEN_REQUEST_TEMPLATE = "{}web/api/websockets/token"
+    WEBSOCKET_TOKEN_REQUEST_TEMPLATE = "{}web/api/websockets/token"  # noqa: S105
 
     def __init__(self, websession: ClientSession, ajax_headers: dict) -> None:
         """Initialize."""

@@ -1,8 +1,8 @@
 """Generic helper functions."""
 from __future__ import annotations
 
-from enum import Enum
 import logging
+from enum import Enum
 from typing import Any
 
 from bs4 import Tag
@@ -147,3 +147,20 @@ def slug_to_title(slug: str) -> str:
     """Convert slug to title case."""
 
     return slug.replace("_", " ").title()
+
+
+# https://stackoverflow.com/a/39542816/20207204
+class classproperty(property):
+    """Decorator for class properties. Lets class functions to be used as properties."""
+
+    def __get__(self, obj: Any, objtype: type | None = None) -> Any:
+        """Get the value of the property."""
+        return super().__get__(objtype)
+
+    def __set__(self, obj: Any, value: Any) -> None:
+        """Set the value of the property."""
+        super().__set__(type(obj), value)
+
+    def __delete__(self, obj: Any) -> None:
+        """Delete the value of the property."""
+        super().__delete__(type(obj))

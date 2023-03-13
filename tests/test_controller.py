@@ -3,14 +3,14 @@
 # pylint: disable=protected-access
 
 import json
+from collections.abc import Callable
 
 import aiohttp
-from deepdiff import DeepDiff
 import pytest
+from deepdiff import DeepDiff
 
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices import DeviceType
-
 from tests.responses import get_http_body_json
 
 
@@ -24,19 +24,19 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
     assert adc_client.provider_name is None
     assert adc_client.user_id is None
 
-    assert not adc_client.systems
-    assert not adc_client.partitions
-    assert not adc_client.sensors
-    assert not adc_client.locks
-    assert not adc_client.garage_doors
-    assert not adc_client.image_sensors
-    assert not adc_client.lights
-    assert not adc_client.thermostats
-    assert not adc_client.cameras
-    assert not adc_client.water_sensors
+    assert not adc_client.devices.systems.values()
+    assert not adc_client.devices.partitions.values()
+    assert not adc_client.devices.sensors.values()
+    assert not adc_client.devices.locks.values()
+    assert not adc_client.devices.garage_doors.values()
+    assert not adc_client.devices.image_sensors.values()
+    assert not adc_client.devices.lights.values()
+    assert not adc_client.devices.thermostats.values()
+    assert not adc_client.devices.cameras.values()
+    assert not adc_client.devices.water_sensors.values()
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__async_build_device_list__sensor_metadata(
     all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
@@ -58,7 +58,7 @@ async def test__async_build_device_list__sensor_metadata(
         ), f"Difference: {diff}"
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_build_device_list__sensors(
     all_base_ok_responses: pytest.fixture,
     adc_client: AlarmController,
@@ -67,12 +67,12 @@ async def test___async_build_device_list__sensors(
 
     await adc_client.async_update(DeviceType.SENSOR)
 
-    print(adc_client.sensors)
+    print(adc_client.devices.sensors.values())
 
-    assert adc_client.sensors
+    assert adc_client.devices.sensors.values()
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test___async_update__ok(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -82,13 +82,13 @@ async def test___async_update__ok(
 
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.cameras
-    assert adc_client.water_sensors
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.cameras.values()
+    assert adc_client.devices.water_sensors.values()

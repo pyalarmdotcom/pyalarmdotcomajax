@@ -9,20 +9,22 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from dataclasses import asdict
-from enum import Enum
 import logging
 import platform
 import sys
+from dataclasses import asdict
+from enum import Enum
 from typing import Any
 
 import aiohttp
 from termcolor import colored, cprint
 
 import pyalarmdotcomajax
+from pyalarmdotcomajax.devices import DeviceType
+from pyalarmdotcomajax.devices.registry import AttributeRegistry
 
 from . import AlarmController, AuthResult
-from .devices import DEVICE_SUPPORT_STATUS, BaseDevice, DeviceType
+from .devices import BaseDevice
 from .devices.light import Light
 from .devices.sensor import Sensor
 from .devices.system import System
@@ -280,12 +282,12 @@ async def cli() -> None:
             # Built List of Device Types
 
             supported_device_types = []
-            for device_type in DEVICE_SUPPORT_STATUS["supported"]:
+            for device_type in AttributeRegistry.supported_devices:
                 supported_device_types.append(device_type)
 
             unsupported_device_types = []
             if include_unsupported := args.get("include_unsupported", False):
-                for device_type in DEVICE_SUPPORT_STATUS["unsupported"]:
+                for device_type in AttributeRegistry.unsupported_devices:
                     unsupported_device_types.append(device_type)
 
             # Get & Add Machine Output
@@ -343,7 +345,7 @@ async def cli() -> None:
             except AttributeError:
                 cprint("Missing set parameter.", "red")
 
-            if not (device := alarm.get_device_by_id(device_id)):
+            if not (device := alarm.devices.get(device_id)):
                 cprint(f"Unable to find a device with ID {device_id}.", "red")
                 sys.exit(0)
 
@@ -475,20 +477,20 @@ def _human_output(alarm: AlarmController) -> dict:
 
     output = {}
 
-    type_to_var: list[tuple[DeviceType, list]] = [
-        (DeviceType.SYSTEM, alarm.systems),
-        (DeviceType.PARTITION, alarm.partitions),
-        (DeviceType.SENSOR, alarm.sensors),
-        (DeviceType.LOCK, alarm.locks),
-        (DeviceType.GARAGE_DOOR, alarm.garage_doors),
-        (DeviceType.IMAGE_SENSOR, alarm.image_sensors),
-        (DeviceType.LIGHT, alarm.lights),
-        (DeviceType.CAMERA, alarm.cameras),
-        (DeviceType.THERMOSTAT, alarm.thermostats),
+    type_to_var: list[tuple[DeviceType, dict]] = [
+        (DeviceType.SYSTEM, alarm.devices.systems),
+        (DeviceType.PARTITION, alarm.devices.partitions),
+        (DeviceType.SENSOR, alarm.devices.sensors),
+        (DeviceType.LOCK, alarm.devices.locks),
+        (DeviceType.GARAGE_DOOR, alarm.devices.garage_doors),
+        (DeviceType.IMAGE_SENSOR, alarm.devices.image_sensors),
+        (DeviceType.LIGHT, alarm.devices.lights),
+        (DeviceType.CAMERA, alarm.devices.cameras),
+        (DeviceType.THERMOSTAT, alarm.devices.thermostats),
     ]
 
     device_type: DeviceType
-    devices: list
+    devices: dict
     for device_type, devices in type_to_var:
         device_type_output: str = ""
         if len(devices) == 0:

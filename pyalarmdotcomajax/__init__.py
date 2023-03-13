@@ -13,29 +13,16 @@ import aiohttp
 from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
 
-from pyalarmdotcomajax.helpers import slug_to_title
-from pyalarmdotcomajax.websocket import WebSocketClient
+from pyalarmdotcomajax.devices.image_sensor import ImageSensor
+from pyalarmdotcomajax.devices.partition import Partition
 
 from . import const as c
 from .devices import (
-    DEVICE_ENDPOINTS,
-    SUPPORTED_DEVICES,
     BaseDevice,
-    DeviceType,
     ElementSpecificData,
     TroubleCondition,
 )
-from .devices.camera import Camera
-from .devices.garage_door import GarageDoor
-from .devices.gate import Gate
-from .devices.image_sensor import ImageSensor
-from .devices.light import Light
-from .devices.lock import Lock
-from .devices.partition import Partition
-from .devices.sensor import Sensor
-from .devices.system import System
-from .devices.thermostat import Thermostat
-from .devices.water_sensor import WaterSensor
+from .devices.registry import AttributeRegistry, DeviceRegistry, DeviceType
 from .errors import (
     AuthenticationFailed,
     BadAccount,
@@ -49,26 +36,28 @@ from .extensions import (
     ConfigurationOption,
     ExtendedProperties,
 )
+from .helpers import slug_to_title
+from .websocket import WebSocketClient
 
-__version__ = "0.4.14"
+__version__ = "0.4.15-alpha"
 
 log = logging.getLogger(__name__)
 
-# Map DeviceType enum to device class.
-# Must be kept in /__init__.py to avoid circular reference errors.
-DEVICE_CLASSES: dict = {
-    DeviceType.CAMERA: Camera,
-    DeviceType.GARAGE_DOOR: GarageDoor,
-    DeviceType.GATE: Gate,
-    DeviceType.IMAGE_SENSOR: ImageSensor,
-    DeviceType.LIGHT: Light,
-    DeviceType.LOCK: Lock,
-    DeviceType.PARTITION: Partition,
-    DeviceType.SENSOR: Sensor,
-    DeviceType.SYSTEM: System,
-    DeviceType.THERMOSTAT: Thermostat,
-    DeviceType.WATER_SENSOR: WaterSensor,
-}
+# # Map DeviceType enum to device class.
+# # Must be kept in /__init__.py to avoid circular reference errors.
+# DEVICE_CLASSES: dict = {
+#     DeviceType.CAMERA: Camera,
+#     DeviceType.GARAGE_DOOR: GarageDoor,
+#     DeviceType.GATE: Gate,
+#     DeviceType.IMAGE_SENSOR: ImageSensor,
+#     DeviceType.LIGHT: Light,
+#     DeviceType.LOCK: Lock,
+#     DeviceType.PARTITION: Partition,
+#     DeviceType.SENSOR: Sensor,
+#     DeviceType.SYSTEM: System,
+#     DeviceType.THERMOSTAT: Thermostat,
+#     DeviceType.WATER_SENSOR: WaterSensor,
+# }
 
 
 class AuthResult(Enum):
@@ -160,19 +149,7 @@ class AlarmController:
 
         self._trouble_conditions: dict = {}
 
-        self.devices: DeviceStore = {
-            "cameras": {},
-            "garageDoors": {},
-            "gates": {},
-            "imageSensors": {},
-            "lights": {},
-            "locks": {},
-            "partitions": {},
-            "sensors": {},
-            "systems": {},
-            "thermostats": {},
-            "waterSensors": {},
-        }
+        self.devices: DeviceRegistry = DeviceRegistry()
 
     #
     #
@@ -368,7 +345,9 @@ class AlarmController:
             device_types = [DeviceType.SYSTEM, device_type]
         else:
             device_types = [DeviceType.SYSTEM] + [
-                type for type in SUPPORTED_DEVICES if type != DeviceType.SYSTEM
+                type
+                for type in AttributeRegistry.supported_devices
+                if type != DeviceType.SYSTEM
             ]
 
         log.debug("Refreshing data for device types: %s", device_types)
@@ -389,12 +368,9 @@ class AlarmController:
             #
             # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
             #
-            try:
-                device_class: (type[BaseDevice]) = DEVICE_CLASSES[device_type_i]
-            except KeyError as err:
-                raise UnsupportedDevice(
-                    f"Device type {device_type_i} is not supported."
-                ) from err
+            device_class: (type[BaseDevice]) = AttributeRegistry.get_class(
+                device_type_i
+            )
 
             #############################
             # FETCH DATA FROM ALARM.COM #
@@ -407,16 +383,17 @@ class AlarmController:
             try:
                 devices = await self._async_build_device_list(device_type=device_type_i)
 
+            # Clear registry for current device type if an error occurs. This prevents stale data from being used.
             except BadAccount as err:
                 with contextlib.suppress(KeyError):
-                    self.devices[device_type_i.value] = {}  # type: ignore
+                    self.devices.clear(device_type_i)
 
                 # Indicates fatal account error.
                 raise PermissionError from err
 
             except DataFetchFailed:
                 with contextlib.suppress(KeyError):
-                    self.devices[device_type_i.value] = {}  # type: ignore
+                    self.devices.clear(device_type_i)
 
                 log.error(
                     (
@@ -428,7 +405,7 @@ class AlarmController:
 
             if len(devices) == 0:
                 with contextlib.suppress(KeyError):
-                    self.devices[device_type_i.value] = {}  # type: ignore
+                    self.devices.clear(device_type_i)
 
                 continue
 
@@ -453,18 +430,14 @@ class AlarmController:
             #
             additional_endpoint_raw_results: dict = {}
 
-            try:
-                additional_endpoints: dict = DEVICE_ENDPOINTS[device_type_i][
-                    "additional"
-                ]
+            additional_endpoints = AttributeRegistry.get_endpoints(device_type_i).get(
+                "additional", {}
+            )
 
-                for name, url in additional_endpoints.items():
-                    additional_endpoint_raw_results[name] = (
-                        await self._async_build_device_list(url=url)
-                    )
-
-            except KeyError:
-                pass
+            for name, url in additional_endpoints.items():
+                additional_endpoint_raw_results[name] = (
+                    await self._async_build_device_list(url=url)
+                )
 
             ####################
             # QUERY EXTENSIONS #
@@ -593,7 +566,7 @@ class AlarmController:
                 temp_device_storage.append(entity_obj)
 
             try:
-                self.devices[device_type_i.value].update({entity_id: temp_device_storage})  # type: ignore
+                self.devices.store(temp_device_storage)
             except KeyError:
                 log.warn("Tried to store unsupported device type %s", device_type_i)
                 pass
@@ -601,28 +574,23 @@ class AlarmController:
     async def async_send_command(
         self,
         device_type: DeviceType,
-        event: Lock.Command
-        | Partition.Command
-        | GarageDoor.Command
-        | Gate.Command
-        | Light.Command
-        | ImageSensor.Command
-        | Thermostat.Command,
+        event: BaseDevice.Command,
         device_id: str | None = None,  # ID corresponds to device_type
-        msg_body: dict | None = None,  # Body of request. No abstractions here.
+        msg_body: dict = {},  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
         log.debug("Sending %s to Alarm.com.", event)
 
-        if not msg_body:
-            msg_body = {}
-
         msg_body["statePollOnly"] = False
 
-        url = (
-            f"{DEVICE_ENDPOINTS[device_type]['primary'].format(c.URL_BASE, device_id)}/{event.value}"
-        )
+        try:
+            url = (
+                f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
+            )
+        except KeyError as err:
+            raise UnsupportedDevice from err
+
         log.debug("Url %s", url)
 
         async with self._websession.post(
@@ -699,7 +667,7 @@ class AlarmController:
 
         endpoints = []
 
-        for device_type, device_data in DEVICE_ENDPOINTS.items():
+        for device_type, device_data in AttributeRegistry.endpoints.items():
             if device_type in device_types:
                 endpoints.append(
                     (slug_to_title(device_type.name), device_data["primary"])
@@ -829,7 +797,9 @@ class AlarmController:
     async def _async_requires_2fa(self) -> bool | None:
         """Check whether two factor authentication is enabled on the account."""
         async with self._websession.get(
-            url=DEVICE_ENDPOINTS[DeviceType.SYSTEM]["primary"].format(c.URL_BASE, ""),
+            url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(
+                c.URL_BASE, ""
+            ),
             headers=self._ajax_headers,
         ) as resp:
             self._update_antiforgery_token(resp)
@@ -975,7 +945,11 @@ class AlarmController:
         if (not device_type and not url) or (device_type and url):
             raise ValueError
 
-        full_path = DEVICE_ENDPOINTS[device_type]["primary"] if device_type else url
+        full_path = (
+            AttributeRegistry.get_endpoints(device_type).get("primary")
+            if device_type
+            else url
+        )
 
         if not full_path:
             raise ValueError

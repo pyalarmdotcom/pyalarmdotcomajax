@@ -1,7 +1,10 @@
 """Test device extensions."""
 
+from collections.abc import Callable
+
 import aiohttp
 import pytest
+from aioresponses import aioresponses
 
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.cli import _print_element_tearsheet
@@ -15,7 +18,7 @@ from pyalarmdotcomajax.extensions import (
 from .responses import get_http_body_html
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__extension_camera_skybellhd__fetch(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -42,7 +45,7 @@ async def test__extension_camera_skybellhd__fetch(
     assert configs[0].raw_attribs
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__extension_camera_skybellhd__via_alarm_controller(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -52,9 +55,9 @@ async def test__extension_camera_skybellhd__via_alarm_controller(
 
     await adc_client.async_update()
 
-    assert adc_client.cameras[0]
+    assert adc_client.devices.cameras["id-camera-skybell"]
 
-    skybell = adc_client.cameras[0]
+    skybell = adc_client.devices.cameras["id-camera-skybell"]
 
     assert skybell.name == "Front Doorbell"
     assert (
@@ -71,7 +74,7 @@ async def test__extension_camera_skybellhd__via_alarm_controller(
     )
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__extension_camera_skybellhd__cli_tearsheet(
     all_base_ok_responses: pytest.fixture,
     all_extension_ok_responses: pytest.fixture,
@@ -81,12 +84,12 @@ async def test__extension_camera_skybellhd__cli_tearsheet(
 
     await adc_client.async_update()
 
-    assert adc_client.cameras[0]
+    assert adc_client.devices.cameras["id-camera-skybell"]
 
-    _print_element_tearsheet(adc_client.cameras[0])
+    _print_element_tearsheet(adc_client.devices.cameras["id-camera-skybell"])
 
 
-# @pytest.mark.asyncio  # type: ignore
+# @pytest.mark.asyncio # type: ignore
 # async def test__extension_camera_skybellhd__change_indoor_chime(
 #     all_base_ok_responses: pytest.fixture,
 #     all_extension_ok_responses: pytest.fixture,
@@ -95,10 +98,10 @@ async def test__extension_camera_skybellhd__cli_tearsheet(
 #     """_print_element_tearsheet will throw exception on failure."""
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__extension_camera_skybellhd__submit_change(
     all_base_ok_responses: pytest.fixture,
-    response_mocker: pytest.fixture,
+    response_mocker: aioresponses,
     adc_client: AlarmController,
 ) -> None:
     """Test changing configuration option."""
@@ -118,7 +121,7 @@ async def test__extension_camera_skybellhd__submit_change(
 
     await adc_client.async_update()
 
-    camera: Camera = adc_client.cameras[0]
+    camera: Camera = adc_client.devices.cameras["id-camera-skybell"]
 
     await camera.async_change_setting(
         "indoor-chime", CameraSkybellControllerExtension.ChimeOnOff.OFF
@@ -130,7 +133,7 @@ async def test__extension_camera_skybellhd__submit_change(
     )
 
 
-@pytest.mark.asyncio  # type: ignore
+@pytest.mark.asyncio
 async def test__extension_camera_skybellhd__missing_field(
     all_base_ok_responses: pytest.fixture,
     skybell_missing_video_quality_field: pytest.fixture,
@@ -140,9 +143,9 @@ async def test__extension_camera_skybellhd__missing_field(
 
     await adc_client.async_update()
 
-    assert adc_client.cameras[0]
+    assert adc_client.devices.cameras is not None
 
-    skybell = adc_client.cameras[0]
+    skybell = adc_client.devices.cameras["id-camera-skybell"]
 
     assert skybell.name == "Front Doorbell"
     assert (

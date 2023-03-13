@@ -7,7 +7,7 @@ from enum import Enum
 
 from dateutil import parser
 
-from ..helpers import CastingMixin
+from pyalarmdotcomajax.helpers import CastingMixin
 
 
 class PropertyChangeType(Enum):
@@ -123,6 +123,7 @@ class WebSocketMessage(CastingMixin):
     """Alarm.com websocket message base class."""
 
     def __init__(self, message: dict):
+        """Initialize."""
         self.id_: str = (
             f"{str(message.get('UnitId', ''))}-{str(message.get('DeviceId', ''))}"
         )
@@ -132,6 +133,7 @@ class MonitoringMessage(WebSocketMessage):
     """Alarm.com monitoring event websocket message class."""
 
     def __init__(self, message: dict):
+        """Initialize."""
         super().__init__(message)
         self.type_: str = message.get("eventType", "")
         self.date: datetime | None = parser.parse(message.get("EventDateUtc", ""))
@@ -155,6 +157,7 @@ class PropertyChangeMessage(WebSocketMessage):
     """Alarm.com property change websocket message class."""
 
     def __init__(self, message: dict):
+        """Initialize."""
         super().__init__(message)
         self.change_date: datetime = parser.parse(message.get("ChangeDateUtc", ""))
         self.reported_date: datetime = parser.parse(message.get("ReportedDateUtc", ""))
@@ -176,6 +179,7 @@ class StateChangeMessage(WebSocketMessage):
     """Alarm.com status update websocket message class."""
 
     def __init__(self, message: dict):
+        """Initialize."""
         super().__init__(message)
         self.date: datetime = parser.parse(message.get("EventDateUtc", ""))
         self.new_state: datetime = parser.parse(message.get("NewState", ""))
