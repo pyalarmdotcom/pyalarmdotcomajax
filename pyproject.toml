@@ -77,7 +77,6 @@ ignore = [
   "E501", # line too long
   "E731" # do not assign a lambda expression, use a def
 ]
-# required-version = "0.0.252"
 
 [tool.ruff.flake8-pytest-style]
 fixture-parentheses = false
