@@ -43,22 +43,6 @@ __version__ = "0.4.15-alpha"
 
 log = logging.getLogger(__name__)
 
-# # Map DeviceType enum to device class.
-# # Must be kept in /__init__.py to avoid circular reference errors.
-# DEVICE_CLASSES: dict = {
-#     DeviceType.CAMERA: Camera,
-#     DeviceType.GARAGE_DOOR: GarageDoor,
-#     DeviceType.GATE: Gate,
-#     DeviceType.IMAGE_SENSOR: ImageSensor,
-#     DeviceType.LIGHT: Light,
-#     DeviceType.LOCK: Lock,
-#     DeviceType.PARTITION: Partition,
-#     DeviceType.SENSOR: Sensor,
-#     DeviceType.SYSTEM: System,
-#     DeviceType.THERMOSTAT: Thermostat,
-#     DeviceType.WATER_SENSOR: WaterSensor,
-# }
-
 
 class AuthResult(Enum):
     """Standard for reporting results of login attempt."""
@@ -725,24 +709,6 @@ class AlarmController:
                         )
 
         return return_data
-
-    # def get_device_by_id(self, device_id: str) -> BaseDevice | None:
-    #     """Find device by its id."""
-
-    #     devices: dict[str, BaseDevice] = {
-    #         **self.systems,
-    #         **self.partitions,
-    #         **self.sensors,
-    #         **self.locks,
-    #         **self.garage_doors,
-    #         **self.gates,
-    #         **self.image_sensors,
-    #         **self.lights,
-    #         **self.cameras,
-    #         **self.thermostats,
-    #         **self.water_sensors,
-    #     }
-    #     return devices.get(device_id)
 
     def get_websocket_client(self) -> WebSocketClient:
         """Construct and return a websocket client."""

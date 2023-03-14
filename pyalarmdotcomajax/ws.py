@@ -42,9 +42,9 @@ class WebSocketClient:
         async with self._websession.ws_connect(
             self.WEBSOCKET_TOKEN_REQUEST_TEMPLATE.format(self._ws_auth_token),
             headers=self._ajax_headers,
-        ) as websocket:
-            async for msg in websocket:
-                if msg.type == aiohttp.WSMsgType.JSON:
+        ) as ws:
+            async for msg in ws:
+                if msg.type == aiohttp.WSMsgType.TEXT:
                     if msg.data == "close cmd":
                         await ws.close()
                         break
