@@ -1,6 +1,7 @@
 """Basic example for logging in using time-based one-time password via pyalarmdotcomajax."""
 
 import asyncio
+import logging
 import os
 import sys
 
@@ -12,6 +13,9 @@ from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 USERNAME = os.environ.get("ADC_USERNAME")
 PASSWORD = os.environ.get("ADC_PASSWORD")
 TWOFA_COOKIE = os.environ.get("ADC_2FA_TOKEN")
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def main() -> None:
@@ -41,7 +45,7 @@ async def main() -> None:
             login_result = await alarm.async_login()
 
             if login_result == AuthResult.OTP_REQUIRED:
-                print("Two factor authentication is enabled for this user.")
+                print("Two factor authentication is enabled for this user.")  # noqa: T201
 
                 if not (code := input("Enter One-Time Password: ")):
                     sys.exit("Requested OTP was not entered.")
@@ -49,10 +53,7 @@ async def main() -> None:
                 await alarm.async_submit_otp(code=code)
 
             elif login_result == AuthResult.ENABLE_TWO_FACTOR:
-                sys.exit(
-                    "Unable to log in. Please set up two-factor authentication for this"
-                    " account."
-                )
+                sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
 
         except (ConnectionError, DataFetchFailed):
             sys.exit("Could not connect to Alarm.com.")
@@ -64,7 +65,7 @@ async def main() -> None:
         # PULL DEVICE DATA FROM ALARM.COM
         #
 
-        # await alarm.async_update()
+        await alarm.async_update()
 
         ws_client = alarm.get_websocket_client()
         await ws_client.async_connect()
