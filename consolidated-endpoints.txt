@@ -1,0 +1,15 @@
+https://www.alarm.com/web/api/devices/sensors?ids[]=103238342-14&ids[]=103238342-26 = Get multiple devices
+
+https://www.alarm.com/web/api/devices/thermostats/103238342-2207 = Get single device
+
+https://www.alarm.com/web/api/settings/manageDevices/deviceCatalogs/13276704 = Get details for all devices and statuses (image sensor shows up as regular sensor)
+
+https://www.alarm.com/web/api/imageSensor/imageSensorImages/getRecentImages # Get all recent images
+
+https://www.alarm.com/web/api/systems/systems/13276704 # Get list of all devices. No details, but properly lists image sensors.
+
+https://www.alarm.com/web/api/systems/availableSystemItems # Get list of systems. No detail.
+
+https://www.alarm.com/web/api/appload # Has is logged in parameter
+
+https://www.alarm.com/web/api/identities/15672471/reloadContext # Empty post refreshes session.

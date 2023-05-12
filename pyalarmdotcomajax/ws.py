@@ -32,9 +32,7 @@ class WebSocketClient:
         try:
             self._ws_auth_token = await self._async_get_websocket_token()
             if not self._ws_auth_token:
-                raise AuthenticationFailed(
-                    "async_connect(): Failed to get WebSocket authentication token."
-                )
+                raise AuthenticationFailed("async_connect(): Failed to get WebSocket authentication token.")
         except (DataFetchFailed, AuthenticationFailed) as err:
             raise AuthenticationFailed from err
 
@@ -42,14 +40,14 @@ class WebSocketClient:
         async with self._websession.ws_connect(
             self.WEBSOCKET_TOKEN_REQUEST_TEMPLATE.format(self._ws_auth_token),
             headers=self._ajax_headers,
-        ) as ws:
-            async for msg in ws:
+        ) as websocket:
+            async for msg in websocket:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     if msg.data == "close cmd":
-                        await ws.close()
+                        await websocket.close()
                         break
                     else:
-                        await ws.send_str(msg.data + "/answer")
+                        await websocket.send_str(msg.data + "/answer")
                 elif msg.type == aiohttp.WSMsgType.ERROR:
                     break
 
@@ -63,14 +61,8 @@ class WebSocketClient:
 
         if (
             ((errors := json_rsp.get("errors")) and len(errors) > 0)
-            or (
-                (validation_errors := json_rsp.get("validation_errors"))
-                and len(validation_errors) > 0
-            )
-            or (
-                (processing_errors := json_rsp.get("processingErrors"))
-                and len(processing_errors) > 0
-            )
+            or ((validation_errors := json_rsp.get("validation_errors")) and len(validation_errors) > 0)
+            or ((processing_errors := json_rsp.get("processingErrors")) and len(processing_errors) > 0)
             or ((token_value := json_rsp.get("value")) in [None, ""])
         ):
             log.debug(
@@ -81,8 +73,7 @@ class WebSocketClient:
                 resp,
             )
             raise DataFetchFailed(
-                "async_get_websocket_token(): Received errors while requesting"
-                " WebSocket authentication token."
+                "async_get_websocket_token(): Received errors while requesting WebSocket authentication token."
             )
 
         return str(token_value)

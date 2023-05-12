@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Protocol, TypedDict
@@ -92,55 +92,55 @@ class DesiredStateMixin:
         return state
 
 
-class ElementSpecificData(TypedDict, total=False):
+class DeviceTypeSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
-    raw_recent_images: set[dict]
+    raw_recent_images: list[dict]
 
 
 class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC devices."""
 
-    DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
+    _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
+    _ATTRIB_STATE = "state"
+
+    ATTRIB_DESIRED_STATE = "desiredState"
 
     def __init__(
         self,
         id_: str,
         send_action_callback: Callable,
         config_change_callback: Callable | None,
-        subordinates: list,
+        children: list[tuple[str, DeviceType]],
         raw_device_data: dict,
-        element_specific_data: ElementSpecificData | None = None,
+        device_type_specific_data: DeviceTypeSpecificData | None = None,
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
         settings: dict | None = None,  # slug: ConfigurationOption
+        external_update_callback: Awaitable | None = None,  # Called when device is updated via WebSockets.
     ) -> None:
         """Initialize base element class."""
 
         self._id_: str = id_
         self._family_raw: str | None = raw_device_data.get("type")
         self._attribs_raw: dict = raw_device_data.get("attributes", {})
-        self._element_specific_data: ElementSpecificData = (
-            element_specific_data if element_specific_data else {}
+        self._device_type_specific_data: DeviceTypeSpecificData = (
+            device_type_specific_data if device_type_specific_data else {}
         )
         self._send_action_callback: Callable = send_action_callback
         self._config_change_callback: Callable | None = config_change_callback
-        self._subordinates: list = subordinates
         self._settings: dict = settings if settings else {}
 
-        self.trouble_conditions: list[TroubleCondition] = (
-            trouble_conditions if trouble_conditions else []
-        )
+        self.children = children
+        self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
 
         self._system_id: str | None = (
-            raw_device_data.get("relationships", {})
-            .get("system", {})
-            .get("data", {})
-            .get("id")
+            raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
         )
         self._partition_id: str | None = partition_id
+        self.external_update_callback: Awaitable | None = external_update_callback
 
-        self.process_element_specific_data()
+        self.process_device_type_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
 
@@ -194,8 +194,7 @@ class BaseDevice(ABC, CastingMixin):
         return {
             config_option.slug: config_option
             for config_option in self._settings.values()
-            if isinstance(config_option, ConfigurationOption)
-            and config_option.user_configurable
+            if isinstance(config_option, ConfigurationOption) and config_option.user_configurable
         }
 
     @property
@@ -239,7 +238,7 @@ class BaseDevice(ABC, CastingMixin):
         return (
             reported_model
             if (reported_model := self._attribs_raw.get("deviceModel"))
-            else self.DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
+            else self._DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
         )
 
     @property
@@ -259,6 +258,36 @@ class BaseDevice(ABC, CastingMixin):
             return self.Subtype(self._attribs_raw["deviceType"])
         except (ValueError, KeyError):
             return None
+
+    # #
+    # FUNCTIONS
+    # #
+
+    async def async_handle_external_state_change(self, raw_state: int) -> None:
+        """Update device state when notified of externally-triggered change."""
+
+        self._attribs_raw[self._ATTRIB_STATE] = raw_state
+
+        log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
+
+        if self.external_update_callback:
+            await self.external_update_callback
+
+    async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
+        """Update device attribute when notified of externally-triggered change."""
+
+        self._attribs_raw.update(new_attribute)
+
+        if self.external_update_callback:
+            await self.external_update_callback
+
+    async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
+        """Log externally-triggered attribute change."""
+
+        log.info(
+            f"{__name__} Got async update for {self.name} ({self.id_}) with new {attribute_name}:"
+            f" {attribute_value}."
+        )
 
     # #
     # PLACEHOLDERS
@@ -288,7 +317,7 @@ class BaseDevice(ABC, CastingMixin):
     def desired_state(self) -> Enum | None:
         """Return state. To be overridden by children."""
 
-    def process_element_specific_data(self) -> None:
+    def process_device_type_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""
 
         return None
@@ -298,10 +327,7 @@ class BaseDevice(ABC, CastingMixin):
 
         if not self._config_change_callback:
             log.error(
-                (
-                    "async_change_setting called for %s, which does not have a"
-                    " config_change_callback set."
-                ),
+                "async_change_setting called for %s, which does not have a config_change_callback set.",
                 self.name,
             )
             return
@@ -315,10 +341,7 @@ class BaseDevice(ABC, CastingMixin):
             raise InvalidConfigurationOption
 
         log.debug(
-            (
-                "BaseDevice -> async_change_setting: Calling change setting function"
-                " for %s %s (%s) via extension %s."
-            ),
+            "BaseDevice -> async_change_setting: Calling change setting function for %s %s (%s) via extension %s.",
             type(self).__name__,
             self.name,
             self.id_,

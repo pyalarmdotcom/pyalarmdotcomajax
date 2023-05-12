@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TypedDict
 
-from pyalarmdotcomajax.devices import BaseDevice, DeviceType
+from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.devices.camera import Camera
 from pyalarmdotcomajax.devices.garage_door import GarageDoor
 from pyalarmdotcomajax.devices.gate import Gate
@@ -21,6 +21,20 @@ from pyalarmdotcomajax.errors import UnsupportedDevice
 from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
+
+AllDeviceTypes_t = (
+    type[Camera]
+    | type[GarageDoor]
+    | type[Gate]
+    | type[ImageSensor]
+    | type[Light]
+    | type[Lock]
+    | type[Partition]
+    | type[Sensor]
+    | type[System]
+    | type[Thermostat]
+    | type[WaterSensor]
+)
 
 AllDevices_t = (
     Camera
@@ -76,7 +90,7 @@ class AttributeRegistryEntry(TypedDict, total=False):
     """Stores information about a device type."""
 
     endpoints: DeviceTypeEndpoints
-    class_: type[BaseDevice]
+    class_: AllDeviceTypes_t
     supported: bool
     rel_id: str
     device_registry_property: str
@@ -86,90 +100,84 @@ class AttributeRegistryEntry(TypedDict, total=False):
 class DeviceRegistry:
     """Stores devices by type."""
 
-    cameras: dict[str, Camera] = field(default_factory=dict)
-    garage_doors: dict[str, GarageDoor] = field(default_factory=dict)
-    gates: dict[str, Gate] = field(default_factory=dict)
-    image_sensors: dict[str, ImageSensor] = field(default_factory=dict)
-    lights: dict[str, Light] = field(default_factory=dict)
-    locks: dict[str, Lock] = field(default_factory=dict)
-    partitions: dict[str, Partition] = field(default_factory=dict)
-    sensors: dict[str, Sensor] = field(default_factory=dict)
-    systems: dict[str, System] = field(default_factory=dict)
-    thermostats: dict[str, Thermostat] = field(default_factory=dict)
-    water_sensors: dict[str, WaterSensor] = field(default_factory=dict)
+    _devices: dict[str, AllDevices_t] = field(default_factory=dict)
 
     ############
     ## PUBLIC ##
     ############
 
-    def get(self, device_id: str) -> BaseDevice | None:
+    @property
+    def all(self) -> dict[str, AllDevices_t]:
+        """Return devices."""
+        return self._devices
+
+    def get(self, device_id: str) -> AllDevices_t | None:
         """Get device by id."""
 
-        # Selects all device buckets by pulling all variables from self, then merges into a single dict.
+        return self._devices.get(device_id)
 
-        return {
-            key: value for d in list(vars(self).values()) for key, value in d.items()
-        }.get(device_id)
-
-    def store(self, payload: AllDevices_t | AllDevicesLists_t) -> None:
+    def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""
 
-        if isinstance(payload, list):
-            self._store_devices(payload)
-        if isinstance(payload, BaseDevice):
-            self._store_device(payload)
+        if purge:
+            self._devices = payload
+        else:
+            self._devices.update(payload)
 
-    def clear(self, type_or_class: type | DeviceType) -> None:
-        """Clear devices of a given type."""
+    @property
+    def cameras(self) -> dict[str, Camera]:
+        """Return cameras."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Camera}
 
-        if isinstance(type_or_class, type):
-            self._get_storage_by_class(type_or_class).clear()
-        if isinstance(type_or_class, DeviceType):
-            self._get_storage_by_devicetype(type_or_class).clear()
+    @property
+    def garage_doors(self) -> dict[str, GarageDoor]:
+        """Return garage doors."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == GarageDoor}
 
-    #############
-    ## PRIVATE ##
-    #############
+    @property
+    def gates(self) -> dict[str, Gate]:
+        """Return gates."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Gate}
 
-    def _store_device(self, device: AllDevices_t) -> None:
-        """Store device in appropriate device store by class."""
+    @property
+    def image_sensors(self) -> dict[str, ImageSensor]:
+        """Return image sensors."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == ImageSensor}
 
-        device_type = type(device)
+    @property
+    def lights(self) -> dict[str, Light]:
+        """Return lights."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Light}
 
-        device_store: dict = self._get_storage_by_class(device_type)
+    @property
+    def locks(self) -> dict[str, Lock]:
+        """Return locks."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Lock}
 
-        device_store[device.id_] = device
+    @property
+    def partitions(self) -> dict[str, Partition]:
+        """Return partitions."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Partition}
 
-    def _store_devices(self, devices: AllDevicesLists_t) -> None:
-        """Store devices in appropriate device store by class."""
+    @property
+    def sensors(self) -> dict[str, Sensor]:
+        """Return sensors."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Sensor}
 
-        device_type = type(devices[0])
+    @property
+    def systems(self) -> dict[str, System]:
+        """Return systems."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == System}
 
-        device_store: dict = self._get_storage_by_class(device_type)
+    @property
+    def thermostats(self) -> dict[str, Thermostat]:
+        """Return thermostats."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == Thermostat}
 
-        device_store.clear()
-
-        device_store.update(
-            {
-                device.id_: device
-                for device in devices
-                if isinstance(device, device_type)
-            }
-        )
-
-    def _get_storage_by_class(self, device_class: type) -> AllDevicesDicts_t:
-        """Get device storage for specified class."""
-
-        storage: AllDevicesDicts_t = getattr(
-            self, AttributeRegistry.get_storage_name(device_class)
-        )
-
-        return storage
-
-    def _get_storage_by_devicetype(self, device_type: DeviceType) -> AllDevicesDicts_t:
-        """Get device storage for specified device type."""
-
-        return self._get_storage_by_class(AttributeRegistry.get_class(device_type))
+    @property
+    def water_sensors(self) -> dict[str, WaterSensor]:
+        """Return water sensors."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == WaterSensor}
 
 
 class AttributeRegistry:
@@ -197,11 +205,7 @@ class AttributeRegistry:
         DeviceType.IMAGE_SENSOR: {
             "endpoints": {
                 "primary": "{}web/api/imageSensor/imageSensors/{}",
-                "additional": {
-                    "recent_images": (
-                        "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
-                    )
-                },
+                "additional": {"recent_images": "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"},
             },
             "class_": ImageSensor,
             "rel_id": "image-sensor/image-sensor",
@@ -250,9 +254,7 @@ class AttributeRegistry:
             "device_registry_property": "water_sensors",
         },
         DeviceType.ACCESS_CONTROL: {
-            "endpoints": {
-                "primary": "{}web/api/devices/accessControlAccessPointDevices/{}"
-            },
+            "endpoints": {"primary": "{}web/api/devices/accessControlAccessPointDevices/{}"},
             "rel_id": "devices/access-control-access-point-device",
         },
         DeviceType.CAMERA_SD: {
@@ -264,9 +266,7 @@ class AttributeRegistry:
             "rel_id": "devices/car-monitor",
         },
         DeviceType.COMMERCIAL_TEMP: {
-            "endpoints": {
-                "primary": "{}web/api/devices/commercialTemperatureSensors/{}"
-            },
+            "endpoints": {"primary": "{}web/api/devices/commercialTemperatureSensors/{}"},
             "rel_id": "devices/commercial-temperature-sensor",
         },
         # DeviceType.CONFIGURATION: {
@@ -330,9 +330,7 @@ class AttributeRegistry:
     @staticmethod
     def is_supported(device_type: DeviceType) -> bool:
         """Return if device type is supported."""
-        return (
-            AttributeRegistry._ATTRIBUTES.get(device_type, {}).get("supported") is True
-        )
+        return AttributeRegistry._ATTRIBUTES.get(device_type, {}).get("class_") is not None
 
     @staticmethod
     def get_endpoints(device_type: DeviceType) -> DeviceTypeEndpoints:
@@ -343,11 +341,11 @@ class AttributeRegistry:
             raise UnsupportedDevice from err
 
     @staticmethod
-    def get_class(device_type: DeviceType) -> type[BaseDevice]:
+    def get_class(device_type: DeviceType) -> type[AllDevices_t]:
         """Return primary endpoint for device type."""
 
         try:
-            return AttributeRegistry._ATTRIBUTES.get(device_type, {})["class_"]
+            return AttributeRegistry._ATTRIBUTES[device_type]["class_"]
         except KeyError as err:
             raise UnsupportedDevice from err
 
@@ -357,9 +355,7 @@ class AttributeRegistry:
 
         try:
             if isinstance(device_type, DeviceType):
-                return AttributeRegistry._ATTRIBUTES.get(device_type, {})[
-                    "device_registry_property"
-                ]
+                return AttributeRegistry._ATTRIBUTES.get(device_type, {})["device_registry_property"]
 
             return next(
                 attributes["device_registry_property"]
@@ -370,28 +366,39 @@ class AttributeRegistry:
         except KeyError as err:
             raise UnsupportedDevice from err
 
-    @classproperty
-    def supported_devices(cls) -> list[DeviceType]:
-        """Return list of supported devices."""
-        return [
-            device_type
-            for device_type in cls._ATTRIBUTES
-            if cls._ATTRIBUTES[device_type].get("class_")
-        ]
+    @staticmethod
+    def get_devicetype_from_relationship_id(relationship_id: str) -> DeviceType:
+        """Return device type from relationship id."""
+        for device_type, attributes in AttributeRegistry._ATTRIBUTES.items():
+            if attributes.get("rel_id") == relationship_id:
+                return device_type
+
+        raise UnsupportedDevice
+
+    @staticmethod
+    def get_relationship_id_from_devicetype(device_type: DeviceType) -> str:
+        """Return device type from relationship id."""
+        try:
+            return AttributeRegistry._ATTRIBUTES[device_type]["rel_id"]
+        except KeyError as err:
+            raise UnsupportedDevice from err
 
     @classproperty
-    def unsupported_devices(cls) -> list[DeviceType]:
+    def supported_device_types(cls) -> list[DeviceType]:
         """Return list of supported devices."""
-        return [
-            device_type
-            for device_type in cls._ATTRIBUTES
-            if not cls._ATTRIBUTES[device_type].get("class_")
-        ]
+        return [device_type for device_type in cls._ATTRIBUTES if cls._ATTRIBUTES[device_type].get("class_")]
+
+    @classproperty
+    def unsupported_device_types(cls) -> list[DeviceType]:
+        """Return list of supported devices."""
+        return [device_type for device_type in cls._ATTRIBUTES if not cls._ATTRIBUTES[device_type].get("class_")]
 
     @classproperty
     def endpoints(cls) -> dict[DeviceType, DeviceTypeEndpoints]:
         """Return all endpoints for all device types."""
-        return {
-            device_type: cls.get_endpoints(device_type)
-            for device_type in cls._ATTRIBUTES
-        }
+        return {device_type: cls.get_endpoints(device_type) for device_type in cls._ATTRIBUTES}
+
+    @classproperty
+    def all_relationship_ids(cls) -> list[str]:
+        """Return all relationship ids for all device types."""
+        return [device_type["rel_id"] for device_type in cls._ATTRIBUTES.values()]

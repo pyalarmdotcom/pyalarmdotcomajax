@@ -47,9 +47,7 @@ class CastingMixin:
 
         return None
 
-    def _safe_list_from_dict(
-        self, src_dict: dict, key: str, value_type: type
-    ) -> list | None:
+    def _safe_list_from_dict(self, src_dict: dict, key: str, value_type: type) -> list | None:
         """Cast raw value to list. Satisfies mypy."""
 
         try:
@@ -62,9 +60,7 @@ class CastingMixin:
 
         return None
 
-    def _safe_special_from_dict(
-        self, src_dict: dict, key: str, value_type: type
-    ) -> Any | None:
+    def _safe_special_from_dict(self, src_dict: dict, key: str, value_type: type) -> Any | None:
         """Cast raw value to specified type. Satisfies mypy."""
 
         try:
@@ -82,9 +78,7 @@ class ExtendedEnumMixin(Enum):
     def has_value(cls, value: str) -> bool:
         """Return whether value exists in enum."""
 
-        return str(value).upper() in [
-            str(item).upper() for item in cls._value2member_map_
-        ]
+        return str(value).upper() in [str(item).upper() for item in cls._value2member_map_]
 
     @classmethod
     def has_key_(cls, key: str) -> Any:

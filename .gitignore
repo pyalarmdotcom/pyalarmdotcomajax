@@ -155,3 +155,4 @@ dmypy.json
 
 # MonkeyType
 monkeytype.sqlite3
+websocket-sandbox.py

@@ -1,6 +1,5 @@
 """Test thermostat device."""
 
-from collections.abc import Callable
 
 import pytest
 
@@ -11,8 +10,7 @@ from pyalarmdotcomajax.devices.thermostat import Thermostat
 
 @pytest.mark.asyncio
 async def test__device_thermostat__ok(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
+    all_base_ok_responses: str,
     adc_client: AlarmController,
 ) -> None:
     """Ensures that thermostats load correctly."""
@@ -55,8 +53,7 @@ async def test__device_thermostat__ok(
 
 @pytest.mark.asyncio
 async def test__device_thermostat__cli_tearsheet(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
+    all_base_ok_responses: str,
     adc_client: AlarmController,
 ) -> None:
     """_print_element_tearsheet will throw exception on failure."""

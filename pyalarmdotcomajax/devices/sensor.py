@@ -22,8 +22,10 @@ class Sensor(BaseDevice):
         OPEN = 2
         IDLE = 3
         ACTIVE = 4
-        DRY = 5
-        WET = 6
+
+        # Supported in WaterSensor class.
+        # DRY = 5
+        # WET = 6
 
         # Below not currently supported.
         # FULL = 7

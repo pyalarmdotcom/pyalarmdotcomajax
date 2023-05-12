@@ -19,9 +19,7 @@ async def main() -> None:
         # CREATE ALARM CONTROLLER
         #
 
-        alarm = AlarmController(
-            username=USERNAME, password=PASSWORD, websession=session
-        )
+        alarm = AlarmController(username=USERNAME, password=PASSWORD, websession=session)
 
         #
         # LOG IN AND HANDLE TWO-FACTOR AUTHENTICATION
@@ -40,10 +38,7 @@ async def main() -> None:
                 await alarm.async_submit_otp(code=code)
 
             elif login_result == AuthResult.ENABLE_TWO_FACTOR:
-                sys.exit(
-                    "Unable to log in. Please set up two-factor authentication for this"
-                    " account."
-                )
+                sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
 
         except (ConnectionError, DataFetchFailed):
             sys.exit("Could not connect to Alarm.com.")
@@ -58,10 +53,7 @@ async def main() -> None:
         await alarm.async_update()
 
         for sensor in alarm.devices.sensors.values():
-            print(
-                f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State:"
-                f" {sensor.state}"
-            )
+            print(f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}")
 
 
 loop = asyncio.get_event_loop()

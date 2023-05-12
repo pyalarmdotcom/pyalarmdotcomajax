@@ -8,9 +8,7 @@ from pyalarmdotcomajax import AlarmController
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
-TWOFACTOR = (  # Required if two factor authentication is enabled on your account.
-    "YOUR 2FA COOKIE"
-)
+TWOFACTOR = "YOUR 2FA COOKIE"  # Required if two factor authentication is enabled on your account.
 
 
 async def main() -> None:
@@ -27,10 +25,7 @@ async def main() -> None:
         await alarm.async_update()
 
         for sensor in alarm.devices.sensors.values():
-            print(
-                f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State:"
-                f" {sensor.state}"
-            )
+            print(f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}")
 
 
 loop = asyncio.get_event_loop()

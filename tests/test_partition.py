@@ -1,7 +1,6 @@
 """Test partition device."""
 
 from collections import Counter
-from collections.abc import Callable
 
 import pytest
 
@@ -12,9 +11,7 @@ from pyalarmdotcomajax.devices.partition import Partition
 
 @pytest.mark.asyncio
 async def test__device_partition__house__ok(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
-    response_mocker: pytest.fixture,
+    all_base_ok_responses: str,
     adc_client: AlarmController,
 ) -> None:
     """Ensures that partitions load correctly."""
@@ -32,9 +29,7 @@ async def test__device_partition__house__ok(
 
     if partition.attributes.extended_arming_options is not None:
         # Counter allows for comparing lists while ignoring order.
-        assert Counter(
-            partition.attributes.extended_arming_options.arm_away
-        ) == Counter(
+        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter(
             [
                 Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
                 Partition.ExtendedArmingOption.SILENT_ARMING,
@@ -46,9 +41,8 @@ async def test__device_partition__house__ok(
 
 @pytest.mark.asyncio
 async def test__device_partition__garage__ok(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
-    response_mocker: pytest.fixture,
+    all_base_ok_responses: str,
+    response_mocker: str,
     adc_client: AlarmController,
 ) -> None:
     """Ensures that partitions load correctly."""
@@ -66,9 +60,7 @@ async def test__device_partition__garage__ok(
 
     if partition.attributes.extended_arming_options is not None:
         # Counter allows for comparing lists while ignoring order.
-        assert Counter(
-            partition.attributes.extended_arming_options.arm_away
-        ) == Counter(
+        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter(
             [
                 Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
                 Partition.ExtendedArmingOption.SILENT_ARMING,
@@ -78,8 +70,7 @@ async def test__device_partition__garage__ok(
 
 @pytest.mark.asyncio
 async def test__device_partition__cli_tearsheet(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
+    all_base_ok_responses: str,
     adc_client: AlarmController,
 ) -> None:
     """_print_element_tearsheet will throw exception on failure."""

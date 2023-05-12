@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 import logging
+from enum import Enum
 
 from .sensor import Sensor
 
 log = logging.getLogger(__name__)
 
-# Water sensors are just sensors by another name.
-
 
 class WaterSensor(Sensor):
     """Represent Alarm.com water sensor element."""
+
+    class DeviceState(Enum):
+        """Enum of sensor states."""
+
+        # https://www.alarm.com/web/system/assets/customer-ember/enums/SensorStatus.js
+
+        DRY = 5
+        WET = 6

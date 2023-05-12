@@ -15,9 +15,7 @@ from pyalarmdotcomajax.devices.partition import Partition
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
-TWOFACTOR = (  # Required if two factor authentication is enabled on your account.
-    "YOUR 2FA COOKIE"
-)
+TWOFACTOR = "YOUR 2FA COOKIE"  # Required if two factor authentication is enabled on your account.
 
 
 async def main() -> None:
@@ -37,40 +35,28 @@ async def main() -> None:
             print("Failed to login. Your credentials are incorrect.")
             sys.exit()
         except ConnectionError:
-            print(
-                "Failed to login. Could not establish a connection to the Alarm.com"
-                " server."
-            )
+            print("Failed to login. Could not establish a connection to the Alarm.com server.")
             sys.exit()
 
         for partition in alarm.devices.partitions.values():
             if isinstance(partition.state, Partition.DeviceState) is True and (
                 Partition.DeviceState(partition.state) != Partition.DeviceState.DISARMED
             ):
-                print(
-                    f"Alarm control panel {partition.name} is currently armed."
-                    " Disarming..."
-                )
+                print(f"Alarm control panel {partition.name} is currently armed. Disarming...")
                 try:
                     await partition.async_disarm()
                     print("Disarmed successfully.")
                 except PermissionError:
                     print(
-                        "Failed to disarm. Your Alarm.com user does not have permission"
-                        " to change the state of this control panel."
+                        "Failed to disarm. Your Alarm.com user does not have permission to change the state of"
+                        " this control panel."
                     )
                 except AuthenticationError:
                     print("Failed to disarm. Your credentials are incorrect.")
                 except ConnectionError:
-                    print(
-                        "Failed to disarm. Could not establish a connection to the"
-                        " Alarm.com server."
-                    )
+                    print("Failed to disarm. Could not establish a connection to the Alarm.com server.")
             else:
-                print(
-                    f"Alarm control panel {partition.name} is already disarmed. Nothing"
-                    " to do here..."
-                )
+                print(f"Alarm control panel {partition.name} is already disarmed. Nothing to do here...")
 
 
 loop = asyncio.get_event_loop()

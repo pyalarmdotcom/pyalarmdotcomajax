@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": "id-system",
+      "type": "systems/availableSystemItem",
+      "attributes": {
+        "name": "My Alarm System",
+        "icon": "property-single",
+        "isSelected": true,
+        "expandSubItemsByDefault": false
+      },
+      "relationships": {
+        "subItems": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        }
+      }
+    }
+  ],
+  "included": [],
+  "meta": {
+    "transformer_version": "1.1"
+  }
+}

@@ -6,38 +6,42 @@ import contextlib
 import json
 import logging
 import re
+from collections.abc import Awaitable
 from datetime import datetime
 from enum import Enum
+from typing import TypedDict
 
 import aiohttp
-from aiohttp.client_exceptions import ContentTypeError
 from bs4 import BeautifulSoup
 
-from pyalarmdotcomajax.devices.image_sensor import ImageSensor
 from pyalarmdotcomajax.devices.partition import Partition
+from pyalarmdotcomajax.devices.registry import AllDevices_t
+from pyalarmdotcomajax.websockets.client import WebSocketClient
 
 from . import const as c
 from .devices import (
     BaseDevice,
-    ElementSpecificData,
+    DeviceTypeSpecificData,
     TroubleCondition,
 )
 from .devices.registry import AttributeRegistry, DeviceRegistry, DeviceType
 from .errors import (
     AuthenticationFailed,
-    BadAccount,
     DataFetchFailed,
     NagScreen,
+    TryAgain,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
 from .extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
+    ControllerExtensions_t,
     ExtendedProperties,
 )
-from .helpers import slug_to_title
-from .websocket import WebSocketClient
+
+# TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
+# TODO: Fix get raw server response function.
 
 __version__ = "0.4.15-alpha"
 
@@ -50,6 +54,13 @@ class AuthResult(Enum):
     SUCCESS = "success"
     OTP_REQUIRED = "otp_required"
     ENABLE_TWO_FACTOR = "enable_two_factor"
+
+
+class ExtensionResults(TypedDict):
+    """Results of multi-device extension calls."""
+
+    settings: dict[str, ConfigurationOption]
+    controller: ControllerExtensions_t
 
 
 class OtpType(Enum):
@@ -71,6 +82,12 @@ class AlarmController:
         "ajaxrequestuniquekey": None,
     }
 
+    ALL_DEVICES_URL_TEMPLATE = (  # Substitute with base url and system ID.
+        "{}web/api/settings/manageDevices/deviceCatalogs/{}"
+    )
+    ALL_SYSTEMS_URL_TEMPLATE = "{}web/api/systems/availableSystemItems?searchString="
+    ALL_RECENT_IMAGES_TEMPLATE = "{}web/api/imageSensor/imageSensorImages/getRecentImages"
+
     # LOGIN & SESSION: BEGIN
     LOGIN_TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
@@ -78,12 +95,16 @@ class AlarmController:
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
-    LOGIN_2FA_POST_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/verifyTwoFactorCode"
-    LOGIN_2FA_DETAIL_URL_TEMPLATE = (
-        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}"
+    LOGIN_2FA_POST_URL_TEMPLATE = (
+        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/verifyTwoFactorCode"
     )
-    LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
-    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    LOGIN_2FA_DETAIL_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}"
+    LOGIN_2FA_TRUST_URL_TEMPLATE = (
+        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
+    )
+    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = (
+        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    )
     LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
@@ -102,6 +123,7 @@ class AlarmController:
         password: str,
         websession: aiohttp.ClientSession,
         twofactorcookie: str | None = None,
+        notify_on_update_callback: Awaitable | None = None,
     ):
         """Manage access to Alarm.com API and builds devices."""
 
@@ -111,29 +133,39 @@ class AlarmController:
         self._username: str = username
         self._password: str = password
         self._websession: aiohttp.ClientSession = websession
-        self._two_factor_cookie: dict = (
-            {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
-        )
+        self._two_factor_cookie: dict = {"twoFactorAuthenticationId": twofactorcookie} if twofactorcookie else {}
 
         #
         # INITIALIZE
         #
+
         self._factor_type_id: int | None = None
         self._two_factor_method: OtpType | None = None
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
+        self._active_system_id: str | None = None
         self._ajax_headers: dict = self.AJAX_HEADERS_TEMPLATE
+        self.notify_on_update_callback: Awaitable | None = notify_on_update_callback
 
-        # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
-        self._partition_map: dict = {}
+        self._partition_map: dict = (
+            {}
+        )  # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
 
-        # List of device types that are present in a user's environment. We'll use this to cut down on the number of API calls made.
-        self._installed_device_types: set[DeviceType] = set()
+        self._installed_device_types: set[DeviceType] = (
+            set()
+        )  # List of device types that are present in a user's environment. We'll use this to cut down on the number of API calls made.
 
         self._trouble_conditions: dict = {}
 
         self.devices: DeviceRegistry = DeviceRegistry()
+
+        #
+        # CLI ATTRIBUTES
+        #
+        self.raw_catalog: dict = {}
+        self.raw_image_sensors: dict = {}
+        self.raw_recent_images: dict = {}
 
     #
     #
@@ -164,9 +196,7 @@ class AlarmController:
         return (
             cookie
             if isinstance(self._two_factor_cookie, dict)
-            and (
-                cookie := self._two_factor_cookie.get(self.LOGIN_TWO_FACTOR_COOKIE_NAME)
-            )
+            and (cookie := self._two_factor_cookie.get(self.LOGIN_TWO_FACTOR_COOKIE_NAME))
             else None
         )
 
@@ -181,6 +211,8 @@ class AlarmController:
     async def async_login(self, request_otp: bool = True) -> AuthResult:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
+
+        # TODO: Prevent login from making a ton of saved devices in ADC.
 
         try:
             await self._async_login_and_get_key()
@@ -222,7 +254,6 @@ class AlarmController:
                 url=request_url.format(c.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
             ) as resp:
-                self._update_antiforgery_token(resp)
                 if resp.status != 200:
                     raise DataFetchFailed("Failed to request 2FA code.")
 
@@ -232,9 +263,7 @@ class AlarmController:
 
         return None
 
-    async def async_submit_otp(
-        self, code: str, device_name: str | None = None
-    ) -> str | None:
+    async def async_submit_otp(self, code: str, device_name: str | None = None) -> str | None:
         """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
@@ -252,7 +281,6 @@ class AlarmController:
                 headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": self._two_factor_method.value},
             ) as resp:
-                self._update_antiforgery_token(resp)
                 json_rsp = await resp.json()
 
         except (asyncio.TimeoutError, aiohttp.ClientError) as err:
@@ -281,13 +309,10 @@ class AlarmController:
                 log.debug("Registering device...")
 
                 async with self._websession.post(
-                    url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(
-                        c.URL_BASE, self._user_id
-                    ),
+                    url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                     headers=self._ajax_headers,
                     json={"deviceName": device_name},
                 ) as resp:
-                    self._update_antiforgery_token(resp)
                     json_rsp = await resp.json()
             except (asyncio.TimeoutError, aiohttp.ClientError) as err:
                 log.error("Can not load device trust page from Alarm.com")
@@ -299,261 +324,228 @@ class AlarmController:
         for cookie in self._websession.cookie_jar:
             if cookie.key == self.LOGIN_TWO_FACTOR_COOKIE_NAME:
                 log.debug("Found two-factor authentication cookie: %s", cookie.value)
-                self._two_factor_cookie = (
-                    {"twoFactorAuthenticationId": cookie.value} if cookie.value else {}
-                )
+                self._two_factor_cookie = {"twoFactorAuthenticationId": cookie.value} if cookie.value else {}
                 return str(cookie.value)
 
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_update(
-        self, device_type: DeviceType | None = None
-    ) -> None:  # noqa: C901
+    async def async_update(self) -> None:  # noqa: C901
         """Fetch latest device data."""
 
-        # TO-DO: This function has turned into spaghetti. Needs to be broken down into components.
-
         log.debug("Calling update on Alarm.com")
+
+        has_image_sensors: bool = False
+
+        if not self._active_system_id:
+            self._active_system_id = await self._async_get_active_system()
+            has_image_sensors = await self._async_has_image_sensors(self._active_system_id)
 
         with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
             await self._async_get_trouble_conditions()
 
-        # Fetch system data before other devices to populate list of installed device types.
+        #
+        # GET CORE DEVICE ATTRIBUTES
+        #
 
-        device_types: list[DeviceType]
+        device_instances: dict[str, AllDevices_t] = {}
+        raw_devices: list[dict] = await self._async_get_system_devices(self._active_system_id)
 
-        if device_type is DeviceType.SYSTEM:
-            device_types = [DeviceType.SYSTEM]
-        elif device_type:
-            device_types = [DeviceType.SYSTEM, device_type]
-        else:
-            device_types = [DeviceType.SYSTEM] + [
-                type
-                for type in AttributeRegistry.supported_devices
-                if type != DeviceType.SYSTEM
-            ]
+        #
+        # QUERY MULTI-DEVICE EXTENSIONS
+        #
 
-        log.debug("Refreshing data for device types: %s", device_types)
+        extension_results = await self._async_update__query_multi_device_extensions(raw_devices)
 
-        for device_type_i in device_types:
-            #
-            # PASS ON DEVICE TYPES NOT INSTALLED IN USER ENVIRONMENT
-            #
-            if device_type_i not in {DeviceType.SYSTEM}.union(
-                self._installed_device_types
-            ):
-                log.debug(
-                    "Skipping %s. Not installed in user environment.",
-                    device_type_i.name,
-                )
-                continue
+        #
+        # QUERY IMAGE SENSORS
+        #
+        # Detailed image sensors data is not included in the main device catalog. It must be queried separately.
+        #
+        # TODO: Convert image sensors images to device extension. Merge entity_specific_data and settings; eliminate "additional endpoints" concept. Maybe push processing/placement into specific device class.
 
-            #
-            # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS
-            #
-            device_class: (type[BaseDevice]) = AttributeRegistry.get_class(
-                device_type_i
+        device_type_specific_data = {}
+
+        if has_image_sensors:
+            # Get detailed image sensor data and add to raw device list.
+            image_sensors = await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR)
+            raw_devices.extend(image_sensors)
+
+            # Get recent images
+            device_type_specific_data = await self._async_get_recent_images()
+
+        #
+        # BUILD PARTITIONS
+        #
+        # Ensures that partition map is built before devices are built.
+
+        for device in [
+            device
+            for device in raw_devices
+            if device["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
+        ]:
+            partition_instance: AllDevices_t = await self._async_update__build_device(
+                device, device_type_specific_data, extension_results
             )
 
-            #############################
-            # FETCH DATA FROM ALARM.COM #
-            #############################
+            for child, _ in partition_instance.children:
+                self._partition_map[child] = partition_instance.id_
+
+            device_instances.update({partition_instance.id_: partition_instance})
+
+            raw_devices.remove(device)
 
             #
-            # GET ALL DEVICES WITHIN SPECIFIED CLASS
+            # BUILD ALL DEVICES IN PARTITION
             #
-            devices = []
-            try:
-                devices = await self._async_build_device_list(device_type=device_type_i)
+            # This ensures that partition map is built before devices are built.
 
-            # Clear registry for current device type if an error occurs. This prevents stale data from being used.
-            except BadAccount as err:
-                with contextlib.suppress(KeyError):
-                    self.devices.clear(device_type_i)
+            for device in raw_devices:
+                try:
+                    device_instance: AllDevices_t = await self._async_update__build_device(
+                        device, device_type_specific_data, extension_results
+                    )
 
-                # Indicates fatal account error.
-                raise PermissionError from err
+                    device_instances.update({device_instance.id_: device_instance})
 
-            except DataFetchFailed:
-                with contextlib.suppress(KeyError):
-                    self.devices.clear(device_type_i)
+                except UnsupportedDevice:
+                    continue
 
-                log.error(
-                    (
-                        "Encountered data error while fetching %ss. Skipping this"
-                        " device type."
-                    ),
-                    device_type_i.name,
-                )
+        self.devices.update(device_instances, purge=True)
 
-            if len(devices) == 0:
-                with contextlib.suppress(KeyError):
-                    self.devices.clear(device_type_i)
+    async def _async_update__build_device(
+        self,
+        raw_device: dict,
+        device_type_specific_data: dict[str, DeviceTypeSpecificData],
+        extension_results: dict[str, ExtensionResults],
+    ) -> AllDevices_t:
+        """Build device instance."""
 
-                continue
+        #
+        # DETERMINE DEVICE'S PYALARMDOTCOMAJAX PYTHON CLASS & DEVICETYPE
+        #
+        device_type: DeviceType = AttributeRegistry.get_devicetype_from_relationship_id(raw_device["type"])
+        device_class: type[AllDevices_t] = AttributeRegistry.get_class(device_type)
 
-            #
-            # PURGE UNSUPPORTED CAMERAS
-            #
-            # This is a hack. We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
-            if device_type_i == DeviceType.CAMERA:
-                skybells: list = []
-                for device_json, _ in devices:
-                    if (
-                        device_json.get("attributes", {}).get("deviceModel")
-                        == "SKYBELLHD"
-                    ):
-                        skybells.append((device_json, None))
+        #
+        # SKIP UNSUPPORTED DEVICE TYPES
+        #
+        # There is a hack here for cameras. We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
+        if not AttributeRegistry.is_supported(device_type) or (
+            (device_type == DeviceType.CAMERA)
+            and (raw_device.get("attributes", {}).get("deviceModel") != "SKYBELLHD")
+        ):
+            raise UnsupportedDevice(f"Unsupported device type: {device_type}")
 
-                if not (devices := skybells):
-                    pass
+        children: list[tuple[str, DeviceType]] = []
 
-            #
-            # MAKE ADDITIONAL CALLS IF REQUIRED FOR DEVICE TYPE
-            #
-            additional_endpoint_raw_results: dict = {}
+        # Get child elements for partitions and systems if function called using a device_type.
+        if device_type in [DeviceType.PARTITION, DeviceType.SYSTEM]:
+            for family_name, family_data in raw_device["relationships"].items():
+                if DeviceType.has_value(family_name):
+                    for sub_device in family_data["data"]:
+                        children.append((sub_device["id"], DeviceType(family_name)))
 
-            additional_endpoints = AttributeRegistry.get_endpoints(device_type_i).get(
-                "additional", {}
-            )
+        #
+        # BUILD DEVICE INSTANCE
+        #
 
-            for name, url in additional_endpoints.items():
-                additional_endpoint_raw_results[name] = (
-                    await self._async_build_device_list(url=url)
-                )
+        device_extension_results: ExtensionResults | dict = extension_results.get(
+            entity_id := raw_device["id"], {}
+        )
 
-            ####################
-            # QUERY EXTENSIONS #
-            ####################
+        device_instance = device_class(
+            id_=entity_id,
+            raw_device_data=raw_device,
+            children=children,
+            device_type_specific_data=device_type_specific_data.get(entity_id),
+            send_action_callback=self.async_send_command,
+            config_change_callback=(
+                extension_controller.submit_change
+                if (extension_controller := device_extension_results.get("controller"))
+                else None
+            ),
+            trouble_conditions=self._trouble_conditions.get(entity_id),
+            partition_id=self._partition_map.get(entity_id),
+            settings=device_extension_results.get("settings"),
+        )
 
-            #
-            # Check whether any devices have extensions.
-            #
+        return device_instance
 
-            required_extensions: list[type[CameraSkybellControllerExtension]] = []
-            device_settings: dict[str, dict[str, ConfigurationOption]] = (
-                {}
-            )  # device_id {slug: ConfigurationOption}
-            name_id_map: dict[str, str] = {}
+    async def _async_update__query_multi_device_extensions(
+        self, raw_devices: list[dict]
+    ) -> dict[str, ExtensionResults]:
+        """Query device extensions that request data for multiple devices at once.
+
+        Args:
+            raw_devices: A list of devices to query.
+
+        Returns:
+            A dict containing a dictionary with the device id, device extensions, and a
+            ControllerExtensions_t object.
+
+        """
+
+        required_extensions: list[type[ControllerExtensions_t]] = []
+        name_id_map: dict[str, str] = {}
+
+        #
+        # Check whether any devices have extensions.
+        #
+
+        for raw_device in raw_devices:
+            device_type: DeviceType = AttributeRegistry.get_devicetype_from_relationship_id(raw_device["type"])
 
             #
             # Camera Skybell HD Extension
-            # Skybell HD extension pulls data for all cameras at once. We can stop searching at the first hit since we only care if we have at least one.
-            if device_type_i == DeviceType.CAMERA:
-                for device_json, _ in devices:
-                    if (
-                        device_json.get("attributes", {}).get("deviceModel")
-                        == "SKYBELLHD"
-                    ):
-                        required_extensions.append(CameraSkybellControllerExtension)
-                        break
-
+            # Skybell HD extension pulls data for all cameras at once.
             #
-            # Build map of device names -> device ids.
-            #
+            if device_type == DeviceType.CAMERA:
+                if raw_device.get("attributes", {}).get("deviceModel") == "SKYBELLHD":
+                    required_extensions.append(CameraSkybellControllerExtension)
+                    # Stop searching at the first hit since once we have a Skybell, we know that we need to query the extension.
+                    break
 
-            for device_json, _subordinates in devices:
-                if name := device_json.get("attributes", {}).get("description"):
-                    name_id_map[name] = device_json["id"]
+        if not required_extensions:
+            return {}
 
-            #
-            # Retrieve data for extensions
-            #
+        #
+        # Build map of device names -> device ids.
+        #
 
-            extension_controller: CameraSkybellControllerExtension | None = None
+        for raw_device in raw_devices:
+            if name := raw_device.get("attributes", {}).get("description"):
+                name_id_map[name] = raw_device["id"]
 
-            for extension_class in required_extensions:
-                extension_controller = extension_class(
-                    websession=self._websession,
-                    headers=self._ajax_headers,
-                )
+        #
+        # Retrieve data for extensions
+        #
 
-                try:
-                    # Fetch from Alarm.com
-                    extended_properties_list: list[ExtendedProperties] = (
-                        await extension_controller.fetch()
-                    )
-                except UnexpectedDataStructure:
-                    continue
+        results: dict[str, ExtensionResults] = {}
 
-                # Match extended properties to devices by name, then add to device_settings storage.
-                for extended_property in extended_properties_list:
-                    if (device_name := extended_property.device_name) in name_id_map:
-                        device_id = name_id_map[device_name]
-                        device_settings[device_id] = extended_property.settings
-
-            ##############################
-            # PREPROCESS ADDITIONAL DATA #
-            ##############################
-
-            #
-            # PREPROCESSING FOR SYSTEMS
-            #
-            # Extract device types installed in user's environment.
-
-            if device_type_i == DeviceType.SYSTEM:
-                self._installed_device_types = {
-                    DeviceType(child_family)
-                    for _, children in devices
-                    for _, child_family in children
-                }
-
-            log.debug("Installed device types: %s", self._installed_device_types)
-
-            #
-            # PREPROCESSING FOR IMAGE SENSORS
-            #
-            # Extract recent images from image sensors
-
-            element_specific_data: dict[str, ElementSpecificData] = {}
-
-            if device_class is ImageSensor:
-                for image in additional_endpoint_raw_results["recent_images"]:
-                    if isinstance(image, dict) and (
-                        image_sensor_id := str(
-                            image.get("relationships", {})
-                            .get("imageSensor", {})
-                            .get("data", {})
-                            .get("id")
-                        )
-                    ):
-                        element_specific_data.setdefault(
-                            image_sensor_id, {}
-                        ).setdefault("raw_recent_images", set()).add(image)
-
-            ###################
-            # BASE PROCESSING #
-            ###################
-
-            temp_device_storage: list = []
-
-            for device_raw_attribs, subordinates in devices:
-                entity_id = device_raw_attribs["id"]
-
-                entity_obj = device_class(
-                    id_=entity_id,
-                    raw_device_data=device_raw_attribs,
-                    subordinates=subordinates,
-                    element_specific_data=element_specific_data.get(entity_id),
-                    send_action_callback=self.async_send_command,
-                    config_change_callback=(
-                        extension_controller.submit_change
-                        if extension_controller
-                        else None
-                    ),
-                    trouble_conditions=self._trouble_conditions.get(entity_id),
-                    partition_id=self._partition_map.get(entity_id),
-                    settings=device_settings.get(entity_id),
-                )
-
-                temp_device_storage.append(entity_obj)
+        for extension_t in required_extensions:
+            extension_controller = extension_t(
+                websession=self._websession,
+                headers=self._ajax_headers,
+            )
 
             try:
-                self.devices.store(temp_device_storage)
-            except KeyError:
-                log.warn("Tried to store unsupported device type %s", device_type_i)
-                pass
+                # Fetch from Alarm.com
+                extended_properties_by_device: list[ExtendedProperties] = await extension_controller.fetch()
+            except UnexpectedDataStructure:
+                continue
+
+            # Match extended properties to devices by name, then add to storage.
+
+            for device_properties in extended_properties_by_device:
+                if (device_name := device_properties.device_name) in name_id_map:
+                    device_id = name_id_map[device_name]
+                    results[device_id] = {
+                        "settings": device_properties.settings,
+                        "controller": extension_controller,
+                    }
+
+        return results
 
     async def async_send_command(
         self,
@@ -564,7 +556,7 @@ class AlarmController:
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
         """Send commands to Alarm.com."""
-        log.debug("Sending %s to Alarm.com.", event)
+        log.info("Sending %s to Alarm.com.", event)
 
         msg_body["statePollOnly"] = False
 
@@ -577,143 +569,69 @@ class AlarmController:
 
         log.debug("Url %s", url)
 
-        async with self._websession.post(
-            url=url, json=msg_body, headers=self._ajax_headers
-        ) as resp:
-            self._update_antiforgery_token(resp)
+        async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
             log.debug("Response from Alarm.com %s", resp.status)
-            if resp.status == 200:
-                # Update alarm.com status after calling state change.
-                await self.async_update(device_type)
-                return True
-            if resp.status == 423:
-                # User has read-only permission to the entity.
-                err_msg = (
-                    f"{__name__}: User {self.user_email} has read-only access to"
-                    f" {device_type.name.lower()} {device_id}."
-                )
-                raise PermissionError(err_msg)
-            if (
-                (resp.status == 422)
-                and isinstance(event, Partition.Command)
-                and (msg_body.get("forceBypass") is True)
-            ):
-                # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
-                log.debug(
-                    "Error executing %s, trying again without force bypass...",
-                    event.value,
-                )
 
-                # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
+            match str(resp.status):
+                case "200":
+                    # Update alarm.com status after calling state change.
+                    # TODO: Update single device, or remove entirely for webhooks.
+                    await self.async_update()
+                    return True
 
-                msg_body["forceBypass"] = False
-
-                return await self.async_send_command(
-                    device_type=device_type,
-                    event=event,
-                    device_id=device_id,
-                    msg_body=msg_body,
-                )
-            if resp.status == 403:
-                # May have been logged out, try again
-                log.warning(
-                    "Error executing %s, logging in and trying again...", event.value
-                )
-                if retry_on_failure:
-                    await self.async_login()
-                    return await self.async_send_command(
-                        device_type,
-                        event,
-                        device_id,
-                        msg_body,
-                        False,
+                case "423":
+                    # User has read-only permission to the entity.
+                    err_msg = (
+                        f"{__name__}: User {self.user_email} has read-only access to"
+                        f" {device_type.name.lower()} {device_id}."
                     )
+                    raise PermissionError(err_msg)
 
-        log.error("%s failed with HTTP code %s", event.value, resp.status)
+                case "422":
+                    if isinstance(event, Partition.Command) and (msg_body.get("forceBypass") is True):
+                        # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
+                        log.debug(
+                            "Error executing %s, trying again without force bypass...",
+                            event.value,
+                        )
+
+                        # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
+
+                        msg_body["forceBypass"] = False
+
+                        return await self.async_send_command(
+                            device_type=device_type,
+                            event=event,
+                            device_id=device_id,
+                            msg_body=msg_body,
+                        )
+
+                case "403":
+                    # May have been logged out, try again
+                    log.warning(
+                        "Error executing %s, logging in and trying again...",
+                        event.value,
+                    )
+                    if retry_on_failure:
+                        await self.async_login()
+                        return await self.async_send_command(
+                            device_type,
+                            event,
+                            device_id,
+                            msg_body,
+                            False,
+                        )
+
         log.error(
-            """URL: %s
-            JSON: %s
-            Headers: %s""",
-            url,
-            msg_body,
-            self._ajax_headers,
+            f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
+            f" {self._ajax_headers}"
         )
         raise ConnectionError
-
-    async def async_get_raw_server_responses(
-        self,
-        device_types: list[DeviceType],
-        include_image_sensor_b64: bool = False,
-    ) -> dict:
-        """Get raw responses from Alarm.com device endpoints."""
-
-        return_data: dict = {}
-
-        endpoints = []
-
-        for device_type, device_data in AttributeRegistry.endpoints.items():
-            if device_type in device_types:
-                endpoints.append(
-                    (slug_to_title(device_type.name), device_data["primary"])
-                )
-
-        if DeviceType.IMAGE_SENSOR in device_types:
-            endpoints.append(("Image Sensor Data", c.IMAGE_SENSOR_DATA_URL_TEMPLATE))
-
-        for name, url_template in endpoints:
-            async with self._websession.get(
-                url=url_template.format(c.URL_BASE, ""),
-                headers=self._ajax_headers,
-            ) as resp:
-                self._update_antiforgery_token(resp)
-                try:
-                    json_rsp = await resp.json()
-
-                    if name == "Image Sensor Data" and not include_image_sensor_b64:
-                        for image in json_rsp["data"]:
-                            del image["attributes"]["image"]
-
-                    rsp_errors = json_rsp.get("errors", [])
-
-                    if len(rsp_errors) != 0:
-                        error_msg = (
-                            "async_get_raw_server_responses(): Failed to get data."
-                            f" Response: {rsp_errors}"
-                        )
-                        log.debug(error_msg)
-
-                        if rsp_errors[0].get("status") in ["403"]:
-                            raise PermissionError(error_msg)
-
-                        if (
-                            rsp_errors[0].get("status") == "409"
-                            and rsp_errors[0].get("detail")
-                            == "TwoFactorAuthenticationRequired"
-                        ):
-                            raise AuthenticationFailed(error_msg)
-
-                        if rsp_errors[0].get("status") not in ["423"]:
-                            # We'll get here if user doesn't have permission to access a specific device type.
-                            pass
-
-                    return_data[slug_to_title(name)] = (
-                        "\n" + json.dumps(json_rsp) + "\n"
-                    )
-
-                except ContentTypeError:
-                    if resp.status == 404:
-                        return_data[slug_to_title(name)] = "Endpoint not found."
-                    else:
-                        return_data[slug_to_title(name)] = (
-                            f"\nUnprocessable output:\n{resp.text}\n"
-                        )
-
-        return return_data
 
     def get_websocket_client(self) -> WebSocketClient:
         """Construct and return a websocket client."""
 
-        return WebSocketClient(self._websession, self._ajax_headers)
+        return WebSocketClient(self._websession, self._ajax_headers, self.devices)
 
     #
     #
@@ -721,84 +639,180 @@ class AlarmController:
     # PRIVATE FUNCTIONS #
     #####################
     #
-    # Help process data returned by the API
+    # Communicate directly with the ADC API
 
     async def _is_logged_in(self) -> bool:
         """Check if we are logged in."""
 
         async with self._websession.get(
-            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(
-                c.URL_BASE, int(round(datetime.now().timestamp()))
-            ),
+            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
             headers=self._ajax_headers,
         ) as resp:
-            self._update_antiforgery_token(resp)
             text_rsp = await resp.text()
 
         return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
 
-    def _update_antiforgery_token(self, resp: aiohttp.ClientResponse) -> None:
-        """Update the anti-forgery token."""
+    async def _async_get_active_system(self) -> str:
+        """Get active system for user account."""
 
-        if resp.cookies and (token := resp.cookies.get("afg")) and token.value != "":
-            self._ajax_headers["ajaxrequestuniquekey"] = token.value
-        else:
-            log.debug(
-                (
-                    "AlarmController._update_antiforgery_token(): Anti-forgery token"
-                    " NOT found in response. Cookies: %s. URL: %s"
-                ),
-                resp.cookies,
-                resp.url,
-            )
+        try:
+            log.info("Getting active system.")
 
-    #
-    #
-    #################
-    # API FUNCTIONS #
-    #################
-    #
-    # Communicate directly with the ADC API
+            async with self._websession.get(
+                url=self.ALL_SYSTEMS_URL_TEMPLATE.format(c.URL_BASE),
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                json_rsp = await resp.json()
+
+                return str(
+                    [system["id"] for system in json_rsp.get("data", []) if system["attributes"]["isSelected"]][0]
+                )
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
+            log.error("Failed to get available systems.")
+            raise DataFetchFailed from err
+
+    async def _async_get_recent_images(self) -> dict[str, DeviceTypeSpecificData]:
+        """Get recent images."""
+
+        try:
+            log.info("Getting recent images.")
+
+            async with self._websession.get(
+                url=self.ALL_RECENT_IMAGES_TEMPLATE.format(c.URL_BASE),
+                headers=self._ajax_headers,
+            ) as resp:
+                json_rsp = await resp.json()
+
+            # Used by adc CLI.
+            self.raw_recent_images = json_rsp
+
+            if resp.status >= 400 or not isinstance(json_rsp, dict) or not len(json_rsp.get("data", [])):
+                return {}
+
+            device_type_specific_data: dict[str, DeviceTypeSpecificData] = {}
+
+            for image in json_rsp["data"]:
+                device_type_specific_data.setdefault(
+                    str(image["relationships"]["imageSensor"]["data"]["id"]), {}
+                ).setdefault("raw_recent_images", []).append(image)
+
+            return device_type_specific_data
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, KeyError) as err:
+            log.error("Failed to get available systems.")
+            raise DataFetchFailed from err
+
+    async def _async_has_image_sensors(self, system_id: str, retry_on_failure: bool = True) -> bool:
+        """Check whether image sensors are present in system.
+
+        Check is required because image sensors are not shown in the device catalog endpoint.
+        """
+
+        try:
+            log.info(f"Checking system {system_id} for image sensors.")
+
+            # Find image sensors.
+
+            async with self._websession.get(
+                url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, system_id),
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                json_rsp = await resp.json()
+
+                await self._async_handle_server_errors(json_rsp, "image sensors", retry_on_failure)
+
+                return len(json_rsp["data"].get("relationships", {}).get("imageSensors", {}).get("data", [])) > 0
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
+            log.error("Failed to get image sensors.")
+            raise DataFetchFailed from err
+
+    async def _async_get_system_devices(self, system_id: str, retry_on_failure: bool = True) -> list[dict]:
+        """Get all devices present in system."""
+
+        try:
+            log.info(f"Getting all devices in {system_id}.")
+
+            async with self._websession.get(
+                url=self.ALL_DEVICES_URL_TEMPLATE.format(c.URL_BASE, system_id),
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                json_rsp = await resp.json()
+
+                # Used by adc CLI.
+                self.raw_catalog = json_rsp
+
+                await self._async_handle_server_errors(json_rsp, "system devices", retry_on_failure)
+
+                return [
+                    device
+                    for device in json_rsp["included"]
+                    if device.get("type") in AttributeRegistry.all_relationship_ids
+                ]
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
+            log.error("Failed to get system devices.")
+            raise DataFetchFailed from err
+        except TryAgain:
+            return await self._async_get_system_devices(system_id=system_id, retry_on_failure=False)
+
+    async def _async_get_devices_by_device_type(
+        self, device_type: DeviceType, retry_on_failure: bool = True
+    ) -> list[dict]:
+        """Get all devices of the specified type."""
+
+        try:
+            log.info(f"Getting all {device_type.value}.")
+
+            async with self._websession.get(
+                url=AttributeRegistry.get_endpoints(device_type)["primary"].format(c.URL_BASE, ""),
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                json_rsp = await resp.json()
+
+                # Used by adc CLI.
+                if device_type == DeviceType.IMAGE_SENSOR:
+                    self.raw_image_sensors = json_rsp
+
+                await self._async_handle_server_errors(json_rsp, f"get all {device_type.value}", retry_on_failure)
+
+                return list(json_rsp["data"])
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
+            log.error(f"Failed to get {device_type.value}.")
+            raise DataFetchFailed from err
+        except TryAgain:
+            return await self._async_get_devices_by_device_type(device_type=device_type, retry_on_failure=False)
 
     async def _async_requires_2fa(self) -> bool | None:
         """Check whether two factor authentication is enabled on the account."""
         async with self._websession.get(
-            url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(
-                c.URL_BASE, ""
-            ),
+            url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
             headers=self._ajax_headers,
         ) as resp:
-            self._update_antiforgery_token(resp)
             json_rsp = await resp.json()
 
         if (errors := json_rsp.get("errors")) and len(errors) > 0:
             for error in errors:
-                if (
-                    error.get("status") == "409"
-                    and error.get("detail") == "TwoFactorAuthenticationRequired"
-                ):
+                if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
                     # Get 2FA type ID
                     async with self._websession.get(
-                        url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(
-                            c.URL_BASE, self._user_id
-                        ),
+                        url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                         headers=self._ajax_headers,
                     ) as resp:
-                        self._update_antiforgery_token(resp)
                         json_rsp = await resp.json()
 
-                        if isinstance(
-                            factor_id := json_rsp.get("data", {}).get("id"), int
-                        ):
+                        if isinstance(factor_id := json_rsp.get("data", {}).get("id"), int):
                             self._factor_type_id = factor_id
                             self._two_factor_method = OtpType(
-                                json_rsp.get("data", {})
-                                .get("attributes", {})
-                                .get("twoFactorType")
+                                json_rsp.get("data", {}).get("attributes", {}).get("twoFactorType")
                             )
-                            log.debug(
-                                "Requires 2FA. Using method %s", self._two_factor_method
-                            )
+                            log.info("Requires 2FA. Using method %s", self._two_factor_method)
                             return True
 
         log.debug("Does not require 2FA.")
@@ -812,32 +826,23 @@ class AlarmController:
                 headers=self._ajax_headers,
                 cookies=self._two_factor_cookie,
             ) as resp:
-                self._update_antiforgery_token(resp)
-
                 json_rsp = await resp.json()
-
-                # This is a verbose response. Uncommend when needed.
-                # log.debug("Got identity info:\n%s", json.dumps(json_rsp))
 
                 self._user_id = json_rsp["data"][0]["id"]
                 self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
 
                 for inclusion in json_rsp["included"]:
-                    if (
-                        inclusion["id"] == self._user_id
-                        and inclusion["type"] == "profile/profile"
-                    ):
+                    if inclusion["id"] == self._user_id and inclusion["type"] == "profile/profile":
                         self._user_email = inclusion["attributes"]["loginEmailAddress"]
 
             if self._user_email is None:
                 raise AuthenticationFailed("Could not find user email address.")
 
-            log.debug(
-                "Got Provider: %s, User ID: %s", self._provider_name, self._user_id
-            )
+            log.debug("Got Provider: %s, User ID: %s", self._provider_name, self._user_id)
 
         except KeyError as err:
-            log.debug(json_rsp)
+            log.error(f"{__name__} _async_get_identity_info: Failed to get user's identity info.")
+            log.debug(f"{__name__} _async_get_identity_info: Server Response:\n{json.dumps(json_rsp, indent=4)}")
             raise AuthenticationFailed from err
 
     async def _async_get_trouble_conditions(self) -> None:
@@ -850,7 +855,6 @@ class AlarmController:
                 url=c.TROUBLECONDITIONS_URL_TEMPLATE.format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
             ) as resp:
-                self._update_antiforgery_token(resp)
                 json_rsp = await resp.json()
 
                 log.debug("Trouble condition response:\n%s", json_rsp)
@@ -861,11 +865,7 @@ class AlarmController:
                     new_trouble: TroubleCondition = {
                         "message_id": condition.get("id"),
                         "title": condition.get("attributes", {}).get("description"),
-                        "body": (
-                            condition.get("attributes", {})
-                            .get("extraData", {})
-                            .get("description")
-                        ),
+                        "body": condition.get("attributes", {}).get("extraData", {}).get("description"),
                         "device_id": device_id,
                     }
 
@@ -878,10 +878,7 @@ class AlarmController:
         except aiohttp.ContentTypeError as err:
             self._trouble_conditions = {}
             log.error(
-                (
-                    "Server returned wrong content type. Response: %s\n\nResponse"
-                    " Text:\n\n%s\n\n"
-                ),
+                "Server returned wrong content type. Response: %s\n\nResponse Text:\n\n%s\n\n",
                 resp,
                 resp.text(),
             )
@@ -897,196 +894,86 @@ class AlarmController:
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
 
-    async def _async_build_device_list(
-        self,
-        device_type: DeviceType | None = None,
-        url: str | None = None,
-        retry_on_failure: bool = True,
-    ) -> list:
-        """Get attributes, metadata, and child devices for an ADC device class. Takes EITHER url (without base) or device_type."""
+    async def _async_handle_server_errors(
+        self, json_rsp: dict, request_name: str, retry_on_failure: bool = False
+    ) -> None:
+        """Handle errors returned by the server."""
 
-        #
-        # Determine URL
-        #
-        if (not device_type and not url) or (device_type and url):
-            raise ValueError
-
-        full_path = (
-            AttributeRegistry.get_endpoints(device_type).get("primary")
-            if device_type
-            else url
+        log.debug(
+            f"\n==============================\nServer Response:\n{json_rsp}\n=============================="
         )
 
-        if not full_path:
-            raise ValueError
+        if not len(rsp_errors := json_rsp.get("errors", [])):
+            return
 
-        #
-        # Request data for device type
-        #
-        try:
-            async with self._websession.get(
-                url=full_path.format(c.URL_BASE, ""),
-                headers=self._ajax_headers,
-            ) as resp:
-                self._update_antiforgery_token(resp)
-                json_rsp = await resp.json()
-        except (ContentTypeError, json.JSONDecodeError) as err:
-            error_msg = (
-                "Could not fetch data for"
-                f" {device_type.name if device_type is not None else url}. Server"
-                f" responded with status {resp.status}."
-            )
-            log.warning(error_msg)
-            raise DataFetchFailed(error_msg) from err
+        log.debug(
+            error_msg := f"{__name__}: Request error. Status: {rsp_errors[0].get('status')}. Response: {json_rsp}"
+        )
 
-        return_items = []
-
-        #
-        # Handle Errors
-        #
-
-        rsp_errors = json_rsp.get("errors", [])
-        if len(rsp_errors) != 0:
-            error_msg = (
-                "_async_build_device_list(): Failed to get data for device"
-                f" type {device_type}. Response: {rsp_errors}. Errors: {json_rsp}."
-            )
-            log.debug(error_msg)
-
-            if rsp_errors[0].get("status") == "423":
-                log.debug(
-                    (
-                        "Error fetching data from Alarm.com. This account either"
-                        " doesn't have permission to %s, is on a plan that does not"
-                        " support %s, or is part of a system with %s turned off."
-                    ),
-                    device_type,
-                    device_type,
-                    device_type,
+        match rsp_errors[0].get("status"):
+            case "423":  # Processing Error
+                log.error(
+                    f"Got a processing error when trying to request {request_name}. This may be caused by missing"
+                    " permissions, being on an Alarm.com plan without support for a particular device type, or"
+                    " having a device type disabled for this system."
                 )
-                # Carry on. We'll still try to load all other devices to which a user has access.
-                return []
+                log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
+                raise PermissionError
 
-            if rsp_errors[0].get("status") == "403":
+            case "403":  # Invalid Anti-Forgery Token
                 # 403 means that either the user doesn't have access to this class of device or that the user has logged out.
                 # Unsupported device types should be stripped out in async_update(), so assume logged out.
                 # If logged out, try logging in again, then give up by pretending that we couldn't find any devices of this type.
 
                 if not retry_on_failure:
                     log.error(
-                        (
-                            "Error fetching data from Alarm.com. Got 403 status when"
-                            " fetching data for device type %s. Logging in again didn't"
-                            " help. Giving up on device type."
-                        ),
-                        device_type,
+                        "Error fetching data from Alarm.com. Got 403 status when"
+                        f" fetching {request_name}. Logging in"
+                        " again didn't help. Giving up on device type."
                     )
-                    return []
+                    raise DataFetchFailed(error_msg)
 
                 if not self._is_logged_in():
                     log.debug(
-                        (
-                            "Error fetching data from Alarm.com. Got 403 status when"
-                            " fetching data for device type %s. Trying to refresh auth"
-                            " tokens by logging in again."
-                        ),
-                        device_type,
+                        "Error fetching data from Alarm.com. Got 403 status"
+                        f" when requesting {request_name}. Trying to"
+                        " refresh auth tokens by logging in again."
                     )
+
                     await self.async_login()
-                    return await self._async_build_device_list(
-                        device_type=device_type,
-                        retry_on_failure=False,
-                    )
 
+                    raise TryAgain
+
+            case "409":
                 log.error(
-                    (
-                        "Error fetching data from Alarm.com. Got 403 status when"
-                        " fetching data for device type %s. User is already logged in."
-                        " Giving up on device type."
-                    ),
-                    device_type,
+                    error_msg := f"Failed to request {request_name}. Two factor authentication cookie is incorrect."
                 )
-                log.debug("Server response: %s", json_rsp)
-                return []
+                log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
+                raise AuthenticationFailed(error_msg)
 
-            if (
-                rsp_errors[0].get("status") == "409"
-                and rsp_errors[0].get("detail") == "TwoFactorAuthenticationRequired"
-            ):
-                log.error(
-                    "Failed while fetching items and subordinates. Two factor"
-                    " authentication cookie is incorrect."
-                )
-                raise AuthenticationFailed(
-                    "Failed while fetching items and subordinates. Two factor"
-                    " authentication cookie is incorrect."
-                )
-
-            error_msg = (
-                f"{__name__}: Showing first error only. Status:"
-                f" {rsp_errors[0].get('status')}. Response: {json_rsp}"
-            )
-            log.debug(error_msg)
-            raise DataFetchFailed(error_msg)
-
-        #
-        # Get child elements for partitions and systems if function called using device_type parameter.
-        # If only url parameter used, we're probably just here to fetch additional endpoints.
-        #
-
-        if device_type and json_rsp.get("data"):
-            try:
-                for device in json_rsp["data"]:
-                    # Get list of downstream devices. Add to list for reference
-                    subordinates = []
-                    if device_type in [
-                        DeviceType.PARTITION,
-                        DeviceType.SYSTEM,
-                    ]:
-                        for family_name, family_data in device["relationships"].items():
-                            if DeviceType.has_value(family_name):
-                                for sub_device in family_data["data"]:
-                                    subordinates.append((sub_device["id"], family_name))
-
-                                    if device_type == DeviceType.PARTITION:
-                                        self._partition_map[sub_device["id"]] = device[
-                                            "id"
-                                        ]
-
-                    return_items.append((device, subordinates))
-            except KeyError as err:
-                raise UnexpectedDataStructure(
-                    f"Failed while processing {device_type}"
-                ) from err
-
-        return return_items
+            case _:
+                log.error(f"Unknown error while requesting {request_name}.")
+                log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
+                raise DataFetchFailed(error_msg)
 
     async def _async_login_and_get_key(self) -> None:
         """Load hidden fields from login page."""
         try:
             # load login page once and grab VIEWSTATE/cookies
-            async with self._websession.get(
-                url=self.LOGIN_URL, cookies=self._two_factor_cookie
-            ) as resp:
+            async with self._websession.get(url=self.LOGIN_URL, cookies=self._two_factor_cookie) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
                 login_info = {
-                    self.VIEWSTATE_FIELD: tree.select(f"#{self.VIEWSTATE_FIELD}")[
-                        0
-                    ].attrs.get("value"),
-                    self.VIEWSTATEGENERATOR_FIELD: tree.select(
-                        f"#{self.VIEWSTATEGENERATOR_FIELD}"
-                    )[0].attrs.get("value"),
-                    self.EVENTVALIDATION_FIELD: tree.select(
-                        f"#{self.EVENTVALIDATION_FIELD}"
-                    )[0].attrs.get("value"),
-                    self.PREVIOUSPAGE_FIELD: tree.select(f"#{self.PREVIOUSPAGE_FIELD}")[
-                        0
-                    ].attrs.get("value"),
+                    self.VIEWSTATE_FIELD: tree.select(f"#{self.VIEWSTATE_FIELD}")[0].attrs.get("value"),
+                    self.VIEWSTATEGENERATOR_FIELD: tree.select(f"#{self.VIEWSTATEGENERATOR_FIELD}")[0].attrs.get(
+                        "value"
+                    ),
+                    self.EVENTVALIDATION_FIELD: tree.select(f"#{self.EVENTVALIDATION_FIELD}")[0].attrs.get(
+                        "value"
+                    ),
+                    self.PREVIOUSPAGE_FIELD: tree.select(f"#{self.PREVIOUSPAGE_FIELD}")[0].attrs.get("value"),
                 }
-
-                log.debug(login_info)
 
         except (
             asyncio.TimeoutError,
@@ -1107,9 +994,7 @@ class AlarmController:
                     self.LOGIN_USERNAME_FIELD: self._username,
                     self.LOGIN_PASSWORD_FIELD: self._password,
                     self.VIEWSTATE_FIELD: login_info[self.VIEWSTATE_FIELD],
-                    self.VIEWSTATEGENERATOR_FIELD: login_info[
-                        self.VIEWSTATEGENERATOR_FIELD
-                    ],
+                    self.VIEWSTATEGENERATOR_FIELD: login_info[self.VIEWSTATEGENERATOR_FIELD],
                     self.EVENTVALIDATION_FIELD: login_info[self.EVENTVALIDATION_FIELD],
                     self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
                     "IsFromNewSite": "1",
@@ -1119,16 +1004,11 @@ class AlarmController:
                 if re.search("m=login_fail", str(resp.url)) is not None:
                     log.error("Login failed.")
                     log.error("\nResponse URL:\n%s\n", str(resp.url))
-                    log.error(
-                        "\nRequest Headers:\n%s\n", str(resp.request_info.headers)
-                    )
+                    log.error("\nRequest Headers:\n%s\n", str(resp.request_info.headers))
                     raise AuthenticationFailed("Invalid username and password.")
 
                 # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.
-                if (
-                    re.search("concurrent-two-factor-authentication", str(resp.url))
-                    is not None
-                ):
+                if re.search("concurrent-two-factor-authentication", str(resp.url)) is not None:
                     raise NagScreen("Encountered 2FA nag screen.")
 
                 # Update anti-forgery cookie

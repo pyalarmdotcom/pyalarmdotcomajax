@@ -20,6 +20,15 @@ class Thermostat(DesiredStateMixin, BaseDevice):
     # TODO: desiredRts (remote temp sensor), desiredLocalDisplayLockingMode. Need user with remote sensors.
     # In identity info, check localizeTempUnitsToCelsius.
 
+    ATTRIB_SETPOINT_OFFSET = "setpointOffset"
+    ATTRIB_AMBIENT_TEMP = "ambientTemp"
+    ATTRIB_FAN_MODE = "fanMode"
+    ATTRIB_DESIRED_FAN_MODE = "desiredFanMode"
+    ATTRIB_HEAT_SETPOINT = "heatSetpoint"
+    ATTRIB_DESIRED_HEAT_SETPOINT = "desiredHeatSetpoint"
+    ATTRIB_COOL_SETPOINT = "coolSetpoint"
+    ATTRIB_DESIRED_COOL_SETPOINT = "desiredCoolSetpoint"
+
     class FanMode(Enum):
         """Enum of thermostat fan modes."""
 
@@ -116,7 +125,7 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         supports_schedules_smart: bool | None
         schedule_mode: Thermostat.ScheduleMode | None
 
-    DEVICE_MODELS = {
+    _DEVICE_MODELS = {
         4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
         10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},
     }
@@ -132,21 +141,19 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         )
 
     @property
-    def attributes(self) -> ThermostatAttributes | None:
+    def attributes(self) -> ThermostatAttributes:
         """Return thermostat attributes."""
 
         return self.ThermostatAttributes(
             temp_average=self._get_float("forwardingAmbientTemp"),
-            temp_at_tstat=self._get_float("ambientTemp"),
+            temp_at_tstat=self._get_float(self.ATTRIB_AMBIENT_TEMP),
             inferred_mode=self._get_special("inferredMode", self.DeviceState),
-            setpoint_offset=self._get_float("setpointOffset"),
+            setpoint_offset=self._get_float(self.ATTRIB_SETPOINT_OFFSET),
             supports_fan_mode=self._get_bool("supportsFanMode"),
             supports_fan_indefinite=self._get_bool("supportsIndefiniteFanOn"),
-            supports_fan_circulate_when_off=self._get_bool(
-                "supportsCirculateFanModeWhenOff"
-            ),
+            supports_fan_circulate_when_off=self._get_bool("supportsCirculateFanModeWhenOff"),
             supported_fan_durations=self._get_list("supportedFanDurations", int),
-            fan_mode=self._get_special("fanMode", self.FanMode),
+            fan_mode=self._get_special(self.ATTRIB_FAN_MODE, self.FanMode),
             supports_heat=self._get_bool("supportsHeatMode"),
             supports_heat_aux=self._get_bool("supportsAuxHeatMode"),
             supports_cool=self._get_bool("supportsCoolMode"),
@@ -157,8 +164,8 @@ class Thermostat(DesiredStateMixin, BaseDevice):
             min_cool_setpoint=self._get_float("minCoolSetpoint"),
             max_heat_setpoint=self._get_float("maxHeatSetpoint"),
             max_cool_setpoint=self._get_float("maxCoolSetpoint"),
-            heat_setpoint=self._get_float("heatSetpoint"),
-            cool_setpoint=self._get_float("coolSetpoint"),
+            heat_setpoint=self._get_float(self.ATTRIB_HEAT_SETPOINT),
+            cool_setpoint=self._get_float(self.ATTRIB_COOL_SETPOINT),
             supports_humidity=self._get_bool("supportsHumidity"),
             humidity=self._get_int("humidityLevel"),
             supports_schedules=self._get_bool("supportsSchedules"),
@@ -179,25 +186,23 @@ class Thermostat(DesiredStateMixin, BaseDevice):
         msg_body: dict[str, float | int] = {}
 
         # Make sure we're only being asked to set one attribute at a time.
-        if (
-            attrib_list := [state, fan, cool_setpoint, heat_setpoint, schedule_mode]
-        ).count(None) < len(attrib_list) - 1:
+        if (attrib_list := [state, fan, cool_setpoint, heat_setpoint, schedule_mode]).count(None) < len(
+            attrib_list
+        ) - 1:
             raise UnexpectedDataStructure
 
         # Build the request body.
         if state:
-            msg_body = {"desiredState": state.value}
+            msg_body = {self._ATTRIB_STATE: state.value}
         elif fan:
             msg_body = {
-                "desiredFanMode": self.FanMode(fan[0]).value,
-                "desiredFanDuration": (
-                    0 if self.FanMode(fan[0]) == self.FanMode.AUTO else fan[1]
-                ),
+                self.ATTRIB_DESIRED_FAN_MODE: self.FanMode(fan[0]).value,
+                "desiredFanDuration": 0 if self.FanMode(fan[0]) == self.FanMode.AUTO else fan[1],
             }
         elif cool_setpoint:
-            msg_body = {"desiredCoolSetpoint": cool_setpoint}
+            msg_body = {self.ATTRIB_DESIRED_COOL_SETPOINT: cool_setpoint}
         elif heat_setpoint:
-            msg_body = {"desiredHeatSetpoint": heat_setpoint}
+            msg_body = {self.ATTRIB_DESIRED_HEAT_SETPOINT: heat_setpoint}
         elif schedule_mode:
             msg_body = {"desiredScheduleMode": schedule_mode.value}
 
