@@ -789,6 +789,18 @@ class AlarmController:
         except TryAgain:
             return await self._async_get_devices_by_device_type(device_type=device_type, retry_on_failure=False)
 
+    async def _async_unmask_otp(self, enabled_otp_types: int) -> OtpType:
+        """Extract single OTP type from enabledTwoFactorTypes bitmask."""
+
+        if bool(enabled_otp_types & OtpType.APP.value):
+            return OtpType.APP
+        elif bool(enabled_otp_types & OtpType.SMS.value):
+            return OtpType.SMS
+        elif bool(enabled_otp_types & OtpType.EMAIL.value):
+            return OtpType.EMAIL
+        else:
+            raise ValueError(f"Unknown OTP type: {enabled_otp_types}")
+
     async def _async_requires_2fa(self) -> bool | None:
         """Check whether two factor authentication is enabled on the account."""
         async with self._websession.get(
@@ -800,6 +812,7 @@ class AlarmController:
         if (errors := json_rsp.get("errors")) and len(errors) > 0:
             for error in errors:
                 if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
+                    log.debug("Two factor authentication is required. Getting details...")
                     # Get 2FA type ID
                     async with self._websession.get(
                         url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
@@ -809,8 +822,8 @@ class AlarmController:
 
                         if isinstance(factor_id := json_rsp.get("data", {}).get("id"), int):
                             self._factor_type_id = factor_id
-                            self._two_factor_method = OtpType(
-                                json_rsp.get("data", {}).get("attributes", {}).get("twoFactorType")
+                            self._two_factor_method = await self._async_unmask_otp(
+                                json_rsp.get("data", {}).get("attributes", {}).get("enabledTwoFactorTypes")
                             )
                             log.info("Requires 2FA. Using method %s", self._two_factor_method)
                             return True

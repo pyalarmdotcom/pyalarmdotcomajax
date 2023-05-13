@@ -164,6 +164,16 @@ async def cli() -> None:
         help="New value for setting.",
     )
 
+    #
+    # WebSocket / Watch Subparser
+    #
+
+    get_subparser = subparsers.add_parser(
+        "watch",
+        description="monitor alarm.com for real time updates",
+        help="monitor alarm.com for real time updates over WebSockets. hit Ctrl + C to exit.",
+    )
+
     ##########
     # SET UP #
     ##########
@@ -380,10 +390,24 @@ async def cli() -> None:
                     "red",
                 )
 
+        ###########################
+        # WATCH REAL TIME UPDATES #
+        ###########################
+
+        if args.get("action") == "watch":
+            await _async_watch_realtime(alarm)
+
 
 #############
 # FUNCTIONS #
 #############
+
+
+async def _async_watch_realtime(alarm: AlarmController) -> None:
+    """Watch for real-time updates via WebSockets."""
+
+    ws_client = alarm.get_websocket_client()
+    await ws_client.async_connect()
 
 
 def _human_output(alarm: AlarmController) -> dict:
