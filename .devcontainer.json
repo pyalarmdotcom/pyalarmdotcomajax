@@ -8,7 +8,7 @@
                 "marklarah.pre-commit-vscode",
                 "eamodio.gitlens",
                 "ms-python.black-formatter",
-                "matangover.mypy",
+                "ms-python.mypy-type-checker",
                 "charliermarsh.ruff",
                 "esbenp.prettier-vscode",
                 "EditorConfig.EditorConfig",
