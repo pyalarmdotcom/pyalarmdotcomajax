@@ -1,14 +1,16 @@
 """Alarm.com image sensor."""
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from enum import Enum
-import logging
 from typing import TypedDict
 
 from dateutil import parser
 
-from . import BaseDevice, DeviceType
+from pyalarmdotcomajax.devices import DeviceType
+
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
@@ -33,23 +35,16 @@ class ImageSensor(BaseDevice):
 
     _recent_images: list[ImageSensorImage] = []
 
-    def process_element_specific_data(self) -> None:
+    def process_device_type_specific_data(self) -> None:
         """Process recent images."""
 
-        if not (
-            raw_recent_images := self._element_specific_data.get("raw_recent_images")
-        ):
+        if not (raw_recent_images := self._device_type_specific_data.get("raw_recent_images")):
             return
 
         for image in raw_recent_images:
             if (
                 isinstance(image, dict)
-                and str(
-                    image.get("relationships", {})
-                    .get("imageSensor", {})
-                    .get("data", {})
-                    .get("id")
-                )
+                and str(image.get("relationships", {}).get("imageSensor", {}).get("data", {}).get("id"))
                 == self.id_
             ):
                 image_data: ImageSensorImage = {

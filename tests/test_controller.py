@@ -2,21 +2,17 @@
 
 # pylint: disable=protected-access
 
-import json
 
 import aiohttp
-from deepdiff import DeepDiff
 import pytest
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.devices import DeviceType
-
-from tests.responses import get_http_body_json
+from pyalarmdotcomajax.errors import DataFetchFailed
 
 
 def test_property__initial_state(adc_client: AlarmController) -> None:
     """Ensure that login data is ingested correctly."""
-    assert adc_client._password == "hunter2"
+    assert adc_client._password == "hunter2"  # noqa: S105
     assert adc_client._username == "test-username"
     assert adc_client.two_factor_cookie == "test-cookie"
     assert isinstance(adc_client._websession, aiohttp.ClientSession)
@@ -24,69 +20,55 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
     assert adc_client.provider_name is None
     assert adc_client.user_id is None
 
-    assert not adc_client.systems
-    assert not adc_client.partitions
-    assert not adc_client.sensors
-    assert not adc_client.locks
-    assert not adc_client.garage_doors
-    assert not adc_client.image_sensors
-    assert not adc_client.lights
-    assert not adc_client.thermostats
-    assert not adc_client.cameras
-    assert not adc_client.water_sensors
+    assert not adc_client.devices.systems.values()
+    assert not adc_client.devices.partitions.values()
+    assert not adc_client.devices.sensors.values()
+    assert not adc_client.devices.locks.values()
+    assert not adc_client.devices.garage_doors.values()
+    assert not adc_client.devices.image_sensors.values()
+    assert not adc_client.devices.lights.values()
+    assert not adc_client.devices.thermostats.values()
+    assert not adc_client.devices.cameras.values()
+    assert not adc_client.devices.water_sensors.values()
 
 
-@pytest.mark.asyncio  # type: ignore
-async def test__async_build_device_list__sensor_metadata(
-    all_base_ok_responses: pytest.fixture,
+@pytest.mark.asyncio
+async def test__device_storage(
+    all_base_ok_responses: str,
     adc_client: AlarmController,
 ) -> None:
     """Test for function that fetches item metadata from Alarm.com API."""
 
-    items = await adc_client._async_build_device_list(DeviceType.SENSOR)
-
-    for rsp_device, _ in items:
-        src_match = {}
-
-        for src_device in json.loads(get_http_body_json("sensor_ok")).get("data", {}):
-            if src_device.get("id") == rsp_device.get("id"):
-                src_match = src_device
-
-        # Account for all source devices in response.
-        assert not (
-            diff := DeepDiff(src_match, rsp_device, ignore_order=True)
-        ), f"Difference: {diff}"
-
-
-@pytest.mark.asyncio  # type: ignore
-async def test___async_build_device_list__sensors(
-    all_base_ok_responses: pytest.fixture,
-    adc_client: AlarmController,
-) -> None:
-    """Test whether pyalarmdotcomajax sensor objects are built."""
-
-    await adc_client.async_update(DeviceType.SENSOR)
-
-    assert adc_client.sensors
-
-
-@pytest.mark.asyncio  # type: ignore
-async def test___async_update__ok(
-    all_base_ok_responses: pytest.fixture,
-    all_extension_ok_responses: pytest.fixture,
-    adc_client: AlarmController,
-) -> None:
-    """Test whether pyalarmdotcomajax sensor objects are built."""
-
     await adc_client.async_update()
 
-    assert adc_client.systems
-    assert adc_client.partitions
-    assert adc_client.sensors
-    assert adc_client.locks
-    assert adc_client.garage_doors
-    assert adc_client.image_sensors
-    assert adc_client.lights
-    assert adc_client.thermostats
-    assert adc_client.cameras
-    assert adc_client.water_sensors
+    assert adc_client.devices.systems.values()
+    assert adc_client.devices.partitions.values()
+    assert adc_client.devices.sensors.values()
+    assert adc_client.devices.locks.values()
+    assert adc_client.devices.garage_doors.values()
+    assert adc_client.devices.image_sensors.values()
+    assert adc_client.devices.lights.values()
+    assert adc_client.devices.thermostats.values()
+    assert adc_client.devices.water_sensors.values()
+
+
+@pytest.mark.asyncio
+async def test___async_update__refresh_failure(
+    device_catalog_no_permissions: str,
+    adc_client: AlarmController,
+) -> None:
+    """Test for when devices initialize but fail to refresh. Ensure that devices are wiped on update failure."""
+
+    with pytest.raises(DataFetchFailed):
+        await adc_client.async_update()
+
+
+@pytest.mark.asyncio
+async def test__async_has_image_sensors(
+    image_sensors_no_permission: str,
+    all_base_ok_responses: str,
+    adc_client: AlarmController,
+) -> None:
+    """Test for function that fetches image sensor images."""
+
+    await adc_client.async_update()

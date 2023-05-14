@@ -6,6 +6,10 @@ class UnsupportedDevice(Exception):
     """pyalarmdotcomajax encountered a device not currently supported by the package."""
 
 
+class UnkonwnDevice(Exception):
+    """pyalarmdotcomajax did not recognize the device ID."""
+
+
 class AuthenticationFailed(Exception):
     """Alarm.com authentication failure."""
 
@@ -40,3 +44,7 @@ class InvalidConfigurationOption(Exception):
 
 class UnsupportedAction(Exception):
     """Device does not support requested action."""
+
+
+class TryAgain(Exception):
+    """Request that caller tries again after session has been fixed."""

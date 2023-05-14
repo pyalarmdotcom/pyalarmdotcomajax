@@ -1,6 +1,8 @@
 """Basic example for logging in using time-based one-time password via pyalarmdotcomajax."""
 
 import asyncio
+import logging
+import os
 import sys
 
 import aiohttp
@@ -8,18 +10,31 @@ import aiohttp
 from pyalarmdotcomajax import AlarmController, AuthResult
 from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 
-USERNAME = "ENTER YOUR USERNAME"
-PASSWORD = "ENTER YOUR PASSWORD"
+USERNAME = os.environ.get("ADC_USERNAME")
+PASSWORD = os.environ.get("ADC_PASSWORD")
+TWOFA_COOKIE = os.environ.get("ADC_2FA_TOKEN")
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def main() -> None:
     """Request Alarm.com sensor data."""
+
+    if not (USERNAME and PASSWORD):
+        sys.exit("Missing account credentials.")
+
     async with aiohttp.ClientSession() as session:
         #
         # CREATE ALARM CONTROLLER
         #
 
-        alarm = AlarmController(username=USERNAME, password=PASSWORD, websession=session)
+        alarm = AlarmController(
+            username=USERNAME,
+            password=PASSWORD,
+            websession=session,
+            twofactorcookie=TWOFA_COOKIE,
+        )
 
         #
         # LOG IN AND HANDLE TWO-FACTOR AUTHENTICATION
@@ -30,7 +45,7 @@ async def main() -> None:
             login_result = await alarm.async_login()
 
             if login_result == AuthResult.OTP_REQUIRED:
-                print("Two factor authentication is enabled for this user.")
+                print("Two factor authentication is enabled for this user.")  # noqa: T201
 
                 if not (code := input("Enter One-Time Password: ")):
                     sys.exit("Requested OTP was not entered.")
@@ -52,9 +67,8 @@ async def main() -> None:
 
         await alarm.async_update()
 
-        for sensor in alarm.devices.sensors.values():
-            print(f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}")
+        ws_client = alarm.get_websocket_client()
+        await ws_client.async_connect()
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+asyncio.run(main())

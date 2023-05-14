@@ -1,16 +1,19 @@
 """Alarm.com light."""
 from __future__ import annotations
 
-from enum import Enum
 import logging
+from enum import Enum
 
-from . import BaseDevice, DesiredStateMixin, DeviceType
+from pyalarmdotcomajax.devices import BaseDevice, DesiredStateMixin, DeviceType
 
 log = logging.getLogger(__name__)
 
 
+# WebSocket Handler: https://www.alarm.com/web/system/assets/customer-ember/websockets/handlers/lights.ts
 class Light(DesiredStateMixin, BaseDevice):
     """Represent Alarm.com light element."""
+
+    ATTRIB_LIGHT_LEVEL = "lightLevel"
 
     class DeviceState(Enum):
         """Enum of light states."""
@@ -36,8 +39,7 @@ class Light(DesiredStateMixin, BaseDevice):
             self._attribs_raw.get("canReceiveCommands", False)
             and self._attribs_raw.get("remoteCommandsEnabled", False)
             and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state
-            in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
+            and self.state in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
         )
 
     @property
@@ -46,7 +48,7 @@ class Light(DesiredStateMixin, BaseDevice):
         if not self._attribs_raw.get("isDimmer", False):
             return None
 
-        if isinstance(level := self._attribs_raw.get("lightLevel", 0), int):
+        if isinstance(level := self._attribs_raw.get(self.ATTRIB_LIGHT_LEVEL, 0), int):
             return level
 
         return None
