@@ -574,9 +574,9 @@ class AlarmController:
 
             match str(resp.status):
                 case "200":
-                    # Update alarm.com status after calling state change.
-                    # TODO: Update single device, or remove entirely for webhooks.
-                    await self.async_update()
+                    # Update entities after calling state change.
+                    # TODO: Confirm that we can remove this call because of webhook support.
+                    # await self.async_update()
                     return True
 
                 case "423":
