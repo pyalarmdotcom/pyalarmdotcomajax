@@ -182,6 +182,8 @@ async def cli() -> None:
 
     if args.get("debug", 0) > 0:
         logging.basicConfig(level=logging.DEBUG)
+    elif args.get("action") == "watch":
+        logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.ERROR)
 
@@ -395,6 +397,12 @@ async def cli() -> None:
         ###########################
 
         if args.get("action") == "watch":
+            cprint(
+                "Watching for real-time updates...",
+                "grey",
+                "on_yellow",
+                attrs=["bold"],
+            )
             await _async_watch_realtime(alarm)
 
 
