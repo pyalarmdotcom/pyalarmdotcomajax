@@ -85,6 +85,13 @@ def all_base_ok_responses_callable(response_mocker: aioresponses) -> Callable:
             repeat=repeat,
         )
 
+        # response_mocker.get(
+        #     url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
+        #     status=200,
+        #     body=get_http_body_json("systems_ok"),
+        #     repeat=repeat,
+        # )
+
         response_mocker.get(
             url=AttributeRegistry.get_endpoints(DeviceType.IMAGE_SENSOR)["primary"].format(c.URL_BASE, ""),
             status=200,
