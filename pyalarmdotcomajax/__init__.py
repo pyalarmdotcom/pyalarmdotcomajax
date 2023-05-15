@@ -164,6 +164,7 @@ class AlarmController:
         # CLI ATTRIBUTES
         #
         self.raw_catalog: dict = {}
+        self.raw_system: dict = {}
         self.raw_image_sensors: dict = {}
         self.raw_recent_images: dict = {}
 
@@ -349,7 +350,8 @@ class AlarmController:
         #
 
         device_instances: dict[str, AllDevices_t] = {}
-        raw_devices: list[dict] = await self._async_get_system_devices(self._active_system_id)
+        raw_devices: list[dict] = await self._async_get_system(self._active_system_id)
+        raw_devices.extend(await self._async_get_system_devices(self._active_system_id))
 
         #
         # QUERY MULTI-DEVICE EXTENSIONS
@@ -377,7 +379,8 @@ class AlarmController:
         #
         # BUILD PARTITIONS
         #
-        # Ensures that partition map is built before devices are built.
+
+        # Ensure that partition map is built before devices are built.
 
         for device in [
             device
@@ -633,15 +636,7 @@ class AlarmController:
 
         return WebSocketClient(self._websession, self._ajax_headers, self.devices)
 
-    #
-    #
-    #####################
-    # PRIVATE FUNCTIONS #
-    #####################
-    #
-    # Communicate directly with the ADC API
-
-    async def _is_logged_in(self) -> bool:
+    async def async_keep_alive_login_check(self) -> bool:
         """Check if we are logged in."""
 
         async with self._websession.get(
@@ -651,6 +646,14 @@ class AlarmController:
             text_rsp = await resp.text()
 
         return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
+
+    #
+    #
+    #####################
+    # PRIVATE FUNCTIONS #
+    #####################
+    #
+    # Communicate directly with the ADC API
 
     async def _async_get_active_system(self) -> str:
         """Get active system for user account."""
@@ -710,6 +713,8 @@ class AlarmController:
         Check is required because image sensors are not shown in the device catalog endpoint.
         """
 
+        # TODO: Needs changes to support multi-system environments
+
         try:
             log.info(f"Checking system {system_id} for image sensors.")
 
@@ -729,6 +734,32 @@ class AlarmController:
         except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
             log.error("Failed to get image sensors.")
             raise DataFetchFailed from err
+
+    async def _async_get_system(self, system_id: str, retry_on_failure: bool = True) -> list[dict]:
+        """Get all devices present in system."""
+
+        try:
+            log.info(f"Getting system data for {system_id}.")
+
+            async with self._websession.get(
+                url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, system_id),
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                json_rsp = await resp.json()
+
+                # Used by adc CLI.
+                self.raw_system = json_rsp
+
+                await self._async_handle_server_errors(json_rsp, "system", retry_on_failure)
+
+                return [json_rsp["data"]]
+
+        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
+            log.error("Failed to get system devices.")
+            raise DataFetchFailed from err
+        except TryAgain:
+            return await self._async_get_system(system_id=system_id, retry_on_failure=False)
 
     async def _async_get_system_devices(self, system_id: str, retry_on_failure: bool = True) -> list[dict]:
         """Get all devices present in system."""
@@ -946,7 +977,7 @@ class AlarmController:
                     )
                     raise DataFetchFailed(error_msg)
 
-                if not self._is_logged_in():
+                if not self.async_keep_alive_login_check():
                     log.debug(
                         "Error fetching data from Alarm.com. Got 403 status"
                         f" when requesting {request_name}. Trying to"

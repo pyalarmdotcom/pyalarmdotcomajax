@@ -263,7 +263,7 @@ async def cli() -> None:
             device_type_output = {
                 slug_to_title(device_type.name): [
                     device
-                    for device in alarm.raw_catalog.get("included", [])
+                    for device in [*alarm.raw_catalog.get("included", []), alarm.raw_system.get("data", [])]
                     if device.get("type") == AttributeRegistry.get_relationship_id_from_devicetype(device_type)
                 ] or "\n(none found)\n"
                 for device_type in DeviceType
@@ -455,8 +455,10 @@ def _print_element_tearsheet(
         battery = "Critical"
     elif element.battery_low:
         battery = "Low"
-    else:
+    elif element.battery_critical is not None or element.battery_low is not None:
         battery = "Normal"
+    else:
+        battery = None
 
     # DESIRED STATE
     desired_str = (
@@ -468,30 +470,34 @@ def _print_element_tearsheet(
     # ATTRIBUTES
     output_str += "ATTRIBUTES: "
 
-    if isinstance(element.device_subtype, Sensor.Subtype):
-        output_str += f'[Type: {element.device_subtype.name.title().replace("_"," ")}] '
+    if isinstance(element.device_subtype, Sensor.Subtype) or element.state or battery or element.read_only:
+        if isinstance(element.device_subtype, Sensor.Subtype):
+            output_str += f'[TYPE: {element.device_subtype.name.title().replace("_"," ")}] '
 
-    if element.state:
-        output_str += f"[STATE: {element.state.name.title()}{desired_str}] "
+        if element.state:
+            output_str += f"[STATE: {element.state.name.title()}{desired_str}] "
 
-    output_str += f"[BATTERY: {battery}] "
+        if battery:
+            output_str += f"[BATTERY: {battery}] "
 
-    if element.read_only:
-        output_str += f"[READ ONLY: {element.read_only}] "
+        if element.read_only:
+            output_str += f"[READ ONLY: {element.read_only}] "
 
-    if isinstance(element, Light):
-        # Disabling. Boring stat.
-        # attribute_str += f"[REPORTS STATE: {element.supports_state_tracking}] "
+        if isinstance(element, Light):
+            # Disabling. Boring stat.
+            # attribute_str += f"[REPORTS STATE: {element.supports_state_tracking}] "
 
-        if element.brightness:
-            output_str += f"[BRIGHTNESS: {element.brightness}%] "
+            if element.brightness:
+                output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
-    output_str += "\n"
+        # ENTITIES WITH "ATTRIBUTES" PROPERTY
+        if isinstance(element.attributes, BaseDevice.DeviceAttributes):
+            for name, value in asdict(element.attributes).items():
+                output_str += f"[{str(name).upper()}: {value}] "
+    else:
+        output_str += "(none)"
 
-    # ENTITIES WITH "ATTRIBUTES" PROPERTY
-    if isinstance(element.attributes, BaseDevice.DeviceAttributes):
-        for name, value in asdict(element.attributes).items():
-            output_str += f"[{str(name).upper()}: {value}] "
+        output_str += "\n"
 
     # SETTINGS / EXTENSIONS
 
