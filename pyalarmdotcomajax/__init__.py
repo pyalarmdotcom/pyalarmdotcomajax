@@ -636,7 +636,7 @@ class AlarmController:
 
         return WebSocketClient(self._websession, self._ajax_headers, self.devices)
 
-    async def async_keep_alive_login_check(self) -> bool:
+    async def _async_keep_alive_login_check(self) -> bool:
         """Check if we are logged in."""
 
         async with self._websession.get(
@@ -977,7 +977,7 @@ class AlarmController:
                     )
                     raise DataFetchFailed(error_msg)
 
-                if not self.async_keep_alive_login_check():
+                if not self._async_keep_alive_login_check():
                     log.debug(
                         "Error fetching data from Alarm.com. Got 403 status"
                         f" when requesting {request_name}. Trying to"

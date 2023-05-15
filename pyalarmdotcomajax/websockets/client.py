@@ -52,12 +52,16 @@ class WebSocketClient:
     WEBSOCKET_ENDPOINT_TEMPLATE = "wss://webskt.alarm.com:8443/?auth={}"
     WEBSOCKET_TOKEN_REQUEST_TEMPLATE = "{}web/api/websockets/token"  # noqa: S105
 
-    def __init__(self, websession: ClientSession, ajax_headers: dict, device_registry: DeviceRegistry) -> None:
+    def __init__(
+        self,
+        websession: ClientSession,
+        ajax_headers: dict,
+        device_registry: DeviceRegistry,
+    ) -> None:
         """Initialize."""
         self._websession: ClientSession = websession
         self._ajax_headers: dict = ajax_headers
         self._device_registry: DeviceRegistry = device_registry
-
         self._ws_auth_token: str | None = None
 
     async def async_connect(self) -> None:
@@ -73,8 +77,7 @@ class WebSocketClient:
 
         # Connect to websocket endpoint
         async with self._websession.ws_connect(
-            self.WEBSOCKET_ENDPOINT_TEMPLATE.format(self._ws_auth_token),
-            headers=self._ajax_headers,
+            self.WEBSOCKET_ENDPOINT_TEMPLATE.format(self._ws_auth_token), headers=self._ajax_headers, timeout=30
         ) as websocket:
             async for msg in websocket:
                 # Message is JSON but encoded as text.
