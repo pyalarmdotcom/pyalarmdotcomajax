@@ -43,7 +43,7 @@ from .extensions import (
 # TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
 # TODO: Fix get raw server response function.
 
-__version__ = "0.5.0-beta"
+__version__ = "0.5.0-beta.2"
 
 log = logging.getLogger(__name__)
 
