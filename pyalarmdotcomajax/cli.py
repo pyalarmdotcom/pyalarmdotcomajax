@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import platform
 import sys
@@ -261,11 +262,23 @@ async def cli() -> None:
             # Process MACHINE output
 
             device_type_output = {
-                slug_to_title(device_type.name): [
-                    device
-                    for device in [*alarm.raw_catalog.get("included", []), alarm.raw_system.get("data", [])]
-                    if device.get("type") == AttributeRegistry.get_relationship_id_from_devicetype(device_type)
-                ] or "\n(none found)\n"
+                slug_to_title(device_type.name): (
+                    json.dumps(
+                        [
+                            device
+                            for device in combined_device_list
+                            if device.get("type")
+                            == AttributeRegistry.get_relationship_id_from_devicetype(device_type)
+                        ]
+                    )
+                    if (
+                        combined_device_list := [
+                            *alarm.raw_catalog.get("included", []),
+                            alarm.raw_system.get("data"),
+                        ]
+                    )
+                    else "\n(none found)\n"
+                )
                 for device_type in DeviceType
                 if (
                     device_type in AttributeRegistry.supported_device_types
