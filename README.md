@@ -166,5 +166,5 @@ This repository includes a full development environment for VS Code:
 1. Support additional components (lights, irrigation, etc.).
 2. Support more sensor types (see list above in this README).
 3. Add `debug_info` property to `ADCController` that returns aggregate of raw JSON from all endpoints. This will allow users to export the entity model of unsupported devices to help maintainers implement support in this library.
-4. Similar to above, proactively populate `unsupported_devices` property for `ADCBaseElement` to show users device id, device name, and device type for available but unsupported devices.
+4. Similar to above, proactively populate `unsupported_device_types` property for `ADCBaseElement` to show users device id, device name, and device type for available but unsupported devices.
 5. More granular exception handling when logging in. Should report discrete error types for authentication failures due to wrong credentials, connection issues, or other.

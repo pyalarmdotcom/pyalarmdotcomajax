@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+import logging
+from abc import ABC
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-import logging
-from typing import Any, Protocol, TypedDict, final
+from typing import Any, Protocol, TypedDict
 
 import aiohttp
 
@@ -15,24 +16,16 @@ from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
 )
-from pyalarmdotcomajax.helpers import ExtendedEnumMixin
+from pyalarmdotcomajax.helpers import CastingMixin, ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
-
-
-class TroubleCondition(TypedDict):
-    """Alarm.com alert / trouble condition."""
-
-    message_id: str
-    title: str
-    body: str
-    device_id: str
 
 
 class DeviceType(ExtendedEnumMixin):
     """Enum of devices using ADC ids."""
 
     # Supported
+    CAMERA = "cameras"
     GARAGE_DOOR = "garageDoors"
     GATE = "gates"
     IMAGE_SENSOR = "imageSensors"
@@ -46,7 +39,6 @@ class DeviceType(ExtendedEnumMixin):
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
-    CAMERA = "cameras"
     CAMERA_SD = "sdCardCameras"
     CAR_MONITOR = "carMonitors"
     COMMERCIAL_TEMP = "commercialTemperatureSensors"
@@ -66,133 +58,13 @@ class DeviceType(ExtendedEnumMixin):
     X10_LIGHT = "x10Lights"
 
 
-DEVICE_URLS: dict = {
-    "supported": {
-        DeviceType.CAMERA: {
-            "relationshipId": "video/camera",
-            "endpoint": "{}web/api/video/devices/cameras/{}",
-        },
-        DeviceType.GARAGE_DOOR: {
-            "relationshipId": "devices/garage-door",
-            "endpoint": "{}web/api/devices/garageDoors/{}",
-        },
-        DeviceType.GATE: {
-            "relationshipId": "devices/gate",
-            "endpoint": "{}web/api/devices/gates/{}",
-        },
-        DeviceType.IMAGE_SENSOR: {
-            "relationshipId": "image-sensor/image-sensor",
-            "endpoint": "{}web/api/imageSensor/imageSensors/{}",
-            "additional_endpoints": {
-                "recent_images": (
-                    "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"
-                )
-            },
-        },
-        DeviceType.LIGHT: {
-            "relationshipId": "devices/light",
-            "endpoint": "{}web/api/devices/lights/{}",
-        },
-        DeviceType.LOCK: {
-            "relationshipId": "devices/lock",
-            "endpoint": "{}web/api/devices/locks/{}",
-        },
-        DeviceType.PARTITION: {
-            "relationshipId": "devices/partition",
-            "endpoint": "{}web/api/devices/partitions/{}",
-        },
-        DeviceType.SENSOR: {
-            "relationshipId": "devices/sensor",
-            "endpoint": "{}web/api/devices/sensors/{}",
-        },
-        DeviceType.SYSTEM: {
-            "relationshipId": "systems/system",
-            "endpoint": "{}web/api/systems/systems/{}",
-        },
-        DeviceType.THERMOSTAT: {
-            "relationshipId": "devices/thermostat",
-            "endpoint": "{}web/api/devices/thermostats/{}",
-        },
-        DeviceType.WATER_SENSOR: {
-            "relationshipId": "devices/water-sensor",
-            "endpoint": "{}web/api/devices/waterSensors/{}",
-        },
-    },
-    "unsupported": {
-        DeviceType.ACCESS_CONTROL: {
-            "relationshipId": "devices/access-control-access-point-device",
-            "endpoint": "{}web/api/devices/accessControlAccessPointDevices/{}",
-        },
-        DeviceType.CAMERA_SD: {
-            "relationshipId": "video/sd-card-camera",
-            "endpoint": "{}web/api/video/devices/sdCardCameras/{}",
-        },
-        DeviceType.CAR_MONITOR: {
-            "relationshipId": "devices/car-monitor",
-            "endpoint": "{}web/api/devices/carMonitors{}",
-        },
-        DeviceType.COMMERCIAL_TEMP: {
-            "relationshipId": "devices/commercial-temperature-sensor",
-            "endpoint": "{}web/api/devices/commercialTemperatureSensors/{}",
-        },
-        # DeviceType.CONFIGURATION: {
-        #     "relationshipId": "configuration",
-        #     "endpoint": "{}web/api/systems/configurations/{}",
-        # },
-        # DeviceType.FENCE: {
-        #     "relationshipId": "",
-        #     "endpoint": "{}web/api/geolocation/fences/{}",
-        # },
-        DeviceType.GEO_DEVICE: {
-            "relationshipId": "geolocation/geo-device",
-            "endpoint": "{}web/api/geolocation/geoDevices/{}",
-        },
-        DeviceType.IQ_ROUTER: {
-            "relationshipId": "devices/iq-router",
-            "endpoint": "{}web/api/devices/iqRouters/{}",
-        },
-        DeviceType.REMOTE_TEMP: {
-            "relationshipId": "devices/remote-temperature-sensor",
-            "endpoint": "{}web/api/devices/remoteTemperatureSensors/{}",
-        },
-        DeviceType.SCENE: {
-            "relationshipId": "automation/scene",
-            "endpoint": "{}web/api/automation/scenes/{}",
-        },
-        DeviceType.SHADE: {
-            "relationshipId": "devices/shade",
-            "endpoint": "{}web/api/devices/shades/{}",
-        },
-        DeviceType.SMART_CHIME: {
-            "relationshipId": "devices/smart-chime-device",
-            "endpoint": "{}web/api/devices/smartChimeDevices/{}",
-        },
-        DeviceType.SUMP_PUMP: {
-            "relationshipId": "devices/sump-pump",
-            "endpoint": "{}web/api/devices/sumpPumps/{}",
-        },
-        DeviceType.SWITCH: {
-            "relationshipId": "devices/switch",
-            "endpoint": "{}web/api/devices/switches/{}",
-        },
-        DeviceType.VALVE_SWITCH: {
-            "relationshipId": "valve-switch",
-            "endpoint": "{}web/api/devices/valveSwitches/{}",
-        },
-        DeviceType.WATER_METER: {
-            "relationshipId": "devices/water-meter",
-            "endpoint": "{}web/api/devices/waterMeters/{}",
-        },
-        DeviceType.WATER_VALVE: {
-            "relationshipId": "devices/water-valve",
-            "endpoint": "{}web/api/devices/waterValves/{}",
-        },
-        DeviceType.X10_LIGHT: {
-            "relationshipId": "devices/x10light",
-            "endpoint": "{}web/api/devices/x10Lights/{}",
-        },
-    },
-}
+class TroubleCondition(TypedDict):
+    """Alarm.com alert / trouble condition."""
+
+    message_id: str
+    title: str
+    body: str
+    device_id: str
 
 
 class DesiredStateProtocol(Protocol):
@@ -220,122 +92,57 @@ class DesiredStateMixin:
         return state
 
 
-class ElementSpecificData(TypedDict, total=False):
+class DeviceTypeSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
-    raw_recent_images: set[dict]
+    raw_recent_images: list[dict]
 
 
-class BaseDevice:
+class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC devices."""
 
-    DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
+    _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
+    _ATTRIB_STATE = "state"
+
+    ATTRIB_DESIRED_STATE = "desiredState"
 
     def __init__(
         self,
         id_: str,
         send_action_callback: Callable,
         config_change_callback: Callable | None,
-        subordinates: list,
+        children: list[tuple[str, DeviceType]],
         raw_device_data: dict,
-        element_specific_data: ElementSpecificData | None = None,
+        device_type_specific_data: DeviceTypeSpecificData | None = None,
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
         settings: dict | None = None,  # slug: ConfigurationOption
+        external_update_callback: Awaitable | None = None,  # Called when device is updated via WebSockets.
     ) -> None:
         """Initialize base element class."""
 
         self._id_: str = id_
         self._family_raw: str | None = raw_device_data.get("type")
         self._attribs_raw: dict = raw_device_data.get("attributes", {})
-        self._element_specific_data: ElementSpecificData = (
-            element_specific_data if element_specific_data else {}
+        self._device_type_specific_data: DeviceTypeSpecificData = (
+            device_type_specific_data if device_type_specific_data else {}
         )
         self._send_action_callback: Callable = send_action_callback
         self._config_change_callback: Callable | None = config_change_callback
-        self._subordinates: list = subordinates
         self._settings: dict = settings if settings else {}
 
-        self.trouble_conditions: list[TroubleCondition] = (
-            trouble_conditions if trouble_conditions else []
-        )
+        self.children = children
+        self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
 
         self._system_id: str | None = (
-            raw_device_data.get("relationships", {})
-            .get("system", {})
-            .get("data", {})
-            .get("id")
+            raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
         )
         self._partition_id: str | None = partition_id
+        self.external_update_callback: Awaitable | None = external_update_callback
 
-        self.process_element_specific_data()
+        self.process_device_type_specific_data()
 
         log.debug("Initialized %s %s", self._family_raw, self.name)
-
-    #
-    # Casting Functions
-    #
-    # Functions used for pulling data from _raw_attribs in standardized format.
-    @final
-    def _get_int(self, key: str) -> int | None:
-        """Cast raw value to int. Satisfies mypy."""
-
-        try:
-            return int(self._attribs_raw.get(key))  # type: ignore
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_float(self, key: str) -> int | None:
-        """Cast raw value to int. Satisfies mypy."""
-
-        try:
-            return float(self._attribs_raw.get(key))  # type: ignore
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_str(self, key: str) -> str | None:
-        """Cast raw value to str. Satisfies mypy."""
-
-        try:
-            return str(self._attribs_raw.get(key))
-        except (ValueError, TypeError):
-            return None
-
-    @final
-    def _get_bool(self, key: str) -> bool | None:
-        """Cast raw value to bool. Satisfies mypy."""
-
-        if self._attribs_raw.get(key) in [True, False]:
-            return self._attribs_raw.get(key)
-
-        return None
-
-    @final
-    def _get_list(self, key: str, value_type: type) -> list | None:
-        """Cast raw value to list. Satisfies mypy."""
-
-        try:
-            duration_list: list = list(self._attribs_raw.get(key))  # type: ignore
-            for duration in duration_list:
-                value_type(duration)
-            return duration_list
-        except (ValueError, TypeError):
-            pass
-
-        return None
-
-    @final
-    def _get_special(self, key: str, value_type: type) -> Any | None:
-        """Cast raw value to bool. Satisfies mypy."""
-
-        try:
-            return value_type(self._attribs_raw.get(key))
-        except (ValueError, TypeError):
-            pass
-
-        return None
 
     #
     # Properties
@@ -387,8 +194,7 @@ class BaseDevice:
         return {
             config_option.slug: config_option
             for config_option in self._settings.values()
-            if isinstance(config_option, ConfigurationOption)
-            and config_option.user_configurable
+            if isinstance(config_option, ConfigurationOption) and config_option.user_configurable
         }
 
     @property
@@ -432,7 +238,7 @@ class BaseDevice:
         return (
             reported_model
             if (reported_model := self._attribs_raw.get("deviceModel"))
-            else self.DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
+            else self._DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
         )
 
     @property
@@ -452,6 +258,36 @@ class BaseDevice:
             return self.Subtype(self._attribs_raw["deviceType"])
         except (ValueError, KeyError):
             return None
+
+    # #
+    # FUNCTIONS
+    # #
+
+    async def async_handle_external_state_change(self, raw_state: int) -> None:
+        """Update device state when notified of externally-triggered change."""
+
+        self._attribs_raw[self._ATTRIB_STATE] = raw_state
+
+        log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
+
+        if self.external_update_callback:
+            await self.external_update_callback
+
+    async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
+        """Update device attribute when notified of externally-triggered change."""
+
+        self._attribs_raw.update(new_attribute)
+
+        if self.external_update_callback:
+            await self.external_update_callback
+
+    async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
+        """Log externally-triggered attribute change."""
+
+        log.info(
+            f"{__name__} Got async update for {self.name} ({self.id_}) with new {attribute_name}:"
+            f" {attribute_value}."
+        )
 
     # #
     # PLACEHOLDERS
@@ -481,7 +317,7 @@ class BaseDevice:
     def desired_state(self) -> Enum | None:
         """Return state. To be overridden by children."""
 
-    def process_element_specific_data(self) -> None:
+    def process_device_type_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""
 
         return None
@@ -491,10 +327,7 @@ class BaseDevice:
 
         if not self._config_change_callback:
             log.error(
-                (
-                    "async_change_setting called for %s, which does not have a"
-                    " config_change_callback set."
-                ),
+                "async_change_setting called for %s, which does not have a config_change_callback set.",
                 self.name,
             )
             return
@@ -508,10 +341,7 @@ class BaseDevice:
             raise InvalidConfigurationOption
 
         log.debug(
-            (
-                "BaseDevice -> async_change_setting: Calling change setting function"
-                " for %s %s (%s) via extension %s."
-            ),
+            "BaseDevice -> async_change_setting: Calling change setting function for %s %s (%s) via extension %s.",
             type(self).__name__,
             self.name,
             self.id_,
@@ -532,3 +362,33 @@ class BaseDevice:
             raise err
 
         self._settings["slug"] = updated_option
+
+    # #
+    # CASTING FUNCTIONS
+    # #
+
+    # Override CastingMixin functions to automatically pass in _raw_attribs dict.
+
+    def _get_int(self, key: str) -> int | None:
+        """Return int value from _attribs_raw."""
+        return super()._safe_int_from_dict(self._attribs_raw, key)
+
+    def _get_float(self, key: str) -> float | None:
+        """Return float value from _attribs_raw."""
+        return super()._safe_float_from_dict(self._attribs_raw, key)
+
+    def _get_str(self, key: str) -> str | None:
+        """Return str value from _attribs_raw."""
+        return super()._safe_str_from_dict(self._attribs_raw, key)
+
+    def _get_bool(self, key: str) -> bool | None:
+        """Return bool value from _attribs_raw."""
+        return super()._safe_bool_from_dict(self._attribs_raw, key)
+
+    def _get_list(self, key: str, value_type: type) -> list | None:
+        """Return list value from _attribs_raw."""
+        return super()._safe_list_from_dict(self._attribs_raw, key, value_type)
+
+    def _get_special(self, key: str, value_type: type) -> Any | None:
+        """Return specified type value from _attribs_raw."""
+        return super()._safe_special_from_dict(self._attribs_raw, key, value_type)

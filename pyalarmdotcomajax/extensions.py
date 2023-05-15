@@ -1,12 +1,12 @@
 """Configuration option extensions."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import asyncio
-from dataclasses import dataclass
-from enum import Enum, auto
 import logging
 import re
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any
 
 import aiohttp
@@ -267,9 +267,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         try:
             additional_camera_config_ids: list[str] = []
 
-            async with self._websession.get(
-                url=self.ENDPOINT, headers=self._headers
-            ) as resp:
+            async with self._websession.get(url=self.ENDPOINT, headers=self._headers) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 # log.debug("Response text from Alarm.com: %s", text)
@@ -278,9 +276,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Build list of cameras (everything or selection from camera_names)
 
                 child: Tag
-                for child in tree.select_one(
-                    "#ctl00_phBody_CamSelector_ddlCams"
-                ).findChildren():
+                for child in tree.select_one("#ctl00_phBody_CamSelector_ddlCams").findChildren():
                     camera_config_id: str = child.attrs.get("value")
                     if child.attrs.get("selected") == "selected":
                         # Retrieve data for camera on current page.
@@ -302,9 +298,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
             raise err
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract page info from Alarm.com.")
-            log.debug(
-                "====== HTTP DUMP BEGIN ======\n%s\n====== HTTP DUMP END ======", text
-            )
+            log.debug("====== HTTP DUMP BEGIN ======\n%s\n====== HTTP DUMP END ======", text)
             raise UnexpectedDataStructure from err
 
         #
@@ -330,9 +324,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                     tree = BeautifulSoup(text, "html.parser")
 
                     # Pull data for camera on current page
-                    camera_return_data.append(
-                        current_form_data := self._extract_fields(config_id, tree)
-                    )
+                    camera_return_data.append(current_form_data := self._extract_fields(config_id, tree))
         except (
             asyncio.TimeoutError,
             aiohttp.ClientError,
@@ -359,10 +351,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         # For volume adjustable chimes (outdoor),  When on, either 1 for low, 2 for medium, 3 for high, or 0 for off.
 
         log.debug(
-            (
-                "CameraSkybellControllerExtension -> submit_change(): Requested change"
-                " for %s: %s to %s."
-            ),
+            "CameraSkybellControllerExtension -> submit_change(): Requested change for %s: %s to %s.",
             camera_name,
             slug,
             new_value,
@@ -386,9 +375,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         except KeyError as err:
             raise UnexpectedDataStructure("Slug not found.") from err
 
-        log.debug(
-            "CameraSkybellControllerExtension -> submit_change(): Validating input."
-        )
+        log.debug("CameraSkybellControllerExtension -> submit_change(): Validating input.")
 
         #
         # VALIDATE INPUT
@@ -404,14 +391,8 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         if field_value_type == int:
             if (
-                (
-                    (value_max := field_config_options.value_max)
-                    and new_value > value_max
-                )
-                or (
-                    (value_min := field_config_options.value_min)
-                    and new_value < value_min
-                )
+                ((value_max := field_config_options.value_max) and new_value > value_max)
+                or ((value_min := field_config_options.value_min) and new_value < value_min)
                 or not (isinstance(new_value, int))
             ):
                 raise ValueError
@@ -420,14 +401,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         if field_value_type == str:
             if (
-                (value_regex := field_config_options.value_regex)
-                and not re.search(value_regex, new_value)
+                (value_regex := field_config_options.value_regex) and not re.search(value_regex, new_value)
             ) or not isinstance(new_value, str):
                 raise ValueError
 
-        log.debug(
-            "CameraSkybellControllerExtension -> submit_change(): Refreshing settings."
-        )
+        log.debug("CameraSkybellControllerExtension -> submit_change(): Refreshing settings.")
 
         #
         # Refresh settings data to prime submission payload.
@@ -442,10 +420,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         ):
             raise UnexpectedDataStructure("Failed to refresh settings data for device.")
 
-        log.debug(
-            "CameraSkybellControllerExtension -> submit_change(): Creating response"
-            " payload."
-        )
+        log.debug("CameraSkybellControllerExtension -> submit_change(): Creating response payload.")
 
         #
         # Process into response payload.
@@ -514,10 +489,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         debug_payload.pop("__VIEWSTATE")
 
         log.debug(
-            (
-                "======= POST PAYLOAD - BEGIN =======\n\n%s\n\n======= POST"
-                " PAYLOAD - END ======="
-            ),
+            "======= POST PAYLOAD - BEGIN =======\n\n%s\n\n======= POST PAYLOAD - END =======",
             debug_payload,
         )
 
@@ -557,15 +529,13 @@ class CameraSkybellControllerExtension(ControllerExtension):
             "__SCROLLPOSITIONX": "0",
             "__SCROLLPOSITIONY": "0",
             "ctl00$phBody$CamSelector$ddlPage": "CameraInfo",
-            "ctl00$phBody$AutomaticClipDonationSettings$ShowClipDonationLegalAgreement": (
-                "1"
-            ),
+            "ctl00$phBody$AutomaticClipDonationSettings$ShowClipDonationLegalAgreement": "1",
             "ctl00$phBody$tfSave": "Save",
             "ctl00$phBody$bridgeInfo$wirelessSettings$rblEncryption": "MakeASelection",
             "ctl00$phBody$bridgeInfo$wirelessSettings$rblAlgoritm": "MakeASelection",
             "ctl00$phBody$fwUpgradeModalTailTextBox": (
-                "Firmware upgrade is complete. You can check the video device status"
-                " after closing this dialog box."
+                "Firmware upgrade is complete. You can check the video device status after closing this dialog"
+                " box."
             ),
         }
 
@@ -574,9 +544,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         return static_form_data
 
-    def _extract_fields(
-        self, config_id: str, tree: BeautifulSoup
-    ) -> ExtendedProperties:
+    def _extract_fields(self, config_id: str, tree: BeautifulSoup) -> ExtendedProperties:
         """Extract data from camera config page."""
 
         # To prevent a single Skybell error from throwing an exception, missing fields will have values set to empty strings.
@@ -701,3 +669,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
         properties.raw_attribs = raw_attribs
 
         return properties
+
+
+ControllerExtensions_t = CameraSkybellControllerExtension

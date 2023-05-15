@@ -1,15 +1,12 @@
 """Shared constants."""
 
+# WEBSOCKETS: BEGIN
+WS_EVENT = "ws_event"
+
 # URLS: BEGIN
 URL_BASE = "https://www.alarm.com/"
 PROVIDER_INFO_TEMPLATE = "{}/web/api/appload"
-TROUBLECONDITIONS_URL_TEMPLATE = (
-    "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
-)
-IMAGE_SENSOR_DATA_URL_TEMPLATE = (
-    "{}/web/api/imageSensor/imageSensorImages/getRecentImages"
-)
+TROUBLECONDITIONS_URL_TEMPLATE = "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
+IMAGE_SENSOR_DATA_URL_TEMPLATE = "{}/web/api/imageSensor/imageSensorImages/getRecentImages"
 IDENTITIES_URL_TEMPLATE = "{}/web/api/identities/{}"
 # URLS: END
-
-SUPPORTED_DEVICE_TYPE_REFRESH_INTERVAL_MIN = 10

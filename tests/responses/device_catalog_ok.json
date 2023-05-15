@@ -1,0 +1,1655 @@
+{
+  "data": {
+    "id": 13276704,
+    "type": "settings/manage-devices/device-catalog",
+    "attributes": {
+      "availableManagedDeviceFilters": {
+        "2": "Detectors",
+        "4": "Lights",
+        "6": "Mobile Devices",
+        "8": "Security",
+        "10": "Thermostats",
+        "12": "Voice Assistants"
+      },
+      "canAddDevices": true
+    },
+    "relationships": {
+      "managedDeviceCategories": {
+        "data": [
+          {
+            "id": "2",
+            "type": "settings/manage-devices/managed-device-category"
+          },
+          {
+            "id": "4",
+            "type": "settings/manage-devices/managed-device-category"
+          },
+          {
+            "id": "6",
+            "type": "settings/manage-devices/managed-device-category"
+          },
+          {
+            "id": "8",
+            "type": "settings/manage-devices/managed-device-category"
+          },
+          {
+            "id": "10",
+            "type": "settings/manage-devices/managed-device-category"
+          },
+          {
+            "id": "12",
+            "type": "settings/manage-devices/managed-device-category"
+          }
+        ],
+        "meta": {
+          "count": "6"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "id-camera-skybell",
+      "type": "video/camera",
+      "attributes": {
+        "supportsSnapShot": false,
+        "canTakeSnapshot": false,
+        "canRequestRecording": false,
+        "canUploadClips": true,
+        "hasSvrSchedule": false,
+        "excludedFromVisualVerification": false,
+        "liveViewHdToggleEnabled": true,
+        "supports4MPStreaming": false,
+        "canPlaySiren": false,
+        "isSirenEnabled": false,
+        "isSirenOn": false,
+        "canPanTilt": false,
+        "maxPanTiltLevel": 0,
+        "canZoom": false,
+        "maxZoomLevel": 0,
+        "minZoomLevelForPanTilt": 0,
+        "panTiltPresets": [],
+        "preferredPanTiltPreset": null,
+        "isUnreachable": false,
+        "lastSuccessfulSupervision": null,
+        "canStreamToPanel": true,
+        "canChangeStreamToPanel": false,
+        "canStreamToPanelBeEnabled": true,
+        "isStreamToPanelEnabled": false,
+        "doorbellChimeType": 0,
+        "isBatteryCameraAndUsingGatewayForBackendAccess": false,
+        "supportsVmdSchedules": false,
+        "deviceImagePath": "/web/webimages/camera_images/SkyBellHD_64px.png?v=2",
+        "deviceModel": "SKYBELLHD",
+        "macAddress": "12:34:56:78:9A:BC",
+        "firmwareVersion": "1.5",
+        "publicIp": null,
+        "privateIp": null,
+        "port": null,
+        "httpsPort": null,
+        "shouldUseEntireImageForSnapshot": false,
+        "hasDdnsed": false,
+        "usageProtocolMapping": {
+          "6": 1,
+          "10": 1,
+          "18": 3
+        },
+        "isVirtualCamera": false,
+        "isVarifocalCamera": false,
+        "hasSdRecordingSchedule": false,
+        "supportsLiveView": false,
+        "forcedAspectRatio": null,
+        "canBeSaved": false,
+        "canChangeDescription": false,
+        "description": "Front Doorbell",
+        "deviceModelId": 0,
+        "canConfirmStateChange": false,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": false,
+        "hasPermissionToChangeState": false,
+        "deviceIcon": {
+          "icon": 27
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": null
+      },
+      "relationships": {
+        "videoEvents": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "videoSource": {
+          "data": {
+            "id": "555555555-91",
+            "type": "video/liveVideoSource"
+          }
+        },
+        "videoSourceHd": {
+          "data": {
+            "id": "555555555-92",
+            "type": "video/liveVideoHighestResSource"
+          }
+        },
+        "svrVideoSource": {
+          "data": {
+            "id": "555555555-93",
+            "type": "video/videoSources/svrVideoSource"
+          }
+        },
+        "svrScrubberThumbnailEndpoint": {
+          "data": {
+            "id": "555555555-94",
+            "type": "video/svrThumbnailEndpoint"
+          }
+        },
+        "cameraSiren": {
+          "data": null
+        },
+        "privacyZonesSetting": {
+          "data": null
+        },
+        "snapshot": {
+          "data": {
+            "id": "555555555-95",
+            "type": "video/snapshot"
+          }
+        },
+        "system": {
+          "data": {
+            "id": "555555555-96",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-garage-detached",
+      "type": "devices/garage-door",
+      "attributes": {
+        "state": 2,
+        "desiredState": 2,
+        "managedDeviceType": 3,
+        "canAccessWebSettings": true,
+        "webSettings": 1003,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Detached Garage Door",
+        "deviceModelId": 9999,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 320
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-garage-right",
+      "type": "devices/garage-door",
+      "attributes": {
+        "state": 2,
+        "desiredState": 2,
+        "managedDeviceType": 3,
+        "canAccessWebSettings": true,
+        "webSettings": 1003,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Right Garage Door",
+        "deviceModelId": 9999,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 320
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-garage-left",
+      "type": "devices/garage-door",
+      "attributes": {
+        "state": 1,
+        "desiredState": 1,
+        "managedDeviceType": 3,
+        "canAccessWebSettings": true,
+        "webSettings": 1003,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Left Garage Door",
+        "deviceModelId": 9999,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 320
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-gate-driveway",
+      "type": "devices/gate",
+      "attributes": {
+        "state": 2,
+        "desiredState": 2,
+        "supportsRemoteClose": true,
+        "managedDeviceType": 5,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": true,
+        "webSettings": 1004,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "addDeviceResource": 0,
+        "canBeAssociatedToVideoDevice": false,
+        "associatedCameraDeviceIds": {},
+        "macAddress": "",
+        "manufacturer": "Chamberlain",
+        "isAssignedToCareReceiver": false,
+        "isOAuth": true,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Driveway Gate",
+        "deviceModelId": 9475,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 305
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-gate-driveway-2",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-light-balcony",
+      "type": "devices/light",
+      "attributes": {
+        "state": 2,
+        "desiredState": 2,
+        "isDimmer": true,
+        "isFavorite": false,
+        "lightLevel": 100,
+        "stateTrackingEnabled": true,
+        "shouldShowFavoritesToggle": false,
+        "canEnableRemoteCommands": true,
+        "canEnableStateTracking": false,
+        "supportsRGBColorControl": false,
+        "supportsWhiteLightColorControl": false,
+        "percentWarmth": 0,
+        "lightColorFormat": 0,
+        "hexColor": null,
+        "shouldUpdateMultiLevelState": false,
+        "managedDeviceType": 5,
+        "canAccessWebSettings": true,
+        "webSettings": 1017,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Balcony",
+        "deviceModelId": 4154,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 319
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "lightGroups": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-stateinfo-light-balcony",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-light-upstairs",
+      "type": "devices/light",
+      "attributes": {
+        "state": 3,
+        "desiredState": 3,
+        "isDimmer": false,
+        "isFavorite": false,
+        "lightLevel": 0,
+        "stateTrackingEnabled": true,
+        "shouldShowFavoritesToggle": false,
+        "canEnableRemoteCommands": true,
+        "canEnableStateTracking": false,
+        "supportsRGBColorControl": false,
+        "supportsWhiteLightColorControl": false,
+        "percentWarmth": 0,
+        "lightColorFormat": 0,
+        "hexColor": null,
+        "shouldUpdateMultiLevelState": false,
+        "managedDeviceType": 5,
+        "canAccessWebSettings": true,
+        "webSettings": 1017,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "Jasco",
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Upstairs Stairway",
+        "deviceModelId": 3597,
+        "canConfirmStateChange": false,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 319
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "lightGroups": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-lock-back",
+      "type": "devices/lock",
+      "attributes": {
+        "state": 2,
+        "desiredState": 2,
+        "maxUserCodeLength": 4,
+        "supportsScheduledUserCodes": true,
+        "supportsTemporaryUserCodes": true,
+        "supportsLatchControl": true,
+        "canEnableRemoteCommands": true,
+        "managedDeviceType": 6,
+        "canAccessWebSettings": true,
+        "webSettings": 1005,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Back Door",
+        "deviceModelId": 9999,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 28
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-lock-front",
+      "type": "devices/lock",
+      "attributes": {
+        "state": 1,
+        "desiredState": 1,
+        "maxUserCodeLength": 4,
+        "supportsScheduledUserCodes": false,
+        "supportsTemporaryUserCodes": false,
+        "supportsLatchControl": true,
+        "canEnableRemoteCommands": true,
+        "managedDeviceType": 6,
+        "canAccessWebSettings": true,
+        "webSettings": 1005,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": true,
+        "canAccessAppSettings": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": null,
+        "isOAuth": false,
+        "isZWave": true,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Front Door",
+        "deviceModelId": 9999,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 28
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-partition-house",
+      "type": "devices/partition",
+      "attributes": {
+        "partitionId": 1,
+        "state": 1,
+        "desiredState": 1,
+        "extendedArmingOptions": {
+          "Disarmed": [],
+          "ArmedStay": [2, 1, 0, 4],
+          "ArmedAway": [2, 1, 0, 4],
+          "ArmedNight": []
+        },
+        "invalidExtendedArmingOptions": {
+          "Disarmed": [],
+          "ArmedStay": [],
+          "ArmedAway": [],
+          "ArmedNight": []
+        },
+        "needsClearIssuesPrompt": false,
+        "canEnableAlexa": false,
+        "isAlexaEnabled": false,
+        "canAccessPanelWifi": true,
+        "canScanForWifi": true,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 9,
+        "canBeRenamed": true,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": true,
+        "webSettings": 1002,
+        "hasState": true,
+        "canBeDeleted": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "House",
+        "deviceModelId": 9609,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 184
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "sensors": {
+          "data": [
+            {
+              "id": "id-sensor-backdoor",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-bsmt_hallway_glass",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-kids_left_window",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-dad_iphone",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-carbon_monoxide",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-smoke-inter",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-smoke-laundry",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-camera-panel",
+              "type": "devices/sensor"
+            },
+            {
+              "id": "id-sensor-shared",
+              "type": "devices/sensor"
+            }
+          ],
+          "meta": {
+            "count": "9"
+          }
+        },
+        "cameras": {
+          "data": [
+            {
+              "id": "id-camera-skybell",
+              "type": "video/camera"
+            }
+          ],
+          "meta": {
+            "count": "1"
+          }
+        },
+        "garageDoors": {
+          "data": [
+            {
+              "id": "id-garage-right",
+              "type": "devices/garage-door"
+            },
+            {
+              "id": "id-garage-left",
+              "type": "devices/garage-door"
+            }
+          ],
+          "meta": {
+            "count": "2"
+          }
+        },
+        "gates": {
+          "data": [
+            {
+              "id": "id-gate-driveway",
+              "type": "devices/gate"
+            }
+          ],
+          "meta": {
+            "count": "1"
+          }
+        },
+        "thermostats": {
+          "data": [
+            {
+              "id": "id-tstat-upstairs",
+              "type": "devices/thermostat"
+            }
+          ],
+          "meta": {
+            "count": "1"
+          }
+        },
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "waterSensors": {
+          "data": [
+            {
+              "id": "id-water-kitchen",
+              "type": "devices/water-sensor"
+            },
+            {
+              "id": "id-water-basement",
+              "type": "devices/water-sensor"
+            }
+          ],
+          "meta": {
+            "count": "2"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-stateinfo-partition-house",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-partition-detached_garage",
+      "type": "devices/partition",
+      "attributes": {
+        "partitionId": 2,
+        "state": 1,
+        "desiredState": 1,
+        "extendedArmingOptions": {
+          "Disarmed": [],
+          "ArmedStay": [2, 1],
+          "ArmedAway": [2, 1],
+          "ArmedNight": []
+        },
+        "invalidExtendedArmingOptions": {
+          "Disarmed": [],
+          "ArmedStay": [],
+          "ArmedAway": [],
+          "ArmedNight": []
+        },
+        "needsClearIssuesPrompt": false,
+        "canEnableAlexa": false,
+        "isAlexaEnabled": false,
+        "canAccessPanelWifi": true,
+        "canScanForWifi": true,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 9,
+        "canBeRenamed": true,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": true,
+        "webSettings": 1002,
+        "hasState": true,
+        "canBeDeleted": false,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Detached Garage",
+        "deviceModelId": 9609,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 184
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "sensors": {
+          "data": [
+            {
+              "id": "id-sensor-shared",
+              "type": "devices/sensor"
+            }
+          ],
+          "meta": {
+            "count": "1"
+          }
+        },
+        "garageDoors": {
+          "data": [
+            {
+              "id": "id-garage-detached",
+              "type": "devices/garage-door"
+            }
+          ],
+          "meta": {
+            "count": "1"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-stateinfo-partition-detached_garage",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-sensor-backdoor",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 1,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Closed",
+        "isMonitoringEnabled": true,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 10,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Back Door",
+        "deviceModelId": 110,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 317
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": true,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-bsmt_hallway_glass",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 19,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Idle",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 10,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Basement Hallway Glass Break",
+        "deviceModelId": 128,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 317
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-kids_left_window",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 1,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Closed",
+        "isMonitoringEnabled": true,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 10,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Kid's Room Left Window",
+        "deviceModelId": 110,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 317
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": true,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-dad_iphone",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 69,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Closed",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 10,
+        "hasState": true,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Dad's iPhone",
+        "deviceModelId": 821,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 317
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-carbon_monoxide",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 6,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Closed",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 2,
+        "hasState": false,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Interconnected Carbon Monoxide Detectors",
+        "deviceModelId": 115,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 218
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-smoke-inter",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 5,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Not Reset",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 2,
+        "hasState": false,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Interconnected Smoke Detectors",
+        "deviceModelId": 114,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 218
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-shared",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 5,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Not Reset",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 2,
+        "hasState": false,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Shared Sensor",
+        "deviceModelId": 114,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 218
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-smoke-laundry",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 5,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Not Reset",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 2,
+        "hasState": false,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Laundry Room Smoke Detector",
+        "deviceModelId": 114,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 218
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-sensor-camera-panel",
+      "type": "devices/sensor",
+      "attributes": {
+        "deviceType": 68,
+        "openClosedStatus": 2,
+        "state": 1,
+        "isFlexIO": false,
+        "deviceRole": 0,
+        "displayStateText": "Idle",
+        "isMonitoringEnabled": false,
+        "sensorNamingFormat": 3,
+        "managedDeviceType": 10,
+        "hasState": true,
+        "canBeRenamed": false,
+        "canBeDeleted": false,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": false,
+        "webSettings": 400,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "macAddress": "",
+        "manufacturer": "",
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Panel Camera",
+        "deviceModelId": 818,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 317
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": []
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-tstat-upstairs",
+      "type": "devices/thermostat",
+      "attributes": {
+        "requiresSetup": false,
+        "forwardingAmbientTemp": 72.0,
+        "minHeatSetpoint": 45.0,
+        "maxHeatSetpoint": 79.0,
+        "minCoolSetpoint": 65.0,
+        "maxCoolSetpoint": 92.0,
+        "minAuxHeatSetpoint": 45.0,
+        "maxAuxHeatSetpoint": 79.0,
+        "heatSetpoint": 68.0,
+        "desiredHeatSetpoint": 68.0,
+        "coolSetpoint": 73.0,
+        "desiredCoolSetpoint": 73.0,
+        "homeHeatSetpoint": 70.0,
+        "homeCoolSetpoint": 75.0,
+        "awayHeatSetpoint": 65.0,
+        "awayCoolSetpoint": 78.0,
+        "sleepHeatSetpoint": 67.0,
+        "sleepCoolSetpoint": 77.0,
+        "setpointOffset": 1.0,
+        "autoSetpointBuffer": 6.0,
+        "thirdPartySettingsUrlDesc": null,
+        "thirdPartySettingsUrl": null,
+        "state": 4,
+        "desiredState": 4,
+        "inferredState": 3,
+        "scheduleMode": 1,
+        "fanMode": 0,
+        "desiredFanMode": 0,
+        "fanDuration": null,
+        "localDisplayLockingMode": 0,
+        "desiredLocalDisplayLockingMode": null,
+        "hasRtsIssue": false,
+        "isControlled": false,
+        "supportsSetpoints": true,
+        "isPoolController": false,
+        "supportsOffMode": true,
+        "supportsHeatMode": true,
+        "supportsCoolMode": true,
+        "supportsAutoMode": true,
+        "supportsSmartSchedules": false,
+        "supportsAuxHeatMode": false,
+        "supportsSchedules": true,
+        "supportsFanMode": true,
+        "supportsIndefiniteFanOn": false,
+        "supportedFanDurations": [1, 2, 3, 24],
+        "supportsCirculateFanModeAlways": false,
+        "supportsCirculateFanModeWhenOff": false,
+        "supportsRts": null,
+        "supportsLocalDisplayLocking": false,
+        "supportsPartialLocalDisplayLocking": false,
+        "supportsHvacAnalytics": false,
+        "supportsThirdPartySettings": false,
+        "hasPendingTempModeChange": false,
+        "hasPendingSetpointChange": false,
+        "hasPendingHeatSetpointChange": false,
+        "hasPendingCoolSetpointChange": false,
+        "ambientTemp": 72.0,
+        "isPaired": false,
+        "supportsPairing": false,
+        "tempForwardingActive": true,
+        "supportsHumidity": false,
+        "humidityLevel": 69,
+        "managedDeviceType": 15,
+        "hasState": true,
+        "canBeRenamed": false,
+        "canBeDeleted": true,
+        "canAccessWebSettings": true,
+        "canAccessAppSettings": true,
+        "webSettings": 1011,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "canBeLinkedToVideoDevice": false,
+        "videoDeviceLinkDeviceIds": {},
+        "macAddress": "",
+        "manufacturer": "ecobee",
+        "isOAuth": true,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": false,
+        "description": "Upstairs",
+        "deviceModelId": 10023,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": true,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 37
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false
+      },
+      "relationships": {
+        "ruleSuggestions": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "thermostatSettingsTemplate": {
+          "data": null
+        },
+        "remoteTemperatureSensors": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "boilerControlSystem": {
+          "data": null
+        },
+        "valveSwitches": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "peakProtect": {
+          "data": {
+            "id": "id-auto-peak-protect-tstat-upstairs",
+            "type": "automation/peak-protect"
+          }
+        },
+        "controlledThermostats": {
+          "data": [],
+          "meta": {
+            "count": "0"
+          }
+        },
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": null
+        }
+      }
+    },
+    {
+      "id": "id-water-kitchen",
+      "type": "devices/water-sensor",
+      "attributes": {
+        "deviceType": null,
+        "openClosedStatus": null,
+        "state": 5,
+        "displayStateText": "Dry",
+        "isNormalActivityMonitoringEligible": false,
+        "hasNormalActivityMonitoring": false,
+        "sensorNamingFormat": 3,
+        "hasState": true,
+        "managedDeviceType": 19,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": false,
+        "canAccessAppSettings": false,
+        "webSettings": 1001,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "addDeviceResource": 0,
+        "canBeAssociatedToVideoDevice": false,
+        "associatedCameraDeviceIds": {},
+        "macAddress": "",
+        "manufacturer": null,
+        "isAssignedToCareReceiver": false,
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Kitchen Water Sensor",
+        "deviceModelId": 125,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 318
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-stateinfo-water-kitchen",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    },
+    {
+      "id": "id-water-basement",
+      "type": "devices/water-sensor",
+      "attributes": {
+        "deviceType": null,
+        "openClosedStatus": null,
+        "state": 5,
+        "displayStateText": "Dry",
+        "isNormalActivityMonitoringEligible": false,
+        "hasNormalActivityMonitoring": false,
+        "sensorNamingFormat": 3,
+        "hasState": true,
+        "managedDeviceType": 19,
+        "canBeRenamed": true,
+        "canBeDeleted": false,
+        "canAccessWebSettings": false,
+        "canAccessAppSettings": false,
+        "webSettings": 1001,
+        "canAccessTroubleshootingWizard": false,
+        "troubleshootingWizard": null,
+        "addDeviceResource": 0,
+        "canBeAssociatedToVideoDevice": false,
+        "associatedCameraDeviceIds": {},
+        "macAddress": "",
+        "manufacturer": null,
+        "isAssignedToCareReceiver": false,
+        "isOAuth": false,
+        "isZWave": false,
+        "supportsCommandClassBasic": false,
+        "isMalfunctioning": false,
+        "canBeSaved": true,
+        "canChangeDescription": true,
+        "description": "Basement Water Sensor",
+        "deviceModelId": 125,
+        "canConfirmStateChange": true,
+        "canReceiveCommands": false,
+        "remoteCommandsEnabled": true,
+        "hasPermissionToChangeState": true,
+        "deviceIcon": {
+          "icon": 318
+        },
+        "batteryLevelNull": null,
+        "lowBattery": false,
+        "criticalBattery": false
+      },
+      "relationships": {
+        "system": {
+          "data": {
+            "id": "id-system",
+            "type": "systems/system"
+          }
+        },
+        "stateInfo": {
+          "data": {
+            "id": "id-stateinfo-water-basement",
+            "type": "devices/state-info"
+          }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "transformer_version": "2.0"
+  }
+}
