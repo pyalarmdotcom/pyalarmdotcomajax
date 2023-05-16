@@ -3,7 +3,7 @@
 Based on https://github.com/uvjustin/pyalarmdotcomajax/pull/16 by Kevin David (@kevin-david)
 """
 
-# ruff: noqa: T201
+# ruff: noqa: T201 C901
 
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ from . import AlarmController, AuthResult
 from .devices import BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
-from .devices.system import System
 from .errors import (
     InvalidConfigurationOption,
     NagScreen,
@@ -471,13 +470,6 @@ def _print_element_tearsheet(
     else:
         battery = None
 
-    # DESIRED STATE
-    desired_str = (
-        f" (Desired: {element.desired_state.name})"
-        if isinstance(element, System) and element.desired_state
-        else ""
-    )
-
     # ATTRIBUTES
     output_str += "ATTRIBUTES: "
 
@@ -486,7 +478,7 @@ def _print_element_tearsheet(
             output_str += f'[TYPE: {element.device_subtype.name.title().replace("_"," ")}] '
 
         if element.state:
-            output_str += f"[STATE: {element.state.name.title()}{desired_str}] "
+            output_str += f"[STATE: {element.state.name.title()}] "
 
         if battery:
             output_str += f"[BATTERY: {battery}] "

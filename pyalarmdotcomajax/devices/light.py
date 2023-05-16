@@ -4,13 +4,13 @@ from __future__ import annotations
 import logging
 from enum import Enum
 
-from pyalarmdotcomajax.devices import BaseDevice, DesiredStateMixin, DeviceType
+from pyalarmdotcomajax.devices import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
 # WebSocket Handler: https://www.alarm.com/web/system/assets/customer-ember/websockets/handlers/lights.ts
-class Light(DesiredStateMixin, BaseDevice):
+class Light(BaseDevice):
     """Represent Alarm.com light element."""
 
     ATTRIB_LIGHT_LEVEL = "lightLevel"

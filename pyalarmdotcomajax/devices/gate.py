@@ -7,12 +7,12 @@ from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
-from . import BaseDevice, DesiredStateMixin
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class Gate(DesiredStateMixin, BaseDevice):
+class Gate(BaseDevice):
     """Represent Alarm.com gate element."""
 
     @dataclass

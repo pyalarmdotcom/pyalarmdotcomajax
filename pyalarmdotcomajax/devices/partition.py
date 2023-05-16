@@ -7,12 +7,12 @@ from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
-from . import BaseDevice, DesiredStateMixin
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class Partition(DesiredStateMixin, BaseDevice):
+class Partition(BaseDevice):
     """Represent Alarm.com partition element."""
 
     class ExtendedArmingOption(Enum):

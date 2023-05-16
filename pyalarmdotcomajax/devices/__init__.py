@@ -7,7 +7,7 @@ from abc import ABC
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Protocol, TypedDict
+from typing import Any, TypedDict
 
 import aiohttp
 
@@ -67,31 +67,6 @@ class TroubleCondition(TypedDict):
     device_id: str
 
 
-class DesiredStateProtocol(Protocol):
-    """Private variables for DesiredStateMixin."""
-
-    _attribs_raw: dict
-    desired_state: Enum | None
-    has_state: bool
-    state: Enum | None
-    DeviceState: type[Enum]
-
-
-class DesiredStateMixin:
-    """Mixin decorator for entities with desired_state attribute."""
-
-    @property
-    def desired_state(self: DesiredStateProtocol) -> Enum | None:
-        """Return state."""
-
-        try:
-            state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
-        except (ValueError, TypeError):
-            return None
-
-        return state
-
-
 class DeviceTypeSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
@@ -103,8 +78,6 @@ class BaseDevice(ABC, CastingMixin):
 
     _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
     _ATTRIB_STATE = "state"
-
-    ATTRIB_DESIRED_STATE = "desiredState"
 
     def __init__(
         self,
@@ -223,7 +196,7 @@ class BaseDevice(ABC, CastingMixin):
         return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
 
     @property
-    def mac_address(self) -> bool | None:
+    def mac_address(self) -> str | None:
         """Return device MAC address."""
         return self._attribs_raw.get("macAddress")
 
@@ -312,10 +285,6 @@ class BaseDevice(ABC, CastingMixin):
     @property
     def attributes(self) -> DeviceAttributes | None:
         """Hold non-primary device state attributes. To be overridden by children."""
-
-    @property
-    def desired_state(self) -> Enum | None:
-        """Return state. To be overridden by children."""
 
     def process_device_type_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""

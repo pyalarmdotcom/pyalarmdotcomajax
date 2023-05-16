@@ -17,7 +17,7 @@ from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.errors import UnsupportedDevice
+from pyalarmdotcomajax.errors import UnkonwnDevice, UnsupportedDevice
 from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
@@ -111,10 +111,13 @@ class DeviceRegistry:
         """Return devices."""
         return self._devices
 
-    def get(self, device_id: str) -> AllDevices_t | None:
+    def get(self, device_id: str) -> AllDevices_t:
         """Get device by id."""
 
-        return self._devices.get(device_id)
+        try:
+            return self._devices[device_id]
+        except KeyError:
+            raise UnkonwnDevice(f"Device with id {device_id} not found.")
 
     def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""
