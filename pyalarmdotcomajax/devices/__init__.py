@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, TypedDict
@@ -90,7 +90,7 @@ class BaseDevice(ABC, CastingMixin):
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
         settings: dict | None = None,  # slug: ConfigurationOption
-        external_update_callback: Awaitable | None = None,  # Called when device is updated via WebSockets.
+        external_update_callback: Callable | None = None,  # Called when device is updated via WebSockets.
     ) -> None:
         """Initialize base element class."""
 
@@ -111,7 +111,7 @@ class BaseDevice(ABC, CastingMixin):
             raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
         )
         self._partition_id: str | None = partition_id
-        self.external_update_callback: Awaitable | None = external_update_callback
+        self.external_update_callback: Callable | None = external_update_callback
 
         self.process_device_type_specific_data()
 
@@ -244,7 +244,7 @@ class BaseDevice(ABC, CastingMixin):
         log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
 
         if self.external_update_callback:
-            await self.external_update_callback
+            self.external_update_callback
 
     async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
         """Update device attribute when notified of externally-triggered change."""
@@ -252,7 +252,7 @@ class BaseDevice(ABC, CastingMixin):
         self._attribs_raw.update(new_attribute)
 
         if self.external_update_callback:
-            await self.external_update_callback
+            self.external_update_callback
 
     async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
         """Log externally-triggered attribute change."""
@@ -261,6 +261,16 @@ class BaseDevice(ABC, CastingMixin):
             f"{__name__} Got async update for {self.name} ({self.id_}) with new {attribute_name}:"
             f" {attribute_value}."
         )
+
+    def register_external_update_callback(self, callback: Callable) -> None:
+        """Register callback to be called when device state changes."""
+
+        self.external_update_callback = callback
+
+    def unregister_external_update_callback(self) -> None:
+        """Unregister callback to be called when device state changes."""
+
+        self.external_update_callback = None
 
     # #
     # PLACEHOLDERS

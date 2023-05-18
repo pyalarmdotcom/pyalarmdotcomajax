@@ -32,11 +32,8 @@
                 "editor.formatOnSave": true,
                 "editor.formatOnType": true,
                 "python.analysis.autoSearchPaths": false,
-                "python.analysis.extraPaths": ["/workspaces/pyalarmdotcomajax"],
-                "python.analysis.ignore": ["*"],
                 "python.formatting.provider": "none",
                 "python.linting.enabled": true,
-                "python.linting.mypyEnabled": true,
                 "python.testing.pytestEnabled": true,
                 "terminal.integrated.defaultProfile.linux": "bash",
                 "terminal.integrated.profiles.linux": {
