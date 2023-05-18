@@ -14,46 +14,42 @@ from typing import TypedDict
 import aiohttp
 from bs4 import BeautifulSoup
 
-from pyalarmdotcomajax.devices.partition import Partition
-from pyalarmdotcomajax.devices.registry import AllDevices_t
-from pyalarmdotcomajax.websockets.client import WebSocketClient
-
-from . import const as c
-from .devices import (
+from pyalarmdotcomajax import const as c
+from pyalarmdotcomajax.devices import (
     BaseDevice,
     DeviceTypeSpecificData,
     TroubleCondition,
 )
-from .devices.registry import AttributeRegistry, DeviceRegistry, DeviceType
-from .errors import (
+from pyalarmdotcomajax.devices.partition import Partition
+from pyalarmdotcomajax.devices.registry import (
+    AllDevices_t,
+    AttributeRegistry,
+    DeviceRegistry,
+    DeviceType,
+)
+from pyalarmdotcomajax.errors import (
     AuthenticationFailed,
     DataFetchFailed,
-    NagScreen,
     TryAgain,
+    TwoFactor_ConfigurationRequired,
+    TwoFactor_OtpRequired,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
-from .extensions import (
+from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
     ControllerExtensions_t,
     ExtendedProperties,
 )
+from pyalarmdotcomajax.websockets.client import WebSocketClient
 
 # TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
 # TODO: Fix get raw server response function.
 
-__version__ = "0.5.0-beta.2"
+__version__ = "0.5.0-beta.3"
 
 log = logging.getLogger(__name__)
-
-
-class AuthResult(Enum):
-    """Standard for reporting results of login attempt."""
-
-    SUCCESS = "success"
-    OTP_REQUIRED = "otp_required"
-    ENABLE_TWO_FACTOR = "enable_two_factor"
 
 
 class ExtensionResults(TypedDict):
@@ -102,9 +98,7 @@ class AlarmController:
     LOGIN_2FA_TRUST_URL_TEMPLATE = (
         "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
     )
-    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = (
-        "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
-    )
+    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaSms"
     LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
@@ -139,8 +133,6 @@ class AlarmController:
         # INITIALIZE
         #
 
-        self._factor_type_id: int | None = None
-        self._two_factor_method: OtpType | None = None
         self._provider_name: str | None = None
         self._user_id: str | None = None
         self._user_email: str | None = None
@@ -209,7 +201,9 @@ class AlarmController:
     #
     #
 
-    async def async_login(self, request_otp: bool = True) -> AuthResult:
+    async def async_login(
+        self,
+    ) -> None:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
 
@@ -219,35 +213,56 @@ class AlarmController:
             await self._async_login_and_get_key()
             await self._async_get_identity_info()
 
-            if not self._two_factor_cookie and await self._async_requires_2fa():
-                log.debug("Two factor authentication code or cookie required.")
+            # Check whether two factor authentication is required.
+            if not self._two_factor_cookie:
+                async with self._websession.get(
+                    url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
+                    headers=self._ajax_headers,
+                ) as resp:
+                    json_rsp = await resp.json()
 
-                if request_otp and self._two_factor_method in [
-                    OtpType.SMS,
-                    OtpType.EMAIL,
-                ]:
-                    await self.async_request_otp()
-
-                return AuthResult.OTP_REQUIRED
+                for error in (errors := json_rsp.get("errors", {})):
+                    if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
+                        log.debug("Two factor authentication code or cookie required.")
+                        raise TwoFactor_OtpRequired
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
             raise AuthenticationFailed from err
-        except NagScreen:
-            return AuthResult.ENABLE_TWO_FACTOR
+        except TwoFactor_ConfigurationRequired as err:
+            raise err
 
-        return AuthResult.SUCCESS
+        log.info("Logged in successfully.")
+        return None
 
-    async def async_request_otp(self) -> str | None:
+    async def async_get_enabled_2fa_methods(self) -> list[OtpType]:
+        """Get list of two factor authentication methods enabled on account."""
+
+        async with self._websession.get(
+            url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
+            headers=self._ajax_headers,
+        ) as resp:
+            json_rsp = await resp.json()
+            enabled_otp_types_bitmask = json_rsp.get("data", {}).get("attributes", {}).get("enabledTwoFactorTypes")
+            enabled_2fa_methods = [
+                otp_type for otp_type in OtpType if bool(enabled_otp_types_bitmask & otp_type.value)
+            ]
+            log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
+            return enabled_2fa_methods
+
+    async def async_request_otp(self, method: OtpType | None) -> None:
         """Request SMS/email OTP code from Alarm.com."""
+
+        if method not in (OtpType.EMAIL, OtpType.SMS):
+            return None
 
         try:
             log.debug("Requesting OTP code...")
 
             request_url = (
                 self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
-                if self._two_factor_method == OtpType.EMAIL
+                if method == OtpType.EMAIL
                 else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
             )
 
@@ -264,7 +279,7 @@ class AlarmController:
 
         return None
 
-    async def async_submit_otp(self, code: str, device_name: str | None = None) -> str | None:
+    async def async_submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> str | None:
         """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
@@ -274,13 +289,13 @@ class AlarmController:
         try:
             log.debug("Submitting OTP code...")
 
-            if not self._two_factor_method:
+            if not method:
                 raise AuthenticationFailed("Missing OTP type.")
 
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
-                json={"code": code, "typeOf2FA": self._two_factor_method.value},
+                json={"code": code, "typeOf2FA": method.value},
             ) as resp:
                 json_rsp = await resp.json()
 
@@ -820,48 +835,6 @@ class AlarmController:
         except TryAgain:
             return await self._async_get_devices_by_device_type(device_type=device_type, retry_on_failure=False)
 
-    async def _async_unmask_otp(self, enabled_otp_types: int) -> OtpType:
-        """Extract single OTP type from enabledTwoFactorTypes bitmask."""
-
-        if bool(enabled_otp_types & OtpType.APP.value):
-            return OtpType.APP
-        elif bool(enabled_otp_types & OtpType.SMS.value):
-            return OtpType.SMS
-        elif bool(enabled_otp_types & OtpType.EMAIL.value):
-            return OtpType.EMAIL
-        else:
-            raise ValueError(f"Unknown OTP type: {enabled_otp_types}")
-
-    async def _async_requires_2fa(self) -> bool | None:
-        """Check whether two factor authentication is enabled on the account."""
-        async with self._websession.get(
-            url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
-            headers=self._ajax_headers,
-        ) as resp:
-            json_rsp = await resp.json()
-
-        if (errors := json_rsp.get("errors")) and len(errors) > 0:
-            for error in errors:
-                if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
-                    log.debug("Two factor authentication is required. Getting details...")
-                    # Get 2FA type ID
-                    async with self._websession.get(
-                        url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
-                        headers=self._ajax_headers,
-                    ) as resp:
-                        json_rsp = await resp.json()
-
-                        if isinstance(factor_id := json_rsp.get("data", {}).get("id"), int):
-                            self._factor_type_id = factor_id
-                            self._two_factor_method = await self._async_unmask_otp(
-                                json_rsp.get("data", {}).get("attributes", {}).get("enabledTwoFactorTypes")
-                            )
-                            log.info("Requires 2FA. Using method %s", self._two_factor_method)
-                            return True
-
-        log.debug("Does not require 2FA.")
-        return False
-
     async def _async_get_identity_info(self) -> None:
         """Get user id, email address, provider name, etc."""
         try:
@@ -1053,7 +1026,7 @@ class AlarmController:
 
                 # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.
                 if re.search("concurrent-two-factor-authentication", str(resp.url)) is not None:
-                    raise NagScreen("Encountered 2FA nag screen.")
+                    raise TwoFactor_ConfigurationRequired("Encountered 2FA nag screen.")
 
                 # Update anti-forgery cookie
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value

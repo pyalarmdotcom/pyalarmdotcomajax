@@ -6,12 +6,12 @@ from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
-from . import BaseDevice, DesiredStateMixin
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class Lock(DesiredStateMixin, BaseDevice):
+class Lock(BaseDevice):
     """Represent Alarm.com sensor element."""
 
     class DeviceState(Enum):

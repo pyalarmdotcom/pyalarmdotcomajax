@@ -4,10 +4,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Protocol, TypedDict
+from typing import Any, TypedDict
 
 import aiohttp
 
@@ -67,31 +67,6 @@ class TroubleCondition(TypedDict):
     device_id: str
 
 
-class DesiredStateProtocol(Protocol):
-    """Private variables for DesiredStateMixin."""
-
-    _attribs_raw: dict
-    desired_state: Enum | None
-    has_state: bool
-    state: Enum | None
-    DeviceState: type[Enum]
-
-
-class DesiredStateMixin:
-    """Mixin decorator for entities with desired_state attribute."""
-
-    @property
-    def desired_state(self: DesiredStateProtocol) -> Enum | None:
-        """Return state."""
-
-        try:
-            state: Enum = self.DeviceState(self._attribs_raw.get("desiredState"))
-        except (ValueError, TypeError):
-            return None
-
-        return state
-
-
 class DeviceTypeSpecificData(TypedDict, total=False):
     """Hold entity-type-specific metadata."""
 
@@ -104,8 +79,6 @@ class BaseDevice(ABC, CastingMixin):
     _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
     _ATTRIB_STATE = "state"
 
-    ATTRIB_DESIRED_STATE = "desiredState"
-
     def __init__(
         self,
         id_: str,
@@ -117,7 +90,7 @@ class BaseDevice(ABC, CastingMixin):
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
         settings: dict | None = None,  # slug: ConfigurationOption
-        external_update_callback: Awaitable | None = None,  # Called when device is updated via WebSockets.
+        external_update_callback: Callable | None = None,  # Called when device is updated via WebSockets.
     ) -> None:
         """Initialize base element class."""
 
@@ -138,7 +111,7 @@ class BaseDevice(ABC, CastingMixin):
             raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
         )
         self._partition_id: str | None = partition_id
-        self.external_update_callback: Awaitable | None = external_update_callback
+        self.external_update_callback: Callable | None = external_update_callback
 
         self.process_device_type_specific_data()
 
@@ -223,7 +196,7 @@ class BaseDevice(ABC, CastingMixin):
         return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
 
     @property
-    def mac_address(self) -> bool | None:
+    def mac_address(self) -> str | None:
         """Return device MAC address."""
         return self._attribs_raw.get("macAddress")
 
@@ -271,7 +244,7 @@ class BaseDevice(ABC, CastingMixin):
         log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
 
         if self.external_update_callback:
-            await self.external_update_callback
+            self.external_update_callback
 
     async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
         """Update device attribute when notified of externally-triggered change."""
@@ -279,7 +252,7 @@ class BaseDevice(ABC, CastingMixin):
         self._attribs_raw.update(new_attribute)
 
         if self.external_update_callback:
-            await self.external_update_callback
+            self.external_update_callback
 
     async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
         """Log externally-triggered attribute change."""
@@ -288,6 +261,16 @@ class BaseDevice(ABC, CastingMixin):
             f"{__name__} Got async update for {self.name} ({self.id_}) with new {attribute_name}:"
             f" {attribute_value}."
         )
+
+    def register_external_update_callback(self, callback: Callable) -> None:
+        """Register callback to be called when device state changes."""
+
+        self.external_update_callback = callback
+
+    def unregister_external_update_callback(self) -> None:
+        """Unregister callback to be called when device state changes."""
+
+        self.external_update_callback = None
 
     # #
     # PLACEHOLDERS
@@ -312,10 +295,6 @@ class BaseDevice(ABC, CastingMixin):
     @property
     def attributes(self) -> DeviceAttributes | None:
         """Hold non-primary device state attributes. To be overridden by children."""
-
-    @property
-    def desired_state(self) -> Enum | None:
-        """Return state. To be overridden by children."""
 
     def process_device_type_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""

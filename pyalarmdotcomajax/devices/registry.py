@@ -17,7 +17,7 @@ from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.errors import UnsupportedDevice
+from pyalarmdotcomajax.errors import UnkonwnDevice, UnsupportedDevice
 from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
@@ -111,10 +111,13 @@ class DeviceRegistry:
         """Return devices."""
         return self._devices
 
-    def get(self, device_id: str) -> AllDevices_t | None:
+    def get(self, device_id: str) -> AllDevices_t:
         """Get device by id."""
 
-        return self._devices.get(device_id)
+        try:
+            return self._devices[device_id]
+        except KeyError:
+            raise UnkonwnDevice(f"Device with id {device_id} not found.")
 
     def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""
@@ -384,21 +387,21 @@ class AttributeRegistry:
             raise UnsupportedDevice from err
 
     @classproperty
-    def supported_device_types(cls) -> list[DeviceType]:
+    def supported_device_types(cls) -> list[DeviceType]:  # pylint: disable=no-self-argument
         """Return list of supported devices."""
         return [device_type for device_type in cls._ATTRIBUTES if cls._ATTRIBUTES[device_type].get("class_")]
 
     @classproperty
-    def unsupported_device_types(cls) -> list[DeviceType]:
+    def unsupported_device_types(cls) -> list[DeviceType]:  # pylint: disable=no-self-argument
         """Return list of supported devices."""
         return [device_type for device_type in cls._ATTRIBUTES if not cls._ATTRIBUTES[device_type].get("class_")]
 
     @classproperty
-    def endpoints(cls) -> dict[DeviceType, DeviceTypeEndpoints]:
+    def endpoints(cls) -> dict[DeviceType, DeviceTypeEndpoints]:  # pylint: disable=no-self-argument
         """Return all endpoints for all device types."""
         return {device_type: cls.get_endpoints(device_type) for device_type in cls._ATTRIBUTES}
 
     @classproperty
-    def all_relationship_ids(cls) -> list[str]:
+    def all_relationship_ids(cls) -> list[str]:  # pylint: disable=no-self-argument
         """Return all relationship ids for all device types."""
         return [device_type["rel_id"] for device_type in cls._ATTRIBUTES.values()]

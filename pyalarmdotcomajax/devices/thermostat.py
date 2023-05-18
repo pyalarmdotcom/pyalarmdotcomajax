@@ -8,12 +8,12 @@ from enum import Enum
 from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.errors import UnexpectedDataStructure
 
-from . import BaseDevice, DesiredStateMixin
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class Thermostat(DesiredStateMixin, BaseDevice):
+class Thermostat(BaseDevice):
     """Represent Alarm.com thermostat element."""
 
     # Fan duration of 0 is indefinite. otherwise value == hours.

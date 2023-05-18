@@ -1,34 +1,41 @@
 """Basic example for logging in using time-based one-time password via pyalarmdotcomajax."""
 
 import asyncio
+import logging
+import os
 import sys
 
 import aiohttp
 
 from pyalarmdotcomajax import AlarmController, OtpType
-from pyalarmdotcomajax.errors import (
-    AuthenticationFailed,
-    DataFetchFailed,
-    TwoFactor_OtpRequired,
-    TwoFactor_ConfigurationRequired,
-)
+from pyalarmdotcomajax.errors import TwoFactor_ConfigurationRequired, TwoFactor_OtpRequired
+from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
 
-USERNAME = "YOUR USERNAME"
-PASSWORD = "YOUR PASSWORD"
+USERNAME = os.environ.get("ADC_USERNAME")
+PASSWORD = os.environ.get("ADC_PASSWORD")
+TWOFA_COOKIE = os.environ.get("ADC_2FA_TOKEN")
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def main() -> None:
     """Request Alarm.com sensor data."""
+
+    if not (USERNAME and PASSWORD):
+        sys.exit("Missing account credentials.")
+
     async with aiohttp.ClientSession() as session:
         #
         # CREATE ALARM CONTROLLER
         #
 
-        alarm = AlarmController(username=USERNAME, password=PASSWORD, websession=session)
-
-        #
-        # LOG IN
-        #
+        alarm = AlarmController(
+            username=USERNAME,
+            password=PASSWORD,
+            websession=session,
+            twofactorcookie=TWOFA_COOKIE,
+        )
 
         try:
             await alarm.async_login()
@@ -52,8 +59,12 @@ async def main() -> None:
 
         await alarm.async_update()
 
-        for sensor in alarm.devices.sensors.values():
-            print(f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}")
+        #
+        # OPEN WEBSOCKET CONNECTION
+        #
+
+        ws_client = alarm.get_websocket_client()
+        await ws_client.async_connect()
 
 
 async def async_handle_otp_workflow(alarm: AlarmController) -> None:
@@ -101,5 +112,4 @@ async def async_handle_otp_workflow(alarm: AlarmController) -> None:
     await alarm.async_submit_otp(code=code, method=selected_otp_method)
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+asyncio.run(main())

@@ -14,11 +14,11 @@ class AuthenticationFailed(Exception):
     """Alarm.com authentication failure."""
 
 
-class TwoFactorAuthEnabled(Exception):
+class TwoFactor_OtpRequired(Exception):
     """User has two factor authentication enabled."""
 
 
-class NagScreen(Exception):
+class TwoFactor_ConfigurationRequired(Exception):
     """Client encountered Alarm.com nag screen to setup 2 factor authentication."""
 
 
