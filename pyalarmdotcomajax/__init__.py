@@ -414,6 +414,8 @@ class AlarmController:
                 ) as resp:
                     json_rsp = await resp.json()
 
+                    log.debug(f"Response from Alarm.com login: {resp.status} {resp.json()}")
+
                 for error in (errors := json_rsp.get("errors", {})):
                     if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
                         log.debug("Two factor authentication code or cookie required.")
