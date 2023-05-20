@@ -31,7 +31,7 @@
                 "editor.formatOnPaste": false,
                 "editor.formatOnSave": true,
                 "editor.formatOnType": true,
-                "python.analysis.autoSearchPaths": false,
+                "python.analysis.autoSearchPaths": true,
                 "python.formatting.provider": "none",
                 "python.linting.enabled": true,
                 "python.testing.pytestEnabled": true,

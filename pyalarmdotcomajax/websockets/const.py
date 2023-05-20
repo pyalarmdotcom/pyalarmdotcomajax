@@ -27,7 +27,9 @@ SUPPORTED_PROPERY_CHANGE_TYPES = [
 class EventType(Enum):
     """Enum for monitoring event types."""
 
+    #
     # Supported
+    #
     ArmedAway = 10
     ArmedNight = 113
     ArmedStay = 9
@@ -48,7 +50,9 @@ class EventType(Enum):
     ThermostatOffset = 105
     ThermostatSetPointChanged = 94
 
+    #
     # Not Supported
+    #
     Alarm = 1
     BypassStart = 13
     BypassEnd = 35
@@ -89,6 +93,9 @@ class EventType(Enum):
     SilentPolicePanic = 73
     SilentPolicePanicSuspectedAlarm = 172
     ViewedByCentralStation = 158
+
+    # Undocumented
+    UserLoggedIn = 55
 
 
 SUPPORTED_MONITORING_EVENT_TYPES = [

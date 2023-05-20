@@ -36,6 +36,7 @@ from .errors import (
 )
 from .extensions import ConfigurationOption
 from .helpers import ExtendedEnumMixin, slug_to_title
+from .websockets.client import WebSocketState
 
 CLI_CARD_BREAK = ""  # "--------"
 
@@ -412,8 +413,24 @@ async def cli() -> None:
 async def _async_stream_realtime(alarm: AlarmController) -> None:
     """Stream real-time updates via WebSockets."""
 
-    ws_client = alarm.get_websocket_client()
-    await ws_client.async_connect()
+    def ws_state_handler(state: WebSocketState) -> None:
+        """Handle websocket connection state changes."""
+
+        print(f"Websocket state changed to: {state.name}")
+
+    alarm.start_websocket(ws_state_handler)
+
+    try:
+        # Keep event loop alive until cancelled.
+        while True:
+            await asyncio.sleep(1)
+
+    except asyncio.CancelledError:
+        pass
+
+    finally:
+        # Close connection when cancelled.
+        alarm.stop_websocket()
 
 
 def _human_output(alarm: AlarmController) -> dict:
