@@ -114,7 +114,7 @@ async def handle_otp_workflow(alarm: AlarmController) -> None:
     # Request OTP
     #
 
-    if selected_otp_method in (OtpType.EMAIL, OtpType.SMS):
+    if selected_otp_method in (OtpType.email, OtpType.sms):
         # Ask Alarm.com to send OTP if selected method is EMAIL or SMS.
         print(f"Requesting One-Time Password via {selected_otp_method.name}...")
         await alarm.async_request_otp(selected_otp_method)

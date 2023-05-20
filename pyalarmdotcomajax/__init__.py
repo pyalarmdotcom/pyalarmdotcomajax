@@ -63,11 +63,12 @@ class OtpType(Enum):
     """Alarm.com two factor authentication type."""
 
     # https://www.alarm.com/web/system/assets/customer-ember/enums/TwoFactorAuthenticationType.js
+    # Keep these lowercase. Strings.json in Home Assistant requires lowercase values.
 
-    DISABLED = 0
-    APP = 1
-    SMS = 2
-    EMAIL = 4
+    disabled = 0
+    app = 1
+    sms = 2
+    email = 4
 
 
 class AlarmController:
@@ -449,7 +450,7 @@ class AlarmController:
     async def async_request_otp(self, method: OtpType | None) -> None:
         """Request SMS/email OTP code from Alarm.com."""
 
-        if method not in (OtpType.EMAIL, OtpType.SMS):
+        if method not in (OtpType.email, OtpType.sms):
             return None
 
         try:
@@ -457,7 +458,7 @@ class AlarmController:
 
             request_url = (
                 self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
-                if method == OtpType.EMAIL
+                if method == OtpType.email
                 else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
             )
 

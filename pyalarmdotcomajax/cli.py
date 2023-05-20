@@ -548,7 +548,7 @@ async def async_handle_otp_workflow(alarm: AlarmController, args: dict[str, Any]
     selected_otp_method: OtpType
     if code := args.get("one_time_password"):
         # If an OTP is provided directly in the CLI, it's from an OTP app.
-        selected_otp_method = OtpType.APP
+        selected_otp_method = OtpType.app
     else:
         cprint(
             "Two factor authentication is enabled for this user.",
@@ -581,7 +581,7 @@ async def async_handle_otp_workflow(alarm: AlarmController, args: dict[str, Any]
         # Request OTP
         #
 
-        if selected_otp_method in (OtpType.EMAIL, OtpType.SMS):
+        if selected_otp_method in (OtpType.email, OtpType.sms):
             # Ask Alarm.com to send OTP if selected method is EMAIL or SMS.
             cprint(f"Requesting One-Time Password via {selected_otp_method.name}...")
             await alarm.async_request_otp(selected_otp_method)
@@ -616,7 +616,7 @@ class EnumAction(argparse.Action):
             raise TypeError("type must be an Enum when using EnumAction")
 
         # Generate choices from the Enum
-        kwargs.setdefault("choices", tuple(e.name for e in enum_type if e != OtpType.DISABLED))
+        kwargs.setdefault("choices", tuple(e.name for e in enum_type if e != OtpType.disabled))
 
         super().__init__(**kwargs)
 
