@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+from collections.abc import Callable
 from enum import Enum
 
 import aiohttp
@@ -38,6 +40,15 @@ from pyalarmdotcomajax.websockets.messages import (
 log = logging.getLogger(__name__)
 
 
+class WebSocketState(Enum):
+    """Websocket state."""
+
+    DISCONNECTED = "disconnected"
+    RUNNING = "running"
+    STARTING = "starting"
+    STOPPED = "stopped"
+
+
 class WebSocketCloseCodes(Enum):
     """Enum for codes given by server on disconnect or reject."""
 
@@ -57,14 +68,33 @@ class WebSocketClient:
         websession: ClientSession,
         ajax_headers: dict,
         device_registry: DeviceRegistry,
+        ws_state_callback: Callable[[WebSocketState], None] | None = None,
     ) -> None:
         """Initialize."""
         self._websession: ClientSession = websession
         self._ajax_headers: dict = ajax_headers
         self._device_registry: DeviceRegistry = device_registry
         self._ws_auth_token: str | None = None
+        self._ws_connection: aiohttp.ClientWebSocketResponse | None = None
+        self._state = WebSocketState.STOPPED
+        self._ws_state_callback = ws_state_callback
+        self._loop = asyncio.get_running_loop()
 
-    async def async_connect(self) -> None:
+    @property
+    def state(self) -> WebSocketState:
+        """State of websocket."""
+        return self._state
+
+    @state.setter
+    def state(self, value: WebSocketState) -> None:
+        """Set state of websocket."""
+        self._state = value
+        log.debug("Websocket %s", value)
+
+        if self._ws_state_callback:
+            self._ws_state_callback(value)
+
+    async def _connect(self) -> None:
         """Connect to Alarm.com WebSocket."""
 
         # Get authentication token for websocket communication
@@ -75,20 +105,60 @@ class WebSocketClient:
         except (DataFetchFailed, AuthenticationFailed) as err:
             raise AuthenticationFailed from err
 
-        # Connect to websocket endpoint
-        async with self._websession.ws_connect(
-            self.WEBSOCKET_ENDPOINT_TEMPLATE.format(self._ws_auth_token), headers=self._ajax_headers, timeout=30
-        ) as websocket:
-            async for msg in websocket:
-                # Message is JSON but encoded as text.
-                if msg.type != aiohttp.WSMsgType.TEXT:
-                    pass
+        try:
+            # Connect to websocket endpoint
+            async with self._websession.ws_connect(
+                self.WEBSOCKET_ENDPOINT_TEMPLATE.format(self._ws_auth_token),
+                headers=self._ajax_headers,
+                timeout=30,
+            ) as websocket:
+                self.state = WebSocketState.RUNNING
 
-                try:
-                    await self._async_handle_message(json.loads(msg.data))
-                except (TypeError, ValueError):
-                    log.warning("Unable to parse message from Alarm.com: %s", msg.data)
-                    # TODO: On failure, refresh everything synchronous HTTP endpoints.
+                async for msg in websocket:
+                    if self.state == WebSocketState.STOPPED:
+                        break
+
+                    # Message is JSON but encoded as text.
+                    if msg.type != aiohttp.WSMsgType.TEXT:
+                        pass
+                    elif msg.type == aiohttp.WSMsgType.CLOSED:
+                        log.warning("AIOHTTP websocket connection closed")
+                        break
+
+                    elif msg.type == aiohttp.WSMsgType.ERROR:
+                        log.error("AIOHTTP websocket error: '%s'", msg.data)
+                        break
+
+                    try:
+                        await self._async_handle_message(json.loads(msg.data))
+                    except (TypeError, ValueError):
+                        log.warning("Unable to parse message from Alarm.com: %s", msg.data)
+                        # TODO: On failure, refresh everything synchronous HTTP endpoints.
+                        pass
+
+        except aiohttp.ClientConnectorError:
+            if self.state != WebSocketState.STOPPED:
+                log.error("WebSocket client connection error")
+                self.state = WebSocketState.DISCONNECTED
+
+        except Exception as err:
+            if self.state != WebSocketState.STOPPED:
+                log.error("Unexpected WebSocket error %s", err)
+                self.state = WebSocketState.DISCONNECTED
+
+        else:
+            if self.state != WebSocketState.STOPPED:
+                self.state = WebSocketState.DISCONNECTED
+
+    def start(self) -> None:
+        """Start websocket and update its state."""
+        if self.state != WebSocketState.RUNNING:
+            self.state = WebSocketState.STARTING
+            self._loop.create_task(self._connect())
+
+    def stop(self) -> None:
+        """Close websocket connection."""
+        self.state = WebSocketState.STOPPED
 
     async def _async_handle_message(self, raw_message: dict) -> None:
         """Handle incoming message from Alarm.com."""

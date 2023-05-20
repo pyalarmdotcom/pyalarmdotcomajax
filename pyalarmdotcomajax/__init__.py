@@ -6,7 +6,7 @@ import contextlib
 import json
 import logging
 import re
-from collections.abc import Awaitable
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from typing import TypedDict
@@ -42,12 +42,12 @@ from pyalarmdotcomajax.extensions import (
     ControllerExtensions_t,
     ExtendedProperties,
 )
-from pyalarmdotcomajax.websockets.client import WebSocketClient
+from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
 # TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
 # TODO: Fix get raw server response function.
 
-__version__ = "0.5.0-beta.3"
+__version__ = "0.5.0-beta.4"
 
 log = logging.getLogger(__name__)
 
@@ -117,7 +117,6 @@ class AlarmController:
         password: str,
         websession: aiohttp.ClientSession,
         twofactorcookie: str | None = None,
-        notify_on_update_callback: Awaitable | None = None,
     ):
         """Manage access to Alarm.com API and builds devices."""
 
@@ -138,7 +137,9 @@ class AlarmController:
         self._user_email: str | None = None
         self._active_system_id: str | None = None
         self._ajax_headers: dict = self.AJAX_HEADERS_TEMPLATE
-        self.notify_on_update_callback: Awaitable | None = notify_on_update_callback
+
+        self._ws_state_callback: Callable[[WebSocketState], None] | None = None
+        self._websocket: WebSocketClient | None = None
 
         self._partition_map: dict = (
             {}
@@ -201,6 +202,198 @@ class AlarmController:
     #
     #
 
+    async def async_update(self) -> None:  # noqa: C901
+        """Fetch latest device data."""
+
+        log.debug("Calling update on Alarm.com")
+
+        has_image_sensors: bool = False
+
+        if not self._active_system_id:
+            self._active_system_id = await self._async_get_active_system()
+            has_image_sensors = await self._async_has_image_sensors(self._active_system_id)
+
+        with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
+            await self._async_get_trouble_conditions()
+
+        #
+        # GET CORE DEVICE ATTRIBUTES
+        #
+
+        device_instances: dict[str, AllDevices_t] = {}
+        raw_devices: list[dict] = await self._async_get_system(self._active_system_id)
+        raw_devices.extend(await self._async_get_system_devices(self._active_system_id))
+
+        #
+        # QUERY MULTI-DEVICE EXTENSIONS
+        #
+
+        extension_results = await self._async_update__query_multi_device_extensions(raw_devices)
+
+        #
+        # QUERY IMAGE SENSORS
+        #
+        # Detailed image sensors data is not included in the main device catalog. It must be queried separately.
+        #
+        # TODO: Convert image sensors images to device extension. Merge entity_specific_data and settings; eliminate "additional endpoints" concept. Maybe push processing/placement into specific device class.
+
+        device_type_specific_data = {}
+
+        if has_image_sensors:
+            # Get detailed image sensor data and add to raw device list.
+            image_sensors = await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR)
+            raw_devices.extend(image_sensors)
+
+            # Get recent images
+            device_type_specific_data = await self._async_get_recent_images()
+
+        #
+        # BUILD PARTITIONS
+        #
+
+        # Ensure that partition map is built before devices are built.
+
+        for device in [
+            device
+            for device in raw_devices
+            if device["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
+        ]:
+            partition_instance: AllDevices_t = await self._async_update__build_device(
+                device, device_type_specific_data, extension_results
+            )
+
+            for child, _ in partition_instance.children:
+                self._partition_map[child] = partition_instance.id_
+
+            device_instances.update({partition_instance.id_: partition_instance})
+
+            raw_devices.remove(device)
+
+            #
+            # BUILD ALL DEVICES IN PARTITION
+            #
+            # This ensures that partition map is built before devices are built.
+
+            for device in raw_devices:
+                try:
+                    device_instance: AllDevices_t = await self._async_update__build_device(
+                        device, device_type_specific_data, extension_results
+                    )
+
+                    device_instances.update({device_instance.id_: device_instance})
+
+                except UnsupportedDevice:
+                    continue
+
+        self.devices.update(device_instances, purge=True)
+
+    async def async_send_command(
+        self,
+        device_type: DeviceType,
+        event: BaseDevice.Command,
+        device_id: str | None = None,  # ID corresponds to device_type
+        msg_body: dict = {},  # Body of request. No abstractions here.
+        retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
+    ) -> bool:
+        """Send commands to Alarm.com."""
+        log.info("Sending %s to Alarm.com.", event)
+
+        msg_body["statePollOnly"] = False
+
+        try:
+            url = (
+                f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
+            )
+        except KeyError as err:
+            raise UnsupportedDevice from err
+
+        log.debug("Url %s", url)
+
+        async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
+            log.debug("Response from Alarm.com %s", resp.status)
+
+            match str(resp.status):
+                case "200":
+                    # Update entities after calling state change.
+                    # TODO: Confirm that we can remove this call because of webhook support.
+                    # await self.async_update()
+                    return True
+
+                case "423":
+                    # User has read-only permission to the entity.
+                    err_msg = (
+                        f"{__name__}: User {self.user_email} has read-only access to"
+                        f" {device_type.name.lower()} {device_id}."
+                    )
+                    raise PermissionError(err_msg)
+
+                case "422":
+                    if isinstance(event, Partition.Command) and (msg_body.get("forceBypass") is True):
+                        # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
+                        log.debug(
+                            "Error executing %s, trying again without force bypass...",
+                            event.value,
+                        )
+
+                        # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
+
+                        msg_body["forceBypass"] = False
+
+                        return await self.async_send_command(
+                            device_type=device_type,
+                            event=event,
+                            device_id=device_id,
+                            msg_body=msg_body,
+                        )
+
+                case "403":
+                    # May have been logged out, try again
+                    log.warning(
+                        "Error executing %s, NOT logging in and trying again...",
+                        event.value,
+                    )
+
+                    return False
+                    # if retry_on_failure:
+                    #     await self.async_login()
+                    #     return await self.async_send_command(
+                    #         device_type,
+                    #         event,
+                    #         device_id,
+                    #         msg_body,
+                    #         False,
+                    #     )
+
+        log.error(
+            f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
+            f" {self._ajax_headers}"
+        )
+        raise ConnectionError
+
+    #
+    # WEBSOCKET FUNCTIONS
+    #
+
+    def start_websocket(self, ws_state_callback: Callable[[WebSocketState], None] | None = None) -> None:
+        """Construct and return a websocket client."""
+
+        self._ws_state_callback = ws_state_callback
+
+        self._websocket = WebSocketClient(
+            self._websession, self._ajax_headers, self.devices, self._ws_state_callback
+        )
+        self._websocket.start()
+
+    def stop_websocket(self) -> None:
+        """Close websession and websocket to UniFi."""
+        log.info("Closing WebSocket connection.")
+        if self._websocket:
+            self._websocket.stop()
+
+    #
+    # AUTHENTICATION FUNCTIONS
+    #
+
     async def async_login(
         self,
     ) -> None:
@@ -220,6 +413,8 @@ class AlarmController:
                     headers=self._ajax_headers,
                 ) as resp:
                     json_rsp = await resp.json()
+
+                    log.debug(f"Response from Alarm.com login: {resp.status} {resp.json()}")
 
                 for error in (errors := json_rsp.get("errors", {})):
                     if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
@@ -346,90 +541,24 @@ class AlarmController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
-    async def async_update(self) -> None:  # noqa: C901
-        """Fetch latest device data."""
+    #
+    #
+    #####################
+    # PRIVATE FUNCTIONS #
+    #####################
+    #
+    # Communicate directly with the ADC API
 
-        log.debug("Calling update on Alarm.com")
+    async def _async_keep_alive_login_check(self) -> bool:
+        """Check if we are logged in."""
 
-        has_image_sensors: bool = False
+        async with self._websession.get(
+            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
+            headers=self._ajax_headers,
+        ) as resp:
+            text_rsp = await resp.text()
 
-        if not self._active_system_id:
-            self._active_system_id = await self._async_get_active_system()
-            has_image_sensors = await self._async_has_image_sensors(self._active_system_id)
-
-        with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
-            await self._async_get_trouble_conditions()
-
-        #
-        # GET CORE DEVICE ATTRIBUTES
-        #
-
-        device_instances: dict[str, AllDevices_t] = {}
-        raw_devices: list[dict] = await self._async_get_system(self._active_system_id)
-        raw_devices.extend(await self._async_get_system_devices(self._active_system_id))
-
-        #
-        # QUERY MULTI-DEVICE EXTENSIONS
-        #
-
-        extension_results = await self._async_update__query_multi_device_extensions(raw_devices)
-
-        #
-        # QUERY IMAGE SENSORS
-        #
-        # Detailed image sensors data is not included in the main device catalog. It must be queried separately.
-        #
-        # TODO: Convert image sensors images to device extension. Merge entity_specific_data and settings; eliminate "additional endpoints" concept. Maybe push processing/placement into specific device class.
-
-        device_type_specific_data = {}
-
-        if has_image_sensors:
-            # Get detailed image sensor data and add to raw device list.
-            image_sensors = await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR)
-            raw_devices.extend(image_sensors)
-
-            # Get recent images
-            device_type_specific_data = await self._async_get_recent_images()
-
-        #
-        # BUILD PARTITIONS
-        #
-
-        # Ensure that partition map is built before devices are built.
-
-        for device in [
-            device
-            for device in raw_devices
-            if device["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
-        ]:
-            partition_instance: AllDevices_t = await self._async_update__build_device(
-                device, device_type_specific_data, extension_results
-            )
-
-            for child, _ in partition_instance.children:
-                self._partition_map[child] = partition_instance.id_
-
-            device_instances.update({partition_instance.id_: partition_instance})
-
-            raw_devices.remove(device)
-
-            #
-            # BUILD ALL DEVICES IN PARTITION
-            #
-            # This ensures that partition map is built before devices are built.
-
-            for device in raw_devices:
-                try:
-                    device_instance: AllDevices_t = await self._async_update__build_device(
-                        device, device_type_specific_data, extension_results
-                    )
-
-                    device_instances.update({device_instance.id_: device_instance})
-
-                except UnsupportedDevice:
-                    continue
-
-        self.devices.update(device_instances, purge=True)
+        return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
 
     async def _async_update__build_device(
         self,
@@ -564,111 +693,6 @@ class AlarmController:
                     }
 
         return results
-
-    async def async_send_command(
-        self,
-        device_type: DeviceType,
-        event: BaseDevice.Command,
-        device_id: str | None = None,  # ID corresponds to device_type
-        msg_body: dict = {},  # Body of request. No abstractions here.
-        retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
-    ) -> bool:
-        """Send commands to Alarm.com."""
-        log.info("Sending %s to Alarm.com.", event)
-
-        msg_body["statePollOnly"] = False
-
-        try:
-            url = (
-                f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
-            )
-        except KeyError as err:
-            raise UnsupportedDevice from err
-
-        log.debug("Url %s", url)
-
-        async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
-            log.debug("Response from Alarm.com %s", resp.status)
-
-            match str(resp.status):
-                case "200":
-                    # Update entities after calling state change.
-                    # TODO: Confirm that we can remove this call because of webhook support.
-                    # await self.async_update()
-                    return True
-
-                case "423":
-                    # User has read-only permission to the entity.
-                    err_msg = (
-                        f"{__name__}: User {self.user_email} has read-only access to"
-                        f" {device_type.name.lower()} {device_id}."
-                    )
-                    raise PermissionError(err_msg)
-
-                case "422":
-                    if isinstance(event, Partition.Command) and (msg_body.get("forceBypass") is True):
-                        # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
-                        log.debug(
-                            "Error executing %s, trying again without force bypass...",
-                            event.value,
-                        )
-
-                        # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
-
-                        msg_body["forceBypass"] = False
-
-                        return await self.async_send_command(
-                            device_type=device_type,
-                            event=event,
-                            device_id=device_id,
-                            msg_body=msg_body,
-                        )
-
-                case "403":
-                    # May have been logged out, try again
-                    log.warning(
-                        "Error executing %s, logging in and trying again...",
-                        event.value,
-                    )
-                    if retry_on_failure:
-                        await self.async_login()
-                        return await self.async_send_command(
-                            device_type,
-                            event,
-                            device_id,
-                            msg_body,
-                            False,
-                        )
-
-        log.error(
-            f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
-            f" {self._ajax_headers}"
-        )
-        raise ConnectionError
-
-    def get_websocket_client(self) -> WebSocketClient:
-        """Construct and return a websocket client."""
-
-        return WebSocketClient(self._websession, self._ajax_headers, self.devices)
-
-    async def _async_keep_alive_login_check(self) -> bool:
-        """Check if we are logged in."""
-
-        async with self._websession.get(
-            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
-            headers=self._ajax_headers,
-        ) as resp:
-            text_rsp = await resp.text()
-
-        return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
-
-    #
-    #
-    #####################
-    # PRIVATE FUNCTIONS #
-    #####################
-    #
-    # Communicate directly with the ADC API
 
     async def _async_get_active_system(self) -> str:
         """Get active system for user account."""

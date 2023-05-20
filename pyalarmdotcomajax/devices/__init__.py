@@ -90,7 +90,6 @@ class BaseDevice(ABC, CastingMixin):
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
         settings: dict | None = None,  # slug: ConfigurationOption
-        external_update_callback: Callable | None = None,  # Called when device is updated via WebSockets.
     ) -> None:
         """Initialize base element class."""
 
@@ -111,7 +110,8 @@ class BaseDevice(ABC, CastingMixin):
             raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
         )
         self._partition_id: str | None = partition_id
-        self.external_update_callback: Callable | None = external_update_callback
+
+        self.external_update_callback: list[Callable] = []
 
         self.process_device_type_specific_data()
 
@@ -143,6 +143,12 @@ class BaseDevice(ABC, CastingMixin):
         """Return user-assigned device name."""
 
         return self._attribs_raw.get("description", None)
+
+    @property
+    def attribs_raw(self) -> None | dict:
+        """Return raw attributes."""
+
+        return self._attribs_raw
 
     @property
     def has_state(self) -> bool:
@@ -243,16 +249,16 @@ class BaseDevice(ABC, CastingMixin):
 
         log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
 
-        if self.external_update_callback:
-            self.external_update_callback
+        for external_callback in self.external_update_callback:
+            external_callback()
 
     async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
         """Update device attribute when notified of externally-triggered change."""
 
         self._attribs_raw.update(new_attribute)
 
-        if self.external_update_callback:
-            self.external_update_callback
+        for external_callback in self.external_update_callback:
+            external_callback()
 
     async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
         """Log externally-triggered attribute change."""
@@ -265,12 +271,12 @@ class BaseDevice(ABC, CastingMixin):
     def register_external_update_callback(self, callback: Callable) -> None:
         """Register callback to be called when device state changes."""
 
-        self.external_update_callback = callback
+        self.external_update_callback.append(callback)
 
-    def unregister_external_update_callback(self) -> None:
+    def unregister_external_update_callback(self, callback: Callable) -> None:
         """Unregister callback to be called when device state changes."""
 
-        self.external_update_callback = None
+        self.external_update_callback.remove(callback)
 
     # #
     # PLACEHOLDERS

@@ -10,6 +10,7 @@ import aiohttp
 from pyalarmdotcomajax import AlarmController, OtpType
 from pyalarmdotcomajax.errors import TwoFactor_ConfigurationRequired, TwoFactor_OtpRequired
 from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax.websockets.client import WebSocketState
 
 USERNAME = os.environ.get("ADC_USERNAME")
 PASSWORD = os.environ.get("ADC_PASSWORD")
@@ -42,7 +43,7 @@ async def main() -> None:
 
         except TwoFactor_OtpRequired:
             print("Two factor authentication is enabled for this user.")
-            await async_handle_otp_workflow(alarm)
+            await handle_otp_workflow(alarm)
 
         except TwoFactor_ConfigurationRequired:
             sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
@@ -63,11 +64,27 @@ async def main() -> None:
         # OPEN WEBSOCKET CONNECTION
         #
 
-        ws_client = alarm.get_websocket_client()
-        await ws_client.async_connect()
+        def ws_state_handler(state: WebSocketState) -> None:
+            """Handle websocket connection state changes."""
+
+            print(f"Websocket state changed to: {state.name}")
+
+        alarm.start_websocket(ws_state_handler)
+
+        try:
+            # Keep event loop alive until cancelled.
+            while True:
+                await asyncio.sleep(1)
+
+        except asyncio.CancelledError:
+            pass
+
+        finally:
+            # Close connection when cancelled.
+            alarm.stop_websocket()
 
 
-async def async_handle_otp_workflow(alarm: AlarmController) -> None:
+async def handle_otp_workflow(alarm: AlarmController) -> None:
     """Handle two-factor authentication workflow."""
 
     selected_otp_method: OtpType
@@ -112,4 +129,7 @@ async def async_handle_otp_workflow(alarm: AlarmController) -> None:
     await alarm.async_submit_otp(code=code, method=selected_otp_method)
 
 
-asyncio.run(main())
+try:
+    asyncio.run(main())
+except KeyboardInterrupt:
+    pass

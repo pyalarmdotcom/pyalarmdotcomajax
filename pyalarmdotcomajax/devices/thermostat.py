@@ -181,7 +181,7 @@ class Thermostat(BaseDevice):
         heat_setpoint: float | None = None,
         schedule_mode: ScheduleMode | None = None,
     ) -> None:
-        """Send turn on command with optional brightness."""
+        """Send command to HVAC unit."""
 
         msg_body: dict[str, float | int] = {}
 

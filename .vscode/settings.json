@@ -12,7 +12,7 @@
     "editor.formatOnPaste": false,
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
-    "python.analysis.autoSearchPaths": false,
+    "python.analysis.autoSearchPaths": true,
     "python.analysis.extraPaths": ["/workspaces/pyalarmdotcomajax"],
     "python.formatting.provider": "black",
     "python.linting.enabled": true,
