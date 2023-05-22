@@ -609,10 +609,10 @@ class AlarmController:
             - datetime.now()
         ).total_seconds()
 
-        log.debug(
-            "Sending keep alive signal. Time until session context refresh: {}",
-            "imminent" if reload_context_now else f"~ {round((seconds_remaining % 3600) // 60)} minutes.",
+        debug_message = "Sending keep alive signal. Time until session context refresh: {}".format(
+            "imminent" if reload_context_now else f"~ {round((seconds_remaining % 3600) // 60)} minutes."
         )
+        log.debug(debug_message)
 
         try:
             if await self.is_logged_in(throw=True) and reload_context_now:
@@ -1007,7 +1007,7 @@ class AlarmController:
             log.debug(f"Keep Alive URL: {self._keep_alive_url}")
             log.debug("*** END IDENTITY INFO ***")
 
-    async def _async_get_trouble_conditions(self) -> None:
+    async def _async_get_trouble_conditions(self, retry_on_failure: bool = True) -> None:
         """Get trouble conditions for all devices."""
 
         # TODO: Trouble condition dict should be flagged, not None, when library encounters an error retrieving trouble conditions.
@@ -1020,6 +1020,8 @@ class AlarmController:
                 json_rsp = await resp.json()
 
                 log.debug("Trouble condition response:\n%s", json_rsp)
+
+                await self._async_handle_server_errors(json_rsp, "active system", retry_on_failure)
 
                 trouble_all_devices: dict = {}
                 for condition in json_rsp.get("data", []):
@@ -1055,6 +1057,12 @@ class AlarmController:
             self._trouble_conditions = {}
             log.error("Failed processing trouble conditions.")
             raise UnexpectedDataStructure from err
+
+        except TryAgain as err:
+            if retry_on_failure:
+                return await self._async_get_trouble_conditions(retry_on_failure=False)
+            else:
+                raise err
 
     async def _async_handle_server_errors(
         self, json_rsp: dict, request_name: str, retry_on_failure: bool = False
