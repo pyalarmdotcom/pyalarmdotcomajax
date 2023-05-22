@@ -610,8 +610,8 @@ class AlarmController:
         ).total_seconds()
 
         log.debug(
-            "Sending keep alive signal. Time until session context refresh:"
-            f" ~{0 if reload_context_now else round((seconds_remaining % 3600) // 60)} minutes."
+            "Sending keep alive signal. Time until session context refresh: {}",
+            "imminent" if reload_context_now else f"~ {round((seconds_remaining % 3600) // 60)} minutes.",
         )
 
         try:
