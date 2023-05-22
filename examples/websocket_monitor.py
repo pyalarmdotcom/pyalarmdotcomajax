@@ -38,12 +38,12 @@ async def main() -> None:
             twofactorcookie=TWOFA_COOKIE,
         )
 
-        try:
-            await alarm.async_login()
+        print(f"Logging in as {USERNAME}")
 
-        except TwoFactor_OtpRequired:
-            print("Two factor authentication is enabled for this user.")
-            await handle_otp_workflow(alarm)
+        try:
+            if enabled_2fa_methods := await alarm.async_login():
+                print("Two factor authentication is enabled for this user.")
+                await handle_otp_workflow(alarm, enabled_2fa_methods)
 
         except TwoFactor_ConfigurationRequired:
             sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
@@ -72,6 +72,9 @@ async def main() -> None:
         alarm.start_websocket(ws_state_handler)
 
         try:
+            # Keeps sessions alive and keeps event loop active.
+            await alarm.start_session_nudger()
+
             # Keep event loop alive until cancelled.
             while True:
                 await asyncio.sleep(1)
@@ -83,8 +86,10 @@ async def main() -> None:
             # Close connection when cancelled.
             alarm.stop_websocket()
 
+            await alarm.stop_session_nudger()
 
-async def handle_otp_workflow(alarm: AlarmController) -> None:
+
+async def handle_otp_workflow(alarm: AlarmController, enabled_2fa_methods: list[OtpType]) -> None:
     """Handle two-factor authentication workflow."""
 
     selected_otp_method: OtpType
@@ -94,10 +99,10 @@ async def handle_otp_workflow(alarm: AlarmController) -> None:
     #
 
     # Get list of enabled OTP methods.
-    if len(enabled_2fa_methods := await alarm.async_get_enabled_2fa_methods()) == 1:
+    if len(enabled_2fa_methods) == 1:
         # If only one OTP method is enabled, use it without prompting user.
         selected_otp_method = enabled_2fa_methods[0]
-        print(f"Using {selected_otp_method.value} for One-Time Password.")
+        print(f"Using {selected_otp_method.name} for one-time password.")
     else:
         # If multiple OTP methods are enabled, let the user pick.
         print("\nAvailable one-time password methods:")
@@ -115,7 +120,7 @@ async def handle_otp_workflow(alarm: AlarmController) -> None:
     #
 
     if selected_otp_method in (OtpType.email, OtpType.sms):
-        # Ask Alarm.com to send OTP if selected method is EMAIL or SMS.
+        # Ask Alarm.com to send OTP if selected method is email or sms.
         print(f"Requesting One-Time Password via {selected_otp_method.name}...")
         await alarm.async_request_otp(selected_otp_method)
 

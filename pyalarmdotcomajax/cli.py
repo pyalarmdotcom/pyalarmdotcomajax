@@ -31,7 +31,6 @@ from .devices.sensor import Sensor
 from .errors import (
     InvalidConfigurationOption,
     TwoFactor_ConfigurationRequired,
-    TwoFactor_OtpRequired,
     UnexpectedDataStructure,
 )
 from .extensions import ConfigurationOption
@@ -221,16 +220,14 @@ async def cli() -> None:
         )
 
         try:
-            await alarm.async_login()
+            if enabled_2fa_methods := await alarm.async_login():
+                await async_handle_otp_workflow(alarm, args, enabled_2fa_methods)
         except TwoFactor_ConfigurationRequired:
             cprint(
                 "Unable to log in. Please set up two-factor authentication for this account.",
                 "red",
             )
             sys.exit()
-
-        except TwoFactor_OtpRequired:
-            await async_handle_otp_workflow(alarm, args)
 
         #######################
         # REFRESH DEVICE DATA #
@@ -402,6 +399,7 @@ async def cli() -> None:
                 "(Press Ctrl+C or Cmd+C to exit.)",
                 attrs=["bold"],
             )
+
             await _async_stream_realtime(alarm)
 
 
@@ -413,10 +411,16 @@ async def cli() -> None:
 async def _async_stream_realtime(alarm: AlarmController) -> None:
     """Stream real-time updates via WebSockets."""
 
+    # Keep user session alive.
+    await alarm.start_session_nudger()
+
     def ws_state_handler(state: WebSocketState) -> None:
         """Handle websocket connection state changes."""
 
-        print(f"Websocket state changed to: {state.name}")
+        if state in [WebSocketState.DISCONNECTED]:
+            # asyncio.create_task(alarm.async_connect())
+            cprint("Lost streaming connection to Alarm.com.", "red")
+            sys.exit()
 
     alarm.start_websocket(ws_state_handler)
 
@@ -429,7 +433,10 @@ async def _async_stream_realtime(alarm: AlarmController) -> None:
         pass
 
     finally:
-        # Close connection when cancelled.
+        # Close connections & stop tasks when cancelled.
+
+        await alarm.stop_session_nudger()
+
         alarm.stop_websocket()
 
 
@@ -537,7 +544,9 @@ def _print_element_tearsheet(
     return output_str
 
 
-async def async_handle_otp_workflow(alarm: AlarmController, args: dict[str, Any]) -> None:
+async def async_handle_otp_workflow(
+    alarm: AlarmController, args: dict[str, Any], enabled_2fa_methods: list[OtpType]
+) -> None:
     """Handle two-factor authentication workflow."""
 
     #
@@ -556,7 +565,7 @@ async def async_handle_otp_workflow(alarm: AlarmController, args: dict[str, Any]
         )
 
         # Get list of enabled OTP methods.
-        if len(enabled_2fa_methods := await alarm.async_get_enabled_2fa_methods()) == 1:
+        if len(enabled_2fa_methods) == 1:
             # If only one OTP method is enabled, use it without prompting user.
             selected_otp_method = enabled_2fa_methods[0]
             cprint(f"Using {selected_otp_method.name} for One-Time Password.")

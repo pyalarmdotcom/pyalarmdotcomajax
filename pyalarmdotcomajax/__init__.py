@@ -6,10 +6,11 @@ import contextlib
 import json
 import logging
 import re
-from collections.abc import Callable
-from datetime import datetime
+from collections.abc import Callable, Coroutine
+from contextlib import suppress
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -30,9 +31,9 @@ from pyalarmdotcomajax.devices.registry import (
 from pyalarmdotcomajax.errors import (
     AuthenticationFailed,
     DataFetchFailed,
+    SessionTimeout,
     TryAgain,
     TwoFactor_ConfigurationRequired,
-    TwoFactor_OtpRequired,
     UnexpectedDataStructure,
     UnsupportedDevice,
 )
@@ -47,7 +48,7 @@ from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 # TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
 # TODO: Fix get raw server response function.
 
-__version__ = "0.5.0-beta.4"
+__version__ = "0.5.0-beta.5"
 
 log = logging.getLogger(__name__)
 
@@ -89,6 +90,7 @@ class AlarmController:
     LOGIN_TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
     LOGIN_USERNAME_FIELD = "ctl00$ContentPlaceHolder1$loginform$txtUserName"
     LOGIN_PASSWORD_FIELD = "txtPassword"  # noqa: S105
+    LOGIN_REMEMBERME_FIELD = "ctl00$ContentPlaceHolder1$loginform$chkRememberMe"
 
     LOGIN_URL = "https://www.alarm.com/login"
     LOGIN_POST_URL = "https://www.alarm.com/web/Default.aspx"
@@ -107,9 +109,12 @@ class AlarmController:
     EVENTVALIDATION_FIELD = "__EVENTVALIDATION"
     PREVIOUSPAGE_FIELD = "__PREVIOUSPAGE"
 
-    KEEP_ALIVE_CHECK_URL_TEMPLATE = "{}web/KeepAlive.aspx?timestamp={}"
-    KEEP_ALIVE_CHECK_RESPONSE = '{"status":"Keep Alive"}'
-    KEEP_ALIVE_URL = "{}web/api/identities/{}/reloadContext"
+    KEEP_ALIVE_DEFAULT_URL = "/web/KeepAlive.aspx"
+    KEEP_ALIVE_URL_PARAM_TEMPLATE = "?timestamp={}"
+    KEEP_ALIVE_RENEW_SESSION_URL_TEMPLATE = "{}web/api/identities/{}/reloadContext"
+    KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
+    SESSION_REFRESH_DEFAULT_INTERVAL_MS = 780000  # 13 minutes. Sessions expire at 15.
+
     # LOGIN & SESSION: END
 
     def __init__(
@@ -139,9 +144,6 @@ class AlarmController:
         self._active_system_id: str | None = None
         self._ajax_headers: dict = self.AJAX_HEADERS_TEMPLATE
 
-        self._ws_state_callback: Callable[[WebSocketState], None] | None = None
-        self._websocket: WebSocketClient | None = None
-
         self._partition_map: dict = (
             {}
         )  # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
@@ -153,6 +155,22 @@ class AlarmController:
         self._trouble_conditions: dict = {}
 
         self.devices: DeviceRegistry = DeviceRegistry()
+
+        #
+        # WEBSOCKET ATTRIBUTES
+        #
+
+        self._ws_state_callback: Callable[[WebSocketState], None] | None = None
+        self._websocket: WebSocketClient | None = None
+
+        #
+        # SESSION ATTRIBUTES
+        #
+
+        self._session_refresh_interval_ms: int = self.SESSION_REFRESH_DEFAULT_INTERVAL_MS
+        self._keep_alive_url: str = self.KEEP_ALIVE_DEFAULT_URL
+        self._last_session_refresh: datetime = datetime.now()
+        self._session_timer: SessionTimer | None = None
 
         #
         # CLI ATTRIBUTES
@@ -348,28 +366,39 @@ class AlarmController:
                         )
 
                 case "403":
-                    # May have been logged out, try again
+                    # Session may have expired. Log back in and try again.
                     log.warning(
-                        "Error executing %s, NOT logging in and trying again...",
+                        "Error executing %s. Session. probably expired. Logging in and trying again...",
                         event.value,
                     )
 
-                    return False
-                    # if retry_on_failure:
-                    #     await self.async_login()
-                    #     return await self.async_send_command(
-                    #         device_type,
-                    #         event,
-                    #         device_id,
-                    #         msg_body,
-                    #         False,
-                    #     )
+                    if retry_on_failure:
+                        await self.async_login()
+                        return await self.async_send_command(
+                            device_type,
+                            event,
+                            device_id,
+                            msg_body,
+                            False,
+                        )
 
         log.error(
             f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
             f" {self._ajax_headers}"
         )
         raise ConnectionError
+
+    async def start_session_nudger(self) -> None:
+        """Start task to nudge user sessions to keep from timing out."""
+
+        self._session_timer = SessionTimer(self.keep_alive, self.KEEP_ALIVE_SIGNAL_INTERVAL_S)
+        await self._session_timer.start()
+
+    async def stop_session_nudger(self) -> None:
+        """Stop session nudger."""
+
+        if self._session_timer:
+            await self._session_timer.stop()
 
     #
     # WEBSOCKET FUNCTIONS
@@ -397,42 +426,24 @@ class AlarmController:
 
     async def async_login(
         self,
-    ) -> None:
+    ) -> list[OtpType] | None:
         """Login to Alarm.com."""
         log.debug("Attempting to log in to Alarm.com")
-
-        # TODO: Prevent login from making a ton of saved devices in ADC.
 
         try:
             await self._async_login_and_get_key()
             await self._async_get_identity_info()
 
-            # Check whether two factor authentication is required.
-            if not self._two_factor_cookie:
-                async with self._websession.get(
-                    url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
-                    headers=self._ajax_headers,
-                ) as resp:
-                    json_rsp = await resp.json()
+            log.info("Logged in successfully.")
 
-                    log.debug(f"Response from Alarm.com login: {resp.status} {resp.json()}")
-
-                for error in (errors := json_rsp.get("errors", {})):
-                    if error.get("status") == "409" and error.get("detail") == "TwoFactorAuthenticationRequired":
-                        log.debug("Two factor authentication code or cookie required.")
-                        raise TwoFactor_OtpRequired
+            return await self._get_2fa_requirements()
 
         except (DataFetchFailed, UnexpectedDataStructure) as err:
             raise ConnectionError from err
         except (AuthenticationFailed, PermissionError) as err:
             raise AuthenticationFailed from err
-        except TwoFactor_ConfigurationRequired as err:
-            raise err
 
-        log.info("Logged in successfully.")
-        return None
-
-    async def async_get_enabled_2fa_methods(self) -> list[OtpType]:
+    async def _get_2fa_requirements(self) -> list[OtpType] | None:
         """Get list of two factor authentication methods enabled on account."""
 
         async with self._websession.get(
@@ -440,10 +451,24 @@ class AlarmController:
             headers=self._ajax_headers,
         ) as resp:
             json_rsp = await resp.json()
+
+            if not (data := json_rsp.get("data", {})):
+                raise UnexpectedDataStructure("Could not find expected data in two-factor authentication details.")
+
+            if data.get("showSuggestedSetup") is True:
+                raise TwoFactor_ConfigurationRequired(
+                    "Got 2FA nag screen. 2FA must be configured on this account before proceeding."
+                )
+
             enabled_otp_types_bitmask = json_rsp.get("data", {}).get("attributes", {}).get("enabledTwoFactorTypes")
             enabled_2fa_methods = [
                 otp_type for otp_type in OtpType if bool(enabled_otp_types_bitmask & otp_type.value)
             ]
+
+            if OtpType.disabled in enabled_2fa_methods or data.get("isCurrentDeviceTrusted") is True:
+                # 2FA is disabled, we can skip 2FA altogether.
+                return None
+
             log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
             return enabled_2fa_methods
 
@@ -475,7 +500,9 @@ class AlarmController:
 
         return None
 
-    async def async_submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> str | None:
+    async def async_submit_otp(
+        self, code: str, method: OtpType, device_name: str | None = None, remember_me: bool = False
+    ) -> str | None:
         """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
@@ -511,19 +538,19 @@ class AlarmController:
 
         log.debug("Submitted OTP code.")
 
-        if not device_name:
+        if not device_name and not remember_me:
             log.debug('Skipping "Remember Me".')
             return None
 
         # Submit device name for "remember me" function.
-        if json_rsp.get("value", {}).get("deviceName"):
+        if suggested_device_name := json_rsp.get("value", {}).get("deviceName"):
             try:
                 log.debug("Registering device...")
 
                 async with self._websession.post(
                     url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                     headers=self._ajax_headers,
-                    json={"deviceName": device_name},
+                    json={"deviceName": device_name if device_name else suggested_device_name},
                 ) as resp:
                     json_rsp = await resp.json()
             except (asyncio.TimeoutError, aiohttp.ClientError) as err:
@@ -542,24 +569,73 @@ class AlarmController:
         log.error("Failed to find two-factor authentication cookie.")
         return None
 
+    async def is_logged_in(self, throw: bool = False) -> bool:
+        """Check if we are still logged in."""
+
+        url = f"{c.URL_BASE[:-1]}{self._keep_alive_url}{self.KEEP_ALIVE_URL_PARAM_TEMPLATE.format(int(round(datetime.now().timestamp())))}"
+
+        log.debug("Sending keep alive signal.")
+
+        async with self._websession.get(
+            url=url,
+            headers=self._ajax_headers,
+        ) as resp:
+            text_rsp = await resp.text()
+
+        if resp.status == 403:
+            log.debug("Session expired.")
+
+            if throw:
+                raise SessionTimeout
+
+            return False
+
+        elif resp.status >= 400:
+            raise DataFetchFailed(f"Failed to send keep alive signal. Response: {text_rsp}")
+
+        return True
+
+    async def keep_alive(self) -> None:
+        """Keep session alive. Handle if not (optionally).
+
+        Should be called once per minute to keep session alive.
+        """
+
+        try:
+            if await self.is_logged_in(throw=True) and (
+                (self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms))
+                < datetime.now()
+            ):
+                await self._reload_session_context()
+        except SessionTimeout:
+            log.info("User session expired. Logging back in.")
+            await self.async_login()
+
     #
     #
     #####################
     # PRIVATE FUNCTIONS #
     #####################
     #
-    # Communicate directly with the ADC API
 
-    async def _async_keep_alive_login_check(self) -> bool:
-        """Check if we are logged in."""
+    async def _reload_session_context(self) -> None:
+        """Check if we are still logged in."""
 
-        async with self._websession.get(
-            url=self.KEEP_ALIVE_CHECK_URL_TEMPLATE.format(c.URL_BASE, int(round(datetime.now().timestamp()))),
+        log.debug("Reloading session context.")
+
+        async with self._websession.post(
+            url=self.KEEP_ALIVE_RENEW_SESSION_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
             headers=self._ajax_headers,
+            data=json.dumps({"included": [], "meta": {"transformer_version": "1.1"}}),
         ) as resp:
-            text_rsp = await resp.text()
+            json_rsp = await resp.json()
 
-        return bool(text_rsp == self.KEEP_ALIVE_CHECK_RESPONSE)
+            if resp.status >= 400:
+                raise DataFetchFailed(f"Failed to reload session context. Response: {json_rsp}")
+
+            self._last_session_refresh = datetime.now()
+
+        return None
 
     async def _async_update__build_device(
         self,
@@ -695,7 +771,7 @@ class AlarmController:
 
         return results
 
-    async def _async_get_active_system(self) -> str:
+    async def _async_get_active_system(self, retry_on_failure: bool = True) -> str:
         """Get active system for user account."""
 
         try:
@@ -708,6 +784,8 @@ class AlarmController:
             ) as resp:
                 json_rsp = await resp.json()
 
+                await self._async_handle_server_errors(json_rsp, "active system", retry_on_failure)
+
                 return str(
                     [system["id"] for system in json_rsp.get("data", []) if system["attributes"]["isSelected"]][0]
                 )
@@ -715,6 +793,11 @@ class AlarmController:
         except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
             log.error("Failed to get available systems.")
             raise DataFetchFailed from err
+        except TryAgain as err:
+            if retry_on_failure:
+                return await self._async_get_active_system(retry_on_failure=False)
+            else:
+                raise err
 
     async def _async_get_recent_images(self) -> dict[str, DeviceTypeSpecificData]:
         """Get recent images."""
@@ -774,6 +857,11 @@ class AlarmController:
         except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
             log.error("Failed to get image sensors.")
             raise DataFetchFailed from err
+        except TryAgain as err:
+            if retry_on_failure:
+                return await self._async_has_image_sensors(system_id, retry_on_failure=False)
+            else:
+                raise err
 
     async def _async_get_system(self, system_id: str, retry_on_failure: bool = True) -> list[dict]:
         """Get all devices present in system."""
@@ -862,30 +950,57 @@ class AlarmController:
 
     async def _async_get_identity_info(self) -> None:
         """Get user id, email address, provider name, etc."""
-        try:
-            async with self._websession.get(
-                url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
-                headers=self._ajax_headers,
-                cookies=self._two_factor_cookie,
-            ) as resp:
-                json_rsp = await resp.json()
 
+        async with self._websession.get(
+            url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
+            headers=self._ajax_headers,
+            cookies=self._two_factor_cookie,
+        ) as resp:
+            json_rsp = await resp.json()
+
+            try:
                 self._user_id = json_rsp["data"][0]["id"]
+                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
                 self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
 
                 for inclusion in json_rsp["included"]:
                     if inclusion["id"] == self._user_id and inclusion["type"] == "profile/profile":
                         self._user_email = inclusion["attributes"]["loginEmailAddress"]
 
-            if self._user_email is None:
-                raise AuthenticationFailed("Could not find user email address.")
+                if not self._user_email:
+                    raise KeyError("Failed to get user's email address.")
+            except KeyError as err:
+                log.error(f"{__name__} _async_get_identity_info: Failed to get user's identity info.")
+                log.debug(
+                    f"{__name__} _async_get_identity_info: Server Response:\n{json.dumps(json_rsp, indent=4)}"
+                )
+                raise AuthenticationFailed from err
 
-            log.debug("Got Provider: %s, User ID: %s", self._provider_name, self._user_id)
+            try:
+                self._session_refresh_interval_ms = json_rsp["data"][0]["attributes"][
+                    "applicationSessionProperties"
+                ]["inactivityWarningTimeoutMs"]
 
-        except KeyError as err:
-            log.error(f"{__name__} _async_get_identity_info: Failed to get user's identity info.")
-            log.debug(f"{__name__} _async_get_identity_info: Server Response:\n{json.dumps(json_rsp, indent=4)}")
-            raise AuthenticationFailed from err
+                if not self._session_refresh_interval_ms:
+                    raise KeyError
+            except KeyError:
+                self._session_refresh_interval_ms = self.SESSION_REFRESH_DEFAULT_INTERVAL_MS
+
+            try:
+                self._keep_alive_url = json_rsp["data"][0]["attributes"]["applicationSessionProperties"][
+                    "keepAliveUrl"
+                ]
+                if not self._keep_alive_url:
+                    raise KeyError
+            except KeyError:
+                self._keep_alive_url = self.KEEP_ALIVE_DEFAULT_URL
+
+            log.debug("*** START IDENTITY INFO ***")
+            log.debug(f"Provider: {self._provider_name}")
+            log.debug(f"User: {self._user_id} {self._user_email}")
+            log.debug(f"Keep Alive Interval: {self._session_refresh_interval_ms}")
+            log.debug(f"Keep Alive URL: {self._keep_alive_url}")
+            log.debug("*** END IDENTITY INFO ***")
 
     async def _async_get_trouble_conditions(self) -> None:
         """Get trouble conditions for all devices."""
@@ -975,7 +1090,7 @@ class AlarmController:
                     )
                     raise DataFetchFailed(error_msg)
 
-                if not self._async_keep_alive_login_check():
+                if not self.is_logged_in():
                     log.debug(
                         "Error fetching data from Alarm.com. Got 403 status"
                         f" when requesting {request_name}. Trying to"
@@ -1039,6 +1154,7 @@ class AlarmController:
                     self.VIEWSTATEGENERATOR_FIELD: login_info[self.VIEWSTATEGENERATOR_FIELD],
                     self.EVENTVALIDATION_FIELD: login_info[self.EVENTVALIDATION_FIELD],
                     self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
+                    self.LOGIN_REMEMBERME_FIELD: "on",
                     "IsFromNewSite": "1",
                 },
                 cookies=self._two_factor_cookie,
@@ -1048,10 +1164,6 @@ class AlarmController:
                     log.error("\nResponse URL:\n%s\n", str(resp.url))
                     log.error("\nRequest Headers:\n%s\n", str(resp.request_info.headers))
                     raise AuthenticationFailed("Invalid username and password.")
-
-                # If Alarm.com is warning us that we'll have to set up two factor authentication soon, alert caller.
-                if re.search("concurrent-two-factor-authentication", str(resp.url)) is not None:
-                    raise TwoFactor_ConfigurationRequired("Encountered 2FA nag screen.")
 
                 # Update anti-forgery cookie
                 self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
@@ -1063,4 +1175,42 @@ class AlarmController:
             log.error("Unable to extract ajax key from Alarm.com. Response:\n%s", resp)
             raise DataFetchFailed from err
 
+        self._last_session_refresh = datetime.now()
+
         log.debug("Logged in to Alarm.com.")
+
+
+class SessionTimer:
+    """Run keep_alive function periodically to keep session alive."""
+
+    # https://stackoverflow.com/a/37514633
+
+    def __init__(self, func: Callable[[], Coroutine[Any, Any, Any]], time: float) -> None:
+        """Initialize SessionTimer. Takes time in seconds."""
+        self.func = func
+        self.time: float = time
+        self.is_started: bool = False
+        self._task: asyncio.Task | None = None
+
+    async def start(self) -> None:
+        """Start SessionTimer."""
+        if not self.is_started:
+            self.is_started = True
+            # Start task to call func periodically:
+            self._task = asyncio.ensure_future(self._run())
+
+    async def stop(self) -> None:
+        """Stop SessionTimer."""
+        if self.is_started:
+            self.is_started = False
+            # Stop task and await it stopped:
+            if self._task:
+                self._task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await self._task
+
+    async def _run(self) -> None:
+        """Run task and sleep."""
+        while True:
+            await asyncio.sleep(self.time)
+            await self.func()

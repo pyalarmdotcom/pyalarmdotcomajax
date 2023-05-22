@@ -4,7 +4,7 @@ import asyncio
 import sys
 
 import aiohttp
-
+import os
 from pyalarmdotcomajax import AlarmController, OtpType
 from pyalarmdotcomajax.errors import (
     AuthenticationFailed,
@@ -13,12 +13,17 @@ from pyalarmdotcomajax.errors import (
     TwoFactor_ConfigurationRequired,
 )
 
-USERNAME = "YOUR USERNAME"
-PASSWORD = "YOUR PASSWORD"
+# Pulls usernane and password from environment variables. Replace with string below if you don't want to use env vars.
+USERNAME = os.environ.get("ADC_USERNAME")
+PASSWORD = os.environ.get("ADC_PASSWORD")
 
 
 async def main() -> None:
     """Request Alarm.com sensor data."""
+
+    if not (USERNAME and PASSWORD):
+        sys.exit("Missing account credentials.")
+
     async with aiohttp.ClientSession() as session:
         #
         # CREATE ALARM CONTROLLER
@@ -30,12 +35,12 @@ async def main() -> None:
         # LOG IN
         #
 
-        try:
-            await alarm.async_login()
+        print(f"Logging in as {USERNAME}")
 
-        except TwoFactor_OtpRequired:
-            print("Two factor authentication is enabled for this user.")
-            await async_handle_otp_workflow(alarm)
+        try:
+            if enabled_2fa_methods := await alarm.async_login():
+                print("Two factor authentication is enabled for this user.")
+                await handle_otp_workflow(alarm, enabled_2fa_methods)
 
         except TwoFactor_ConfigurationRequired:
             sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
@@ -56,7 +61,7 @@ async def main() -> None:
             print(f"Name: {sensor.name}, Sensor Type: {sensor.device_subtype}, State: {sensor.state}")
 
 
-async def async_handle_otp_workflow(alarm: AlarmController) -> None:
+async def handle_otp_workflow(alarm: AlarmController, enabled_2fa_methods: list[OtpType]) -> None:
     """Handle two-factor authentication workflow."""
 
     selected_otp_method: OtpType
@@ -66,10 +71,10 @@ async def async_handle_otp_workflow(alarm: AlarmController) -> None:
     #
 
     # Get list of enabled OTP methods.
-    if len(enabled_2fa_methods := await alarm.async_get_enabled_2fa_methods()) == 1:
+    if len(enabled_2fa_methods) == 1:
         # If only one OTP method is enabled, use it without prompting user.
         selected_otp_method = enabled_2fa_methods[0]
-        print(f"Using {selected_otp_method.value} for One-Time Password.")
+        print(f"Using {selected_otp_method.name} for one-time password.")
     else:
         # If multiple OTP methods are enabled, let the user pick.
         print("\nAvailable one-time password methods:")

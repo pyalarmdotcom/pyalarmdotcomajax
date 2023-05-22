@@ -48,3 +48,7 @@ class UnsupportedAction(Exception):
 
 class TryAgain(Exception):
     """Request that caller tries again after session has been fixed."""
+
+
+class SessionTimeout(Exception):
+    """Session has timed out and needs to be re-established."""
