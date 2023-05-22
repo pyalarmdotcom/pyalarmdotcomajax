@@ -599,20 +599,20 @@ class AlarmController:
         Should be called once per minute to keep session alive.
         """
 
-        log.debug("Sending keep alive signal...")
-
         reload_context_now = (
             self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms)
         ) < datetime.now()
 
-        if not reload_context_now:
-            seconds_remaining = (
-                self._last_session_refresh
-                + (timedelta(milliseconds=self._session_refresh_interval_ms))
-                - datetime.now()
-            ).total_seconds()
+        seconds_remaining = (
+            self._last_session_refresh
+            + (timedelta(milliseconds=self._session_refresh_interval_ms))
+            - datetime.now()
+        ).total_seconds()
 
-            log.debug(f"Time until session context refresh: ~{round((seconds_remaining % 3600) // 60)} minutes.")
+        log.debug(
+            "Sending keep alive signal. Time until session context refresh:"
+            f" ~{0 if reload_context_now else round((seconds_remaining % 3600) // 60)} minutes."
+        )
 
         try:
             if await self.is_logged_in(throw=True) and reload_context_now:
