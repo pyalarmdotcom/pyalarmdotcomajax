@@ -574,8 +574,6 @@ class AlarmController:
 
         url = f"{c.URL_BASE[:-1]}{self._keep_alive_url}{self.KEEP_ALIVE_URL_PARAM_TEMPLATE.format(int(round(datetime.now().timestamp())))}"
 
-        log.debug("Sending keep alive signal.")
-
         async with self._websession.get(
             url=url,
             headers=self._ajax_headers,
@@ -601,11 +599,23 @@ class AlarmController:
         Should be called once per minute to keep session alive.
         """
 
+        log.debug("Sending keep alive signal...")
+
+        reload_context_now = (
+            self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms)
+        ) < datetime.now()
+
+        if not reload_context_now:
+            seconds_remaining = (
+                self._last_session_refresh
+                + (timedelta(milliseconds=self._session_refresh_interval_ms))
+                - datetime.now()
+            ).total_seconds()
+
+            log.debug(f"Time until session context refresh: ~{round((seconds_remaining % 3600) // 60)} minutes.")
+
         try:
-            if await self.is_logged_in(throw=True) and (
-                (self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms))
-                < datetime.now()
-            ):
+            if await self.is_logged_in(throw=True) and reload_context_now:
                 await self._reload_session_context()
         except SessionTimeout:
             log.info("User session expired. Logging back in.")
@@ -780,7 +790,6 @@ class AlarmController:
             async with self._websession.get(
                 url=self.ALL_SYSTEMS_URL_TEMPLATE.format(c.URL_BASE),
                 headers=self._ajax_headers,
-                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
@@ -846,7 +855,6 @@ class AlarmController:
             async with self._websession.get(
                 url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, system_id),
                 headers=self._ajax_headers,
-                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
@@ -872,7 +880,6 @@ class AlarmController:
             async with self._websession.get(
                 url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, system_id),
                 headers=self._ajax_headers,
-                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
@@ -898,7 +905,6 @@ class AlarmController:
             async with self._websession.get(
                 url=self.ALL_DEVICES_URL_TEMPLATE.format(c.URL_BASE, system_id),
                 headers=self._ajax_headers,
-                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
@@ -930,7 +936,6 @@ class AlarmController:
             async with self._websession.get(
                 url=AttributeRegistry.get_endpoints(device_type)["primary"].format(c.URL_BASE, ""),
                 headers=self._ajax_headers,
-                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
