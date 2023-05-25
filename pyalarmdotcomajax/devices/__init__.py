@@ -11,7 +11,10 @@ from typing import Any, TypedDict
 
 import aiohttp
 
-from pyalarmdotcomajax.errors import InvalidConfigurationOption, UnexpectedDataStructure
+from pyalarmdotcomajax.exceptions import (
+    InvalidConfigurationOption,
+    UnexpectedResponse,
+)
 from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
     ConfigurationOption,
@@ -343,7 +346,7 @@ class BaseDevice(ABC, CastingMixin):
             asyncio.exceptions.CancelledError,
         ) as err:
             raise err
-        except UnexpectedDataStructure as err:
+        except UnexpectedResponse as err:
             raise err
 
         self._settings["slug"] = updated_option

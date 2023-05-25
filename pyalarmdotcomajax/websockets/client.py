@@ -22,7 +22,7 @@ from pyalarmdotcomajax.devices.registry import DeviceRegistry
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax.exceptions import AuthenticationFailed, UnexpectedResponse
 from pyalarmdotcomajax.websockets.handler.garage_door import GarageDoorWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.gate import GateWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.light import LightWebSocketHandler
@@ -102,7 +102,7 @@ class WebSocketClient:
             self._ws_auth_token = await self._async_get_websocket_token()
             if not self._ws_auth_token:
                 raise AuthenticationFailed("async_connect(): Failed to get WebSocket authentication token.")
-        except (DataFetchFailed, AuthenticationFailed) as err:
+        except (UnexpectedResponse, AuthenticationFailed) as err:
             raise AuthenticationFailed from err
 
         try:
@@ -220,7 +220,7 @@ class WebSocketClient:
                 ),
                 resp,
             )
-            raise DataFetchFailed(
+            raise UnexpectedResponse(
                 "async_get_websocket_token(): Received errors while requesting WebSocket authentication token."
             )
 

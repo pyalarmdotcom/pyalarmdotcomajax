@@ -22,16 +22,20 @@ import aiohttp
 from termcolor import colored, cprint
 
 import pyalarmdotcomajax
+from pyalarmdotcomajax.const import OtpType
 from pyalarmdotcomajax.devices.registry import AllDevices_t, AttributeRegistry
 
-from . import AlarmController, OtpType
+from . import AlarmController
 from .devices import BaseDevice, DeviceType
 from .devices.light import Light
 from .devices.sensor import Sensor
-from .errors import (
+from .exceptions import (
+    AuthenticationFailed,
+    ConfigureTwoFactorAuthentication,
     InvalidConfigurationOption,
-    TwoFactor_ConfigurationRequired,
-    UnexpectedDataStructure,
+    NotAuthorized,
+    OtpRequired,
+    UnexpectedResponse,
 )
 from .extensions import ConfigurationOption
 from .helpers import ExtendedEnumMixin, slug_to_title
@@ -220,14 +224,24 @@ async def cli() -> None:
         )
 
         try:
-            if enabled_2fa_methods := await alarm.async_login():
-                await async_handle_otp_workflow(alarm, args, enabled_2fa_methods)
-        except TwoFactor_ConfigurationRequired:
+            await alarm.async_login()
+        except ConfigureTwoFactorAuthentication:
             cprint(
                 "Unable to log in. Please set up two-factor authentication for this account.",
                 "red",
             )
             sys.exit()
+
+        except (aiohttp.ClientError, asyncio.TimeoutError, UnexpectedResponse, NotAuthorized):
+            cprint("Could not connect to Alarm.com.", "red")
+            sys.exit()
+
+        except AuthenticationFailed:
+            cprint("Invalid credentials.", "red")
+            sys.exit()
+
+        except OtpRequired as exc:
+            await async_handle_otp_workflow(alarm, args, exc.enabled_2fa_methods)
 
         #######################
         # REFRESH DEVICE DATA #
@@ -359,7 +373,7 @@ async def cli() -> None:
                 asyncio.exceptions.CancelledError,
             ):
                 cprint("Failed to connect to Alarm.com.")
-            except UnexpectedDataStructure:
+            except UnexpectedResponse:
                 cprint("Couldn't find settings on device configuration page.")
             except InvalidConfigurationOption:
                 cprint(f"Couldn't load pyalarmdotcomajax configuration extension for {setting_slug}.")
@@ -460,7 +474,7 @@ def _human_output(alarm: AlarmController) -> dict:
 
 
 def _print_element_tearsheet(
-    element: BaseDevice,
+    element: AllDevices_t,
 ) -> str:
     output_str: str = ""
 

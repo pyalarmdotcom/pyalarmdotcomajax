@@ -7,7 +7,7 @@ from typing import Any
 
 from bs4 import Tag
 
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 log = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ def extract_field_value(field: Tag) -> str | None:
             pass
 
     except (KeyError, AttributeError) as err:
-        raise UnexpectedDataStructure from err
+        raise UnexpectedResponse from err
 
     return value
 

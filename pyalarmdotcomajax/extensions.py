@@ -13,7 +13,7 @@ import aiohttp
 from bs4 import BeautifulSoup, Tag
 
 from pyalarmdotcomajax import const as c
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 from .helpers import ExtendedEnumMixin, extract_field_value
 
@@ -299,7 +299,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         except (AttributeError, IndexError) as err:
             log.error("Unable to extract page info from Alarm.com.")
             log.debug("====== HTTP DUMP BEGIN ======\n%s\n====== HTTP DUMP END ======", text)
-            raise UnexpectedDataStructure from err
+            raise UnexpectedResponse from err
 
         #
         # Get data for additional cameras.
@@ -309,7 +309,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Build payload to request config page for next camera
 
                 if not (postback_form_data := current_form_data.raw_attribs):
-                    raise UnexpectedDataStructure
+                    raise UnexpectedResponse
 
                 postback_form_data["__EVENTTARGET"] = "ctl00$phBody$CamSelector$ddlCams"
                 postback_form_data["ctl00$phBody$CamSelector$ddlCams"] = config_id
@@ -333,7 +333,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
             log.error("Can not load settings page for additional camera from Alarm.com")
 
             raise err
-        except UnexpectedDataStructure as err:
+        except UnexpectedResponse as err:
             log.debug("HTTP Response Status %s, Body:\n%s", resp.status, text)
             raise err
 
@@ -373,7 +373,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                     field_config_options = config_option
 
         except KeyError as err:
-            raise UnexpectedDataStructure("Slug not found.") from err
+            raise UnexpectedResponse("Slug not found.") from err
 
         log.debug("CameraSkybellControllerExtension -> submit_change(): Validating input.")
 
@@ -418,7 +418,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
         if not (payload := results[0].raw_attribs) or not (
             (config_id := results[0].config_id) or not isinstance(payload, dict)
         ):
-            raise UnexpectedDataStructure("Failed to refresh settings data for device.")
+            raise UnexpectedResponse("Failed to refresh settings data for device.")
 
         log.debug("CameraSkybellControllerExtension -> submit_change(): Creating response payload.")
 
@@ -562,7 +562,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 else:
                     try:
                         value = extract_field_value(field)
-                    except UnexpectedDataStructure:
+                    except UnexpectedResponse:
                         log.warning("Couldn't find field %s", field)
                         value = ""
                     raw_attribs[field_name] = value
@@ -571,7 +571,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 field = tree.find(attrs={"name": field_name})
                 try:
                     value = extract_field_value(field)
-                except UnexpectedDataStructure:
+                except UnexpectedResponse:
                     log.warning("Couldn't find field %s", field)
                     value = ""
                 raw_attribs[field_name] = value
@@ -580,7 +580,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 field = tree.find(attrs={"name": field_name})
                 try:
                     value = extract_field_value(field)
-                except UnexpectedDataStructure:
+                except UnexpectedResponse:
                     log.warning("Couldn't find field %s", field)
                     value = ""
                 raw_attribs[field_name] = value
@@ -591,7 +591,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                 try:
                     value = extract_field_value(field)
-                except UnexpectedDataStructure:
+                except UnexpectedResponse:
                     log.warning("Couldn't find field %s", field)
                     value = ""
 
@@ -662,9 +662,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                 properties.settings[config_option.slug] = config_option
 
-        except (KeyError, ValueError, UnexpectedDataStructure) as err:
+        except (KeyError, ValueError, UnexpectedResponse) as err:
             log.error("Unable to extract field. Failed on field %s.", field_name)
-            raise UnexpectedDataStructure from err
+            raise UnexpectedResponse from err
 
         properties.raw_attribs = raw_attribs
 

@@ -5,12 +5,14 @@ import sys
 
 import aiohttp
 import os
-from pyalarmdotcomajax import AlarmController, OtpType
-from pyalarmdotcomajax.errors import (
+from pyalarmdotcomajax.const import OtpType
+from pyalarmdotcomajax import AlarmController
+from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
-    DataFetchFailed,
-    TwoFactor_OtpRequired,
-    TwoFactor_ConfigurationRequired,
+    UnexpectedResponse,
+    OtpRequired,
+    ConfigureTwoFactorAuthentication,
+    NotAuthorized,
 )
 
 # Pulls usernane and password from environment variables. Replace with string below if you don't want to use env vars.
@@ -38,18 +40,23 @@ async def main() -> None:
         print(f"Logging in as {USERNAME}")
 
         try:
-            if enabled_2fa_methods := await alarm.async_login():
-                print("Two factor authentication is enabled for this user.")
-                await handle_otp_workflow(alarm, enabled_2fa_methods)
+            await alarm.async_login()
 
-        except TwoFactor_ConfigurationRequired:
+        except ConfigureTwoFactorAuthentication:
             sys.exit("Unable to log in. Please set up two-factor authentication for this account.")
 
-        except (ConnectionError, DataFetchFailed):
+        except (aiohttp.ClientError, asyncio.TimeoutError, UnexpectedResponse):
             sys.exit("Could not connect to Alarm.com.")
 
         except AuthenticationFailed:
             sys.exit("Invalid credentials.")
+
+        except NotAuthorized:
+            sys.exit("Permission error.")
+
+        except OtpRequired as exc:
+            print("Two factor authentication is enabled for this user.")
+            await handle_otp_workflow(alarm, exc.enabled_2fa_methods)
 
         #
         # PULL DEVICE DATA FROM ALARM.COM

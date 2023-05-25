@@ -65,9 +65,8 @@ class Light(BaseDevice):
     async def async_turn_on(self, brightness: int | None = None) -> None:
         """Send turn on command with optional brightness."""
 
-        msg_body: dict | None = None
+        msg_body: dict = {}
         if brightness:
-            msg_body = {}
             msg_body["dimmerLevel"] = brightness
 
         await self._send_action_callback(

@@ -7,7 +7,7 @@ import aiohttp
 import pytest
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.errors import DataFetchFailed
+from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 
 def test_property__initial_state(adc_client: AlarmController) -> None:
@@ -59,7 +59,7 @@ async def test___async_update__refresh_failure(
 ) -> None:
     """Test for when devices initialize but fail to refresh. Ensure that devices are wiped on update failure."""
 
-    with pytest.raises(DataFetchFailed):
+    with pytest.raises(UnexpectedResponse):
         await adc_client.async_update()
 
 

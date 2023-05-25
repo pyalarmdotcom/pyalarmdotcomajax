@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import TypedDict, Union
 
 from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.devices.camera import Camera
@@ -17,7 +17,7 @@ from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.errors import UnkonwnDevice, UnsupportedDevice
+from pyalarmdotcomajax.exceptions import UnkonwnDevice, UnsupportedDeviceType
 from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
@@ -36,7 +36,21 @@ AllDeviceTypes_t = (
     | type[WaterSensor]
 )
 
-AllDevices_t = (
+AllCommands_t = Union[
+    Camera.Command
+    | GarageDoor.Command
+    | Gate.Command
+    | ImageSensor.Command
+    | Light.Command
+    | Lock.Command
+    | Partition.Command
+    | Sensor.Command
+    | System.Command
+    | Thermostat.Command
+    | WaterSensor.Command
+]
+
+AllDevices_t = Union[
     Camera
     | GarageDoor
     | Gate
@@ -48,7 +62,7 @@ AllDevices_t = (
     | System
     | Thermostat
     | WaterSensor
-)
+]
 
 AllDevicesLists_t = (
     list[Camera]
@@ -117,7 +131,7 @@ class DeviceRegistry:
         try:
             return self._devices[device_id]
         except KeyError:
-            raise UnkonwnDevice(f"Device with id {device_id} not found.")
+            raise UnkonwnDevice(device_id)
 
     def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""
@@ -341,7 +355,7 @@ class AttributeRegistry:
         try:
             return AttributeRegistry._ATTRIBUTES.get(device_type, {})["endpoints"]
         except KeyError as err:
-            raise UnsupportedDevice from err
+            raise UnsupportedDeviceType(device_type) from err
 
     @staticmethod
     def get_class(device_type: DeviceType) -> type[AllDevices_t]:
@@ -350,7 +364,7 @@ class AttributeRegistry:
         try:
             return AttributeRegistry._ATTRIBUTES[device_type]["class_"]
         except KeyError as err:
-            raise UnsupportedDevice from err
+            raise UnsupportedDeviceType(device_type) from err
 
     @staticmethod
     def get_storage_name(device_type: DeviceType | type) -> str:
@@ -367,7 +381,7 @@ class AttributeRegistry:
             )
 
         except KeyError as err:
-            raise UnsupportedDevice from err
+            raise UnsupportedDeviceType(str(device_type)) from err
 
     @staticmethod
     def get_devicetype_from_relationship_id(relationship_id: str) -> DeviceType:
@@ -376,7 +390,7 @@ class AttributeRegistry:
             if attributes.get("rel_id") == relationship_id:
                 return device_type
 
-        raise UnsupportedDevice
+        raise UnsupportedDeviceType(relationship_id)
 
     @staticmethod
     def get_relationship_id_from_devicetype(device_type: DeviceType) -> str:
@@ -384,7 +398,7 @@ class AttributeRegistry:
         try:
             return AttributeRegistry._ATTRIBUTES[device_type]["rel_id"]
         except KeyError as err:
-            raise UnsupportedDevice from err
+            raise UnsupportedDeviceType(device_type) from err
 
     @classproperty
     def supported_device_types(cls) -> list[DeviceType]:  # pylint: disable=no-self-argument

@@ -5,13 +5,13 @@
 # #
 
 import asyncio
-from multiprocessing import AuthenticationError
 import sys
 
 import aiohttp
 
 from pyalarmdotcomajax import AlarmController
 from pyalarmdotcomajax.devices.partition import Partition
+from pyalarmdotcomajax.exceptions import UnexpectedResponse, NotAuthorized, AuthenticationFailed
 
 USERNAME = "ENTER YOUR USERNAME"
 PASSWORD = "ENTER YOUR PASSWORD"
@@ -31,10 +31,13 @@ async def main() -> None:
         try:
             await alarm.async_login()
             await alarm.async_update()
-        except AuthenticationError:
+        except AuthenticationFailed:
             print("Failed to login. Your credentials are incorrect.")
             sys.exit()
-        except ConnectionError:
+        except NotAuthorized:
+            print("Encountered permission error while retrieving data.")
+            sys.exit()
+        except (aiohttp.ClientError, asyncio.TimeoutError, UnexpectedResponse):
             print("Failed to login. Could not establish a connection to the Alarm.com server.")
             sys.exit()
 
@@ -46,14 +49,14 @@ async def main() -> None:
                 try:
                     await partition.async_disarm()
                     print("Disarmed successfully.")
-                except PermissionError:
+                except NotAuthorized:
                     print(
                         "Failed to disarm. Your Alarm.com user does not have permission to change the state of"
                         " this control panel."
                     )
-                except AuthenticationError:
+                except AuthenticationFailed:
                     print("Failed to disarm. Your credentials are incorrect.")
-                except ConnectionError:
+                except (asyncio.TimeoutError, aiohttp.ClientError, UnexpectedResponse):
                     print("Failed to disarm. Could not establish a connection to the Alarm.com server.")
             else:
                 print(f"Alarm control panel {partition.name} is already disarmed. Nothing to do here...")
