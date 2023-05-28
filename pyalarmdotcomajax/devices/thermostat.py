@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
+from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 from . import BaseDevice
 
@@ -189,7 +189,7 @@ class Thermostat(BaseDevice):
         if (attrib_list := [state, fan, cool_setpoint, heat_setpoint, schedule_mode]).count(None) < len(
             attrib_list
         ) - 1:
-            raise UnexpectedDataStructure
+            raise UnexpectedResponse
 
         # Build the request body.
         if state:

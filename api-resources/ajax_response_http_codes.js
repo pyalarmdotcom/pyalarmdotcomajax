@@ -4,7 +4,7 @@ export const NotLoggedIn = 401;
 
 export const InvalidAntiForgeryToken = 403;
 
-export const NoPermissionForEmber = 406;
+export const NotAuthorizedForEmber = 406;
 
 export const TwoFactorAuthenticationRequired = 409;
 

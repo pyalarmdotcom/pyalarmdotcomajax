@@ -1,18 +1,18 @@
 """Tests for main controller."""
 
 # pylint: disable=protected-access
-
+# ruff: noqa: SLF001, S105
 
 import aiohttp
 import pytest
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.errors import DataFetchFailed
+from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 
 def test_property__initial_state(adc_client: AlarmController) -> None:
     """Ensure that login data is ingested correctly."""
-    assert adc_client._password == "hunter2"  # noqa: S105
+    assert adc_client._password == "hunter2"
     assert adc_client._username == "test-username"
     assert adc_client.two_factor_cookie == "test-cookie"
     assert isinstance(adc_client._websession, aiohttp.ClientSession)
@@ -20,16 +20,7 @@ def test_property__initial_state(adc_client: AlarmController) -> None:
     assert adc_client.provider_name is None
     assert adc_client.user_id is None
 
-    assert not adc_client.devices.systems.values()
-    assert not adc_client.devices.partitions.values()
-    assert not adc_client.devices.sensors.values()
-    assert not adc_client.devices.locks.values()
-    assert not adc_client.devices.garage_doors.values()
-    assert not adc_client.devices.image_sensors.values()
-    assert not adc_client.devices.lights.values()
-    assert not adc_client.devices.thermostats.values()
-    assert not adc_client.devices.cameras.values()
-    assert not adc_client.devices.water_sensors.values()
+    assert not adc_client.devices.all.values()
 
 
 @pytest.mark.asyncio
@@ -59,7 +50,7 @@ async def test___async_update__refresh_failure(
 ) -> None:
     """Test for when devices initialize but fail to refresh. Ensure that devices are wiped on update failure."""
 
-    with pytest.raises(DataFetchFailed):
+    with pytest.raises(UnexpectedResponse):
         await adc_client.async_update()
 
 

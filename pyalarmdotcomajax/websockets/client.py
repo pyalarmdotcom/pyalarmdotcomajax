@@ -1,6 +1,5 @@
 """Functions for communicating with Alarm.com over WebSockets."""
 
-# noqa: T201
 
 from __future__ import annotations
 
@@ -22,7 +21,7 @@ from pyalarmdotcomajax.devices.registry import DeviceRegistry
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.errors import AuthenticationFailed, DataFetchFailed
+from pyalarmdotcomajax.exceptions import AuthenticationFailed, UnexpectedResponse
 from pyalarmdotcomajax.websockets.handler.garage_door import GarageDoorWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.gate import GateWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.light import LightWebSocketHandler
@@ -100,10 +99,11 @@ class WebSocketClient:
         # Get authentication token for websocket communication
         try:
             self._ws_auth_token = await self._async_get_websocket_token()
-            if not self._ws_auth_token:
-                raise AuthenticationFailed("async_connect(): Failed to get WebSocket authentication token.")
-        except (DataFetchFailed, AuthenticationFailed) as err:
+        except (UnexpectedResponse, AuthenticationFailed) as err:
             raise AuthenticationFailed from err
+
+        if not self._ws_auth_token:
+            raise AuthenticationFailed("async_connect(): Failed to get WebSocket authentication token.")
 
         try:
             # Connect to websocket endpoint
@@ -126,7 +126,7 @@ class WebSocketClient:
                         break
 
                     elif msg.type == aiohttp.WSMsgType.ERROR:
-                        log.error("AIOHTTP websocket error: '%s'", msg.data)
+                        log.exception("AIOHTTP websocket error: '%s'", msg.data)
                         break
 
                     try:
@@ -138,12 +138,12 @@ class WebSocketClient:
 
         except aiohttp.ClientConnectorError:
             if self.state != WebSocketState.STOPPED:
-                log.error("WebSocket client connection error")
+                log.exception("WebSocket client connection error")
                 self.state = WebSocketState.DISCONNECTED
 
-        except Exception as err:
+        except Exception:
             if self.state != WebSocketState.STOPPED:
-                log.error("Unexpected WebSocket error %s", err)
+                log.exception("Unexpected WebSocket error")
                 self.state = WebSocketState.DISCONNECTED
 
         else:
@@ -220,7 +220,7 @@ class WebSocketClient:
                 ),
                 resp,
             )
-            raise DataFetchFailed(
+            raise UnexpectedResponse(
                 "async_get_websocket_token(): Received errors while requesting WebSocket authentication token."
             )
 

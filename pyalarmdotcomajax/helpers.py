@@ -7,8 +7,6 @@ from typing import Any
 
 from bs4 import Tag
 
-from pyalarmdotcomajax.errors import UnexpectedDataStructure
-
 log = logging.getLogger(__name__)
 
 
@@ -54,9 +52,10 @@ class CastingMixin:
             extracted_list: list = list(src_dict.get(key))  # type: ignore
             for duration in extracted_list:
                 value_type(duration)
-            return extracted_list
         except (ValueError, TypeError):
             pass
+        else:
+            return extracted_list
 
         return None
 
@@ -115,26 +114,28 @@ class ExtendedEnumMixin(Enum):
         return cls._member_names_
 
 
-def extract_field_value(field: Tag) -> str | None:
+def extract_field_value(field: Tag) -> str:
     """Extract value from BeautifulSoup4 text, checkbox, and dropdown fields."""
 
     # log.debug("Extracting field: %s", field)
 
-    value: str | None = None
+    value = None
+
     try:
         if field.attrs.get("name") and field.name == "select":
             value = field.findChild(attrs={"selected": "selected"}).attrs["value"]
-        elif field.attrs.get("checked") and (is_checked := field.attrs["checked"]):
-            value = is_checked == "checked"
+        elif field.attrs.get("checked") and field.attrs.get("checked"):
+            value = field.attrs["checked"] == "checked"
         elif field.attrs.get("value"):
             value = field.attrs["value"]
-        else:
-            pass
 
     except (KeyError, AttributeError) as err:
-        raise UnexpectedDataStructure from err
+        raise ValueError from err
 
-    return value
+    if not value:
+        raise ValueError("Value not found.")
+
+    return str(value)
 
 
 def slug_to_title(slug: str) -> str:

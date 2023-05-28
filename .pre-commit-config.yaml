@@ -37,6 +37,8 @@ repos:
       hooks:
           - id: yamllint
             exclude: (.vscode|.devcontainer|.github)
+            args:
+                - -d relaxed
     - repo: https://github.com/pappasam/toml-sort
       rev: v0.23.1
       hooks:

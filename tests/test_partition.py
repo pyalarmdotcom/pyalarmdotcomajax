@@ -1,5 +1,7 @@
 """Test partition device."""
 
+# ruff: noqa: PLR2004
+
 from collections import Counter
 
 import pytest

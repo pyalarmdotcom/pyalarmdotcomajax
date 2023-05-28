@@ -2,20 +2,19 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import json
 import logging
 import re
 from collections.abc import Callable, Coroutine
 from contextlib import suppress
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Any, TypedDict
 
 import aiohttp
 from bs4 import BeautifulSoup
 
 from pyalarmdotcomajax import const as c
+from pyalarmdotcomajax.const import OtpType
 from pyalarmdotcomajax.devices import (
     BaseDevice,
     DeviceTypeSpecificData,
@@ -28,14 +27,15 @@ from pyalarmdotcomajax.devices.registry import (
     DeviceRegistry,
     DeviceType,
 )
-from pyalarmdotcomajax.errors import (
+from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
-    DataFetchFailed,
+    ConfigureTwoFactorAuthentication,
+    NotAuthorized,
+    OtpRequired,
     SessionTimeout,
     TryAgain,
-    TwoFactor_ConfigurationRequired,
-    UnexpectedDataStructure,
-    UnsupportedDevice,
+    UnexpectedResponse,
+    UnsupportedDeviceType,
 )
 from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
@@ -44,9 +44,6 @@ from pyalarmdotcomajax.extensions import (
     ExtendedProperties,
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
-
-# TODO: Use error handler and exception handlers in _async_get_system_devices on other request functions.
-# TODO: Fix get raw server response function.
 
 __version__ = "0.5.0-beta.5"
 
@@ -58,18 +55,6 @@ class ExtensionResults(TypedDict):
 
     settings: dict[str, ConfigurationOption]
     controller: ControllerExtensions_t
-
-
-class OtpType(Enum):
-    """Alarm.com two factor authentication type."""
-
-    # https://www.alarm.com/web/system/assets/customer-ember/enums/TwoFactorAuthenticationType.js
-    # Keep these lowercase. Strings.json in Home Assistant requires lowercase values.
-
-    disabled = 0
-    app = 1
-    sms = 2
-    email = 4
 
 
 class AlarmController:
@@ -221,8 +206,19 @@ class AlarmController:
     #
     #
 
-    async def async_update(self) -> None:  # noqa: C901
-        """Fetch latest device data."""
+    async def async_update(self) -> None:
+        """Pull latest device data from Alarm.com.
+
+        Raises:
+            OtpRequired: Username and password are correct. User now needs to begin two-factor authentication workflow.
+            ConfigureTwoFactorAuthentication: Alarm.com requires that the user set up two-factor authentication for their account.
+            UnexpectedResponse: Server returned status code >=400 or response object was not as expected.
+            aiohttp.ClientError: Connection error.
+            asyncio.TimeoutError: Connection error due to timeout.
+            NotAuthorized: User doesn't have permission to perform the action requested.
+            AuthenticationFailed: User could not be logged in, likely due to invalid credentials.
+            UnsupportedDeviceType: Device type is not supported by this library.
+        """
 
         log.debug("Calling update on Alarm.com")
 
@@ -232,8 +228,7 @@ class AlarmController:
             self._active_system_id = await self._async_get_active_system()
             has_image_sensors = await self._async_has_image_sensors(self._active_system_id)
 
-        with contextlib.suppress(DataFetchFailed, UnexpectedDataStructure):
-            await self._async_get_trouble_conditions()
+        await self._async_get_trouble_conditions()
 
         #
         # GET CORE DEVICE ATTRIBUTES
@@ -272,13 +267,13 @@ class AlarmController:
 
         # Ensure that partition map is built before devices are built.
 
-        for device in [
-            device
-            for device in raw_devices
-            if device["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
+        for partition_raw in [
+            partition_raw
+            for partition_raw in raw_devices
+            if partition_raw["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
         ]:
             partition_instance: AllDevices_t = await self._async_update__build_device(
-                device, device_type_specific_data, extension_results
+                partition_raw, device_type_specific_data, extension_results
             )
 
             for child, _ in partition_instance.children:
@@ -286,22 +281,22 @@ class AlarmController:
 
             device_instances.update({partition_instance.id_: partition_instance})
 
-            raw_devices.remove(device)
+            raw_devices.remove(partition_raw)
 
             #
             # BUILD ALL DEVICES IN PARTITION
             #
             # This ensures that partition map is built before devices are built.
 
-            for device in raw_devices:
+            for device_raw in raw_devices:
                 try:
                     device_instance: AllDevices_t = await self._async_update__build_device(
-                        device, device_type_specific_data, extension_results
+                        device_raw, device_type_specific_data, extension_results
                     )
 
                     device_instances.update({device_instance.id_: device_instance})
 
-                except UnsupportedDevice:
+                except UnsupportedDeviceType:
                     continue
 
         self.devices.update(device_instances, purge=True)
@@ -310,7 +305,7 @@ class AlarmController:
         self,
         device_type: DeviceType,
         event: BaseDevice.Command,
-        device_id: str | None = None,  # ID corresponds to device_type
+        device_id: str,  # ID corresponds to device_type
         msg_body: dict = {},  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> bool:
@@ -324,69 +319,63 @@ class AlarmController:
                 f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
             )
         except KeyError as err:
-            raise UnsupportedDevice from err
+            raise UnsupportedDeviceType(device_type, device_id) from err
 
         log.debug("Url %s", url)
 
-        async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
-            log.debug("Response from Alarm.com %s", resp.status)
+        try:
+            async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
+                log.debug("Response from Alarm.com %s", resp.status)
 
-            match str(resp.status):
-                case "200":
-                    # Update entities after calling state change.
-                    # TODO: Confirm that we can remove this call because of webhook support.
-                    # await self.async_update()
-                    return True
+                json_rsp = await resp.json()
 
-                case "423":
-                    # User has read-only permission to the entity.
-                    err_msg = (
-                        f"{__name__}: User {self.user_email} has read-only access to"
-                        f" {device_type.name.lower()} {device_id}."
-                    )
-                    raise PermissionError(err_msg)
-
-                case "422":
-                    if isinstance(event, Partition.Command) and (msg_body.get("forceBypass") is True):
-                        # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
-                        log.debug(
-                            "Error executing %s, trying again without force bypass...",
-                            event.value,
-                        )
-
-                        # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
-
-                        msg_body["forceBypass"] = False
-
-                        return await self.async_send_command(
-                            device_type=device_type,
-                            event=event,
-                            device_id=device_id,
-                            msg_body=msg_body,
-                        )
-
-                case "403":
-                    # Session may have expired. Log back in and try again.
-                    log.warning(
-                        "Error executing %s. Session. probably expired. Logging in and trying again...",
+                # Special handling of 422 status.
+                # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
+                if (
+                    str(resp.status) == "422"
+                    and isinstance(event, Partition.Command)
+                    and (msg_body.get("forceBypass") is True)
+                ):
+                    log.debug(
+                        "Error executing %s, trying again without force bypass...",
                         event.value,
                     )
 
-                    if retry_on_failure:
-                        await self.async_login()
-                        return await self.async_send_command(
-                            device_type,
-                            event,
-                            device_id,
-                            msg_body,
-                            False,
-                        )
+                    # Not changing retry_on_failure. Changing forcebypass means that we won't re-enter this block.
 
-        log.error(
-            f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
-            f" {self._ajax_headers}"
-        )
-        raise ConnectionError
+                    msg_body["forceBypass"] = False
+
+                    return await self.async_send_command(
+                        device_type=device_type,
+                        event=event,
+                        device_id=device_id,
+                        msg_body=msg_body,
+                    )
+
+                # Run standard server response checks.
+                await self._async_handle_server_errors(json_rsp, "send_command", retry_on_failure)
+
+                # If above pass and we have a 200, we're good.
+                if str(resp.status) == "200":
+                    return True
+
+        except aiohttp.ClientResponseError as err:
+            log.exception("Failed to send command.")
+            raise UnexpectedResponse from err
+        except TryAgain:
+            return await self.async_send_command(
+                device_type=device_type,
+                event=event,
+                device_id=device_id,
+                msg_body=msg_body,
+                retry_on_failure=False,
+            )
+        else:
+            log.exception(
+                f"{event.value} failed with HTTP code {resp.status}. URL: {url}\nJSON: {msg_body}\nHeaders:"
+                f" {self._ajax_headers}"
+            )
+            raise UnexpectedResponse
 
     async def start_session_nudger(self) -> None:
         """Start task to nudge user sessions to keep from timing out."""
@@ -426,83 +415,208 @@ class AlarmController:
 
     async def async_login(
         self,
-    ) -> list[OtpType] | None:
-        """Login to Alarm.com."""
+    ) -> None:
+        """Log in to Alarm.com.
+
+        Raises:
+            OtpRequired: Username and password are correct. User now needs to begin two-factor authentication workflow.
+            ConfigureTwoFactorAuthentication: Alarm.com requires that the user set up two-factor authentication for their account.
+            UnexpectedResponse: Server returned status code >=400 or response object was not as expected.
+            aiohttp.ClientError: Connection error.
+            asyncio.TimeoutError: Connection error due to timeout.
+            NotAuthorized: User doesn't have permission to perform the action requested.
+            AuthenticationFailed: User could not be logged in, likely due to invalid credentials.
+        """
         log.debug("Attempting to log in to Alarm.com")
 
+        #
+        # Step 1: Get login page and cookies
+        #
+
         try:
-            await self._async_login_and_get_key()
-            await self._async_get_identity_info()
+            # load login page once and grab VIEWSTATE/cookies
+            async with self._websession.get(url=self.LOGIN_URL, cookies=self._two_factor_cookie) as resp:
+                text = await resp.text()
+                log.debug("Response status from Alarm.com: %s", resp.status)
+                tree = BeautifulSoup(text, "html.parser")
+                login_info = {
+                    self.VIEWSTATE_FIELD: tree.select(f"#{self.VIEWSTATE_FIELD}")[0].attrs.get("value"),
+                    self.VIEWSTATEGENERATOR_FIELD: tree.select(f"#{self.VIEWSTATEGENERATOR_FIELD}")[0].attrs.get(
+                        "value"
+                    ),
+                    self.EVENTVALIDATION_FIELD: tree.select(f"#{self.EVENTVALIDATION_FIELD}")[0].attrs.get(
+                        "value"
+                    ),
+                    self.PREVIOUSPAGE_FIELD: tree.select(f"#{self.PREVIOUSPAGE_FIELD}")[0].attrs.get("value"),
+                }
 
-            log.info("Logged in successfully.")
+        except aiohttp.ClientResponseError as err:
+            log.exception("Failed to load login page.")
+            raise UnexpectedResponse from err
+        except (AttributeError, IndexError) as err:
+            log.exception("Unable to extract login info from Alarm.com")
+            raise UnexpectedResponse from err
 
-            return await self._get_2fa_requirements()
+        #
+        # Step 2: Log in and save anti-forgery key
+        #
 
-        except (DataFetchFailed, UnexpectedDataStructure) as err:
-            raise ConnectionError from err
-        except (AuthenticationFailed, PermissionError) as err:
-            raise AuthenticationFailed from err
+        try:
+            # login and grab ajax key
+            async with self._websession.post(
+                url=self.LOGIN_POST_URL,
+                data={
+                    self.LOGIN_USERNAME_FIELD: self._username,
+                    self.LOGIN_PASSWORD_FIELD: self._password,
+                    self.VIEWSTATE_FIELD: login_info[self.VIEWSTATE_FIELD],
+                    self.VIEWSTATEGENERATOR_FIELD: login_info[self.VIEWSTATEGENERATOR_FIELD],
+                    self.EVENTVALIDATION_FIELD: login_info[self.EVENTVALIDATION_FIELD],
+                    self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
+                    self.LOGIN_REMEMBERME_FIELD: "on",
+                    "IsFromNewSite": "1",
+                },
+                cookies=self._two_factor_cookie,
+                raise_for_status=True,
+            ) as resp:
+                if re.search("m=login_fail", str(resp.url)) is not None:
+                    log.exception("Login failed.")
+                    log.exception("\nResponse URL:\n%s\n", str(resp.url))
+                    log.exception("\nRequest Headers:\n%s\n", str(resp.request_info.headers))
+                    raise AuthenticationFailed("Invalid username and password.")
 
-    async def _get_2fa_requirements(self) -> list[OtpType] | None:
-        """Get list of two factor authentication methods enabled on account."""
+                # Update anti-forgery cookie
+                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
+
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get AJAX key from Alarm.com.")
+            raise UnexpectedResponse from err
+
+        self._last_session_refresh = datetime.now()
+
+        log.debug("Logged in to Alarm.com.")
+
+        #
+        # Step 3: Get user's profile.
+        #
 
         async with self._websession.get(
-            url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
+            url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
             headers=self._ajax_headers,
+            cookies=self._two_factor_cookie,
         ) as resp:
             json_rsp = await resp.json()
 
-            if not (data := json_rsp.get("data", {})):
-                raise UnexpectedDataStructure("Could not find expected data in two-factor authentication details.")
+            try:
+                self._user_id = json_rsp["data"][0]["id"]
+                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
+                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
 
-            if data.get("showSuggestedSetup") is True:
-                raise TwoFactor_ConfigurationRequired(
-                    "Got 2FA nag screen. 2FA must be configured on this account before proceeding."
+                for inclusion in json_rsp["included"]:
+                    if inclusion["id"] == self._user_id and inclusion["type"] == "profile/profile":
+                        self._user_email = inclusion["attributes"]["loginEmailAddress"]
+
+                if not self._user_email:
+                    raise UnexpectedResponse("Failed to get user's email address.")
+            except KeyError as err:
+                log.exception(f"{__name__} _async_get_identity_info: Failed to get user's identity info.")
+                log.debug(
+                    f"{__name__} _async_get_identity_info: Server Response:\n{json.dumps(json_rsp, indent=4)}"
                 )
+                raise AuthenticationFailed from err
 
-            enabled_otp_types_bitmask = json_rsp.get("data", {}).get("attributes", {}).get("enabledTwoFactorTypes")
-            enabled_2fa_methods = [
-                otp_type for otp_type in OtpType if bool(enabled_otp_types_bitmask & otp_type.value)
-            ]
+            try:
+                self._session_refresh_interval_ms = json_rsp["data"][0]["attributes"][
+                    "applicationSessionProperties"
+                ]["inactivityWarningTimeoutMs"]
 
-            if OtpType.disabled in enabled_2fa_methods or data.get("isCurrentDeviceTrusted") is True:
-                # 2FA is disabled, we can skip 2FA altogether.
-                return None
+                if not self._session_refresh_interval_ms:
+                    raise KeyError
 
-            log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
-            return enabled_2fa_methods
+            except KeyError:
+                self._session_refresh_interval_ms = self.SESSION_REFRESH_DEFAULT_INTERVAL_MS
+
+            try:
+                self._keep_alive_url = json_rsp["data"][0]["attributes"]["applicationSessionProperties"][
+                    "keepAliveUrl"
+                ]
+
+                if not self._keep_alive_url:
+                    raise KeyError
+
+            except KeyError:
+                self._keep_alive_url = self.KEEP_ALIVE_DEFAULT_URL
+
+            log.debug("*** START IDENTITY INFO ***")
+            log.debug(f"Provider: {self._provider_name}")
+            log.debug(f"User: {self._user_id} {self._user_email}")
+            log.debug(f"Keep Alive Interval: {self._session_refresh_interval_ms}")
+            log.debug(f"Keep Alive URL: {self._keep_alive_url}")
+            log.debug("*** END IDENTITY INFO ***")
+
+        #
+        # Step 4: Determine whether OTP is required
+        #
+
+        try:
+            async with self._websession.get(
+                url=self.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
+                headers=self._ajax_headers,
+            ) as resp:
+                json_rsp = await resp.json()
+
+            await self._async_handle_server_errors(json_rsp, "2FA requirements", False)
+
+        except aiohttp.ClientResponseError as err:
+            log.exception("Failed to get 2FA requirements.")
+            raise UnexpectedResponse from err
+
+        if not (attribs := json_rsp.get("data", {}).get("attributes")):
+            raise UnexpectedResponse("Could not find expected data in two-factor authentication details.")
+
+        if attribs.get("showSuggestedSetup") is True:
+            raise ConfigureTwoFactorAuthentication
+
+        enabled_otp_types_bitmask = attribs.get("enabledTwoFactorTypes")
+        enabled_2fa_methods = [
+            otp_type for otp_type in OtpType if bool(enabled_otp_types_bitmask & otp_type.value)
+        ]
+
+        if (OtpType.disabled in enabled_2fa_methods) or (attribs.get("isCurrentDeviceTrusted") is True):
+            # 2FA is disabled, we can skip 2FA altogether.
+            return
+
+        log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
+
+        raise OtpRequired(enabled_2fa_methods)
 
     async def async_request_otp(self, method: OtpType | None) -> None:
         """Request SMS/email OTP code from Alarm.com."""
 
+        log.debug("Requesting OTP code...")
+
         if method not in (OtpType.email, OtpType.sms):
-            return None
+            return
 
+        request_url = (
+            self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
+            if method == OtpType.email
+            else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
+        )
         try:
-            log.debug("Requesting OTP code...")
-
-            request_url = (
-                self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
-                if method == OtpType.email
-                else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
-            )
-
             async with self._websession.post(
                 url=request_url.format(c.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
-            ) as resp:
-                if resp.status != 200:
-                    raise DataFetchFailed("Failed to request 2FA code.")
+                raise_for_status=True,
+            ):
+                pass
 
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            log.error("Can not load 2FA submission page from Alarm.com")
-            raise DataFetchFailed from err
-
-        return None
+        except aiohttp.ClientResponseError as err:
+            log.exception("Failed to get available systems.")
+            raise UnexpectedResponse from err
 
     async def async_submit_otp(
         self, code: str, method: OtpType, device_name: str | None = None, remember_me: bool = False
-    ) -> str | None:
+    ) -> None:
         """Submit two factor authentication code.
 
         Register device and return 2FA code if device_name is not None.
@@ -512,35 +626,24 @@ class AlarmController:
         try:
             log.debug("Submitting OTP code...")
 
-            if not method:
-                raise AuthenticationFailed("Missing OTP type.")
-
             async with self._websession.post(
                 url=self.LOGIN_2FA_POST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                 headers=self._ajax_headers,
                 json={"code": code, "typeOf2FA": method.value},
+                raise_for_status=True,
             ) as resp:
                 json_rsp = await resp.json()
 
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            log.error("Can not load 2FA submission page from Alarm.com")
-            raise DataFetchFailed from err
-
-        if resp.status == 422:
-            raise AuthenticationFailed("Wrong code.")
-        if resp.status > 400:
-            log.error(
-                "Failed 2FA submission with status %s: %s",
-                resp.status,
-                await resp.text(),
-            )
-            raise DataFetchFailed("Unknown error.")
+        except aiohttp.ClientResponseError as err:
+            if err.status == 422:
+                raise AuthenticationFailed("Wrong code.") from err
+            raise UnexpectedResponse from err
 
         log.debug("Submitted OTP code.")
 
         if not device_name and not remember_me:
             log.debug('Skipping "Remember Me".')
-            return None
+            return
 
         # Submit device name for "remember me" function.
         if suggested_device_name := json_rsp.get("value", {}).get("deviceName"):
@@ -551,11 +654,12 @@ class AlarmController:
                     url=self.LOGIN_2FA_TRUST_URL_TEMPLATE.format(c.URL_BASE, self._user_id),
                     headers=self._ajax_headers,
                     json={"deviceName": device_name if device_name else suggested_device_name},
+                    raise_for_status=True,
                 ) as resp:
                     json_rsp = await resp.json()
-            except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-                log.error("Can not load device trust page from Alarm.com")
-                raise DataFetchFailed from err
+            except aiohttp.ClientResponseError as err:
+                log.exception("Failed to send command.")
+                raise UnexpectedResponse from err
 
             log.debug("Registered device.")
 
@@ -564,32 +668,33 @@ class AlarmController:
             if cookie.key == self.LOGIN_TWO_FACTOR_COOKIE_NAME:
                 log.debug("Found two-factor authentication cookie: %s", cookie.value)
                 self._two_factor_cookie = {"twoFactorAuthenticationId": cookie.value} if cookie.value else {}
-                return str(cookie.value)
+                return
 
-        log.error("Failed to find two-factor authentication cookie.")
-        return None
+        raise UnexpectedResponse("Failed to find two-factor authentication cookie.")
 
     async def is_logged_in(self, throw: bool = False) -> bool:
         """Check if we are still logged in."""
 
         url = f"{c.URL_BASE[:-1]}{self._keep_alive_url}{self.KEEP_ALIVE_URL_PARAM_TEMPLATE.format(int(round(datetime.now().timestamp())))}"
 
-        async with self._websession.get(
-            url=url,
-            headers=self._ajax_headers,
-        ) as resp:
-            text_rsp = await resp.text()
+        try:
+            async with self._websession.get(
+                url=url,
+                headers=self._ajax_headers,
+                raise_for_status=True,
+            ) as resp:
+                text_rsp = await resp.text()
 
-        if resp.status == 403:
-            log.debug("Session expired.")
+        except aiohttp.ClientResponseError as err:
+            if err.status == 403:
+                log.debug("Session expired.")
 
-            if throw:
-                raise SessionTimeout
+                if throw:
+                    raise SessionTimeout
 
-            return False
+                return False
 
-        elif resp.status >= 400:
-            raise DataFetchFailed(f"Failed to send keep alive signal. Response: {text_rsp}")
+            raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
 
         return True
 
@@ -641,11 +746,9 @@ class AlarmController:
             json_rsp = await resp.json()
 
             if resp.status >= 400:
-                raise DataFetchFailed(f"Failed to reload session context. Response: {json_rsp}")
+                raise UnexpectedResponse(f"Failed to reload session context. Response: {json_rsp}")
 
             self._last_session_refresh = datetime.now()
-
-        return None
 
     async def _async_update__build_device(
         self,
@@ -669,7 +772,7 @@ class AlarmController:
             (device_type == DeviceType.CAMERA)
             and (raw_device.get("attributes", {}).get("deviceModel") != "SKYBELLHD")
         ):
-            raise UnsupportedDevice(f"Unsupported device type: {device_type}")
+            raise UnsupportedDeviceType(device_type, raw_device.get("id"))
 
         children: list[tuple[str, DeviceType]] = []
 
@@ -688,7 +791,7 @@ class AlarmController:
             entity_id := raw_device["id"], {}
         )
 
-        device_instance = device_class(
+        return device_class(
             id_=entity_id,
             raw_device_data=raw_device,
             children=children,
@@ -703,8 +806,6 @@ class AlarmController:
             partition_id=self._partition_map.get(entity_id),
             settings=device_extension_results.get("settings"),
         )
-
-        return device_instance
 
     async def _async_update__query_multi_device_extensions(
         self, raw_devices: list[dict]
@@ -734,11 +835,13 @@ class AlarmController:
             # Camera Skybell HD Extension
             # Skybell HD extension pulls data for all cameras at once.
             #
-            if device_type == DeviceType.CAMERA:
-                if raw_device.get("attributes", {}).get("deviceModel") == "SKYBELLHD":
-                    required_extensions.append(CameraSkybellControllerExtension)
-                    # Stop searching at the first hit since once we have a Skybell, we know that we need to query the extension.
-                    break
+            if (
+                device_type == DeviceType.CAMERA
+                and raw_device.get("attributes", {}).get("deviceModel") == "SKYBELLHD"
+            ):
+                required_extensions.append(CameraSkybellControllerExtension)
+                # Stop searching at the first hit since once we have a Skybell, we know that we need to query the extension.
+                break
 
         if not required_extensions:
             return {}
@@ -766,7 +869,7 @@ class AlarmController:
             try:
                 # Fetch from Alarm.com
                 extended_properties_by_device: list[ExtendedProperties] = await extension_controller.fetch()
-            except UnexpectedDataStructure:
+            except UnexpectedResponse:
                 continue
 
             # Match extended properties to devices by name, then add to storage.
@@ -799,14 +902,14 @@ class AlarmController:
                     [system["id"] for system in json_rsp.get("data", []) if system["attributes"]["isSelected"]][0]
                 )
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
-            log.error("Failed to get available systems.")
-            raise DataFetchFailed from err
-        except TryAgain as err:
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get active system.")
+            raise UnexpectedResponse from err
+        except TryAgain:
             if retry_on_failure:
                 return await self._async_get_active_system(retry_on_failure=False)
-            else:
-                raise err
+
+            raise
 
     async def _async_get_recent_images(self) -> dict[str, DeviceTypeSpecificData]:
         """Get recent images."""
@@ -833,11 +936,12 @@ class AlarmController:
                     str(image["relationships"]["imageSensor"]["data"]["id"]), {}
                 ).setdefault("raw_recent_images", []).append(image)
 
-            return device_type_specific_data
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get recent images.")
+            raise UnexpectedResponse from err
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, KeyError) as err:
-            log.error("Failed to get available systems.")
-            raise DataFetchFailed from err
+        else:
+            return device_type_specific_data
 
     async def _async_has_image_sensors(self, system_id: str, retry_on_failure: bool = True) -> bool:
         """Check whether image sensors are present in system.
@@ -862,14 +966,14 @@ class AlarmController:
 
                 return len(json_rsp["data"].get("relationships", {}).get("imageSensors", {}).get("data", [])) > 0
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
-            log.error("Failed to get image sensors.")
-            raise DataFetchFailed from err
-        except TryAgain as err:
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get image sensors.")
+            raise UnexpectedResponse from err
+        except TryAgain:
             if retry_on_failure:
                 return await self._async_has_image_sensors(system_id, retry_on_failure=False)
-            else:
-                raise err
+
+            raise
 
     async def _async_get_system(self, system_id: str, retry_on_failure: bool = True) -> list[dict]:
         """Get all devices present in system."""
@@ -890,9 +994,9 @@ class AlarmController:
 
                 return [json_rsp["data"]]
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
-            log.error("Failed to get system devices.")
-            raise DataFetchFailed from err
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get system metadata.")
+            raise UnexpectedResponse from err
         except TryAgain:
             return await self._async_get_system(system_id=system_id, retry_on_failure=False)
 
@@ -919,9 +1023,9 @@ class AlarmController:
                     if device.get("type") in AttributeRegistry.all_relationship_ids
                 ]
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
-            log.error("Failed to get system devices.")
-            raise DataFetchFailed from err
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get system devices.")
+            raise UnexpectedResponse from err
         except TryAgain:
             return await self._async_get_system_devices(system_id=system_id, retry_on_failure=False)
 
@@ -947,65 +1051,11 @@ class AlarmController:
 
                 return list(json_rsp["data"])
 
-        except (asyncio.TimeoutError, aiohttp.ClientError, aiohttp.ClientResponseError, KeyError) as err:
-            log.error(f"Failed to get {device_type.value}.")
-            raise DataFetchFailed from err
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception(f"Failed to get devices of type {device_type}.")
+            raise UnexpectedResponse from err
         except TryAgain:
             return await self._async_get_devices_by_device_type(device_type=device_type, retry_on_failure=False)
-
-    async def _async_get_identity_info(self) -> None:
-        """Get user id, email address, provider name, etc."""
-
-        async with self._websession.get(
-            url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
-            headers=self._ajax_headers,
-            cookies=self._two_factor_cookie,
-        ) as resp:
-            json_rsp = await resp.json()
-
-            try:
-                self._user_id = json_rsp["data"][0]["id"]
-                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
-                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
-
-                for inclusion in json_rsp["included"]:
-                    if inclusion["id"] == self._user_id and inclusion["type"] == "profile/profile":
-                        self._user_email = inclusion["attributes"]["loginEmailAddress"]
-
-                if not self._user_email:
-                    raise KeyError("Failed to get user's email address.")
-            except KeyError as err:
-                log.error(f"{__name__} _async_get_identity_info: Failed to get user's identity info.")
-                log.debug(
-                    f"{__name__} _async_get_identity_info: Server Response:\n{json.dumps(json_rsp, indent=4)}"
-                )
-                raise AuthenticationFailed from err
-
-            try:
-                self._session_refresh_interval_ms = json_rsp["data"][0]["attributes"][
-                    "applicationSessionProperties"
-                ]["inactivityWarningTimeoutMs"]
-
-                if not self._session_refresh_interval_ms:
-                    raise KeyError
-            except KeyError:
-                self._session_refresh_interval_ms = self.SESSION_REFRESH_DEFAULT_INTERVAL_MS
-
-            try:
-                self._keep_alive_url = json_rsp["data"][0]["attributes"]["applicationSessionProperties"][
-                    "keepAliveUrl"
-                ]
-                if not self._keep_alive_url:
-                    raise KeyError
-            except KeyError:
-                self._keep_alive_url = self.KEEP_ALIVE_DEFAULT_URL
-
-            log.debug("*** START IDENTITY INFO ***")
-            log.debug(f"Provider: {self._provider_name}")
-            log.debug(f"User: {self._user_id} {self._user_email}")
-            log.debug(f"Keep Alive Interval: {self._session_refresh_interval_ms}")
-            log.debug(f"Keep Alive URL: {self._keep_alive_url}")
-            log.debug("*** END IDENTITY INFO ***")
 
     async def _async_get_trouble_conditions(self, retry_on_failure: bool = True) -> None:
         """Get trouble conditions for all devices."""
@@ -1041,28 +1091,24 @@ class AlarmController:
 
         except aiohttp.ContentTypeError as err:
             self._trouble_conditions = {}
-            log.error(
+            log.exception(
                 "Server returned wrong content type. Response: %s\n\nResponse Text:\n\n%s\n\n",
                 resp,
                 resp.text(),
             )
-            raise DataFetchFailed from err
+            raise UnexpectedResponse from err
 
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            self._trouble_conditions = {}
-            log.error("Connection error while fetching trouble conditions.")
-            raise DataFetchFailed from err
+        except aiohttp.ClientResponseError as err:
+            log.exception("Failed to get trouble conditions.")
+            raise UnexpectedResponse from err
 
         except KeyError as err:
             self._trouble_conditions = {}
-            log.error("Failed processing trouble conditions.")
-            raise UnexpectedDataStructure from err
+            log.exception("Failed processing trouble conditions.")
+            raise UnexpectedResponse from err
 
-        except TryAgain as err:
-            if retry_on_failure:
-                return await self._async_get_trouble_conditions(retry_on_failure=False)
-            else:
-                raise err
+        except TryAgain:
+            return await self._async_get_trouble_conditions(retry_on_failure=False)
 
     async def _async_handle_server_errors(
         self, json_rsp: dict, request_name: str, retry_on_failure: bool = False
@@ -1070,7 +1116,8 @@ class AlarmController:
         """Handle errors returned by the server."""
 
         log.debug(
-            f"\n==============================\nServer Response:\n{json_rsp}\n=============================="
+            "\n==============================\nServer"
+            f" Response:\n{json.dumps(json_rsp)}\n=============================="
         )
 
         if not len(rsp_errors := json_rsp.get("errors", [])):
@@ -1082,13 +1129,13 @@ class AlarmController:
 
         match rsp_errors[0].get("status"):
             case "423":  # Processing Error
-                log.error(
+                log.exception(
                     f"Got a processing error when trying to request {request_name}. This may be caused by missing"
                     " permissions, being on an Alarm.com plan without support for a particular device type, or"
                     " having a device type disabled for this system."
                 )
                 log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
-                raise PermissionError
+                raise NotAuthorized
 
             case "403":  # Invalid Anti-Forgery Token
                 # 403 means that either the user doesn't have access to this class of device or that the user has logged out.
@@ -1096,12 +1143,12 @@ class AlarmController:
                 # If logged out, try logging in again, then give up by pretending that we couldn't find any devices of this type.
 
                 if not retry_on_failure:
-                    log.error(
+                    log.exception(
                         "Error fetching data from Alarm.com. Got 403 status when"
                         f" fetching {request_name}. Logging in"
                         " again didn't help. Giving up on device type."
                     )
-                    raise DataFetchFailed(error_msg)
+                    raise UnexpectedResponse(error_msg)
 
                 if not self.is_logged_in():
                     log.debug(
@@ -1115,82 +1162,16 @@ class AlarmController:
                     raise TryAgain
 
             case "409":
-                log.error(
+                log.exception(
                     error_msg := f"Failed to request {request_name}. Two factor authentication cookie is incorrect."
                 )
                 log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
                 raise AuthenticationFailed(error_msg)
 
             case _:
-                log.error(f"Unknown error while requesting {request_name}.")
+                log.exception(f"Unknown error while requesting {request_name}.")
                 log.debug(error_msg := f"{request_name} failed.\nResponse:\n{json_rsp}.")
-                raise DataFetchFailed(error_msg)
-
-    async def _async_login_and_get_key(self) -> None:
-        """Load hidden fields from login page."""
-        try:
-            # load login page once and grab VIEWSTATE/cookies
-            async with self._websession.get(url=self.LOGIN_URL, cookies=self._two_factor_cookie) as resp:
-                text = await resp.text()
-                log.debug("Response status from Alarm.com: %s", resp.status)
-                tree = BeautifulSoup(text, "html.parser")
-                login_info = {
-                    self.VIEWSTATE_FIELD: tree.select(f"#{self.VIEWSTATE_FIELD}")[0].attrs.get("value"),
-                    self.VIEWSTATEGENERATOR_FIELD: tree.select(f"#{self.VIEWSTATEGENERATOR_FIELD}")[0].attrs.get(
-                        "value"
-                    ),
-                    self.EVENTVALIDATION_FIELD: tree.select(f"#{self.EVENTVALIDATION_FIELD}")[0].attrs.get(
-                        "value"
-                    ),
-                    self.PREVIOUSPAGE_FIELD: tree.select(f"#{self.PREVIOUSPAGE_FIELD}")[0].attrs.get("value"),
-                }
-
-        except (
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            asyncio.exceptions.CancelledError,
-        ) as err:
-            log.error("Can not load login page from Alarm.com")
-
-            raise err
-        except (AttributeError, IndexError) as err:
-            log.error("Unable to extract login info from Alarm.com")
-            raise UnexpectedDataStructure from err
-        try:
-            # login and grab ajax key
-            async with self._websession.post(
-                url=self.LOGIN_POST_URL,
-                data={
-                    self.LOGIN_USERNAME_FIELD: self._username,
-                    self.LOGIN_PASSWORD_FIELD: self._password,
-                    self.VIEWSTATE_FIELD: login_info[self.VIEWSTATE_FIELD],
-                    self.VIEWSTATEGENERATOR_FIELD: login_info[self.VIEWSTATEGENERATOR_FIELD],
-                    self.EVENTVALIDATION_FIELD: login_info[self.EVENTVALIDATION_FIELD],
-                    self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
-                    self.LOGIN_REMEMBERME_FIELD: "on",
-                    "IsFromNewSite": "1",
-                },
-                cookies=self._two_factor_cookie,
-            ) as resp:
-                if re.search("m=login_fail", str(resp.url)) is not None:
-                    log.error("Login failed.")
-                    log.error("\nResponse URL:\n%s\n", str(resp.url))
-                    log.error("\nRequest Headers:\n%s\n", str(resp.request_info.headers))
-                    raise AuthenticationFailed("Invalid username and password.")
-
-                # Update anti-forgery cookie
-                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
-
-        except (asyncio.TimeoutError, aiohttp.ClientError) as err:
-            log.error("Can not login to Alarm.com")
-            raise DataFetchFailed from err
-        except KeyError as err:
-            log.error("Unable to extract ajax key from Alarm.com. Response:\n%s", resp)
-            raise DataFetchFailed from err
-
-        self._last_session_refresh = datetime.now()
-
-        log.debug("Logged in to Alarm.com.")
+                raise UnexpectedResponse(error_msg)
 
 
 class SessionTimer:

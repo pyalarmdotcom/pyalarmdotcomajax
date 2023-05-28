@@ -45,7 +45,7 @@ class LightWebSocketHandler(BaseWebSocketHandler):
                 if message.new_state in self.STATE_MAP:
                     await message.device.async_handle_external_state_change(self.STATE_MAP[message.new_state])
                 else:
-                    log.error(
+                    log.exception(
                         f"{self.__class__.__name__}: Failed to update"
                         f" {message.device.name} ({message.device.id_}). Unknown state: {message.new_state}."
                     )
