@@ -27,7 +27,6 @@ from pyalarmdotcomajax.devices.registry import AllDevices_t, AttributeRegistry
 
 from . import AlarmController
 from .devices import BaseDevice, DeviceType
-from .devices.light import Light
 from .devices.sensor import Sensor
 from .exceptions import (
     AuthenticationFailed,
@@ -512,12 +511,8 @@ def _print_element_tearsheet(
         if element.read_only:
             output_str += f"[READ ONLY: {element.read_only}] "
 
-        if isinstance(element, Light):
-            # Disabling. Boring stat.
-            # attribute_str += f"[REPORTS STATE: {element.supports_state_tracking}] "
-
-            if element.brightness:
-                output_str += f"[BRIGHTNESS: {element.brightness}%] "
+        if hasattr(element, "brightness") and element.brightness:
+            output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
         # ENTITIES WITH "ATTRIBUTES" PROPERTY
         if isinstance(element.attributes, BaseDevice.DeviceAttributes):

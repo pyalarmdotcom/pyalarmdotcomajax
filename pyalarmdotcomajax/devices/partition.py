@@ -79,7 +79,7 @@ class Partition(BaseDevice):
         """Arm alarm system."""
 
         if arm_type == self.Command.DISARM:
-            log.error("Invalid arm type.")
+            log.exception("Invalid arm type.")
             return
 
         msg_body = {}

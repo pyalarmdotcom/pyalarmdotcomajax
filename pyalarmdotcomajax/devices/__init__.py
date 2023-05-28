@@ -1,7 +1,6 @@
 """Alarm.com device base devices."""
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC
 from collections.abc import Callable
@@ -9,11 +8,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, TypedDict
 
-import aiohttp
-
 from pyalarmdotcomajax.exceptions import (
     InvalidConfigurationOption,
-    UnexpectedResponse,
 )
 from pyalarmdotcomajax.extensions import (
     CameraSkybellControllerExtension,
@@ -248,7 +244,7 @@ class BaseDevice(ABC, CastingMixin):
     async def async_handle_external_state_change(self, raw_state: int) -> None:
         """Update device state when notified of externally-triggered change."""
 
-        self._attribs_raw[self._ATTRIB_STATE] = raw_state
+        self._attribs_raw.update({self._ATTRIB_STATE: raw_state})
 
         log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
 
@@ -308,13 +304,13 @@ class BaseDevice(ABC, CastingMixin):
     def process_device_type_specific_data(self) -> None:
         """Process element specific data. To be overridden by children."""
 
-        return None
+        return
 
     async def async_change_setting(self, slug: str, new_value: Any) -> None:
         """Update specified configuration setting via extension."""
 
         if not self._config_change_callback:
-            log.error(
+            log.exception(
                 "async_change_setting called for %s, which does not have a config_change_callback set.",
                 self.name,
             )
@@ -336,18 +332,7 @@ class BaseDevice(ABC, CastingMixin):
             extension,
         )
 
-        try:
-            updated_option = await self._config_change_callback(
-                camera_name=self.name, slug=slug, new_value=new_value
-            )
-        except (
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            asyncio.exceptions.CancelledError,
-        ) as err:
-            raise err
-        except UnexpectedResponse as err:
-            raise err
+        updated_option = await self._config_change_callback(camera_name=self.name, slug=slug, new_value=new_value)
 
         self._settings["slug"] = updated_option
 

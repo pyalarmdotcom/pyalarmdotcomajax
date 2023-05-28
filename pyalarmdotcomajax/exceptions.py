@@ -28,9 +28,9 @@ class UnsupportedDeviceType(DeviceException):
         """Initialize the exception."""
 
         if device_id:
-            message = f"Encountered unsupported device type '{str(device_type)}' with ID '{device_id}'."
+            message = f"Encountered unsupported device type '{device_type!s}' with ID '{device_id}'."
         else:
-            message = f"Encountered unsupported device type '{str(device_type)}'."
+            message = f"Encountered unsupported device type '{device_type!s}'."
 
         super().__init__(message)
 
@@ -83,8 +83,8 @@ class ConfigureTwoFactorAuthentication(AuthenticationException):
     def __init__(self) -> None:
         """Initialize the exception."""
         super().__init__(
-            "Got two-factor authentication setup screen. Two-factor authentication must be configured manually on"
-            " Alarm.com before proceeding."
+            "Alarm.com requires that two-factor authentication be set up on your account. Please log in to"
+            " Alarm.com and set up two-factor authentication."
         )
 
 
@@ -105,8 +105,6 @@ class TryAgain(AuthenticationException):
 #
 class DataException(AlarmdotcomException):
     """Base Alarm.com data exception."""
-
-    pass
 
 
 class UnexpectedResponse(DataException):

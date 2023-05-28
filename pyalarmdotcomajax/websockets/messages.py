@@ -25,7 +25,10 @@ def process_raw_message(message: dict, device_registry: DeviceRegistry) -> WebSo
 
     device = device_registry.get(f"{message['UnitId']}-{message['DeviceId']}")
 
-    if {"EventType", "EventValue", "QstringForExtraData"} <= set(message.keys()):
+    if {"FenceId", "IsInsideNow"} <= set(message.keys()):
+        # Geofence Event (Not Yet Supported)
+        pass
+    elif {"EventType", "EventValue", "QstringForExtraData"} <= set(message.keys()):
         # Event
         log.debug("WebSocket Message Type: Event")
         return EventMessage(message, device)
@@ -37,9 +40,6 @@ def process_raw_message(message: dict, device_registry: DeviceRegistry) -> WebSo
         # Property Change
         log.debug("WebSocket Message Type: Property Change")
         return PropertyChangeMessage(message, device)
-    elif {"FenceId", "IsInsideNow"} <= set(message.keys()):
-        # Geofence Event (Not Yet Supported)
-        pass
     elif {"NewState", "FlagMask"} <= set(message.keys()):
         # State Change
         log.debug("WebSocket Message Type: State Change")
@@ -53,7 +53,7 @@ class WebSocketMessage(CastingMixin):
 
     def __init__(self, message: dict, device: AllDevices_t):
         """Initialize."""
-        self.id_: str = f"{str(message.get('UnitId', ''))}-{str(message.get('DeviceId', ''))}"
+        self.id_: str = f"{message.get('UnitId', '')!s}-{message.get('DeviceId', '')!s}"
         self.device: AllDevices_t = device
 
 

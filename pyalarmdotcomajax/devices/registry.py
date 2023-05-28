@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TypedDict, Union
+from typing import TypedDict
 
 from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.devices.camera import Camera
@@ -36,7 +36,7 @@ AllDeviceTypes_t = (
     | type[WaterSensor]
 )
 
-AllCommands_t = Union[
+AllCommands_t = (
     Camera.Command
     | GarageDoor.Command
     | Gate.Command
@@ -48,9 +48,10 @@ AllCommands_t = Union[
     | System.Command
     | Thermostat.Command
     | WaterSensor.Command
-]
+)
 
-AllDevices_t = Union[
+
+AllDevices_t = (
     Camera
     | GarageDoor
     | Gate
@@ -62,7 +63,8 @@ AllDevices_t = Union[
     | System
     | Thermostat
     | WaterSensor
-]
+)
+
 
 AllDevicesLists_t = (
     list[Camera]
@@ -130,8 +132,8 @@ class DeviceRegistry:
 
         try:
             return self._devices[device_id]
-        except KeyError:
-            raise UnkonwnDevice(device_id)
+        except KeyError as err:
+            raise UnkonwnDevice(device_id) from err
 
     def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""

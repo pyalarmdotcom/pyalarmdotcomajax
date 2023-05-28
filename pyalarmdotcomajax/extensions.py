@@ -293,11 +293,11 @@ class CameraSkybellControllerExtension(ControllerExtension):
             asyncio.TimeoutError,
             aiohttp.ClientError,
             asyncio.exceptions.CancelledError,
-        ) as err:
-            log.error("Can not load settings page from Alarm.com")
-            raise err
+        ):
+            log.exception("Can not load settings page from Alarm.com")
+            raise
         except (AttributeError, IndexError) as err:
-            log.error("Unable to extract page info from Alarm.com.")
+            log.exception("Unable to extract page info from Alarm.com.")
             log.debug("====== HTTP DUMP BEGIN ======\n%s\n====== HTTP DUMP END ======", text)
             raise UnexpectedResponse from err
 
@@ -329,13 +329,13 @@ class CameraSkybellControllerExtension(ControllerExtension):
             asyncio.TimeoutError,
             aiohttp.ClientError,
             asyncio.exceptions.CancelledError,
-        ) as err:
-            log.error("Can not load settings page for additional camera from Alarm.com")
+        ):
+            log.exception("Can not load settings page for additional camera from Alarm.com")
 
-            raise err
-        except UnexpectedResponse as err:
+            raise
+        except UnexpectedResponse:
             log.debug("HTTP Response Status %s, Body:\n%s", resp.status, text)
-            raise err
+            raise
 
         return camera_return_data
 
@@ -389,21 +389,20 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
         # Validation for ints
 
-        if field_value_type == int:
-            if (
-                ((value_max := field_config_options.value_max) and new_value > value_max)
-                or ((value_min := field_config_options.value_min) and new_value < value_min)
-                or not (isinstance(new_value, int))
-            ):
-                raise ValueError
+        if field_value_type == int and (
+            ((value_max := field_config_options.value_max) and new_value > value_max)
+            or ((value_min := field_config_options.value_min) and new_value < value_min)
+            or not (isinstance(new_value, int))
+        ):
+            raise ValueError
 
         # Validation for strings
 
-        if field_value_type == str:
-            if (
-                (value_regex := field_config_options.value_regex) and not re.search(value_regex, new_value)
-            ) or not isinstance(new_value, str):
-                raise ValueError
+        if field_value_type == str and (
+            ((value_regex := field_config_options.value_regex) and not re.search(value_regex, new_value))
+            or not isinstance(new_value, str)
+        ):
+            raise ValueError
 
         log.debug("CameraSkybellControllerExtension -> submit_change(): Refreshing settings.")
 
@@ -514,10 +513,9 @@ class CameraSkybellControllerExtension(ControllerExtension):
             asyncio.TimeoutError,
             aiohttp.ClientError,
             asyncio.exceptions.CancelledError,
-        ) as err:
-            log.error("Can not load settings page for additional camera from Alarm.com")
-
-            raise err
+        ):
+            log.exception("Can not load settings page for additional camera from Alarm.com")
+            raise
 
         return camera_return_data.settings[slug]
 
@@ -562,7 +560,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 else:
                     try:
                         value = extract_field_value(field)
-                    except UnexpectedResponse:
+                    except ValueError:
                         log.warning("Couldn't find field %s", field)
                         value = ""
                     raw_attribs[field_name] = value
@@ -571,7 +569,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 field = tree.find(attrs={"name": field_name})
                 try:
                     value = extract_field_value(field)
-                except UnexpectedResponse:
+                except ValueError:
                     log.warning("Couldn't find field %s", field)
                     value = ""
                 raw_attribs[field_name] = value
@@ -580,7 +578,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 field = tree.find(attrs={"name": field_name})
                 try:
                     value = extract_field_value(field)
-                except UnexpectedResponse:
+                except ValueError:
                     log.warning("Couldn't find field %s", field)
                     value = ""
                 raw_attribs[field_name] = value
@@ -591,7 +589,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                 try:
                     value = extract_field_value(field)
-                except UnexpectedResponse:
+                except ValueError:
                     log.warning("Couldn't find field %s", field)
                     value = ""
 
@@ -622,9 +620,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 ]:
                     raw_attribs[field_name] = value
 
-                    if not value:
-                        raise ValueError
-
                     typed_value = config_value_type(int(value))
 
                 #
@@ -636,9 +631,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 if config_option_type == ConfigurationOptionType.COLOR and (
                     value_regex := config_option.value_regex
                 ):
-                    if not value:
-                        raise ValueError
-
                     match = re.search(value_regex, value)
                     typed_value = str(value)
 
@@ -650,9 +642,6 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Ints
 
                 if config_value_type == int:
-                    if not value:
-                        raise ValueError
-
                     typed_value = int(value)
                     raw_attribs[field_name] = typed_value
 
@@ -663,7 +652,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 properties.settings[config_option.slug] = config_option
 
         except (KeyError, ValueError, UnexpectedResponse) as err:
-            log.error("Unable to extract field. Failed on field %s.", field_name)
+            log.exception("Unable to extract field. Failed on field %s.", field_name)
             raise UnexpectedResponse from err
 
         properties.raw_attribs = raw_attribs

@@ -85,13 +85,6 @@ def all_base_ok_responses_callable(response_mocker: aioresponses) -> Callable:
             repeat=repeat,
         )
 
-        # response_mocker.get(
-        #     url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, ""),
-        #     status=200,
-        #     body=get_http_body_json("systems_ok"),
-        #     repeat=repeat,
-        # )
-
         response_mocker.get(
             url=AttributeRegistry.get_endpoints(DeviceType.IMAGE_SENSOR)["primary"].format(c.URL_BASE, ""),
             status=200,
@@ -125,20 +118,6 @@ def all_base_ok_responses_callable(response_mocker: aioresponses) -> Callable:
         )
 
     return _load_mocks
-
-
-@pytest.fixture
-def device_catalog_no_permission(response_mocker: aioresponses, all_base_ok_responses_callable: Callable) -> None:
-    """No permission to view devices."""
-
-    response_mocker.get(
-        url=AlarmController.ALL_DEVICES_URL_TEMPLATE.format(c.URL_BASE, "id-system"),
-        status=200,
-        body=get_http_body_json("no_permissions_or_invalid_antiforgery"),
-        repeat=True,
-    )
-
-    all_base_ok_responses_callable()
 
 
 @pytest.fixture
