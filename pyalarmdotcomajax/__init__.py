@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import re
@@ -45,7 +46,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 log = logging.getLogger(__name__)
 
@@ -484,8 +485,12 @@ class AlarmController:
                     log.exception("\nRequest Headers:\n%s\n", str(resp.request_info.headers))
                     raise AuthenticationFailed("Invalid username and password.")
 
-                # Update anti-forgery cookie
-                self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
+                # Update anti-forgery cookie.
+                # AFG cookie is not always present in the response. This seems to depend on the specific Alarm.com vendor, so a missing AFG key should not cause a failure.
+                # Ref: https://www.alarm.com/web/system/assets/addon-tree-output/@adc/ajax/services/adc-ajax.js
+
+                with contextlib.suppress(KeyError):
+                    self._ajax_headers["ajaxrequestuniquekey"] = resp.cookies["afg"].value
 
         except (aiohttp.ClientResponseError, KeyError) as err:
             log.exception("Failed to get AJAX key from Alarm.com.")
@@ -581,7 +586,12 @@ class AlarmController:
             otp_type for otp_type in OtpType if bool(enabled_otp_types_bitmask & otp_type.value)
         ]
 
-        if (OtpType.disabled in enabled_2fa_methods) or (attribs.get("isCurrentDeviceTrusted") is True):
+        if (
+            (OtpType.disabled in enabled_2fa_methods)
+            or (attribs.get("isCurrentDeviceTrusted") is True)
+            or not enabled_otp_types_bitmask
+            or not enabled_2fa_methods
+        ):
             # 2FA is disabled, we can skip 2FA altogether.
             return
 
