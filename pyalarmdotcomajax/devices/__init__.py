@@ -1,6 +1,7 @@
 """Alarm.com device base devices."""
 from __future__ import annotations
 
+import contextlib
 import logging
 from abc import ABC
 from collections.abc import Callable
@@ -158,12 +159,12 @@ class BaseDevice(ABC, CastingMixin):
     def state(self) -> Enum | None:
         """Return state."""
 
-        try:
-            state = self.DeviceState(self._attribs_raw.get("state"))
-        except ValueError:
-            return None
+        # Devices that don't report state on Alarm.com still have a value in the state field.
+        if self.has_state:
+            with contextlib.suppress(ValueError):
+                return self.DeviceState(self._attribs_raw.get("state"))
 
-        return state
+        return None
 
     @property
     def settings(self) -> dict:
