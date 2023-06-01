@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from pyalarmdotcomajax.devices.sensor import Sensor
@@ -50,9 +51,21 @@ class SensorWebSocketHandler(BaseWebSocketHandler):
         match message:
             case EventMessage():
                 match message.event_type:
-                    case EventType.Closed | EventType.Opened | EventType.OpenedClosed:
+                    case EventType.Closed | EventType.Opened:
                         state = await self.async_get_state_from_event_type(message)
                         await message.device.async_handle_external_state_change(state)
+
+                    case EventType.OpenedClosed:
+                        # Lock ensures that state changes are executed in order.
+                        lock = asyncio.Lock()
+
+                        async with lock:
+                            await message.device.async_handle_external_state_change(Sensor.DeviceState.OPEN.value)
+
+                        async with lock:
+                            await message.device.async_handle_external_state_change(
+                                Sensor.DeviceState.CLOSED.value
+                            )
                     case _:
                         log.debug(
                             f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"

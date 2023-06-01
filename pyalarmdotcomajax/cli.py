@@ -409,7 +409,7 @@ async def cli() -> None:
                 attrs=["bold"],
             )
             cprint(
-                "(Press Ctrl+C or Cmd+C to exit.)",
+                "(Press Ctrl+C to exit.)",
                 attrs=["bold"],
             )
 
