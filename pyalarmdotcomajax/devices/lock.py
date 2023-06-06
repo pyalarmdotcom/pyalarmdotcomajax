@@ -32,6 +32,8 @@ class Lock(BaseDevice):
     async def async_lock(self) -> None:
         """Send lock command."""
 
+        await self.async_handle_external_desired_state_change(self.DeviceState.LOCKED.value)
+
         await self._send_action_callback(
             device_type=DeviceType.LOCK,
             event=self.Command.LOCK,
@@ -40,6 +42,8 @@ class Lock(BaseDevice):
 
     async def async_unlock(self) -> None:
         """Send unlock command."""
+
+        await self.async_handle_external_desired_state_change(self.DeviceState.UNLOCKED.value)
 
         await self._send_action_callback(
             device_type=DeviceType.LOCK,

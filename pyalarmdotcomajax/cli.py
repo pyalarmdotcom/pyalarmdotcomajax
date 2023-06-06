@@ -490,10 +490,8 @@ def _print_element_tearsheet(
         battery = "Critical"
     elif element.battery_low:
         battery = "Low"
-    elif element.battery_critical is not None or element.battery_low is not None:
-        battery = "Normal"
     else:
-        battery = None
+        battery = "Normal"
 
     # ATTRIBUTES
     output_str += "ATTRIBUTES: "

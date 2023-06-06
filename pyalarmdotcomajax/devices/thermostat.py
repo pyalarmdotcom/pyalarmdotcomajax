@@ -131,16 +131,6 @@ class Thermostat(BaseDevice):
     }
 
     @property
-    def available(self) -> bool:
-        """Return whether the light can be manipulated."""
-        return (
-            self._attribs_raw.get("canReceiveCommands", False)
-            and self._attribs_raw.get("remoteCommandsEnabled", False)
-            and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state is not self.DeviceState.UNKNOWN
-        )
-
-    @property
     def attributes(self) -> ThermostatAttributes:
         """Return thermostat attributes."""
 

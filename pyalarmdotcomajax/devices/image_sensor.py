@@ -28,6 +28,8 @@ class ImageSensorImage(TypedDict):
 class ImageSensor(BaseDevice):
     """Represent Alarm.com image sensor element."""
 
+    malfunction = False
+
     class Command(Enum):
         """Commands for ADC image sensors."""
 
@@ -55,11 +57,6 @@ class ImageSensor(BaseDevice):
                     "timestamp": parser.parse(image["attributes"]["timestamp"]),
                 }
                 self._recent_images.append(image_data)
-
-    @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None
 
     @property
     def images(self) -> list[ImageSensorImage] | None:

@@ -7,7 +7,7 @@ from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, TypedDict
+from typing import Any, Final, TypedDict
 
 from pyalarmdotcomajax.exceptions import (
     InvalidConfigurationOption,
@@ -78,6 +78,7 @@ class BaseDevice(ABC, CastingMixin):
 
     _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
     _ATTRIB_STATE = "state"
+    _ATTRIB_DESIRED_STATE = "desiredState"
 
     def __init__(
         self,
@@ -93,29 +94,25 @@ class BaseDevice(ABC, CastingMixin):
     ) -> None:
         """Initialize base element class."""
 
-        self._id_: str = id_
-        self._family_raw: str | None = raw_device_data.get("type")
-        self._attribs_raw: dict = raw_device_data.get("attributes", {})
+        self.id_: Final[str] = id_
+        self._raw: dict = raw_device_data
         self._device_type_specific_data: DeviceTypeSpecificData = (
             device_type_specific_data if device_type_specific_data else {}
         )
-        self._send_action_callback: Callable = send_action_callback
-        self._config_change_callback: Callable | None = config_change_callback
         self._settings: dict = settings if settings else {}
+        self._partition_id: str | None = partition_id
 
         self.children = children
         self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
 
-        self._system_id: str | None = (
-            raw_device_data.get("relationships", {}).get("system", {}).get("data", {}).get("id")
-        )
-        self._partition_id: str | None = partition_id
+        self._send_action_callback: Callable = send_action_callback
+        self._config_change_callback: Callable | None = config_change_callback
 
         self.external_update_callback: list[Callable] = []
 
         self.process_device_type_specific_data()
 
-        log.debug("Initialized %s %s", self._family_raw, self.name)
+        log.debug("Initialized %s %s", raw_device_data.get("type"), self.name)
 
     #
     # Properties
@@ -127,33 +124,34 @@ class BaseDevice(ABC, CastingMixin):
         return (
             not result
             if isinstance(
-                (result := self._attribs_raw.get("hasPermissionToChangeState")),
+                (result := self.raw_attributes.get("hasPermissionToChangeState")),
                 bool,
             )
             else None
         )
 
     @property
-    def id_(self) -> str:
-        """Return device ID."""
-        return self._id_
-
-    @property
-    def name(self) -> None | str:
+    def name(self) -> str:
         """Return user-assigned device name."""
 
-        return self._attribs_raw.get("description", None)
+        return str(self.raw_attributes["description"])
 
     @property
-    def attribs_raw(self) -> None | dict:
+    def raw_attributes(self) -> dict:
         """Return raw attributes."""
 
-        return self._attribs_raw
+        return self._raw.get("attributes", {})
 
     @property
-    def has_state(self) -> bool:
+    def available(self) -> bool:
+        """Return whether the light can be manipulated."""
+        return not self.malfunction
+
+    @property
+    def has_state(self) -> bool | None:
         """Return whether entity reports state."""
-        return self._attribs_raw.get("hasState", False)
+
+        return self.raw_attributes.get("hasState")
 
     @property
     def state(self) -> Enum | None:
@@ -162,7 +160,18 @@ class BaseDevice(ABC, CastingMixin):
         # Devices that don't report state on Alarm.com still have a value in the state field.
         if self.has_state:
             with contextlib.suppress(ValueError):
-                return self.DeviceState(self._attribs_raw.get("state"))
+                return self.DeviceState(self.raw_attributes.get("state"))
+
+        return None
+
+    @property
+    def desired_state(self) -> Enum | None:
+        """Return state."""
+
+        # Devices that don't report state on Alarm.com still have a value in the desiredState field.
+        if self.has_state:
+            with contextlib.suppress(ValueError, KeyError):
+                return self.DeviceState(self.raw_attributes.get("desiredState"))
 
         return None
 
@@ -179,17 +188,23 @@ class BaseDevice(ABC, CastingMixin):
     @property
     def battery_low(self) -> bool | None:
         """Return whether battery is low."""
-        return self._attribs_raw.get("lowBattery")
+
+        return self.raw_attributes.get("lowBattery")
 
     @property
     def battery_critical(self) -> bool | None:
         """Return whether battery is critically low."""
-        return self._attribs_raw.get("criticalBattery")
+
+        return self.raw_attributes.get("criticalBattery")
 
     @property
     def system_id(self) -> str | None:
         """Return ID of device's parent system."""
-        return self._system_id
+
+        if sys := self._raw.get("relationships", {}).get("system", {}).get("data", {}).get("id"):
+            return str(sys)
+
+        return None
 
     @property
     def partition_id(self) -> str | None:
@@ -199,43 +214,46 @@ class BaseDevice(ABC, CastingMixin):
     @property
     def malfunction(self) -> bool | None:
         """Return whether device is malfunctioning."""
-        return self._attribs_raw.get("isMalfunctioning", True) or self.state is None
+        return self.raw_attributes.get("isMalfunctioning")
 
     @property
     def mac_address(self) -> str | None:
         """Return device MAC address."""
-        return self._attribs_raw.get("macAddress")
+        return str(self.raw_attributes.get("macAddress"))
 
     @property
     def raw_state_text(self) -> str | None:
         """Return state description as reported by ADC."""
-        return self._attribs_raw.get("displayStateText")
+        return str(self.raw_attributes.get("displayStateText"))
 
     @property
-    def model_text(self) -> str | None:
+    def model_text(self) -> str:
         """Return device model as reported by ADC."""
-        return (
-            reported_model
-            if (reported_model := self._attribs_raw.get("deviceModel"))
-            else self._DEVICE_MODELS.get(self._attribs_raw.get("deviceModelId"))
-        )
+
+        if model := self.raw_attributes.get("deviceModel"):
+            return str(model)
+
+        if model := self._DEVICE_MODELS.get(self.raw_attributes.get("deviceModelId")):
+            return str(model)
+
+        return ""
 
     @property
     def manufacturer(self) -> str | None:
         """Return device model as reported by ADC."""
-        return self._attribs_raw.get("manufacturer")
+        return self.raw_attributes.get("manufacturer")
 
     @property
     def debug_data(self) -> dict:
         """Return data that is helpful for debugging."""
-        return self._attribs_raw
+        return self.raw_attributes
 
     @property
     def device_subtype(self) -> Enum | None:
         """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
-            return self.Subtype(self._attribs_raw["deviceType"])
-        except (ValueError, KeyError):
+            return self.Subtype(self.raw_attributes.get("deviceType"))
+        except ValueError:
             return None
 
     # #
@@ -245,17 +263,24 @@ class BaseDevice(ABC, CastingMixin):
     async def async_handle_external_state_change(self, raw_state: int) -> None:
         """Update device state when notified of externally-triggered change."""
 
-        self._attribs_raw.update({self._ATTRIB_STATE: raw_state})
+        await self.async_handle_external_attribute_change({self._ATTRIB_STATE: raw_state})
 
-        log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new state: {self.state}.")
+    async def async_handle_external_desired_state_change(self, raw_state: int) -> None:
+        """Update device state when notified of externally-triggered change."""
 
-        for external_callback in self.external_update_callback:
-            external_callback()
+        await self.async_handle_external_attribute_change({self._ATTRIB_DESIRED_STATE: raw_state})
 
     async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
         """Update device attribute when notified of externally-triggered change."""
 
-        self._attribs_raw.update(new_attribute)
+        log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new {new_attribute}.")
+
+        self.raw_attributes.update(new_attribute)
+
+        new_attrib_key = list(new_attribute.keys())[0]
+        new_attrib_value = list(new_attribute.values())[0]
+
+        log.debug(f"Desired: [{new_attrib_value}] | Current: [{self.raw_attributes.get(new_attrib_key)}]")
 
         for external_callback in self.external_update_callback:
             external_callback()
@@ -344,25 +369,25 @@ class BaseDevice(ABC, CastingMixin):
     # Override CastingMixin functions to automatically pass in _raw_attribs dict.
 
     def _get_int(self, key: str) -> int | None:
-        """Return int value from _attribs_raw."""
-        return super()._safe_int_from_dict(self._attribs_raw, key)
+        """Return int value from _raw_attributes."""
+        return super()._safe_int_from_dict(self.raw_attributes, key)
 
     def _get_float(self, key: str) -> float | None:
-        """Return float value from _attribs_raw."""
-        return super()._safe_float_from_dict(self._attribs_raw, key)
+        """Return float value from _raw_attributes."""
+        return super()._safe_float_from_dict(self.raw_attributes, key)
 
     def _get_str(self, key: str) -> str | None:
-        """Return str value from _attribs_raw."""
-        return super()._safe_str_from_dict(self._attribs_raw, key)
+        """Return str value from _raw_attributes."""
+        return super()._safe_str_from_dict(self.raw_attributes, key)
 
     def _get_bool(self, key: str) -> bool | None:
-        """Return bool value from _attribs_raw."""
-        return super()._safe_bool_from_dict(self._attribs_raw, key)
+        """Return bool value from _raw_attributes."""
+        return super()._safe_bool_from_dict(self.raw_attributes, key)
 
     def _get_list(self, key: str, value_type: type) -> list | None:
-        """Return list value from _attribs_raw."""
-        return super()._safe_list_from_dict(self._attribs_raw, key, value_type)
+        """Return list value from _raw_attributes."""
+        return super()._safe_list_from_dict(self.raw_attributes, key, value_type)
 
     def _get_special(self, key: str, value_type: type) -> Any | None:
-        """Return specified type value from _attribs_raw."""
-        return super()._safe_special_from_dict(self._attribs_raw, key, value_type)
+        """Return specified type value from _raw_attributes."""
+        return super()._safe_special_from_dict(self.raw_attributes, key, value_type)

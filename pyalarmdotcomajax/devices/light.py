@@ -33,22 +33,12 @@ class Light(BaseDevice):
         OFF = "turnOff"
 
     @property
-    def available(self) -> bool:
-        """Return whether the light can be manipulated."""
-        return (
-            self._attribs_raw.get("canReceiveCommands", False)
-            and self._attribs_raw.get("remoteCommandsEnabled", False)
-            and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
-        )
-
-    @property
     def brightness(self) -> int | None:
         """Return light's brightness."""
-        if not self._attribs_raw.get("isDimmer", False):
+        if not self.raw_attributes.get("isDimmer", False):
             return None
 
-        if isinstance(level := self._attribs_raw.get(self.ATTRIB_LIGHT_LEVEL, 0), int):
+        if isinstance(level := self.raw_attributes.get(self.ATTRIB_LIGHT_LEVEL, 0), int):
             return level
 
         return None
@@ -57,7 +47,7 @@ class Light(BaseDevice):
     def supports_state_tracking(self) -> bool | None:
         """Return whether the light reports its current state."""
 
-        if isinstance(supports := self._attribs_raw.get("stateTrackingEnabled"), bool):
+        if isinstance(supports := self.raw_attributes.get("stateTrackingEnabled"), bool):
             return supports
 
         return None

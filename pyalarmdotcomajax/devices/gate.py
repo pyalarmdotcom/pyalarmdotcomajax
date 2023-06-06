@@ -47,6 +47,8 @@ class Gate(BaseDevice):
     async def async_open(self) -> None:
         """Send open command."""
 
+        await self.async_handle_external_desired_state_change(self.DeviceState.OPEN.value)
+
         await self._send_action_callback(
             device_type=DeviceType.GATE,
             event=self.Command.OPEN,
@@ -55,6 +57,8 @@ class Gate(BaseDevice):
 
     async def async_close(self) -> None:
         """Send close command."""
+
+        await self.async_handle_external_desired_state_change(self.DeviceState.CLOSED.value)
 
         if (
             self.attributes is not None

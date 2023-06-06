@@ -46,7 +46,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.2"
+__version__ = "0.5.3-beta.2"
 
 log = logging.getLogger(__name__)
 
@@ -61,8 +61,13 @@ class ExtensionResults(TypedDict):
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
 
+    HOME_URL = "https://www.alarm.com/web/system/home"
+    UA = f"pyalarmdotcomajax/{__version__}"
+
     AJAX_HEADERS_TEMPLATE = {
         "Accept": "application/vnd.api+json",
+        "User-Agent": UA,
+        "Referrer": HOME_URL,
         "ajaxrequestuniquekey": None,
     }
 
@@ -436,7 +441,7 @@ class AlarmController:
 
         try:
             # load login page once and grab VIEWSTATE/cookies
-            async with self._websession.get(url=self.LOGIN_URL, cookies=self._two_factor_cookie) as resp:
+            async with self._websession.get(url=self.LOGIN_URL, cookies=None) as resp:
                 text = await resp.text()
                 log.debug("Response status from Alarm.com: %s", resp.status)
                 tree = BeautifulSoup(text, "html.parser")
@@ -473,7 +478,9 @@ class AlarmController:
                     self.VIEWSTATEGENERATOR_FIELD: login_info[self.VIEWSTATEGENERATOR_FIELD],
                     self.EVENTVALIDATION_FIELD: login_info[self.EVENTVALIDATION_FIELD],
                     self.PREVIOUSPAGE_FIELD: login_info[self.PREVIOUSPAGE_FIELD],
-                    self.LOGIN_REMEMBERME_FIELD: "on",
+                    "__EVENTTARGET": None,
+                    "__EVENTARGUMENT": None,
+                    "__VIEWSTATEENCRYPTED": None,
                     "IsFromNewSite": "1",
                 },
                 cookies=self._two_factor_cookie,
@@ -507,7 +514,6 @@ class AlarmController:
         async with self._websession.get(
             url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""),
             headers=self._ajax_headers,
-            cookies=self._two_factor_cookie,
         ) as resp:
             json_rsp = await resp.json()
 
@@ -797,9 +803,9 @@ class AlarmController:
         # BUILD DEVICE INSTANCE
         #
 
-        device_extension_results: ExtensionResults | dict = extension_results.get(
-            entity_id := raw_device["id"], {}
-        )
+        entity_id = raw_device["id"]
+
+        device_extension_results: ExtensionResults | dict = extension_results.get(entity_id, {})
 
         return device_class(
             id_=entity_id,
@@ -1153,7 +1159,7 @@ class AlarmController:
                 # If logged out, try logging in again, then give up by pretending that we couldn't find any devices of this type.
 
                 if not retry_on_failure:
-                    log.exception(
+                    log.error(
                         "Error fetching data from Alarm.com. Got 403 status when"
                         f" fetching {request_name}. Logging in"
                         " again didn't help. Giving up on device type."
@@ -1161,7 +1167,7 @@ class AlarmController:
                     raise UnexpectedResponse(error_msg)
 
                 if not self.is_logged_in():
-                    log.debug(
+                    log.info(
                         "Error fetching data from Alarm.com. Got 403 status"
                         f" when requesting {request_name}. Trying to"
                         " refresh auth tokens by logging in again."
