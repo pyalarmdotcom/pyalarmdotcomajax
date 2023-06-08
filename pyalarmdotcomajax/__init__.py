@@ -46,7 +46,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.3-beta.2"
+__version__ = "0.5.3-beta.3"
 
 log = logging.getLogger(__name__)
 
@@ -386,6 +386,15 @@ class AlarmController:
             )
             raise UnexpectedResponse
 
+    #
+    # SESSION FUNCTIONS
+    #
+
+    async def close_websession(self) -> None:
+        """Close websession."""
+
+        await self._websession.close()
+
     async def start_session_nudger(self) -> None:
         """Start task to nudge user sessions to keep from timing out."""
 
@@ -397,6 +406,34 @@ class AlarmController:
 
         if self._session_timer:
             await self._session_timer.stop()
+
+    async def keep_alive(self) -> None:
+        """Keep session alive. Handle if not (optionally).
+
+        Should be called once per minute to keep session alive.
+        """
+
+        reload_context_now = (
+            self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms)
+        ) < datetime.now()
+
+        seconds_remaining = (
+            self._last_session_refresh
+            + (timedelta(milliseconds=self._session_refresh_interval_ms))
+            - datetime.now()
+        ).total_seconds()
+
+        debug_message = "Sending keep alive signal. Time until session context refresh: {}".format(
+            "imminent" if reload_context_now else f"~ {round((seconds_remaining % 3600) // 60)} minutes."
+        )
+        log.debug(debug_message)
+
+        try:
+            if await self.is_logged_in(throw=True) and reload_context_now:
+                await self._reload_session_context()
+        except SessionTimeout:
+            log.info("User session expired. Logging back in.")
+            await self.async_login()
 
     #
     # WEBSOCKET FUNCTIONS
@@ -718,34 +755,6 @@ class AlarmController:
             raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
 
         return True
-
-    async def keep_alive(self) -> None:
-        """Keep session alive. Handle if not (optionally).
-
-        Should be called once per minute to keep session alive.
-        """
-
-        reload_context_now = (
-            self._last_session_refresh + timedelta(milliseconds=self._session_refresh_interval_ms)
-        ) < datetime.now()
-
-        seconds_remaining = (
-            self._last_session_refresh
-            + (timedelta(milliseconds=self._session_refresh_interval_ms))
-            - datetime.now()
-        ).total_seconds()
-
-        debug_message = "Sending keep alive signal. Time until session context refresh: {}".format(
-            "imminent" if reload_context_now else f"~ {round((seconds_remaining % 3600) // 60)} minutes."
-        )
-        log.debug(debug_message)
-
-        try:
-            if await self.is_logged_in(throw=True) and reload_context_now:
-                await self._reload_session_context()
-        except SessionTimeout:
-            log.info("User session expired. Logging back in.")
-            await self.async_login()
 
     #
     #
