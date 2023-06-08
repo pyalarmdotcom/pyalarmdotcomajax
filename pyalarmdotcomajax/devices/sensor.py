@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 from . import BaseDevice
 
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class Sensor(BaseDevice):
     """Represent Alarm.com sensor element."""
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of sensor states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/SensorStatus.js

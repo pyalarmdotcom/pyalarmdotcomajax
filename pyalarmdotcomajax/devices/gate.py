@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
@@ -21,7 +20,7 @@ class Gate(BaseDevice):
 
         supports_remote_close: bool | None  # Specifies whether the gate can be closed remotely.
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of gate states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/GateStatus.js
@@ -30,7 +29,7 @@ class Gate(BaseDevice):
         OPEN = 1
         CLOSED = 2
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC gates."""
 
         OPEN = "open"
@@ -47,9 +46,9 @@ class Gate(BaseDevice):
     async def async_open(self) -> None:
         """Send open command."""
 
-        await self.async_handle_external_desired_state_change(self.DeviceState.OPEN.value)
+        await self.async_handle_external_desired_state_change(self.DeviceState.OPEN)
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.GATE,
             event=self.Command.OPEN,
             device_id=self.id_,
@@ -58,7 +57,7 @@ class Gate(BaseDevice):
     async def async_close(self) -> None:
         """Send close command."""
 
-        await self.async_handle_external_desired_state_change(self.DeviceState.CLOSED.value)
+        await self.async_handle_external_desired_state_change(self.DeviceState.CLOSED)
 
         if (
             self.attributes is not None
@@ -67,7 +66,7 @@ class Gate(BaseDevice):
         ):
             raise NotImplementedError("Gate does not support remote close.")
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.GATE,
             event=self.Command.CLOSE,
             device_id=self.id_,

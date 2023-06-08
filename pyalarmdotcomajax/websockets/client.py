@@ -16,15 +16,20 @@ from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.devices.garage_door import GarageDoor
 from pyalarmdotcomajax.devices.gate import Gate
 from pyalarmdotcomajax.devices.light import Light
+from pyalarmdotcomajax.devices.lock import Lock
 from pyalarmdotcomajax.devices.partition import Partition
 from pyalarmdotcomajax.devices.registry import DeviceRegistry
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.exceptions import AuthenticationFailed, UnexpectedResponse
+from pyalarmdotcomajax.exceptions import (
+    AuthenticationFailed,
+    UnexpectedResponse,
+)
 from pyalarmdotcomajax.websockets.handler.garage_door import GarageDoorWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.gate import GateWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.light import LightWebSocketHandler
+from pyalarmdotcomajax.websockets.handler.lock import LockWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.partition import PartitionWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.sensor import SensorWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.thermostat import ThermostatWebSocketHandler
@@ -183,6 +188,8 @@ class WebSocketClient:
                     await SensorWebSocketHandler().process_message(message)
                 case Partition():
                     await PartitionWebSocketHandler().process_message(message)
+                case Lock():
+                    await LockWebSocketHandler().process_message(message)
                 case GarageDoor():
                     await GarageDoorWebSocketHandler().process_message(message)
                 case Gate():

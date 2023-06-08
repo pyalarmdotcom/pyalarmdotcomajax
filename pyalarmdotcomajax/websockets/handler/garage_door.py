@@ -21,9 +21,9 @@ class GarageDoorWebSocketHandler(BaseWebSocketHandler):
 
     SUPPORTED_DEVICE_TYPE = GarageDoor
 
-    EVENT_TO_STATE_MAP = {
-        EventType.Opened: GarageDoor.DeviceState.OPEN.value,
-        EventType.Closed: GarageDoor.DeviceState.CLOSED.value,
+    EVENT_STATE_MAP = {
+        EventType.Opened: GarageDoor.DeviceState.OPEN,
+        EventType.Closed: GarageDoor.DeviceState.CLOSED,
     }
 
     async def process_message(self, message: WebSocketMessage) -> None:
@@ -36,11 +36,19 @@ class GarageDoorWebSocketHandler(BaseWebSocketHandler):
 
         match message:
             case StatusChangeMessage():
-                if message.new_state:
-                    await message.device.async_handle_external_state_change(message.new_state)
+                await message.device.async_handle_external_dual_state_change(message.new_state)
 
             case EventMessage():
-                log.debug("Ignoring message. Already handled in separate status change message.")
+                match message.event_type:
+                    case EventType.Opened | EventType.Closed:
+                        await message.device.async_handle_external_dual_state_change(
+                            self.EVENT_STATE_MAP[message.event_type]
+                        )
+                    case _:
+                        log.debug(
+                            f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"
+                            f" by {self.SUPPORTED_DEVICE_TYPE.__name__}."
+                        )
 
             case _:
                 log.debug(

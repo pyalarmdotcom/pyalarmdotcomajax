@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
@@ -14,7 +13,7 @@ log = logging.getLogger(__name__)
 class Lock(BaseDevice):
     """Represent Alarm.com sensor element."""
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of lock states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LockStatus.js
@@ -23,7 +22,7 @@ class Lock(BaseDevice):
         LOCKED = 1
         UNLOCKED = 2
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC locks."""
 
         LOCK = "lock"
@@ -32,9 +31,9 @@ class Lock(BaseDevice):
     async def async_lock(self) -> None:
         """Send lock command."""
 
-        await self.async_handle_external_desired_state_change(self.DeviceState.LOCKED.value)
+        await self.async_handle_external_desired_state_change(self.DeviceState.LOCKED)
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LOCK,
             event=self.Command.LOCK,
             device_id=self.id_,
@@ -43,9 +42,9 @@ class Lock(BaseDevice):
     async def async_unlock(self) -> None:
         """Send unlock command."""
 
-        await self.async_handle_external_desired_state_change(self.DeviceState.UNLOCKED.value)
+        await self.async_handle_external_desired_state_change(self.DeviceState.UNLOCKED)
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LOCK,
             event=self.Command.UNLOCK,
             device_id=self.id_,

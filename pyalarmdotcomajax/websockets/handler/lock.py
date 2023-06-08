@@ -36,10 +36,18 @@ class LockWebSocketHandler(BaseWebSocketHandler):
 
         match message:
             case StatusChangeMessage():
-                if message.new_state:
-                    await message.device.async_handle_external_state_change(int(message.new_state))
+                await message.device.async_handle_external_dual_state_change(message.new_state)
             case EventMessage():
-                log.debug("Ignoring message. Already handled in separate status change message.")
+                match message.event_type:
+                    case EventType.DoorLocked | EventType.DoorUnlocked:
+                        await message.device.async_handle_external_dual_state_change(
+                            self.EVENT_STATE_MAP[message.event_type]
+                        )
+                    case _:
+                        log.debug(
+                            f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"
+                            f" by {self.SUPPORTED_DEVICE_TYPE.__name__}."
+                        )
             case _:
                 log.debug(
                     f"Support for {type(message)} not yet implemented by {self.SUPPORTED_DEVICE_TYPE.__name__}."

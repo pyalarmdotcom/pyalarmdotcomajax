@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Final, TypedDict
 
+from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.exceptions import (
     InvalidConfigurationOption,
 )
@@ -77,8 +78,6 @@ class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC devices."""
 
     _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
-    _ATTRIB_STATE = "state"
-    _ATTRIB_DESIRED_STATE = "desiredState"
 
     def __init__(
         self,
@@ -105,7 +104,7 @@ class BaseDevice(ABC, CastingMixin):
         self.children = children
         self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
 
-        self._send_action_callback: Callable = send_action_callback
+        self._send_action_callback = send_action_callback
         self._config_change_callback: Callable | None = config_change_callback
 
         self.external_update_callback: list[Callable] = []
@@ -154,7 +153,7 @@ class BaseDevice(ABC, CastingMixin):
         return self.raw_attributes.get("hasState")
 
     @property
-    def state(self) -> Enum | None:
+    def state(self) -> DeviceState | None:
         """Return state."""
 
         # Devices that don't report state on Alarm.com still have a value in the state field.
@@ -165,7 +164,7 @@ class BaseDevice(ABC, CastingMixin):
         return None
 
     @property
-    def desired_state(self) -> Enum | None:
+    def desired_state(self) -> DeviceState | None:
         """Return state."""
 
         # Devices that don't report state on Alarm.com still have a value in the desiredState field.
@@ -260,38 +259,64 @@ class BaseDevice(ABC, CastingMixin):
     # FUNCTIONS
     # #
 
-    async def async_handle_external_state_change(self, raw_state: int) -> None:
+    async def _send_action(
+        self,
+        device_type: DeviceType,
+        event: BaseDevice.Command,
+        device_id: str,
+        msg_body: dict = {},
+        retry_on_failure: bool = True,
+    ) -> None:
+        """Send action to ADC."""
+
+        if updated_device_object := await self._send_action_callback(
+            device_type, event, device_id, msg_body, retry_on_failure
+        ):
+            try:
+                await self.async_handle_external_attribute_change(
+                    updated_device_object["data"]["attributes"], "user action response"
+                )
+            except KeyError:
+                log.exception(f"Failed to update device {self.name} with response {updated_device_object}")
+
+    async def async_handle_external_dual_state_change(self, state: BaseDevice.DeviceState | int | None) -> None:
+        """Update device state when notified of externally-triggered change.
+
+        Takes either a DeviceState or a DeviceState int value for the new state.
+        """
+
+        final_state = state.value if isinstance(state, Enum) else state
+
+        await self.async_handle_external_attribute_change(
+            {ATTR_STATE: final_state, ATTR_DESIRED_STATE: final_state}, "WebSocket message"
+        )
+
+    async def async_handle_external_desired_state_change(self, state: BaseDevice.DeviceState | None) -> None:
         """Update device state when notified of externally-triggered change."""
 
-        await self.async_handle_external_attribute_change({self._ATTRIB_STATE: raw_state})
+        await self.async_handle_external_attribute_change(
+            {ATTR_DESIRED_STATE: state.value if isinstance(state, Enum) else state}, "WebSocket message"
+        )
 
-    async def async_handle_external_desired_state_change(self, raw_state: int) -> None:
-        """Update device state when notified of externally-triggered change."""
-
-        await self.async_handle_external_attribute_change({self._ATTRIB_DESIRED_STATE: raw_state})
-
-    async def async_handle_external_attribute_change(self, new_attribute: dict) -> None:
+    async def async_handle_external_attribute_change(
+        self, new_attributes: dict, source: str | None = None
+    ) -> None:
         """Update device attribute when notified of externally-triggered change."""
 
-        log.info(f"{__name__} Got async update for {self.name} ({self.id_}) with new {new_attribute}.")
+        log.info(
+            f"{__name__} Got async update for {self.name} ({self.id_}){' from ' + source if source else ''} with"
+            f" new {new_attributes}."
+        )
 
-        self.raw_attributes.update(new_attribute)
+        self.raw_attributes.update(new_attributes)
 
-        new_attrib_key = list(new_attribute.keys())[0]
-        new_attrib_value = list(new_attribute.values())[0]
+        new_attrib_key = list(new_attributes.keys())[0]
+        new_attrib_value = list(new_attributes.values())[0]
 
         log.debug(f"Desired: [{new_attrib_value}] | Current: [{self.raw_attributes.get(new_attrib_key)}]")
 
         for external_callback in self.external_update_callback:
             external_callback()
-
-    async def async_log_new_attribute(self, attribute_name: str, attribute_value: Any) -> None:
-        """Log externally-triggered attribute change."""
-
-        log.info(
-            f"{__name__} Got async update for {self.name} ({self.id_}) with new {attribute_name}:"
-            f" {attribute_value}."
-        )
 
     def register_external_update_callback(self, callback: Callable) -> None:
         """Register callback to be called when device state changes."""

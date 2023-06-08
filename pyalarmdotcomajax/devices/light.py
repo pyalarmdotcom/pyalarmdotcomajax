@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 
 from pyalarmdotcomajax.devices import BaseDevice, DeviceType
 
@@ -15,7 +14,7 @@ class Light(BaseDevice):
 
     ATTRIB_LIGHT_LEVEL = "lightLevel"
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of light states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
@@ -26,7 +25,7 @@ class Light(BaseDevice):
         OFF = 3
         LEVELCHANGE = 4
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC lights."""
 
         ON = "turnOn"
@@ -59,7 +58,7 @@ class Light(BaseDevice):
         if brightness:
             msg_body["dimmerLevel"] = brightness
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LIGHT,
             event=self.Command.ON,
             device_id=self.id_,
@@ -69,7 +68,7 @@ class Light(BaseDevice):
     async def async_turn_off(self) -> None:
         """Send turn off command."""
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LIGHT,
             event=self.Command.OFF,
             device_id=self.id_,

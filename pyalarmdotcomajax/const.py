@@ -29,3 +29,5 @@ class OtpType(Enum):
 
 ATTR_STATE_TEXT = "displayStateText"
 ATTR_MAC_ADDRESS = "mac_address"
+ATTR_STATE = "state"
+ATTR_DESIRED_STATE = "desiredState"

@@ -314,7 +314,7 @@ class AlarmController:
         device_id: str,  # ID corresponds to device_type
         msg_body: dict = {},  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
-    ) -> bool:
+    ) -> dict:
         """Send commands to Alarm.com."""
         log.info("Sending %s to Alarm.com.", event)
 
@@ -330,7 +330,9 @@ class AlarmController:
         log.debug("Url %s", url)
 
         try:
-            async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
+            async with self._websession.post(
+                url=url, json=msg_body, headers=self._ajax_headers, raise_for_status=True
+            ) as resp:
                 log.debug("Response from Alarm.com %s", resp.status)
 
                 json_rsp = await resp.json()
@@ -363,11 +365,12 @@ class AlarmController:
 
                 # If above pass and we have a 200, we're good.
                 if str(resp.status) == "200":
-                    return True
+                    return dict(json_rsp)
 
         except aiohttp.ClientResponseError as err:
             log.exception("Failed to send command.")
             raise UnexpectedResponse from err
+
         except TryAgain:
             return await self.async_send_command(
                 device_type=device_type,
@@ -692,6 +695,8 @@ class AlarmController:
         """Check if we are still logged in."""
 
         url = f"{c.URL_BASE[:-1]}{self._keep_alive_url}{self.KEEP_ALIVE_URL_PARAM_TEMPLATE.format(int(round(datetime.now().timestamp())))}"
+
+        text_rsp: str
 
         try:
             async with self._websession.get(

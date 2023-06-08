@@ -15,6 +15,17 @@ from pyalarmdotcomajax.websockets.messages import (
 
 log = logging.getLogger(__name__)
 
+MOTION_EVENT_STATE_MAP = {
+    EventType.Closed: Sensor.DeviceState.IDLE,
+    EventType.OpenedClosed: Sensor.DeviceState.IDLE,
+    EventType.Opened: Sensor.DeviceState.ACTIVE,
+}
+SENSOR_EVENT_STATE_MAP = {
+    EventType.Closed: Sensor.DeviceState.CLOSED,
+    EventType.OpenedClosed: Sensor.DeviceState.CLOSED,
+    EventType.Opened: Sensor.DeviceState.OPEN,
+}
+
 
 class SensorWebSocketHandler(BaseWebSocketHandler):
     """Base class for device-type-specific websocket message handler."""
@@ -23,24 +34,17 @@ class SensorWebSocketHandler(BaseWebSocketHandler):
 
     SUPPORTED_DEVICE_TYPE = Sensor
 
-    async def async_get_state_from_event_type(self, message: EventMessage) -> int:
+    def get_state_from_event_type(self, message: EventMessage) -> Sensor.DeviceState:
         """Get sensor state from websocket message event type."""
+
+        if not message.event_type:
+            return Sensor.DeviceState.UNKNOWN
 
         match message.device.device_subtype:
             case Sensor.Subtype.MOTION_SENSOR:
-                match message.event_type:
-                    case EventType.Closed | EventType.OpenedClosed:
-                        return Sensor.DeviceState.IDLE.value
-                    case EventType.Opened:
-                        return Sensor.DeviceState.ACTIVE.value
+                return MOTION_EVENT_STATE_MAP[message.event_type]
             case _:
-                match message.event_type:
-                    case EventType.Closed | EventType.OpenedClosed:
-                        return Sensor.DeviceState.CLOSED.value
-                    case EventType.Opened:
-                        return Sensor.DeviceState.OPEN.value
-
-        return Sensor.DeviceState.UNKNOWN.value
+                return SENSOR_EVENT_STATE_MAP[message.event_type]
 
     async def process_message(self, message: WebSocketMessage) -> None:
         """Handle websocket message."""
@@ -52,20 +56,19 @@ class SensorWebSocketHandler(BaseWebSocketHandler):
             case EventMessage():
                 match message.event_type:
                     case EventType.Closed | EventType.Opened:
-                        state = await self.async_get_state_from_event_type(message)
-                        await message.device.async_handle_external_state_change(state)
+                        await message.device.async_handle_external_dual_state_change(
+                            self.get_state_from_event_type(message)
+                        )
 
                     case EventType.OpenedClosed:
                         # Lock ensures that state changes are executed in order.
                         lock = asyncio.Lock()
 
                         async with lock:
-                            await message.device.async_handle_external_state_change(Sensor.DeviceState.OPEN.value)
+                            await message.device.async_handle_external_dual_state_change(Sensor.DeviceState.OPEN)
 
                         async with lock:
-                            await message.device.async_handle_external_state_change(
-                                Sensor.DeviceState.CLOSED.value
-                            )
+                            await message.device.async_handle_external_dual_state_change(Sensor.DeviceState.CLOSED)
                     case _:
                         log.debug(
                             f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"

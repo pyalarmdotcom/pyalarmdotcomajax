@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from enum import Enum
 from typing import TypedDict
 
 from dateutil import parser
@@ -30,7 +29,7 @@ class ImageSensor(BaseDevice):
 
     malfunction = False
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC image sensors."""
 
         PEEK_IN = "doPeekInNow"
@@ -67,7 +66,7 @@ class ImageSensor(BaseDevice):
     async def async_peek_in(self) -> None:
         """Send peek in command to take photo."""
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.IMAGE_SENSOR,
             event=self.Command.PEEK_IN,
             device_id=self.id_,
