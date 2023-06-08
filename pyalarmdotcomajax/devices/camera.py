@@ -13,7 +13,4 @@ class Camera(BaseDevice):
 
     # Cameras do not have a state.
 
-    @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None
+    malfunction = False

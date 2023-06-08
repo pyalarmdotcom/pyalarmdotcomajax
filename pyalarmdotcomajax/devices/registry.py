@@ -22,6 +22,20 @@ from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
 
+AllDevices_t = (
+    Camera
+    | GarageDoor
+    | Gate
+    | ImageSensor
+    | Light
+    | Lock
+    | Partition
+    | Sensor
+    | System
+    | Thermostat
+    | WaterSensor
+)
+
 AllDeviceTypes_t = (
     type[Camera]
     | type[GarageDoor]
@@ -36,34 +50,19 @@ AllDeviceTypes_t = (
     | type[WaterSensor]
 )
 
-AllCommands_t = (
-    Camera.Command
-    | GarageDoor.Command
-    | Gate.Command
-    | ImageSensor.Command
-    | Light.Command
-    | Lock.Command
-    | Partition.Command
-    | Sensor.Command
-    | System.Command
-    | Thermostat.Command
-    | WaterSensor.Command
-)
-
-
-AllDevices_t = (
-    Camera
-    | GarageDoor
-    | Gate
-    | ImageSensor
-    | Light
-    | Lock
-    | Partition
-    | Sensor
-    | System
-    | Thermostat
-    | WaterSensor
-)
+# AllCommands_t = (
+#     Camera.Command
+#     | GarageDoor.Command
+#     | Gate.Command
+#     | ImageSensor.Command
+#     | Light.Command
+#     | Lock.Command
+#     | Partition.Command
+#     | Sensor.Command
+#     | System.Command
+#     | Thermostat.Command
+#     | WaterSensor.Command
+# )
 
 
 AllDevicesLists_t = (

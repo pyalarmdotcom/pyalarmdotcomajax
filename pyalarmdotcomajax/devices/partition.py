@@ -41,7 +41,7 @@ class Partition(BaseDevice):
 
         extended_arming_options: Partition.ExtendedArmingMapping  # List of extended arming options
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of arming states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingState.js
@@ -52,7 +52,7 @@ class Partition(BaseDevice):
         ARMED_AWAY = 3
         ARMED_NIGHT = 4
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC partitions."""
 
         DISARM = "disarm"
@@ -62,7 +62,7 @@ class Partition(BaseDevice):
     @property
     def uncleared_issues(self) -> bool | None:
         """Return whether user needs to clear device state on alarm.com."""
-        if isinstance(issues := self._attribs_raw.get("needsClearIssuesPrompt", None), bool):
+        if isinstance(issues := self.raw_attributes.get("needsClearIssuesPrompt", None), bool):
             return issues
 
         return None
@@ -96,7 +96,7 @@ class Partition(BaseDevice):
         if night_arming and Partition.ExtendedArmingOption.NIGHT_ARMING in extended_arming_options:
             msg_body.update({"nightArming": night_arming})
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.PARTITION,
             event=arm_type,
             device_id=self.id_,
@@ -122,6 +122,8 @@ class Partition(BaseDevice):
 
         log.debug("Calling arm stay.")
 
+        await self.async_handle_external_desired_state_change(self.DeviceState.ARMED_STAY)
+
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
             extended_arming_options=self.attributes.extended_arming_options.arm_stay,
@@ -139,6 +141,8 @@ class Partition(BaseDevice):
         """Arm stay alarm."""
 
         log.debug("Calling arm away.")
+
+        await self.async_handle_external_desired_state_change(self.DeviceState.ARMED_AWAY)
 
         await self._async_arm(
             arm_type=self.Command.ARM_AWAY,
@@ -158,6 +162,8 @@ class Partition(BaseDevice):
 
         log.debug("Calling arm night.")
 
+        await self.async_handle_external_desired_state_change(self.DeviceState.ARMED_NIGHT)
+
         await self._async_arm(
             arm_type=self.Command.ARM_STAY,
             extended_arming_options=self.attributes.extended_arming_options.arm_night,
@@ -174,7 +180,9 @@ class Partition(BaseDevice):
 
         log.debug("Calling disarm.")
 
-        await self._send_action_callback(
+        await self.async_handle_external_desired_state_change(self.DeviceState.DISARMED)
+
+        await self._send_action(
             device_type=DeviceType.PARTITION,
             event=self.Command.DISARM,
             device_id=self.id_,
@@ -189,7 +197,7 @@ class Partition(BaseDevice):
     def attributes(self) -> PartitionAttributes:
         """Return partition attributes."""
 
-        extended_arming_options = dict(self._attribs_raw.get("extendedArmingOptions", {}))
+        extended_arming_options = dict(self.raw_attributes.get("extendedArmingOptions", {}))
 
         return self.PartitionAttributes(
             extended_arming_options=self.ExtendedArmingMapping(

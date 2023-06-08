@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from enum import Enum
 from typing import TypedDict
 
 from dateutil import parser
@@ -28,7 +27,9 @@ class ImageSensorImage(TypedDict):
 class ImageSensor(BaseDevice):
     """Represent Alarm.com image sensor element."""
 
-    class Command(Enum):
+    malfunction = False
+
+    class Command(BaseDevice.Command):
         """Commands for ADC image sensors."""
 
         PEEK_IN = "doPeekInNow"
@@ -57,11 +58,6 @@ class ImageSensor(BaseDevice):
                 self._recent_images.append(image_data)
 
     @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return None
-
-    @property
     def images(self) -> list[ImageSensorImage] | None:
         """Get a list of images taken by the image sensor."""
 
@@ -70,7 +66,7 @@ class ImageSensor(BaseDevice):
     async def async_peek_in(self) -> None:
         """Send peek in command to take photo."""
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.IMAGE_SENSOR,
             event=self.Command.PEEK_IN,
             device_id=self.id_,

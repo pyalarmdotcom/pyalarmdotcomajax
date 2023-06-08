@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 
 from pyalarmdotcomajax.devices import BaseDevice, DeviceType
 
@@ -15,7 +14,7 @@ class Light(BaseDevice):
 
     ATTRIB_LIGHT_LEVEL = "lightLevel"
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of light states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
@@ -26,29 +25,19 @@ class Light(BaseDevice):
         OFF = 3
         LEVELCHANGE = 4
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC lights."""
 
         ON = "turnOn"
         OFF = "turnOff"
 
     @property
-    def available(self) -> bool:
-        """Return whether the light can be manipulated."""
-        return (
-            self._attribs_raw.get("canReceiveCommands", False)
-            and self._attribs_raw.get("remoteCommandsEnabled", False)
-            and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state in [self.DeviceState.ON, self.DeviceState.OFF, self.DeviceState.LEVELCHANGE]
-        )
-
-    @property
     def brightness(self) -> int | None:
         """Return light's brightness."""
-        if not self._attribs_raw.get("isDimmer", False):
+        if not self.raw_attributes.get("isDimmer", False):
             return None
 
-        if isinstance(level := self._attribs_raw.get(self.ATTRIB_LIGHT_LEVEL, 0), int):
+        if isinstance(level := self.raw_attributes.get(self.ATTRIB_LIGHT_LEVEL, 0), int):
             return level
 
         return None
@@ -57,7 +46,7 @@ class Light(BaseDevice):
     def supports_state_tracking(self) -> bool | None:
         """Return whether the light reports its current state."""
 
-        if isinstance(supports := self._attribs_raw.get("stateTrackingEnabled"), bool):
+        if isinstance(supports := self.raw_attributes.get("stateTrackingEnabled"), bool):
             return supports
 
         return None
@@ -69,7 +58,7 @@ class Light(BaseDevice):
         if brightness:
             msg_body["dimmerLevel"] = brightness
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LIGHT,
             event=self.Command.ON,
             device_id=self.id_,
@@ -79,7 +68,7 @@ class Light(BaseDevice):
     async def async_turn_off(self) -> None:
         """Send turn off command."""
 
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.LIGHT,
             event=self.Command.OFF,
             device_id=self.id_,

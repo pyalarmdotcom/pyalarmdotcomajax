@@ -51,42 +51,23 @@ class ThermostatWebSocketHandler(BaseWebSocketHandler):
                                 ): (message.value / 100),
                             },
                         )
-                        await message.device.async_log_new_attribute(
-                            (
-                                f"{'heat' if message.property == PropertyChangeType.HeatSetPoint else 'cool'} setpoint"
-                            ),
-                            (
-                                message.device.attributes.heat_setpoint
-                                if message.property == PropertyChangeType.HeatSetPoint
-                                else message.device.attributes.cool_setpoint
-                            ),
-                        )
 
                     case PropertyChangeType.AmbientTemperature:
                         await message.device.async_handle_external_attribute_change(
                             {message.device.ATTRIB_AMBIENT_TEMP: message.value / 100},
                         )
-                        await message.device.async_log_new_attribute(
-                            "ambient temperature", message.device.attributes.temp_at_tstat
-                        )
 
             case EventMessage():
-                if not message.value:
-                    log.debug("Malformed message. Missing value.")
-                    return
-
                 match message.event_type:
                     case EventType.ThermostatOffset:
                         await message.device.async_handle_external_attribute_change(
                             {message.device.ATTRIB_SETPOINT_OFFSET: message.value},
                         )
-                        await message.device.async_log_new_attribute(
-                            "setpoint offset", message.device.attributes.setpoint_offset
-                        )
 
                     case EventType.ThermostatModeChanged:
-                        await message.device.async_handle_external_state_change(int(message.value) + 1)
-                        await message.device.async_log_new_attribute("mode", message.device.state)
+                        await message.device.async_handle_external_dual_state_change(
+                            message.device.DeviceState(message.value + 1)
+                        )
 
                     case EventType.ThermostatFanModeChanged:
                         await message.device.async_handle_external_attribute_change(
@@ -94,9 +75,6 @@ class ThermostatWebSocketHandler(BaseWebSocketHandler):
                                 message.device.ATTRIB_FAN_MODE: message.value,
                                 message.device.ATTRIB_DESIRED_FAN_MODE: message.value,
                             },
-                        )
-                        await message.device.async_log_new_attribute(
-                            "fan mode", message.device.attributes.fan_mode
                         )
 
                     case EventType.ThermostatSetPointChanged:

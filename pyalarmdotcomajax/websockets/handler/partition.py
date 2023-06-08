@@ -21,10 +21,10 @@ class PartitionWebSocketHandler(BaseWebSocketHandler):
     SUPPORTED_DEVICE_TYPE = Partition
 
     EVENT_TO_STATE_MAP = {
-        EventType.Disarmed: Partition.DeviceState.DISARMED.value,
-        EventType.ArmedAway: Partition.DeviceState.ARMED_AWAY.value,
-        EventType.ArmedStay: Partition.DeviceState.ARMED_STAY.value,
-        EventType.ArmedNight: Partition.DeviceState.ARMED_NIGHT.value,
+        EventType.Disarmed: Partition.DeviceState.DISARMED,
+        EventType.ArmedAway: Partition.DeviceState.ARMED_AWAY,
+        EventType.ArmedStay: Partition.DeviceState.ARMED_STAY,
+        EventType.ArmedNight: Partition.DeviceState.ARMED_NIGHT,
     }
 
     async def process_message(self, message: WebSocketMessage) -> None:
@@ -39,7 +39,7 @@ class PartitionWebSocketHandler(BaseWebSocketHandler):
             case EventMessage():
                 match message.event_type:
                     case EventType.Disarmed | EventType.ArmedAway | EventType.ArmedStay | EventType.ArmedNight:
-                        await message.device.async_handle_external_state_change(
+                        await message.device.async_handle_external_dual_state_change(
                             self.EVENT_TO_STATE_MAP[message.event_type]
                         )
                     case EventType.Alarm | EventType.PolicePanic:

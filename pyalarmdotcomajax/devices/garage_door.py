@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 
 from pyalarmdotcomajax.devices import DeviceType
 
@@ -14,7 +13,7 @@ log = logging.getLogger(__name__)
 class GarageDoor(BaseDevice):
     """Represent Alarm.com garage door element."""
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of garage door states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
@@ -23,7 +22,7 @@ class GarageDoor(BaseDevice):
         OPEN = 1
         CLOSED = 2
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC garage doors."""
 
         OPEN = "open"
@@ -32,7 +31,9 @@ class GarageDoor(BaseDevice):
     async def async_open(self) -> None:
         """Send open command."""
 
-        await self._send_action_callback(
+        await self.async_handle_external_desired_state_change(self.DeviceState.OPEN)
+
+        await self._send_action(
             device_type=DeviceType.GARAGE_DOOR,
             event=self.Command.OPEN,
             device_id=self.id_,
@@ -41,7 +42,9 @@ class GarageDoor(BaseDevice):
     async def async_close(self) -> None:
         """Send close command."""
 
-        await self._send_action_callback(
+        await self.async_handle_external_desired_state_change(self.DeviceState.CLOSED)
+
+        await self._send_action(
             device_type=DeviceType.GARAGE_DOOR,
             event=self.Command.CLOSE,
             device_id=self.id_,

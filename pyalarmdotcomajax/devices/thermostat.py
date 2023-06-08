@@ -5,10 +5,10 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 
-from pyalarmdotcomajax.devices import DeviceType
+from pyalarmdotcomajax.const import ATTR_STATE
 from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
-from . import BaseDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class Thermostat(BaseDevice):
         # CIRCULATE = 6
         # HUMIDITY = 7
 
-    class DeviceState(Enum):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of thermostat states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatStatus.js
@@ -83,7 +83,7 @@ class Thermostat(BaseDevice):
         HOME = 2
         SLEEP = 3
 
-    class Command(Enum):
+    class Command(BaseDevice.Command):
         """Commands for ADC lights."""
 
         SET_STATE = "setState"
@@ -129,16 +129,6 @@ class Thermostat(BaseDevice):
         4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
         10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},
     }
-
-    @property
-    def available(self) -> bool:
-        """Return whether the light can be manipulated."""
-        return (
-            self._attribs_raw.get("canReceiveCommands", False)
-            and self._attribs_raw.get("remoteCommandsEnabled", False)
-            and self._attribs_raw.get("hasPermissionToChangeState", False)
-            and self.state is not self.DeviceState.UNKNOWN
-        )
 
     @property
     def attributes(self) -> ThermostatAttributes:
@@ -193,7 +183,7 @@ class Thermostat(BaseDevice):
 
         # Build the request body.
         if state:
-            msg_body = {self._ATTRIB_STATE: state.value}
+            msg_body = {ATTR_STATE: state.value}
         elif fan:
             msg_body = {
                 self.ATTRIB_DESIRED_FAN_MODE: self.FanMode(fan[0]).value,
@@ -207,7 +197,7 @@ class Thermostat(BaseDevice):
             msg_body = {"desiredScheduleMode": schedule_mode.value}
 
         # Send
-        await self._send_action_callback(
+        await self._send_action(
             device_type=DeviceType.THERMOSTAT,
             event=self.Command.SET_STATE,
             device_id=self.id_,

@@ -22,9 +22,15 @@ class LightWebSocketHandler(BaseWebSocketHandler):
 
     SUPPORTED_DEVICE_TYPE = Light
 
+    EVENT_STATE_MAP = {
+        EventType.LightTurnedOff: Light.DeviceState.OFF,
+        EventType.LightTurnedOn: Light.DeviceState.ON,
+    }
+
+    # Light messages use non-standard state values.
     STATE_MAP = {
-        0: Light.DeviceState.OFF.value,
-        1: Light.DeviceState.ON.value,
+        0: Light.DeviceState.OFF,
+        1: Light.DeviceState.ON,
     }
 
     async def process_message(self, message: WebSocketMessage) -> None:
@@ -42,13 +48,7 @@ class LightWebSocketHandler(BaseWebSocketHandler):
                         # RGBW light not currently supported by library.
                         pass
             case StatusChangeMessage():
-                if message.new_state in self.STATE_MAP:
-                    await message.device.async_handle_external_state_change(self.STATE_MAP[message.new_state])
-                else:
-                    log.exception(
-                        f"{self.__class__.__name__}: Failed to update"
-                        f" {message.device.name} ({message.device.id_}). Unknown state: {message.new_state}."
-                    )
+                await message.device.async_handle_external_dual_state_change(self.STATE_MAP[message.new_state])
             case EventMessage():
                 match message.event_type:
                     case EventType.SwitchLevelChanged:
@@ -56,9 +56,10 @@ class LightWebSocketHandler(BaseWebSocketHandler):
                             await message.device.async_handle_external_attribute_change(
                                 {message.device.ATTRIB_LIGHT_LEVEL: int(message.value)}
                             )
-                            await message.device.async_log_new_attribute("brightness", message.device.brightness)
                     case EventType.LightTurnedOff | EventType.LightTurnedOn:
-                        log.debug("Ignoring message. Already handled in separate status change message.")
+                        await message.device.async_handle_external_dual_state_change(
+                            self.EVENT_STATE_MAP[message.event_type]
+                        )
                     case _:
                         log.debug(
                             f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"
