@@ -289,21 +289,20 @@ class AlarmController:
 
             raw_devices.remove(partition_raw)
 
-            #
-            # BUILD ALL DEVICES IN PARTITION
-            #
-            # This ensures that partition map is built before devices are built.
+        #
+        # BUILD DEVICES
+        #
 
-            for device_raw in raw_devices:
-                try:
-                    device_instance: AllDevices_t = await self._async_update__build_device(
-                        device_raw, device_type_specific_data, extension_results
-                    )
+        for device_raw in raw_devices:
+            try:
+                device_instance: AllDevices_t = await self._async_update__build_device(
+                    device_raw, device_type_specific_data, extension_results
+                )
 
-                    device_instances.update({device_instance.id_: device_instance})
+                device_instances.update({device_instance.id_: device_instance})
 
-                except UnsupportedDeviceType:
-                    continue
+            except UnsupportedDeviceType:
+                continue
 
         self.devices.update(device_instances, purge=True)
 
