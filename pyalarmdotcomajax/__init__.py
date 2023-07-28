@@ -48,7 +48,7 @@ from .extensions import (
     ExtendedProperties,
 )
 
-__version__ = "0.4.14"
+__version__ = "0.4.15"
 
 log = logging.getLogger(__name__)
 
@@ -81,10 +81,10 @@ class OtpType(Enum):
 
     # https://www.alarm.com/web/system/assets/customer-ember/enums/TwoFactorAuthenticationType.js
 
-    DISABLED = 0
-    APP = 1
-    SMS = 2
-    EMAIL = 4
+    disabled = 0
+    app = 1
+    sms = 2
+    email = 4
 
 
 class AlarmController:
@@ -107,7 +107,7 @@ class AlarmController:
         "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}"
     )
     LOGIN_2FA_TRUST_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/trustTwoFactorDevice"
-    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCode"
+    LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaSms"
     LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}/sendTwoFactorAuthenticationCodeViaEmail"
 
     VIEWSTATE_FIELD = "__VIEWSTATE"
@@ -224,8 +224,8 @@ class AlarmController:
                 log.debug("Two factor authentication code or cookie required.")
 
                 if request_otp and self._two_factor_method in [
-                    OtpType.SMS,
-                    OtpType.EMAIL,
+                    OtpType.sms,
+                    OtpType.email,
                 ]:
                     await self.async_request_otp()
 
@@ -248,7 +248,7 @@ class AlarmController:
 
             request_url = (
                 self.LOGIN_2FA_REQUEST_OTP_EMAIL_URL_TEMPLATE
-                if self._two_factor_method == OtpType.EMAIL
+                if self._two_factor_method == OtpType.email
                 else self.LOGIN_2FA_REQUEST_OTP_SMS_URL_TEMPLATE
             )
 
@@ -863,18 +863,59 @@ class AlarmController:
                         self._update_antiforgery_token(resp)
                         json_rsp = await resp.json()
 
+                        log.debug(json_rsp)
+
                         if isinstance(
                             factor_id := json_rsp.get("data", {}).get("id"), int
                         ):
                             self._factor_type_id = factor_id
-                            self._two_factor_method = OtpType(
-                                json_rsp.get("data", {})
-                                .get("attributes", {})
-                                .get("twoFactorType")
+
+                            if not (
+                                attribs := json_rsp.get("data", {}).get("attributes")
+                            ):
+                                raise UnexpectedDataStructure(
+                                    "Could not find expected data in two-factor"
+                                    " authentication details."
+                                )
+
+                            if attribs.get("showSuggestedSetup") is True:
+                                raise NagScreen
+
+                            enabled_otp_types_bitmask = attribs.get(
+                                "enabledTwoFactorTypes"
                             )
-                            log.debug(
-                                "Requires 2FA. Using method %s", self._two_factor_method
+
+                            enabled_2fa_methods = [
+                                otp_type
+                                for otp_type in OtpType
+                                if bool(enabled_otp_types_bitmask & otp_type.value)
+                            ]
+
+                            if (
+                                (OtpType.disabled in enabled_2fa_methods)
+                                or (attribs.get("isCurrentDeviceTrusted") is True)
+                                or not enabled_otp_types_bitmask
+                                or not enabled_2fa_methods
+                            ):
+                                # 2FA is disabled, we can skip 2FA altogether.
+                                return False
+
+                            log.info(
+                                "Requires two-factor authentication. Enabled methods"
+                                f" are {enabled_2fa_methods}"
                             )
+
+                            # We have proper 2FA type selection in the 5.x releases. Since this 4.x release is a hotfix, we're going to be lazy here and will select an OTP method for the user.
+                            supported_types = [
+                                int(otp_type.value)
+                                for otp_type in OtpType
+                                if bool(enabled_otp_types_bitmask & otp_type.value)
+                            ]
+
+                            self._two_factor_method = OtpType(min(supported_types))
+
+                            log.debug("Using method %s", self._two_factor_method)
+
                             return True
 
         log.debug("Does not require 2FA.")

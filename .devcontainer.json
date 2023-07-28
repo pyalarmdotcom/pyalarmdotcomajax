@@ -1,5 +1,5 @@
 {
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.10-bullseye",
+  "image": "mcr.microsoft.com/vscode/devcontainers/python:0-3.11-bullseye",
   "name": "pyalarmdotcomajax",
   "postCreateCommand": "scripts/setup.sh",
   "customizations": {
