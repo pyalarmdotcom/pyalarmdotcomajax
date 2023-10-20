@@ -7,7 +7,7 @@ from abc import ABC
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Final, TypedDict
+from typing import Any, Final, Optional, TypedDict
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.exceptions import (
@@ -107,7 +107,7 @@ class BaseDevice(ABC, CastingMixin):
         self._send_action_callback = send_action_callback
         self._config_change_callback: Callable | None = config_change_callback
 
-        self.external_update_callback: list[Callable] = []
+        self.external_update_callback: list[tuple[Callable, Optional[str]]] = []
 
         self.process_device_type_specific_data()
 
@@ -304,29 +304,50 @@ class BaseDevice(ABC, CastingMixin):
         """Update device attribute when notified of externally-triggered change."""
 
         log.info(
-            f"{__name__} Got async update for {self.name} ({self.id_}){' from ' + source if source else ''} with"
+            f"{__name__} Got update for {self.name} ({self.id_}){' from ' + source if source else ''} with"
             f" new {new_attributes}."
         )
 
         self.raw_attributes.update(new_attributes)
 
-        new_attrib_key = list(new_attributes.keys())[0]
-        new_attrib_value = list(new_attributes.values())[0]
+        if log.level == logging.DEBUG:
+            log_str = ""
+            for key, value in new_attributes.items():
+                if (current_value := self.raw_attributes.get(key)) != value:
+                    log_str += f" | {str(key).upper()}:: [{current_value}] -> [{value}]"
+            if log_str:
+                log.debug(f"ATTRIBUTE NAME:: Current_Value -> Desired_Value{log_str}")
 
-        log.debug(f"Desired: [{new_attrib_value}] | Current: [{self.raw_attributes.get(new_attrib_key)}]")
+        # Trace logging for @catellie
+        log.debug(
+            f"{__name__} {self.name} ({self.id_}) has {len(self.external_update_callback)} external update"
+            " callbacks.)"
+        )
 
-        for external_callback in self.external_update_callback:
+        for external_callback, listener_name in self.external_update_callback:
+            # Trace logging for @catellie
+            log.debug(
+                f"{__name__} Calling external update callback for listener {listener_name} by"
+                f" {self.name} ({self.id_})"
+            )
+
             external_callback()
 
-    def register_external_update_callback(self, callback: Callable) -> None:
+    def register_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
         """Register callback to be called when device state changes."""
 
-        self.external_update_callback.append(callback)
+        # Trace logging for @catellie
+        log.debug(f"Registering external update callback for {listener_name} with {self.name} ({self.id_})")
 
-    def unregister_external_update_callback(self, callback: Callable) -> None:
+        self.external_update_callback.append((callback, listener_name))
+
+    def unregister_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
         """Unregister callback to be called when device state changes."""
 
-        self.external_update_callback.remove(callback)
+        # Trace logging for @catellie
+        log.debug(f"Unregistering external update callback for {listener_name} with {self.name} ({self.id_})")
+
+        self.external_update_callback.remove((callback, listener_name))
 
     # #
     # PLACEHOLDERS
