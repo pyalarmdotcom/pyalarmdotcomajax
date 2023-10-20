@@ -125,10 +125,13 @@ class Thermostat(BaseDevice):
         supports_schedules_smart: bool | None
         schedule_mode: Thermostat.ScheduleMode | None
 
-    _DEVICE_MODELS = {
-        4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
-        10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},
-    }
+    @property
+    def models(self) -> dict:
+        """Return mapping of known ADC model IDs to manufacturer and model name. To be overridden by children."""
+        return {
+            4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
+            10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},
+        }
 
     @property
     def attributes(self) -> ThermostatAttributes:

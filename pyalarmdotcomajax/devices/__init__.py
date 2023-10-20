@@ -77,8 +77,6 @@ class DeviceTypeSpecificData(TypedDict, total=False):
 class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC devices."""
 
-    _DEVICE_MODELS: dict  # deviceModelId: {"manufacturer": str, "model": str}
-
     def __init__(
         self,
         id_: str,
@@ -118,6 +116,12 @@ class BaseDevice(ABC, CastingMixin):
     #
 
     @property
+    def models(self) -> dict:
+        """Return mapping of known ADC model IDs to manufacturer and model name. To be overridden by children."""
+
+        return {}  # deviceModelId: {"manufacturer": str, "model": str}
+
+    @property
     def read_only(self) -> bool | None:
         """Return whether logged in user has permission to change state."""
         return (
@@ -139,7 +143,7 @@ class BaseDevice(ABC, CastingMixin):
     def raw_attributes(self) -> dict:
         """Return raw attributes."""
 
-        return self._raw.get("attributes", {})
+        return dict(self._raw.get("attributes", {}))
 
     @property
     def available(self) -> bool:
@@ -232,7 +236,7 @@ class BaseDevice(ABC, CastingMixin):
         if model := self.raw_attributes.get("deviceModel"):
             return str(model)
 
-        if model := self._DEVICE_MODELS.get(self.raw_attributes.get("deviceModelId")):
+        if model := self.models.get(self.raw_attributes.get("deviceModelId")):
             return str(model)
 
         return ""
@@ -264,11 +268,13 @@ class BaseDevice(ABC, CastingMixin):
         device_type: DeviceType,
         event: BaseDevice.Command,
         device_id: str,
-        msg_body: dict = {},
+        msg_body: dict | None = None,
         retry_on_failure: bool = True,
     ) -> None:
         """Send action to ADC."""
 
+        if msg_body is None:
+            msg_body = {}
         if updated_device_object := await self._send_action_callback(
             device_type, event, device_id, msg_body, retry_on_failure
         ):

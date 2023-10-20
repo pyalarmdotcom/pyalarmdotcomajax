@@ -93,6 +93,150 @@ AllDevicesDicts_t = (
     | dict[str, WaterSensor]
 )
 
+ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
+    DeviceType.CAMERA: {
+        "endpoints": {"primary": "{}web/api/video/devices/cameras/{}"},
+        "class_": Camera,
+        "rel_id": "video/camera",
+        "device_registry_property": "cameras",
+    },
+    DeviceType.GARAGE_DOOR: {
+        "endpoints": {"primary": "{}web/api/devices/garageDoors/{}"},
+        "class_": GarageDoor,
+        "rel_id": "devices/garage-door",
+        "device_registry_property": "garage_doors",
+    },
+    DeviceType.GATE: {
+        "endpoints": {"primary": "{}web/api/devices/gates/{}"},
+        "class_": Gate,
+        "rel_id": "devices/gate",
+        "device_registry_property": "gates",
+    },
+    DeviceType.IMAGE_SENSOR: {
+        "endpoints": {
+            "primary": "{}web/api/imageSensor/imageSensors/{}",
+            "additional": {"recent_images": "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"},
+        },
+        "class_": ImageSensor,
+        "rel_id": "image-sensor/image-sensor",
+        "device_registry_property": "image_sensors",
+    },
+    DeviceType.LIGHT: {
+        "endpoints": {"primary": "{}web/api/devices/lights/{}"},
+        "class_": Light,
+        "rel_id": "devices/light",
+        "device_registry_property": "lights",
+    },
+    DeviceType.LOCK: {
+        "endpoints": {"primary": "{}web/api/devices/locks/{}"},
+        "class_": Lock,
+        "rel_id": "devices/lock",
+        "device_registry_property": "locks",
+    },
+    DeviceType.PARTITION: {
+        "endpoints": {"primary": "{}web/api/devices/partitions/{}"},
+        "class_": Partition,
+        "rel_id": "devices/partition",
+        "device_registry_property": "partitions",
+    },
+    DeviceType.SENSOR: {
+        "endpoints": {"primary": "{}web/api/devices/sensors/{}"},
+        "class_": Sensor,
+        "rel_id": "devices/sensor",
+        "device_registry_property": "sensors",
+    },
+    DeviceType.SYSTEM: {
+        "endpoints": {"primary": "{}web/api/systems/systems/{}"},
+        "class_": System,
+        "rel_id": "systems/system",
+        "device_registry_property": "systems",
+    },
+    DeviceType.THERMOSTAT: {
+        "endpoints": {"primary": "{}web/api/devices/thermostats/{}"},
+        "class_": Thermostat,
+        "rel_id": "devices/thermostat",
+        "device_registry_property": "thermostats",
+    },
+    DeviceType.WATER_SENSOR: {
+        "endpoints": {"primary": "{}web/api/devices/waterSensors/{}"},
+        "class_": WaterSensor,
+        "rel_id": "devices/water-sensor",
+        "device_registry_property": "water_sensors",
+    },
+    DeviceType.ACCESS_CONTROL: {
+        "endpoints": {"primary": "{}web/api/devices/accessControlAccessPointDevices/{}"},
+        "rel_id": "devices/access-control-access-point-device",
+    },
+    DeviceType.CAMERA_SD: {
+        "endpoints": {"primary": "{}web/api/video/devices/sdCardCameras/{}"},
+        "rel_id": "video/sd-card-camera",
+    },
+    DeviceType.CAR_MONITOR: {
+        "endpoints": {"primary": "{}web/api/devices/carMonitors/{}"},
+        "rel_id": "devices/car-monitor",
+    },
+    DeviceType.COMMERCIAL_TEMP: {
+        "endpoints": {"primary": "{}web/api/devices/commercialTemperatureSensors/{}"},
+        "rel_id": "devices/commercial-temperature-sensor",
+    },
+    # DeviceType.CONFIGURATION: {
+    #     "endpoints": {"primary": "{}web/api/systems/configurations/{}"},
+    #     "rel_id": "configuration",
+    # },
+    # DeviceType.FENCE: {
+    #     "endpoints": {"primary": "{}web/api/geolocation/fences/{}"},
+    #     "rel_id": "",
+    # },
+    DeviceType.GEO_DEVICE: {
+        "endpoints": {"primary": "{}web/api/geolocation/geoDevices/{}"},
+        "rel_id": "geolocation/geo-device",
+    },
+    DeviceType.IQ_ROUTER: {
+        "endpoints": {"primary": "{}web/api/devices/iqRouters/{}"},
+        "rel_id": "devices/iq-router",
+    },
+    DeviceType.REMOTE_TEMP: {
+        "endpoints": {"primary": "{}web/api/devices/remoteTemperatureSensors/{}"},
+        "rel_id": "devices/remote-temperature-sensor",
+    },
+    DeviceType.SCENE: {
+        "endpoints": {"primary": "{}web/api/automation/scenes/{}"},
+        "rel_id": "automation/scene",
+    },
+    DeviceType.SHADE: {
+        "endpoints": {"primary": "{}web/api/devices/shades/{}"},
+        "rel_id": "devices/shade",
+    },
+    DeviceType.SMART_CHIME: {
+        "endpoints": {"primary": "{}web/api/devices/smartChimeDevices/{}"},
+        "rel_id": "devices/smart-chime-device",
+    },
+    DeviceType.SUMP_PUMP: {
+        "endpoints": {"primary": "{}web/api/devices/sumpPumps/{}"},
+        "rel_id": "devices/sump-pump",
+    },
+    DeviceType.SWITCH: {
+        "endpoints": {"primary": "{}web/api/devices/switches/{}"},
+        "rel_id": "devices/switch",
+    },
+    DeviceType.VALVE_SWITCH: {
+        "endpoints": {"primary": "{}web/api/devices/valveSwitches/{}"},
+        "rel_id": "valve-switch",
+    },
+    DeviceType.WATER_METER: {
+        "endpoints": {"primary": "{}web/api/devices/waterMeters/{}"},
+        "rel_id": "devices/water-meter",
+    },
+    DeviceType.WATER_VALVE: {
+        "endpoints": {"primary": "{}web/api/devices/waterValves/{}"},
+        "rel_id": "devices/water-valve",
+    },
+    DeviceType.X10_LIGHT: {
+        "endpoints": {"primary": "{}web/api/devices/x10Lights/{}"},
+        "rel_id": "devices/x10-light",
+    },
+}
+
 
 class DeviceTypeEndpoints(TypedDict, total=False):
     """Stores endpoints for a device type."""
@@ -201,160 +345,16 @@ class DeviceRegistry:
 class AttributeRegistry:
     """Device registry."""
 
-    _ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
-        DeviceType.CAMERA: {
-            "endpoints": {"primary": "{}web/api/video/devices/cameras/{}"},
-            "class_": Camera,
-            "rel_id": "video/camera",
-            "device_registry_property": "cameras",
-        },
-        DeviceType.GARAGE_DOOR: {
-            "endpoints": {"primary": "{}web/api/devices/garageDoors/{}"},
-            "class_": GarageDoor,
-            "rel_id": "devices/garage-door",
-            "device_registry_property": "garage_doors",
-        },
-        DeviceType.GATE: {
-            "endpoints": {"primary": "{}web/api/devices/gates/{}"},
-            "class_": Gate,
-            "rel_id": "devices/gate",
-            "device_registry_property": "gates",
-        },
-        DeviceType.IMAGE_SENSOR: {
-            "endpoints": {
-                "primary": "{}web/api/imageSensor/imageSensors/{}",
-                "additional": {"recent_images": "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"},
-            },
-            "class_": ImageSensor,
-            "rel_id": "image-sensor/image-sensor",
-            "device_registry_property": "image_sensors",
-        },
-        DeviceType.LIGHT: {
-            "endpoints": {"primary": "{}web/api/devices/lights/{}"},
-            "class_": Light,
-            "rel_id": "devices/light",
-            "device_registry_property": "lights",
-        },
-        DeviceType.LOCK: {
-            "endpoints": {"primary": "{}web/api/devices/locks/{}"},
-            "class_": Lock,
-            "rel_id": "devices/lock",
-            "device_registry_property": "locks",
-        },
-        DeviceType.PARTITION: {
-            "endpoints": {"primary": "{}web/api/devices/partitions/{}"},
-            "class_": Partition,
-            "rel_id": "devices/partition",
-            "device_registry_property": "partitions",
-        },
-        DeviceType.SENSOR: {
-            "endpoints": {"primary": "{}web/api/devices/sensors/{}"},
-            "class_": Sensor,
-            "rel_id": "devices/sensor",
-            "device_registry_property": "sensors",
-        },
-        DeviceType.SYSTEM: {
-            "endpoints": {"primary": "{}web/api/systems/systems/{}"},
-            "class_": System,
-            "rel_id": "systems/system",
-            "device_registry_property": "systems",
-        },
-        DeviceType.THERMOSTAT: {
-            "endpoints": {"primary": "{}web/api/devices/thermostats/{}"},
-            "class_": Thermostat,
-            "rel_id": "devices/thermostat",
-            "device_registry_property": "thermostats",
-        },
-        DeviceType.WATER_SENSOR: {
-            "endpoints": {"primary": "{}web/api/devices/waterSensors/{}"},
-            "class_": WaterSensor,
-            "rel_id": "devices/water-sensor",
-            "device_registry_property": "water_sensors",
-        },
-        DeviceType.ACCESS_CONTROL: {
-            "endpoints": {"primary": "{}web/api/devices/accessControlAccessPointDevices/{}"},
-            "rel_id": "devices/access-control-access-point-device",
-        },
-        DeviceType.CAMERA_SD: {
-            "endpoints": {"primary": "{}web/api/video/devices/sdCardCameras/{}"},
-            "rel_id": "video/sd-card-camera",
-        },
-        DeviceType.CAR_MONITOR: {
-            "endpoints": {"primary": "{}web/api/devices/carMonitors/{}"},
-            "rel_id": "devices/car-monitor",
-        },
-        DeviceType.COMMERCIAL_TEMP: {
-            "endpoints": {"primary": "{}web/api/devices/commercialTemperatureSensors/{}"},
-            "rel_id": "devices/commercial-temperature-sensor",
-        },
-        # DeviceType.CONFIGURATION: {
-        #     "endpoints": {"primary": "{}web/api/systems/configurations/{}"},
-        #     "rel_id": "configuration",
-        # },
-        # DeviceType.FENCE: {
-        #     "endpoints": {"primary": "{}web/api/geolocation/fences/{}"},
-        #     "rel_id": "",
-        # },
-        DeviceType.GEO_DEVICE: {
-            "endpoints": {"primary": "{}web/api/geolocation/geoDevices/{}"},
-            "rel_id": "geolocation/geo-device",
-        },
-        DeviceType.IQ_ROUTER: {
-            "endpoints": {"primary": "{}web/api/devices/iqRouters/{}"},
-            "rel_id": "devices/iq-router",
-        },
-        DeviceType.REMOTE_TEMP: {
-            "endpoints": {"primary": "{}web/api/devices/remoteTemperatureSensors/{}"},
-            "rel_id": "devices/remote-temperature-sensor",
-        },
-        DeviceType.SCENE: {
-            "endpoints": {"primary": "{}web/api/automation/scenes/{}"},
-            "rel_id": "automation/scene",
-        },
-        DeviceType.SHADE: {
-            "endpoints": {"primary": "{}web/api/devices/shades/{}"},
-            "rel_id": "devices/shade",
-        },
-        DeviceType.SMART_CHIME: {
-            "endpoints": {"primary": "{}web/api/devices/smartChimeDevices/{}"},
-            "rel_id": "devices/smart-chime-device",
-        },
-        DeviceType.SUMP_PUMP: {
-            "endpoints": {"primary": "{}web/api/devices/sumpPumps/{}"},
-            "rel_id": "devices/sump-pump",
-        },
-        DeviceType.SWITCH: {
-            "endpoints": {"primary": "{}web/api/devices/switches/{}"},
-            "rel_id": "devices/switch",
-        },
-        DeviceType.VALVE_SWITCH: {
-            "endpoints": {"primary": "{}web/api/devices/valveSwitches/{}"},
-            "rel_id": "valve-switch",
-        },
-        DeviceType.WATER_METER: {
-            "endpoints": {"primary": "{}web/api/devices/waterMeters/{}"},
-            "rel_id": "devices/water-meter",
-        },
-        DeviceType.WATER_VALVE: {
-            "endpoints": {"primary": "{}web/api/devices/waterValves/{}"},
-            "rel_id": "devices/water-valve",
-        },
-        DeviceType.X10_LIGHT: {
-            "endpoints": {"primary": "{}web/api/devices/x10Lights/{}"},
-            "rel_id": "devices/x10-light",
-        },
-    }
-
     @staticmethod
     def is_supported(device_type: DeviceType) -> bool:
         """Return if device type is supported."""
-        return AttributeRegistry._ATTRIBUTES.get(device_type, {}).get("class_") is not None
+        return ATTRIBUTES.get(device_type, {}).get("class_") is not None
 
     @staticmethod
     def get_endpoints(device_type: DeviceType) -> DeviceTypeEndpoints:
         """Return primary endpoint for device type."""
         try:
-            return AttributeRegistry._ATTRIBUTES.get(device_type, {})["endpoints"]
+            return ATTRIBUTES.get(device_type, {})["endpoints"]
         except KeyError as err:
             raise UnsupportedDeviceType(device_type) from err
 
@@ -363,7 +363,7 @@ class AttributeRegistry:
         """Return primary endpoint for device type."""
 
         try:
-            return AttributeRegistry._ATTRIBUTES[device_type]["class_"]
+            return ATTRIBUTES[device_type]["class_"]
         except KeyError as err:
             raise UnsupportedDeviceType(device_type) from err
 
@@ -373,11 +373,11 @@ class AttributeRegistry:
 
         try:
             if isinstance(device_type, DeviceType):
-                return AttributeRegistry._ATTRIBUTES.get(device_type, {})["device_registry_property"]
+                return ATTRIBUTES.get(device_type, {})["device_registry_property"]
 
             return next(
                 attributes["device_registry_property"]
-                for attributes in AttributeRegistry._ATTRIBUTES.values()
+                for attributes in ATTRIBUTES.values()
                 if attributes.get("class_") == device_type
             )
 
@@ -387,7 +387,7 @@ class AttributeRegistry:
     @staticmethod
     def get_devicetype_from_relationship_id(relationship_id: str) -> DeviceType:
         """Return device type from relationship id."""
-        for device_type, attributes in AttributeRegistry._ATTRIBUTES.items():
+        for device_type, attributes in ATTRIBUTES.items():
             if attributes.get("rel_id") == relationship_id:
                 return device_type
 
@@ -397,26 +397,26 @@ class AttributeRegistry:
     def get_relationship_id_from_devicetype(device_type: DeviceType) -> str:
         """Return device type from relationship id."""
         try:
-            return AttributeRegistry._ATTRIBUTES[device_type]["rel_id"]
+            return ATTRIBUTES[device_type]["rel_id"]
         except KeyError as err:
             raise UnsupportedDeviceType(device_type) from err
 
     @classproperty
     def supported_device_types(cls) -> list[DeviceType]:  # pylint: disable=no-self-argument
         """Return list of supported devices."""
-        return [device_type for device_type in cls._ATTRIBUTES if cls._ATTRIBUTES[device_type].get("class_")]
+        return [device_type for device_type in ATTRIBUTES if ATTRIBUTES[device_type].get("class_")]
 
     @classproperty
     def unsupported_device_types(cls) -> list[DeviceType]:  # pylint: disable=no-self-argument
         """Return list of supported devices."""
-        return [device_type for device_type in cls._ATTRIBUTES if not cls._ATTRIBUTES[device_type].get("class_")]
+        return [device_type for device_type in ATTRIBUTES if not ATTRIBUTES[device_type].get("class_")]
 
     @classproperty
     def endpoints(cls) -> dict[DeviceType, DeviceTypeEndpoints]:  # pylint: disable=no-self-argument
         """Return all endpoints for all device types."""
-        return {device_type: cls.get_endpoints(device_type) for device_type in cls._ATTRIBUTES}
+        return {device_type: cls.get_endpoints(device_type) for device_type in ATTRIBUTES}
 
     @classproperty
     def all_relationship_ids(cls) -> list[str]:  # pylint: disable=no-self-argument
         """Return all relationship ids for all device types."""
-        return [device_type["rel_id"] for device_type in cls._ATTRIBUTES.values()]
+        return [device_type["rel_id"] for device_type in ATTRIBUTES.values()]

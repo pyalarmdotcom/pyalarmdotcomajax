@@ -13,19 +13,18 @@ from pyalarmdotcomajax.websockets.messages import (
 )
 
 log = logging.getLogger(__name__)
+EVENT_TO_STATE_MAP = {
+    EventType.Disarmed: Partition.DeviceState.DISARMED,
+    EventType.ArmedAway: Partition.DeviceState.ARMED_AWAY,
+    EventType.ArmedStay: Partition.DeviceState.ARMED_STAY,
+    EventType.ArmedNight: Partition.DeviceState.ARMED_NIGHT,
+}
 
 
 class PartitionWebSocketHandler(BaseWebSocketHandler):
     """Base class for device-type-specific websocket message handler."""
 
     SUPPORTED_DEVICE_TYPE = Partition
-
-    EVENT_TO_STATE_MAP = {
-        EventType.Disarmed: Partition.DeviceState.DISARMED,
-        EventType.ArmedAway: Partition.DeviceState.ARMED_AWAY,
-        EventType.ArmedStay: Partition.DeviceState.ARMED_STAY,
-        EventType.ArmedNight: Partition.DeviceState.ARMED_NIGHT,
-    }
 
     async def process_message(self, message: WebSocketMessage) -> None:
         """Handle websocket message."""
@@ -40,7 +39,7 @@ class PartitionWebSocketHandler(BaseWebSocketHandler):
                 match message.event_type:
                     case EventType.Disarmed | EventType.ArmedAway | EventType.ArmedStay | EventType.ArmedNight:
                         await message.device.async_handle_external_dual_state_change(
-                            self.EVENT_TO_STATE_MAP[message.event_type]
+                            EVENT_TO_STATE_MAP[message.event_type]
                         )
                     case EventType.Alarm | EventType.PolicePanic:
                         # TODO: Support these alarm events. These do not trigger a state change on ADC but rather trigger a notification.
