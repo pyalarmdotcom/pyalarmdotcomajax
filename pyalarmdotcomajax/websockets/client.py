@@ -221,10 +221,8 @@ class WebSocketClient:
             or ((token_value := json_rsp.get("value")) in [None, ""])
         ):
             log.debug(
-                (
-                    "async_get_websocket_token(): Received errors while requesting WebSocket authentication token."
-                    " Response: %s"
-                ),
+                "async_get_websocket_token(): Received errors while requesting WebSocket authentication token."
+                " Response: %s",
                 resp,
             )
             raise UnexpectedResponse(

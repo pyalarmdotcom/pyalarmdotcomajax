@@ -350,10 +350,8 @@ async def cli() -> None:
                     typed_new_value = config_option_type.enum_from_key(new_value)
                 except ValueError:
                     cprint(
-                        (
-                            f"Acceptable valures for {setting_slug} are:"
-                            f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}"
-                        ),
+                        f"Acceptable valures for {setting_slug} are:"
+                        f" {', '.join([member_name.lower() for member_name in config_option_type.names()])}",
                         "red",
                     )
                     sys.exit(0)
