@@ -15,16 +15,16 @@ from pyalarmdotcomajax.websockets.messages import (
 
 log = logging.getLogger(__name__)
 
+EVENT_STATE_MAP = {
+    EventType.Opened: Gate.DeviceState.OPEN,
+    EventType.Closed: Gate.DeviceState.CLOSED,
+}
+
 
 class GateWebSocketHandler(BaseWebSocketHandler):
     """Base class for device-type-specific websocket message handler."""
 
     SUPPORTED_DEVICE_TYPE = Gate
-
-    EVENT_STATE_MAP = {
-        EventType.Opened: Gate.DeviceState.OPEN,
-        EventType.Closed: Gate.DeviceState.CLOSED,
-    }
 
     async def process_message(self, message: WebSocketMessage) -> None:
         """Handle websocket message."""
@@ -43,7 +43,7 @@ class GateWebSocketHandler(BaseWebSocketHandler):
                 match message.event_type:
                     case EventType.Opened | EventType.Closed:
                         await message.device.async_handle_external_dual_state_change(
-                            self.EVENT_STATE_MAP[message.event_type]
+                            EVENT_STATE_MAP[message.event_type]
                         )
                     case _:
                         log.debug(

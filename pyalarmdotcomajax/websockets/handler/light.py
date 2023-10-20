@@ -16,22 +16,22 @@ from pyalarmdotcomajax.websockets.messages import (
 
 log = logging.getLogger(__name__)
 
+EVENT_STATE_MAP = {
+    EventType.LightTurnedOff: Light.DeviceState.OFF,
+    EventType.LightTurnedOn: Light.DeviceState.ON,
+}
+
+# Light messages use non-standard state values.
+STATE_MAP = {
+    0: Light.DeviceState.OFF,
+    1: Light.DeviceState.ON,
+}
+
 
 class LightWebSocketHandler(BaseWebSocketHandler):
     """Base class for device-type-specific websocket message handler."""
 
     SUPPORTED_DEVICE_TYPE = Light
-
-    EVENT_STATE_MAP = {
-        EventType.LightTurnedOff: Light.DeviceState.OFF,
-        EventType.LightTurnedOn: Light.DeviceState.ON,
-    }
-
-    # Light messages use non-standard state values.
-    STATE_MAP = {
-        0: Light.DeviceState.OFF,
-        1: Light.DeviceState.ON,
-    }
 
     async def process_message(self, message: WebSocketMessage) -> None:
         """Handle websocket message."""
@@ -48,7 +48,7 @@ class LightWebSocketHandler(BaseWebSocketHandler):
                         # RGBW light not currently supported by library.
                         pass
             case StatusChangeMessage():
-                await message.device.async_handle_external_dual_state_change(self.STATE_MAP[message.new_state])
+                await message.device.async_handle_external_dual_state_change(STATE_MAP[message.new_state])
             case EventMessage():
                 match message.event_type:
                     case EventType.SwitchLevelChanged:
@@ -58,7 +58,7 @@ class LightWebSocketHandler(BaseWebSocketHandler):
                             )
                     case EventType.LightTurnedOff | EventType.LightTurnedOn:
                         await message.device.async_handle_external_dual_state_change(
-                            self.EVENT_STATE_MAP[message.event_type]
+                            EVENT_STATE_MAP[message.event_type]
                         )
                     case _:
                         log.debug(

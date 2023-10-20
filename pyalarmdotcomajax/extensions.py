@@ -7,7 +7,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import Any, ClassVar
 
 import aiohttp
 from bs4 import BeautifulSoup, Tag
@@ -134,14 +134,14 @@ class CameraSkybellControllerExtension(ControllerExtension):
     _FORM_FIELD_MOTION_SENSITIVITY = "ctl00$phBody$inpMotionThreshold$bootstrapSlider"
     _FORM_FIELD_LED_COLOR = "ctl00$phBody$colorPicker"
 
-    _FORM_FIELDS_BYPASSABLE = [
+    _FORM_FIELDS_BYPASSABLE: ClassVar[list] = [
         "__EVENTTARGET",
         "__EVENTARGUMENT",
         "__LASTFOCUS",
     ]
 
     # Fields not used for settings but required for form submission.
-    _FORM_FIELDS_GENERIC = [
+    _FORM_FIELDS_GENERIC: ClassVar[list] = [
         "ctl00_ScriptManager1_HiddenField",
         "__VIEWSTATE",
         "__VIEWSTATEGENERATOR",
@@ -167,7 +167,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
     ]
 
     # Fields containing camera metadata.
-    _FORM_FIELDS_META = [
+    _FORM_FIELDS_META: ClassVar[list[tuple]] = [
         ("ctl00$phBody$CamSelector$ddlCams", "config_id"),
         ("ctl00$phBody$tbCamName", "device_name"),
     ]

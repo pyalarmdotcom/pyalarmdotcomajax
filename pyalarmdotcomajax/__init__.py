@@ -46,7 +46,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.4"
+__version__ = "0.5.5-dev.1"
 
 log = logging.getLogger(__name__)
 
@@ -60,16 +60,6 @@ class ExtensionResults(TypedDict):
 
 class AlarmController:
     """Base class for communicating with Alarm.com via API."""
-
-    HOME_URL = "https://www.alarm.com/web/system/home"
-    UA = f"pyalarmdotcomajax/{__version__}"
-
-    AJAX_HEADERS_TEMPLATE = {
-        "Accept": "application/vnd.api+json",
-        "User-Agent": UA,
-        "Referrer": HOME_URL,
-        "ajaxrequestuniquekey": None,
-    }
 
     ALL_DEVICES_URL_TEMPLATE = (  # Substitute with base url and system ID.
         "{}web/api/settings/manageDevices/deviceCatalogs/{}"
@@ -133,7 +123,13 @@ class AlarmController:
         self._user_id: str | None = None
         self._user_email: str | None = None
         self._active_system_id: str | None = None
-        self._ajax_headers: dict = self.AJAX_HEADERS_TEMPLATE
+
+        self._ajax_headers = {
+            "Accept": "application/vnd.api+json",
+            "User-Agent": f"pyalarmdotcomajax/{__version__}",
+            "Referrer": "https://www.alarm.com/web/system/home",
+            "ajaxrequestuniquekey": None,
+        }
 
         self._partition_map: dict = (
             {}
@@ -312,10 +308,12 @@ class AlarmController:
         device_type: DeviceType,
         event: BaseDevice.Command,
         device_id: str,  # ID corresponds to device_type
-        msg_body: dict = {},  # Body of request. No abstractions here.
+        msg_body: dict | None = None,  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
     ) -> dict:
         """Send commands to Alarm.com."""
+        if msg_body is None:
+            msg_body = {}
         log.info("Sending %s to Alarm.com.", event)
 
         msg_body["statePollOnly"] = False

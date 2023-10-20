@@ -34,10 +34,12 @@ class ImageSensor(BaseDevice):
 
         PEEK_IN = "doPeekInNow"
 
-    _recent_images: list[ImageSensorImage] = []
+    _recent_images: list[ImageSensorImage]
 
     def process_device_type_specific_data(self) -> None:
         """Process recent images."""
+
+        self._recent_images: list[ImageSensorImage] = []
 
         if not (raw_recent_images := self._device_type_specific_data.get("raw_recent_images")):
             return
