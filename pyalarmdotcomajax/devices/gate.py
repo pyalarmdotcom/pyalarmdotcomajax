@@ -1,4 +1,5 @@
 """Alarm.com gate."""
+
 from __future__ import annotations
 
 import logging

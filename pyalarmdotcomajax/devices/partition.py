@@ -1,4 +1,5 @@
 """Alarm.com partition."""
+
 from __future__ import annotations
 
 import logging

@@ -1,6 +1,5 @@
 """Functions for communicating with Alarm.com over WebSockets."""
 
-
 from __future__ import annotations
 
 import asyncio
