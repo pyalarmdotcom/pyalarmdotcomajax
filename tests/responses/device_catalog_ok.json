@@ -782,6 +782,17 @@
             "count": "2"
           }
         },
+        "waterValves": {
+            "data": [
+              {
+                "id": "id-water-valve",
+                "type": "devices/water-valve"
+              }
+            ],
+            "meta": {
+              "count": "1"
+            }
+          },
         "stateInfo": {
           "data": {
             "id": "id-stateinfo-partition-house",
@@ -1647,7 +1658,64 @@
           }
         }
       }
-    }
+    },
+    {
+        "id": "id-water-valve",
+        "type": "devices/water-valve",
+        "attributes": {
+          "state": 2,
+          "desiredState": 2,
+          "activeSensors": 0,
+          "totalSensors": 1,
+          "managedDeviceType": 20,
+          "hasState": false,
+          "canBeRenamed": true,
+          "canBeDeleted": false,
+          "canAccessWebSettings": false,
+          "canAccessAppSettings": false,
+          "webSettings": 1001,
+          "canAccessTroubleshootingWizard": false,
+          "troubleshootingWizard": null,
+          "addDeviceResource": 0,
+          "canBeAssociatedToVideoDevice": false,
+          "associatedCameraDeviceIds": {},
+          "macAddress": "",
+          "manufacturer": "Custos",
+          "isAssignedToCareReceiver": false,
+          "isOAuth": false,
+          "isZWave": false,
+          "supportsCommandClassBasic": false,
+          "isMalfunctioning": false,
+          "canBeSaved": true,
+          "canChangeDescription": true,
+          "description": "Water Valve",
+          "deviceModelId": 9361,
+          "canConfirmStateChange": true,
+          "canReceiveCommands": true,
+          "remoteCommandsEnabled": true,
+          "hasPermissionToChangeState": true,
+          "deviceIcon": {
+            "icon": 21
+          },
+          "batteryLevelNull": null,
+          "lowBattery": false,
+          "criticalBattery": false
+        },
+        "relationships": {
+          "system": {
+            "data": {
+              "id": "id-system",
+              "type": "systems/system"
+            }
+          },
+          "stateInfo": {
+            "data": {
+              "id": "id-stateinfo-water-valve",
+              "type": "devices/state-info"
+            }
+          }
+        }
+      }
   ],
   "meta": {
     "transformer_version": "2.0"

@@ -1,4 +1,5 @@
 """Alarm.com thermostat."""
+
 from __future__ import annotations
 
 import logging
@@ -96,7 +97,9 @@ class Thermostat(BaseDevice):
         temp_average: float | None  # Temperature from thermostat and all remote sensors, averaged.
         temp_at_tstat: float | None  # Temperature at thermostat only.
         setpoint_offset: float | None
-        inferred_mode: Thermostat.DeviceState | None  # Indicates what thermostat is actually doing (cooling vs heating) if mode = auto.
+        inferred_mode: (
+            Thermostat.DeviceState | None
+        )  # Indicates what thermostat is actually doing (cooling vs heating) if mode = auto.
         # Fan
         supports_fan_mode: bool | None
         supports_fan_indefinite: bool | None
@@ -127,7 +130,7 @@ class Thermostat(BaseDevice):
 
     @property
     def models(self) -> dict:
-        """Return mapping of known ADC model IDs to manufacturer and model name. To be overridden by children."""
+        """Return mapping of known ADC model IDs to manufacturer and model name."""
         return {
             4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
             10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},

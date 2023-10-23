@@ -1,6 +1,5 @@
 """Test device extensions."""
 
-
 import aiohttp
 import pytest
 from aioresponses import aioresponses

@@ -1,4 +1,5 @@
 """Alarm.com device base devices."""
+
 from __future__ import annotations
 
 import contextlib
@@ -37,6 +38,7 @@ class DeviceType(ExtendedEnumMixin):
     SYSTEM = "systems"
     THERMOSTAT = "thermostats"
     WATER_SENSOR = "waterSensors"
+    WATER_VALVE = "waterValves"
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
@@ -55,7 +57,6 @@ class DeviceType(ExtendedEnumMixin):
     SWITCH = "switches"
     VALVE_SWITCH = "valveSwitches"
     WATER_METER = "waterMeters"
-    WATER_VALVE = "waterValves"
     X10_LIGHT = "x10Lights"
 
 
@@ -256,7 +257,7 @@ class BaseDevice(ABC, CastingMixin):
         """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
             return self.Subtype(self.raw_attributes.get("deviceType"))
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
     # #

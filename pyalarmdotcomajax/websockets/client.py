@@ -1,6 +1,5 @@
 """Functions for communicating with Alarm.com over WebSockets."""
 
-
 from __future__ import annotations
 
 import asyncio
@@ -22,6 +21,7 @@ from pyalarmdotcomajax.devices.registry import DeviceRegistry
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
+from pyalarmdotcomajax.devices.water_valve import WaterValve
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
     UnexpectedResponse,
@@ -35,6 +35,9 @@ from pyalarmdotcomajax.websockets.handler.sensor import SensorWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.thermostat import ThermostatWebSocketHandler
 from pyalarmdotcomajax.websockets.handler.water_sensor import (
     WaterSensorWebSocketHandler,
+)
+from pyalarmdotcomajax.websockets.handler.water_valve import (
+    WaterValveWebSocketHandler,
 )
 from pyalarmdotcomajax.websockets.messages import (
     MonitoringEventMessage,
@@ -198,6 +201,8 @@ class WebSocketClient:
                     await ThermostatWebSocketHandler().process_message(message)
                 case WaterSensor():
                     await WaterSensorWebSocketHandler().process_message(message)
+                case WaterValve():
+                    await WaterValveWebSocketHandler().process_message(message)
                 case _:
                     log.debug(
                         f"WebSocket support not yet implemented for {message.device.__class__.__name__.lower()}s."

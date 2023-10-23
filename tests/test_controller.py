@@ -41,6 +41,7 @@ async def test__device_storage(
     assert adc_client.devices.lights.values()
     assert adc_client.devices.thermostats.values()
     assert adc_client.devices.water_sensors.values()
+    assert adc_client.devices.water_valves.values()
 
 
 @pytest.mark.asyncio
@@ -61,5 +62,15 @@ async def test__async_has_image_sensors(
     adc_client: AlarmController,
 ) -> None:
     """Test for function that fetches image sensor images."""
+
+    await adc_client.async_update()
+
+
+@pytest.mark.asyncio
+async def test__async_no_partitions(
+    system_without_partition: str,
+    adc_client: AlarmController,
+) -> None:
+    """Test that we can handle systems without partitions."""
 
     await adc_client.async_update()

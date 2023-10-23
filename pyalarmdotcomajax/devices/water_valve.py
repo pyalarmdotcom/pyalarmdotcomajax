@@ -1,4 +1,4 @@
-"""Alarm.com garage door."""
+"""Alarm.com water valve."""
 
 from __future__ import annotations
 
@@ -11,23 +11,33 @@ from . import BaseDevice
 log = logging.getLogger(__name__)
 
 
-class GarageDoor(BaseDevice):
-    """Represent Alarm.com garage door element."""
+class WaterValve(BaseDevice):
+    """Represent Alarm.com sensor element."""
 
     class DeviceState(BaseDevice.DeviceState):
-        """Enum of garage door states."""
+        """Enum of water valve states."""
 
-        # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
+        # https://www.alarm.com/web/system/assets/customer-site/enums/WaterValveStatus.js
 
         UNKNOWN = 0
-        OPEN = 1
-        CLOSED = 2
+        CLOSED = 1
+        OPEN = 2
 
     class Command(BaseDevice.Command):
-        """Commands for ADC garage doors."""
+        """Commands for ADC water valves."""
 
         OPEN = "open"
         CLOSE = "close"
+
+    @property
+    def models(self) -> dict:
+        """Return mapping of known ADC model IDs to manufacturer and model name."""
+        return {
+            9361: {
+                "manufacturer": "Qolsys",
+                "model": "IQ Water Valve",
+            }  # OEM is Custos - Z-Wave Ball Valve Servo US/CA
+        }
 
     async def async_open(self) -> None:
         """Send open command."""
@@ -35,7 +45,7 @@ class GarageDoor(BaseDevice):
         await self.async_handle_external_desired_state_change(self.DeviceState.OPEN)
 
         await self._send_action(
-            device_type=DeviceType.GARAGE_DOOR,
+            device_type=DeviceType.WATER_VALVE,
             event=self.Command.OPEN,
             device_id=self.id_,
         )
@@ -46,7 +56,7 @@ class GarageDoor(BaseDevice):
         await self.async_handle_external_desired_state_change(self.DeviceState.CLOSED)
 
         await self._send_action(
-            device_type=DeviceType.GARAGE_DOOR,
+            device_type=DeviceType.WATER_VALVE,
             event=self.Command.CLOSE,
             device_id=self.id_,
         )

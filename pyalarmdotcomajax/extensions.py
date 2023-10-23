@@ -1,4 +1,5 @@
 """Configuration option extensions."""
+
 from __future__ import annotations
 
 import asyncio

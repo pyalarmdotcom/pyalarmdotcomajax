@@ -1,11 +1,11 @@
 """Device registry."""
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
 from typing import TypedDict
 
-from pyalarmdotcomajax.devices import DeviceType
 from pyalarmdotcomajax.devices.camera import Camera
 from pyalarmdotcomajax.devices.garage_door import GarageDoor
 from pyalarmdotcomajax.devices.gate import Gate
@@ -17,8 +17,11 @@ from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
+from pyalarmdotcomajax.devices.water_valve import WaterValve
 from pyalarmdotcomajax.exceptions import UnkonwnDevice, UnsupportedDeviceType
 from pyalarmdotcomajax.helpers import classproperty
+
+from . import DeviceType
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ AllDevices_t = (
     | System
     | Thermostat
     | WaterSensor
+    | WaterValve
 )
 
 AllDeviceTypes_t = (
@@ -48,6 +52,7 @@ AllDeviceTypes_t = (
     | type[System]
     | type[Thermostat]
     | type[WaterSensor]
+    | type[WaterValve]
 )
 
 # AllCommands_t = (
@@ -77,6 +82,7 @@ AllDevicesLists_t = (
     | list[System]
     | list[Thermostat]
     | list[WaterSensor]
+    | list[WaterValve]
 )
 
 AllDevicesDicts_t = (
@@ -91,6 +97,7 @@ AllDevicesDicts_t = (
     | dict[str, System]
     | dict[str, Thermostat]
     | dict[str, WaterSensor]
+    | dict[str, WaterValve]
 )
 
 ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
@@ -163,6 +170,12 @@ ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
         "rel_id": "devices/water-sensor",
         "device_registry_property": "water_sensors",
     },
+    DeviceType.WATER_VALVE: {
+        "endpoints": {"primary": "{}web/api/devices/waterValves/{}"},
+        "class_": WaterValve,
+        "rel_id": "devices/water-valve",
+        "device_registry_property": "water_valve",
+    },
     DeviceType.ACCESS_CONTROL: {
         "endpoints": {"primary": "{}web/api/devices/accessControlAccessPointDevices/{}"},
         "rel_id": "devices/access-control-access-point-device",
@@ -226,10 +239,6 @@ ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
     DeviceType.WATER_METER: {
         "endpoints": {"primary": "{}web/api/devices/waterMeters/{}"},
         "rel_id": "devices/water-meter",
-    },
-    DeviceType.WATER_VALVE: {
-        "endpoints": {"primary": "{}web/api/devices/waterValves/{}"},
-        "rel_id": "devices/water-valve",
     },
     DeviceType.X10_LIGHT: {
         "endpoints": {"primary": "{}web/api/devices/x10Lights/{}"},
@@ -340,6 +349,11 @@ class DeviceRegistry:
     def water_sensors(self) -> dict[str, WaterSensor]:
         """Return water sensors."""
         return {device_id: device for device_id, device in self._devices.items() if type(device) == WaterSensor}
+
+    @property
+    def water_valves(self) -> dict[str, WaterValve]:
+        """Return water sensors."""
+        return {device_id: device for device_id, device in self._devices.items() if type(device) == WaterValve}
 
 
 class AttributeRegistry:
