@@ -1,5 +1,6 @@
 pytest>=7.2.0
-aioresponses>=0.7.3
+# aioresponses>=0.7.5
+git+https://github.com/pnuckowski/aioresponses.git@master #Until 0.7.5 release
 pytest-asyncio>=0.19.0
 deepdiff>=6.2.1
 beautifulsoup4 >= 4.12.2
