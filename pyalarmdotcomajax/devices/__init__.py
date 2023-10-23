@@ -1,4 +1,5 @@
 """Alarm.com device base devices."""
+
 from __future__ import annotations
 
 import contextlib
@@ -256,7 +257,7 @@ class BaseDevice(ABC, CastingMixin):
         """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
             return self.Subtype(self.raw_attributes.get("deviceType"))
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
     # #
