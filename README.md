@@ -152,7 +152,7 @@ set options:
 This repository includes a full development environment for VS Code:
 
 1. VS Code [dev container](https://code.visualstudio.com/docs/remote/create-dev-container). Automatically installs extensions and Python dependencies and registers Git pre-commit scripts.
-2. Configuration files for type checking ([mypy](http://mypy-lang.org/)), linting ([flake8](https://flake8.pycqa.org/en/latest/), [isort](https://github.com/PyCQA/isort), and [black](https://github.com/psf/black)), code security ([Bandit](https://bandit.readthedocs.io/en/latest/)), etc.
+2. Configuration files for type checking ([mypy](http://mypy-lang.org/)), linting ([ruff](https://github.com/astral-sh/ruff) and [black](https://github.com/psf/black)), etc.
 3. Pre-commit checks run all of the above when committing to Git and on demand via VS Code [tasks](https://code.visualstudio.com/docs/editor/tasks).
 
 ### References
