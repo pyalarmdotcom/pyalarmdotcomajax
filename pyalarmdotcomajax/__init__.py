@@ -47,7 +47,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.6"
+__version__ = "0.5.7"
 
 log = logging.getLogger(__name__)
 
