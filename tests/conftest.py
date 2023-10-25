@@ -166,3 +166,31 @@ def device_catalog_no_permissions(response_mocker: aioresponses, all_base_ok_res
     )
 
     all_base_ok_responses_callable()
+
+
+@pytest.fixture
+def system_without_partition(response_mocker: aioresponses, all_base_ok_responses_callable: Callable) -> None:
+    """No permission to view devices."""
+
+    response_mocker.get(
+        url=AlarmController.ALL_DEVICES_URL_TEMPLATE.format(c.URL_BASE, "id-system"),
+        status=200,
+        body=get_http_body_json("device_catalog_no_partitions"),
+        repeat=True,
+    )
+
+    response_mocker.get(
+        url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, "id-system"),
+        status=200,
+        body=get_http_body_json("system_no_partitions"),
+        repeat=True,
+    )
+
+    response_mocker.get(
+        url=AlarmController.ALL_SYSTEMS_URL_TEMPLATE.format(c.URL_BASE),
+        status=200,
+        body=get_http_body_json("available_systems_ok"),
+        repeat=True,
+    )
+
+    all_base_ok_responses_callable()

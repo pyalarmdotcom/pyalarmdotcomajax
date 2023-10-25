@@ -131,7 +131,7 @@ class Thermostat(BaseDevice):
 
     @property
     def models(self) -> dict:
-        """Return mapping of known ADC model IDs to manufacturer and model name. To be overridden by children."""
+        """Return mapping of known ADC model IDs to manufacturer and model name."""
         return {
             4293: {"manufacturer": "Honeywell", "model": "T6 Pro"},
             10023: {"manufacturer": "ecobee", "model": "ecobee3 lite"},

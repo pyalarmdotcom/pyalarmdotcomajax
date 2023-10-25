@@ -16,31 +16,13 @@
             },
             "relationships": {
                 "partitions": {
-                    "data": [
-                        {
-                            "id": "id-partition-house",
-                            "type": "devices/partition"
-                        },
-                        {
-                            "id": "id-partition-detache_garage",
-                            "type": "devices/partition"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "2"
+                        "count": "0"
                     }
                 },
                 "locks": {
-                    "data": [
-                        {
-                            "id": "id-lock-front",
-                            "type": "devices/lock"
-                        },
-                        {
-                            "id": "id-lock-back",
-                            "type": "devices/lock"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
                         "count": "2"
                     }
@@ -52,12 +34,7 @@
                     }
                 },
                 "cameras": {
-                    "data": [
-                        {
-                            "id": "id-camera-skybell",
-                            "type": "video/camera"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
                         "count": "1"
                     }
@@ -71,98 +48,36 @@
                 "garageDoors": {
                     "data": [
                         {
-                            "id": "id-garage-right",
-                            "type": "devices/garage-door"
-                        }, {
-                            "id": "id-garage-left",
-                            "type": "devices/garage-door"
-                        }, {
                             "id": "id-garage-detached",
                             "type": "devices/garage-door"
-                        }
-                    ],
-                    "meta": {
-                        "count": "3"
-                    }
-                },
-                "waterValves": {
-                    "data": [
-                        {
-                            "id": "id-water-valve",
-                            "type": "devices/water-valve"
                         }
                     ],
                     "meta": {
                         "count": "1"
                     }
                 },
-                "scenes": {
-                    "data": [
-                        {
-                            "id": "33333304",
-                            "type": "automation/scene"
-                        }, {
-                            "id": "33333305",
-                            "type": "automation/scene"
-                        }, {
-                            "id": "33333306",
-                            "type": "automation/scene"
-                        }, {
-                            "id": "33333307",
-                            "type": "automation/scene"
-                        }
-                    ],
+                "waterValves": {
+                    "data": [],
                     "meta": {
-                        "count": "4"
+                        "count": "0"
+                    }
+                },
+                "scenes": {
+                    "data": [],
+                    "meta": {
+                        "count": "0"
                     }
                 },
                 "sensors": {
-                    "data": [
-                        {
-                            "id": "id-sensor-backdoor",
-                            "type": "devices/sensor"
-                        },
-                        {
-                            "id": "id-sensor-bsmt_hallway_glass",
-                            "type": "devices/sensor"
-                        },
-                        {
-                            "id": "id-sensor-kids_left_window",
-                            "type": "devices/sensor"
-                        },
-                        {
-                            "id": "id-sensor-dad_iphone",
-                            "type": "devices/sensor"
-                        }, {
-                            "id": "id-sensor-carbon_monoxide",
-                            "type": "devices/sensor"
-                        }, {
-                            "id": "id-sensor-smoke-inter",
-                            "type": "devices/sensor"
-                        }, {
-                            "id": "id-sensor-smoke-laundry",
-                            "type": "devices/sensor"
-                        }, {
-                            "id": "id-sensor-camera-panel",
-                            "type": "devices/sensor"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "8"
+                        "count": "0"
                     }
                 },
                 "waterSensors": {
-                    "data": [
-                        {
-                            "id": "id-water-kitchen",
-                            "type": "devices/water-sensor"
-                        }, {
-                            "id": "id-water-basement",
-                            "type": "devices/water-sensor"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "2"
+                        "count": "0"
                     }
                 },
                 "sumpPumps": {
@@ -178,17 +93,9 @@
                     }
                 },
                 "lights": {
-                    "data": [
-                        {
-                            "id": "id-light-balcony",
-                            "type": "devices/light"
-                        }, {
-                            "id": "id-light-upstairs",
-                            "type": "devices/light"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "2"
+                        "count": "0"
                     }
                 },
                 "x10Lights": {
@@ -204,14 +111,9 @@
                     }
                 },
                 "thermostats": {
-                    "data": [
-                        {
-                            "id": "id-tstat-upstairs",
-                            "type": "devices/thermostat"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "1"
+                        "count": "0"
                     }
                 },
                 "remoteTemperatureSensors": {
@@ -248,14 +150,9 @@
                     }
                 },
                 "imageSensors": {
-                    "data": [
-                        {
-                            "id": "177",
-                            "type": "image-sensor/image-sensor"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "1"
+                        "count": "0"
                     }
                 },
                 "configuration": {
@@ -271,14 +168,9 @@
                     }
                 },
                 "gates": {
-                    "data": [
-                        {
-                            "id": "id-gate-driveway",
-                            "type": "devices/gate"
-                        }
-                    ],
+                    "data": [],
                     "meta": {
-                        "count": "1"
+                        "count": "0"
                     }
                 },
                 "switches": {

@@ -38,6 +38,7 @@ class DeviceType(ExtendedEnumMixin):
     SYSTEM = "systems"
     THERMOSTAT = "thermostats"
     WATER_SENSOR = "waterSensors"
+    WATER_VALVE = "waterValves"
 
     # Unsupported
     ACCESS_CONTROL = "accessControlAccessPointDevices"
@@ -56,7 +57,6 @@ class DeviceType(ExtendedEnumMixin):
     SWITCH = "switches"
     VALVE_SWITCH = "valveSwitches"
     WATER_METER = "waterMeters"
-    WATER_VALVE = "waterValves"
     X10_LIGHT = "x10Lights"
 
 
