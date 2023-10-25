@@ -75,6 +75,12 @@ class DeviceTypeSpecificData(TypedDict, total=False):
     raw_recent_images: list[dict]
 
 
+class UserProfile(TypedDict):
+    """Hold user profile fields required by devices."""
+
+    uses_celsius: bool
+
+
 class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC devices."""
 
@@ -85,6 +91,7 @@ class BaseDevice(ABC, CastingMixin):
         config_change_callback: Callable | None,
         children: list[tuple[str, DeviceType]],
         raw_device_data: dict,
+        user_profile: UserProfile,
         device_type_specific_data: DeviceTypeSpecificData | None = None,
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
@@ -99,6 +106,7 @@ class BaseDevice(ABC, CastingMixin):
         )
         self._settings: dict = settings if settings else {}
         self._partition_id: str | None = partition_id
+        self._user_profile: UserProfile = user_profile
 
         self.children = children
         self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
@@ -315,7 +323,7 @@ class BaseDevice(ABC, CastingMixin):
             f" new {new_attributes}."
         )
 
-        self.raw_attributes.update(new_attributes)
+        self._raw.setdefault("attributes", {}).update(new_attributes)
 
         if log.level == logging.DEBUG:
             log_str = ""
@@ -325,18 +333,13 @@ class BaseDevice(ABC, CastingMixin):
             if log_str:
                 log.debug(f"ATTRIBUTE NAME:: Current_Value -> Desired_Value{log_str}")
 
-        # Trace logging for @catellie
-        log.debug(
-            f"{__name__} {self.name} ({self.id_}) has {len(self.external_update_callback)} external update"
-            " callbacks.)"
-        )
-
-        for external_callback, listener_name in self.external_update_callback:
+        # for external_callback, listener_name in self.external_update_callback:
+        for external_callback, _ in self.external_update_callback:
             # Trace logging for @catellie
-            log.debug(
-                f"{__name__} Calling external update callback for listener {listener_name} by"
-                f" {self.name} ({self.id_})"
-            )
+            # log.debug(
+            #     f"{__name__} Calling external update callback for listener {listener_name or 'Main'} by"
+            #     f" {self.name} ({self.id_})"
+            # )
 
             external_callback()
 
@@ -344,7 +347,7 @@ class BaseDevice(ABC, CastingMixin):
         """Register callback to be called when device state changes."""
 
         # Trace logging for @catellie
-        log.debug(f"Registering external update callback for {listener_name} with {self.name} ({self.id_})")
+        # log.debug(f"Registering external update callback for {listener_name} with {self.name} ({self.id_})")
 
         self.external_update_callback.append((callback, listener_name))
 
@@ -352,7 +355,7 @@ class BaseDevice(ABC, CastingMixin):
         """Unregister callback to be called when device state changes."""
 
         # Trace logging for @catellie
-        log.debug(f"Unregistering external update callback for {listener_name} with {self.name} ({self.id_})")
+        # log.debug(f"Unregistering external update callback for {listener_name} with {self.name} ({self.id_})")
 
         self.external_update_callback.remove((callback, listener_name))
 

@@ -100,6 +100,7 @@ class Thermostat(BaseDevice):
         inferred_mode: (
             Thermostat.DeviceState | None
         )  # Indicates what thermostat is actually doing (cooling vs heating) if mode = auto.
+        uses_celsius: bool | None
         # Fan
         supports_fan_mode: bool | None
         supports_fan_indefinite: bool | None
@@ -167,6 +168,7 @@ class Thermostat(BaseDevice):
             supports_schedules=self._get_bool("supportsSchedules"),
             supports_schedules_smart=self._get_bool("supportsSmartSchedules"),
             schedule_mode=self._get_special("scheduleMode", self.ScheduleMode),
+            uses_celsius=self._user_profile.get("uses_celsius"),
         )
 
     async def async_set_attribute(
