@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import logging
 
-from . import HardwareDevice
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class System(HardwareDevice):
+class System(BaseDevice):
     """Represent Alarm.com system element."""
 
     read_only = True

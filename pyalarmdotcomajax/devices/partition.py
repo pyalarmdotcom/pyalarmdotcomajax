@@ -6,12 +6,12 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
-class Partition(HardwareDevice):
+class Partition(BaseDevice):
     """Represent Alarm.com partition element."""
 
     class ExtendedArmingOption(Enum):
@@ -35,12 +35,12 @@ class Partition(HardwareDevice):
         arm_night: list[Partition.ExtendedArmingOption | None]
 
     @dataclass
-    class PartitionAttributes(HardwareDevice.DeviceAttributes):
+    class PartitionAttributes(BaseDevice.DeviceAttributes):
         """Partition attributes."""
 
         extended_arming_options: Partition.ExtendedArmingMapping  # List of extended arming options
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of arming states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/ArmingState.js
@@ -51,7 +51,7 @@ class Partition(HardwareDevice):
         ARMED_AWAY = 3
         ARMED_NIGHT = 4
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC partitions."""
 
         DISARM = "disarm"

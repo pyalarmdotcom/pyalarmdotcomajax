@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import logging
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
 # WebSocket Handler: https://www.alarm.com/web/system/assets/customer-ember/websockets/handlers/lights.ts
-class Light(HardwareDevice):
+class Light(BaseDevice):
     """Represent Alarm.com light element."""
 
     ATTRIB_LIGHT_LEVEL = "lightLevel"
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of light states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
@@ -26,7 +26,7 @@ class Light(HardwareDevice):
         OFF = 3
         LEVELCHANGE = 4
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC lights."""
 
         ON = "turnOn"

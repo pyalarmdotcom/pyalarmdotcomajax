@@ -5,21 +5,21 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
-class Gate(HardwareDevice):
+class Gate(BaseDevice):
     """Represent Alarm.com gate element."""
 
     @dataclass
-    class GateAttributes(HardwareDevice.DeviceAttributes):
+    class GateAttributes(BaseDevice.DeviceAttributes):
         """Gate attributes."""
 
         supports_remote_close: bool | None  # Specifies whether the gate can be closed remotely.
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of gate states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/GateStatus.js
@@ -28,7 +28,7 @@ class Gate(HardwareDevice):
         OPEN = 1
         CLOSED = 2
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC gates."""
 
         OPEN = "open"

@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import logging
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
-class GarageDoor(HardwareDevice):
+class GarageDoor(BaseDevice):
     """Represent Alarm.com garage door element."""
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of garage door states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
@@ -21,7 +21,7 @@ class GarageDoor(HardwareDevice):
         OPEN = 1
         CLOSED = 2
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC garage doors."""
 
         OPEN = "open"

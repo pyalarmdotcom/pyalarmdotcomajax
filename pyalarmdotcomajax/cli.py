@@ -26,7 +26,7 @@ from pyalarmdotcomajax.const import OtpType
 from pyalarmdotcomajax.devices.registry import AllDevices_t, AttributeRegistry
 
 from . import AlarmController
-from .devices import DeviceType, HardwareDevice
+from .devices import BaseDevice, BatteryState, DeviceType
 from .devices.sensor import Sensor
 from .exceptions import (
     AuthenticationFailed,
@@ -322,6 +322,9 @@ async def cli() -> None:
                 cprint(f"Unable to find a device with ID {device_id}.", "red")
                 sys.exit(0)
 
+            if not hasattr(device, "settings"):
+                return
+
             try:
                 config_option: ConfigurationOption = device.settings[setting_slug]
             except KeyError:
@@ -483,26 +486,26 @@ def _print_element_tearsheet(
 
     output_str += "\n"
 
-    # BATTERY
-    if element.battery_critical:
-        battery = "Critical"
-    elif element.battery_low:
-        battery = "Low"
-    else:
-        battery = "Normal"
-
     # ATTRIBUTES
     output_str += "ATTRIBUTES: "
 
-    if isinstance(element.device_subtype, Sensor.Subtype) or element.state or battery or element.read_only:
+    has_battery = element.battery_state is not BatteryState.NO_BATTERY
+
+    if (
+        isinstance(element.device_subtype, Sensor.Subtype)
+        or element.state
+        or has_battery
+        or element.read_only
+        or isinstance(element.attributes, BaseDevice.DeviceAttributes)
+    ):
         if isinstance(element.device_subtype, Sensor.Subtype):
             output_str += f'[TYPE: {element.device_subtype.name.title().replace("_"," ")}] '
 
         if element.state:
             output_str += f"[STATE: {element.state.name.title()}] "
 
-        if battery:
-            output_str += f"[BATTERY: {battery}] "
+        if has_battery:
+            output_str += f'[BATTERY: {element.battery_state.name.title().replace("_"," ")}] '
 
         if element.read_only:
             output_str += f"[READ ONLY: {element.read_only}] "
@@ -511,7 +514,7 @@ def _print_element_tearsheet(
             output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
         # ENTITIES WITH "ATTRIBUTES" PROPERTY
-        if isinstance(element.attributes, HardwareDevice.DeviceAttributes):
+        if isinstance(element.attributes, BaseDevice.DeviceAttributes):
             for name, value in asdict(element.attributes).items():
                 output_str += f"[{str(name).upper()}: {value}] "
     else:

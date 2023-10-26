@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import logging
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
-class Lock(HardwareDevice):
+class Lock(BaseDevice):
     """Represent Alarm.com sensor element."""
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of lock states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LockStatus.js
@@ -21,7 +21,7 @@ class Lock(HardwareDevice):
         LOCKED = 1
         UNLOCKED = 2
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC locks."""
 
         LOCK = "lock"

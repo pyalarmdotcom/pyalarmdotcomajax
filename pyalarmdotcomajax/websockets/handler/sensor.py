@@ -6,6 +6,7 @@ import asyncio
 import logging
 
 from pyalarmdotcomajax.devices.sensor import Sensor
+from pyalarmdotcomajax.exceptions import UnsupportedDeviceType
 from pyalarmdotcomajax.websockets.const import EventType
 from pyalarmdotcomajax.websockets.handler import BaseWebSocketHandler
 from pyalarmdotcomajax.websockets.messages import (
@@ -36,6 +37,9 @@ class SensorWebSocketHandler(BaseWebSocketHandler):
 
     def get_state_from_event_type(self, message: EventMessage) -> Sensor.DeviceState:
         """Get sensor state from websocket message event type."""
+
+        if type(message.device) != self.SUPPORTED_DEVICE_TYPE:
+            raise UnsupportedDeviceType("Unexpected device type in message.")
 
         if not message.event_type:
             return Sensor.DeviceState.UNKNOWN

@@ -8,7 +8,7 @@ from typing import TypedDict
 
 from dateutil import parser
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
@@ -23,12 +23,12 @@ class ImageSensorImage(TypedDict):
     timestamp: datetime
 
 
-class ImageSensor(HardwareDevice):
+class ImageSensor(BaseDevice):
     """Represent Alarm.com image sensor element."""
 
     malfunction = False
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC image sensors."""
 
         PEEK_IN = "doPeekInNow"

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import logging
 
-from . import HardwareDevice
+from . import BaseDevice
 
 log = logging.getLogger(__name__)
 
 
-class Camera(HardwareDevice):
+class Camera(BaseDevice):
     """Represent Alarm.com camera element."""
 
     # Cameras do not have a state.

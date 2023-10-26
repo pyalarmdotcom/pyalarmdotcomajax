@@ -9,12 +9,12 @@ from enum import Enum
 from pyalarmdotcomajax.const import ATTR_STATE
 from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
-from . import DeviceType, HardwareDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 
 
-class Thermostat(HardwareDevice):
+class Thermostat(BaseDevice):
     """Represent Alarm.com thermostat element."""
 
     # Fan duration of 0 is indefinite. otherwise value == hours.
@@ -46,7 +46,7 @@ class Thermostat(HardwareDevice):
         # CIRCULATE = 6
         # HUMIDITY = 7
 
-    class DeviceState(HardwareDevice.DeviceState):
+    class DeviceState(BaseDevice.DeviceState):
         """Enum of thermostat states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/ThermostatStatus.js
@@ -84,13 +84,13 @@ class Thermostat(HardwareDevice):
         HOME = 2
         SLEEP = 3
 
-    class Command(HardwareDevice.Command):
+    class Command(BaseDevice.Command):
         """Commands for ADC lights."""
 
         SET_STATE = "setState"
 
     @dataclass
-    class ThermostatAttributes(HardwareDevice.DeviceAttributes):
+    class ThermostatAttributes(BaseDevice.DeviceAttributes):
         """Thermostat attributes."""
 
         # Base

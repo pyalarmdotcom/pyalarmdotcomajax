@@ -17,11 +17,7 @@ from bs4 import BeautifulSoup
 
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.const import OtpType
-from pyalarmdotcomajax.devices import (
-    DeviceTypeSpecificData,
-    HardwareDevice,
-    TroubleCondition,
-)
+from pyalarmdotcomajax.devices import BaseDevice, DeviceTypeSpecificData, TroubleCondition
 from pyalarmdotcomajax.devices.partition import Partition
 from pyalarmdotcomajax.devices.registry import (
     AllDevices_t,
@@ -47,7 +43,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.7"
+__version__ = "0.5.9"
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +92,8 @@ class AlarmController:
     KEEP_ALIVE_RENEW_SESSION_URL_TEMPLATE = "{}web/api/identities/{}/reloadContext"
     KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
     SESSION_REFRESH_DEFAULT_INTERVAL_MS = 780000  # 13 minutes. Sessions expire at 15.
+
+    SCENE_REFRESH_INTERVAL_M = 60
 
     # LOGIN & SESSION: END
 
@@ -159,6 +157,13 @@ class AlarmController:
         self._keep_alive_url: str = self.KEEP_ALIVE_DEFAULT_URL
         self._last_session_refresh: datetime = datetime.now()
         self._session_timer: SessionTimer | None = None
+
+        #
+        # SCENE REFRESH ATTRIBUTES
+        #
+
+        self._last_scene_update: datetime | None = None
+        self._scene_object_cache: list[dict] = []
 
         #
         # CLI ATTRIBUTES
@@ -229,7 +234,10 @@ class AlarmController:
 
         if not self._active_system_id:
             self._active_system_id = await self._async_get_active_system()
-            has_image_sensors = await self._async_has_image_sensors(self._active_system_id)
+            has_image_sensors = await self._async_device_type_present(
+                self._active_system_id, DeviceType.IMAGE_SENSOR
+            )
+            has_scenes = await self._async_device_type_present(self._active_system_id, DeviceType.SCENE)
 
         await self._async_get_trouble_conditions()
 
@@ -248,6 +256,21 @@ class AlarmController:
         extension_results = await self._async_update__query_multi_device_extensions(raw_devices)
 
         #
+        # QUERY SCENES
+        #
+        # Scenes have no state, so we only need to update for new/deleted scenes. We refresh less frequently than we do for stateful devices to save time.
+
+        if has_scenes:
+            # Refresh scene cache if stale.
+            if not self._last_scene_update or (
+                datetime.now() > self._last_scene_update + timedelta(minutes=self.SCENE_REFRESH_INTERVAL_M)
+            ):
+                self._scene_object_cache = await self._async_get_devices_by_device_type(DeviceType.SCENE)
+                self._last_scene_update = datetime.now()
+
+            raw_devices.extend(self._scene_object_cache)
+
+        #
         # QUERY IMAGE SENSORS
         #
         # Detailed image sensors data is not included in the main device catalog. It must be queried separately.
@@ -258,8 +281,7 @@ class AlarmController:
 
         if has_image_sensors:
             # Get detailed image sensor data and add to raw device list.
-            image_sensors = await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR)
-            raw_devices.extend(image_sensors)
+            raw_devices.extend(await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR))
 
             # Get recent images
             device_type_specific_data = await self._async_get_recent_images()
@@ -275,7 +297,7 @@ class AlarmController:
             for partition_raw in raw_devices
             if partition_raw["type"] == AttributeRegistry.get_relationship_id_from_devicetype(DeviceType.PARTITION)
         ]:
-            partition_instance: AllDevices_t = await self._async_update__build_device(
+            partition_instance: AllDevices_t = await self._async_update__build_hardware_device(
                 partition_raw, device_type_specific_data, extension_results
             )
 
@@ -286,13 +308,15 @@ class AlarmController:
 
             raw_devices.remove(partition_raw)
 
+        # device_type: DeviceType = AttributeRegistry.get_devicetype_from_relationship_id(raw_device["type"])
+
         #
         # BUILD DEVICES
         #
 
         for device_raw in raw_devices:
             try:
-                device_instance: AllDevices_t = await self._async_update__build_device(
+                device_instance: AllDevices_t = await self._async_update__build_hardware_device(
                     device_raw, device_type_specific_data, extension_results
                 )
 
@@ -306,7 +330,7 @@ class AlarmController:
     async def async_send_command(
         self,
         device_type: DeviceType,
-        event: HardwareDevice.Command,
+        event: BaseDevice.Command,
         device_id: str,  # ID corresponds to device_type
         msg_body: dict | None = None,  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
@@ -778,7 +802,7 @@ class AlarmController:
 
             self._last_session_refresh = datetime.now()
 
-    async def _async_update__build_device(
+    async def _async_update__build_hardware_device(
         self,
         raw_device: dict,
         device_type_specific_data: dict[str, DeviceTypeSpecificData],
@@ -812,7 +836,7 @@ class AlarmController:
                         children.append((sub_device["id"], DeviceType(family_name)))
 
         #
-        # BUILD DEVICE INSTANCE
+        # BUILD HARDWARE DEVICE INSTANCE
         #
 
         entity_id = raw_device["id"]
@@ -822,9 +846,9 @@ class AlarmController:
         return device_class(
             id_=entity_id,
             raw_device_data=raw_device,
+            send_action_callback=self.async_send_command,
             children=children,
             device_type_specific_data=device_type_specific_data.get(entity_id),
-            send_action_callback=self.async_send_command,
             config_change_callback=(
                 extension_controller.submit_change
                 if (extension_controller := device_extension_results.get("controller"))
@@ -971,18 +995,20 @@ class AlarmController:
         else:
             return device_type_specific_data
 
-    async def _async_has_image_sensors(self, system_id: str, retry_on_failure: bool = True) -> bool:
-        """Check whether image sensors are present in system.
+    async def _async_device_type_present(
+        self, system_id: str, device_type: DeviceType, retry_on_failure: bool = True
+    ) -> bool:
+        """Check whether a specific device type is present in system.
 
-        Check is required because image sensors are not shown in the device catalog endpoint.
+        Check is required because some devices are not shown in the device catalog endpoint.
         """
 
         # TODO: Needs changes to support multi-system environments
 
         try:
-            log.info(f"Checking system {system_id} for image sensors.")
+            log.info(f"Checking system {system_id} for {device_type}s.")
 
-            # Find image sensors.
+            # Find devices.
 
             async with self._websession.get(
                 url=AttributeRegistry.get_endpoints(DeviceType.SYSTEM)["primary"].format(c.URL_BASE, system_id),
@@ -992,14 +1018,16 @@ class AlarmController:
 
                 await self._async_handle_server_errors(json_rsp, "image sensors", retry_on_failure)
 
-                return len(json_rsp["data"].get("relationships", {}).get("imageSensors", {}).get("data", [])) > 0
+                device_type_id = AttributeRegistry.get_type_id_from_devicetype(device_type)
+
+                return len(json_rsp["data"].get("relationships", {}).get(device_type_id, {}).get("data", [])) > 0
 
         except (aiohttp.ClientResponseError, KeyError) as err:
-            log.exception("Failed to get image sensors.")
+            log.exception(f"Failed to get {device_type}s.")
             raise UnexpectedResponse from err
         except TryAgain:
             if retry_on_failure:
-                return await self._async_has_image_sensors(system_id, retry_on_failure=False)
+                return await self._async_device_type_present(system_id, device_type, retry_on_failure=False)
 
             raise
 
