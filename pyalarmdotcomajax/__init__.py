@@ -17,7 +17,12 @@ from bs4 import BeautifulSoup
 
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.const import OtpType
-from pyalarmdotcomajax.devices import BaseDevice, DeviceTypeSpecificData, TroubleCondition
+from pyalarmdotcomajax.devices import (
+    BaseDevice,
+    DeviceTypeSpecificData,
+    TroubleCondition,
+    UserProfile,
+)
 from pyalarmdotcomajax.devices.partition import Partition
 from pyalarmdotcomajax.devices.registry import (
     AllDevices_t,
@@ -43,7 +48,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.9"
+__version__ = "0.5.8"
 
 log = logging.getLogger(__name__)
 
@@ -123,6 +128,10 @@ class AlarmController:
         self._user_email: str | None = None
         self._active_system_id: str | None = None
 
+        self._user_profile: UserProfile = {
+            "uses_celsius": False,
+        }
+
         self._ajax_headers = {
             "Accept": "application/vnd.api+json",
             "User-Agent": f"pyalarmdotcomajax/{__version__}",
@@ -133,10 +142,6 @@ class AlarmController:
         self._partition_map: dict = (
             {}
         )  # Individual devices don't list their associated partitions. This map is used to retrieve partition id when each device is created.
-
-        self._installed_device_types: set[DeviceType] = (
-            set()
-        )  # List of device types that are present in a user's environment. We'll use this to cut down on the number of API calls made.
 
         self._trouble_conditions: dict = {}
 
@@ -619,6 +624,12 @@ class AlarmController:
             except KeyError:
                 self._keep_alive_url = self.KEEP_ALIVE_DEFAULT_URL
 
+            # Determines whether user uses celsius or fahrenheit. This is used for conversions within thermostats.
+            with contextlib.suppress(KeyError):
+                self._user_profile["uses_celsius"] = json_rsp["data"][0]["attributes"][
+                    "localizeTempUnitsToCelsius"
+                ]
+
             log.debug("*** START IDENTITY INFO ***")
             log.debug(f"Provider: {self._provider_name}")
             log.debug(f"User: {self._user_id} {self._user_email}")
@@ -846,8 +857,9 @@ class AlarmController:
         return device_class(
             id_=entity_id,
             raw_device_data=raw_device,
-            send_action_callback=self.async_send_command,
+            user_profile=self._user_profile,
             children=children,
+            send_action_callback=self.async_send_command,
             device_type_specific_data=device_type_specific_data.get(entity_id),
             config_change_callback=(
                 extension_controller.submit_change

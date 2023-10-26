@@ -84,6 +84,12 @@ class DeviceTypeSpecificData(TypedDict, total=False):
     raw_recent_images: list[dict]
 
 
+class UserProfile(TypedDict):
+    """Hold user profile fields required by devices."""
+
+    uses_celsius: bool
+
+
 class BaseDevice(ABC, CastingMixin):
     """Contains properties shared by all ADC hardware devices."""
 
@@ -94,6 +100,7 @@ class BaseDevice(ABC, CastingMixin):
         config_change_callback: Callable | None,
         children: list[tuple[str, DeviceType]],
         raw_device_data: dict,
+        user_profile: UserProfile,
         device_type_specific_data: DeviceTypeSpecificData | None = None,
         trouble_conditions: list | None = None,
         partition_id: str | None = None,
@@ -114,6 +121,7 @@ class BaseDevice(ABC, CastingMixin):
         )
         self._settings: dict = settings if settings else {}
         self._partition_id: str | None = partition_id
+        self._user_profile: UserProfile = user_profile
 
         self.children = children
         self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
