@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import logging
 
-from pyalarmdotcomajax.devices import BaseDevice, DeviceType
+from . import DeviceType, HardwareDevice
 
 log = logging.getLogger(__name__)
 
 
 # WebSocket Handler: https://www.alarm.com/web/system/assets/customer-ember/websockets/handlers/lights.ts
-class Light(BaseDevice):
+class Light(HardwareDevice):
     """Represent Alarm.com light element."""
 
     ATTRIB_LIGHT_LEVEL = "lightLevel"
 
-    class DeviceState(BaseDevice.DeviceState):
+    class DeviceState(HardwareDevice.DeviceState):
         """Enum of light states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LightStatus.js
@@ -26,7 +26,7 @@ class Light(BaseDevice):
         OFF = 3
         LEVELCHANGE = 4
 
-    class Command(BaseDevice.Command):
+    class Command(HardwareDevice.Command):
         """Commands for ADC lights."""
 
         ON = "turnOn"

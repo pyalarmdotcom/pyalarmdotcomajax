@@ -76,7 +76,50 @@ class DeviceTypeSpecificData(TypedDict, total=False):
 
 
 class BaseDevice(ABC, CastingMixin):
-    """Contains properties shared by all ADC devices."""
+    """Contains properties shared by all ADC hardware devices. Includes scenes and hardware."""
+
+    def __init__(
+        self,
+        id_: str,
+        raw_device_data: dict,
+        send_action_callback: Callable,
+    ) -> None:
+        """Initialize base element class."""
+
+        self.id_: Final[str] = id_
+        self._raw: dict = raw_device_data
+
+        self._send_action_callback = send_action_callback
+
+    @property
+    def name(self) -> str:
+        """Return user-assigned device name."""
+
+        return str(self.raw_attributes["description"])
+
+    @property
+    def raw_attributes(self) -> dict:
+        """Return raw attributes."""
+
+        return dict(self._raw.get("attributes", {}))
+
+    @property
+    def system_id(self) -> str | None:
+        """Return ID of device's parent system."""
+
+        if sys := self._raw.get("relationships", {}).get("system", {}).get("data", {}).get("id"):
+            return str(sys)
+
+        return None
+
+    @property
+    def debug_data(self) -> dict:
+        """Return data that is helpful for debugging."""
+        return self.raw_attributes
+
+
+class HardwareDevice(BaseDevice):
+    """Contains properties shared by all ADC hardware devices."""
 
     def __init__(
         self,
@@ -92,8 +135,12 @@ class BaseDevice(ABC, CastingMixin):
     ) -> None:
         """Initialize base element class."""
 
-        self.id_: Final[str] = id_
-        self._raw: dict = raw_device_data
+        super().__init__(
+            id_=id_,
+            raw_device_data=raw_device_data,
+            send_action_callback=send_action_callback,
+        )
+
         self._device_type_specific_data: DeviceTypeSpecificData = (
             device_type_specific_data if device_type_specific_data else {}
         )
@@ -103,7 +150,6 @@ class BaseDevice(ABC, CastingMixin):
         self.children = children
         self.trouble_conditions: list[TroubleCondition] = trouble_conditions if trouble_conditions else []
 
-        self._send_action_callback = send_action_callback
         self._config_change_callback: Callable | None = config_change_callback
 
         self.external_update_callback: list[tuple[Callable, Optional[str]]] = []
@@ -133,18 +179,6 @@ class BaseDevice(ABC, CastingMixin):
             )
             else None
         )
-
-    @property
-    def name(self) -> str:
-        """Return user-assigned device name."""
-
-        return str(self.raw_attributes["description"])
-
-    @property
-    def raw_attributes(self) -> dict:
-        """Return raw attributes."""
-
-        return dict(self._raw.get("attributes", {}))
 
     @property
     def available(self) -> bool:
@@ -202,15 +236,6 @@ class BaseDevice(ABC, CastingMixin):
         return self.raw_attributes.get("criticalBattery")
 
     @property
-    def system_id(self) -> str | None:
-        """Return ID of device's parent system."""
-
-        if sys := self._raw.get("relationships", {}).get("system", {}).get("data", {}).get("id"):
-            return str(sys)
-
-        return None
-
-    @property
     def partition_id(self) -> str | None:
         """Return ID of device's parent partition."""
         return self._partition_id
@@ -248,11 +273,6 @@ class BaseDevice(ABC, CastingMixin):
         return self.raw_attributes.get("manufacturer")
 
     @property
-    def debug_data(self) -> dict:
-        """Return data that is helpful for debugging."""
-        return self.raw_attributes
-
-    @property
     def device_subtype(self) -> Enum | None:
         """Return normalized device subtype const. E.g.: contact, glass break, etc."""
         try:
@@ -267,7 +287,7 @@ class BaseDevice(ABC, CastingMixin):
     async def _send_action(
         self,
         device_type: DeviceType,
-        event: BaseDevice.Command,
+        event: HardwareDevice.Command,
         device_id: str,
         msg_body: dict | None = None,
         retry_on_failure: bool = True,
@@ -286,7 +306,9 @@ class BaseDevice(ABC, CastingMixin):
             except KeyError:
                 log.exception(f"Failed to update device {self.name} with response {updated_device_object}")
 
-    async def async_handle_external_dual_state_change(self, state: BaseDevice.DeviceState | int | None) -> None:
+    async def async_handle_external_dual_state_change(
+        self, state: HardwareDevice.DeviceState | int | None
+    ) -> None:
         """Update device state when notified of externally-triggered change.
 
         Takes either a DeviceState or a DeviceState int value for the new state.
@@ -295,14 +317,16 @@ class BaseDevice(ABC, CastingMixin):
         final_state = state.value if isinstance(state, Enum) else state
 
         await self.async_handle_external_attribute_change(
-            {ATTR_STATE: final_state, ATTR_DESIRED_STATE: final_state}, "WebSocket message"
+            {ATTR_STATE: final_state, ATTR_DESIRED_STATE: final_state},
+            "WebSocket message",
         )
 
-    async def async_handle_external_desired_state_change(self, state: BaseDevice.DeviceState | None) -> None:
+    async def async_handle_external_desired_state_change(self, state: HardwareDevice.DeviceState | None) -> None:
         """Update device state when notified of externally-triggered change."""
 
         await self.async_handle_external_attribute_change(
-            {ATTR_DESIRED_STATE: state.value if isinstance(state, Enum) else state}, "WebSocket message"
+            {ATTR_DESIRED_STATE: state.value if isinstance(state, Enum) else state},
+            "WebSocket message",
         )
 
     async def async_handle_external_attribute_change(

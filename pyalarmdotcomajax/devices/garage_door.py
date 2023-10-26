@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import logging
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import DeviceType, HardwareDevice
 
 log = logging.getLogger(__name__)
 
 
-class GarageDoor(BaseDevice):
+class GarageDoor(HardwareDevice):
     """Represent Alarm.com garage door element."""
 
-    class DeviceState(BaseDevice.DeviceState):
+    class DeviceState(HardwareDevice.DeviceState):
         """Enum of garage door states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js
@@ -23,7 +21,7 @@ class GarageDoor(BaseDevice):
         OPEN = 1
         CLOSED = 2
 
-    class Command(BaseDevice.Command):
+    class Command(HardwareDevice.Command):
         """Commands for ADC garage doors."""
 
         OPEN = "open"

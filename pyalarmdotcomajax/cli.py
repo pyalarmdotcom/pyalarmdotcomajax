@@ -26,7 +26,7 @@ from pyalarmdotcomajax.const import OtpType
 from pyalarmdotcomajax.devices.registry import AllDevices_t, AttributeRegistry
 
 from . import AlarmController
-from .devices import BaseDevice, DeviceType
+from .devices import DeviceType, HardwareDevice
 from .devices.sensor import Sensor
 from .exceptions import (
     AuthenticationFailed,
@@ -511,7 +511,7 @@ def _print_element_tearsheet(
             output_str += f"[BRIGHTNESS: {element.brightness}%] "
 
         # ENTITIES WITH "ATTRIBUTES" PROPERTY
-        if isinstance(element.attributes, BaseDevice.DeviceAttributes):
+        if isinstance(element.attributes, HardwareDevice.DeviceAttributes):
             for name, value in asdict(element.attributes).items():
                 output_str += f"[{str(name).upper()}: {value}] "
     else:

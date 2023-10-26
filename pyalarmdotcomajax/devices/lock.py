@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import logging
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import DeviceType, HardwareDevice
 
 log = logging.getLogger(__name__)
 
 
-class Lock(BaseDevice):
+class Lock(HardwareDevice):
     """Represent Alarm.com sensor element."""
 
-    class DeviceState(BaseDevice.DeviceState):
+    class DeviceState(HardwareDevice.DeviceState):
         """Enum of lock states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/LockStatus.js
@@ -23,7 +21,7 @@ class Lock(BaseDevice):
         LOCKED = 1
         UNLOCKED = 2
 
-    class Command(BaseDevice.Command):
+    class Command(HardwareDevice.Command):
         """Commands for ADC locks."""
 
         LOCK = "lock"

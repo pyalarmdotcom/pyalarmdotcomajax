@@ -8,9 +8,7 @@ from typing import TypedDict
 
 from dateutil import parser
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import DeviceType, HardwareDevice
 
 log = logging.getLogger(__name__)
 
@@ -25,12 +23,12 @@ class ImageSensorImage(TypedDict):
     timestamp: datetime
 
 
-class ImageSensor(BaseDevice):
+class ImageSensor(HardwareDevice):
     """Represent Alarm.com image sensor element."""
 
     malfunction = False
 
-    class Command(BaseDevice.Command):
+    class Command(HardwareDevice.Command):
         """Commands for ADC image sensors."""
 
         PEEK_IN = "doPeekInNow"

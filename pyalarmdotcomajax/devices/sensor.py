@@ -5,15 +5,15 @@ from __future__ import annotations
 import logging
 from enum import IntEnum
 
-from . import BaseDevice
+from . import HardwareDevice
 
 log = logging.getLogger(__name__)
 
 
-class Sensor(BaseDevice):
+class Sensor(HardwareDevice):
     """Represent Alarm.com sensor element."""
 
-    class DeviceState(BaseDevice.DeviceState):
+    class DeviceState(HardwareDevice.DeviceState):
         """Enum of sensor states."""
 
         # https://www.alarm.com/web/system/assets/customer-ember/enums/SensorStatus.js

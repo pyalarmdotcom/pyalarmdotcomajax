@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 from pyalarmdotcomajax import const as c
 from pyalarmdotcomajax.const import OtpType
 from pyalarmdotcomajax.devices import (
-    BaseDevice,
     DeviceTypeSpecificData,
+    HardwareDevice,
     TroubleCondition,
 )
 from pyalarmdotcomajax.devices.partition import Partition
@@ -306,7 +306,7 @@ class AlarmController:
     async def async_send_command(
         self,
         device_type: DeviceType,
-        event: BaseDevice.Command,
+        event: HardwareDevice.Command,
         device_id: str,  # ID corresponds to device_type
         msg_body: dict | None = None,  # Body of request. No abstractions here.
         retry_on_failure: bool = True,  # Set to prevent infinite loops when function calls itself
