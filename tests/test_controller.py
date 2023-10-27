@@ -41,6 +41,7 @@ async def test__device_storage(
     assert adc_client.devices.lights.values()
     assert adc_client.devices.thermostats.values()
     assert adc_client.devices.water_sensors.values()
+    assert adc_client.devices.scenes.values()
 
 
 @pytest.mark.asyncio

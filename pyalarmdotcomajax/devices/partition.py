@@ -6,9 +6,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 

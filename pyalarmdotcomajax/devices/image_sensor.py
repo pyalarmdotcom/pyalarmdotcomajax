@@ -8,9 +8,7 @@ from typing import TypedDict
 
 from dateutil import parser
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 

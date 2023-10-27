@@ -88,9 +88,16 @@ ignore = [
   "UP006", # Along with UP007, make up pyupgrade's keep-runtime-typing
   "UP007"
 ]
+line-length = 115
 
 [tool.ruff.flake8-pytest-style]
 fixture-parentheses = false
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.ruff.mccabe]
 max-complexity = 25

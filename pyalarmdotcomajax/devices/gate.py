@@ -5,9 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from pyalarmdotcomajax.devices import DeviceType
-
-from . import BaseDevice
+from . import BaseDevice, DeviceType
 
 log = logging.getLogger(__name__)
 

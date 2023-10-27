@@ -1,0 +1,133 @@
+{
+    "data": [
+        {
+            "id": 32640104,
+            "type": "automation/scene",
+            "attributes": {
+                "canBeExecuted": true,
+                "canBeDeleted": false,
+                "canBeEdited": true,
+                "sortOrder": 1,
+                "name": "Home",
+                "icon": {
+                    "icon": 94,
+                    "color": "#09B251"
+                },
+                "actionSetType": 1,
+                "hasDisarmAction": true
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "13276704",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": 32640105,
+            "type": "automation/scene",
+            "attributes": {
+                "canBeExecuted": true,
+                "canBeDeleted": false,
+                "canBeEdited": true,
+                "sortOrder": 2,
+                "name": "Away",
+                "icon": {
+                    "icon": 80,
+                    "color": "#E62117"
+                },
+                "actionSetType": 2,
+                "hasDisarmAction": false
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "13276704",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": 32640106,
+            "type": "automation/scene",
+            "attributes": {
+                "canBeExecuted": true,
+                "canBeDeleted": false,
+                "canBeEdited": true,
+                "sortOrder": 3,
+                "name": "Sleep",
+                "icon": {
+                    "icon": 106,
+                    "color": "#2A84C2"
+                },
+                "actionSetType": 3,
+                "hasDisarmAction": false
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "13276704",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": 32640107,
+            "type": "automation/scene",
+            "attributes": {
+                "canBeExecuted": true,
+                "canBeDeleted": false,
+                "canBeEdited": true,
+                "sortOrder": 4,
+                "name": "Wake Up",
+                "icon": {
+                    "icon": 110,
+                    "color": "#FDC816"
+                },
+                "actionSetType": 4,
+                "hasDisarmAction": true
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "13276704",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        },
+        {
+            "id": 42066369,
+            "type": "automation/scene",
+            "attributes": {
+                "canBeExecuted": true,
+                "canBeDeleted": true,
+                "canBeEdited": true,
+                "sortOrder": 5,
+                "name": "Test Scene",
+                "icon": {
+                    "icon": 86,
+                    "color": "#333333"
+                },
+                "actionSetType": 0,
+                "hasDisarmAction": false
+            },
+            "relationships": {
+                "system": {
+                    "data": {
+                        "id": "13276704",
+                        "type": "systems/system"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [],
+    "meta": {
+        "transformer_version": "2.0"
+    }
+}
