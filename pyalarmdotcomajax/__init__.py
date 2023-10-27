@@ -48,7 +48,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.9"
+__version__ = "0.5.9-hotfix.1"
 
 log = logging.getLogger(__name__)
 
@@ -236,6 +236,7 @@ class AlarmController:
         log.debug("Calling update on Alarm.com")
 
         has_image_sensors: bool = False
+        has_scenes: bool = False
 
         if not self._active_system_id:
             self._active_system_id = await self._async_get_active_system()
