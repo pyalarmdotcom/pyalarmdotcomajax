@@ -91,7 +91,7 @@ Pyalarmdotcomajax supports changing configuration options for the devices listed
 | ------------------------- | -------------------- | ------------------------------------ | -------------------------- |
 | Indoor Chime              | `indoor-chime`       | `on`, `off`                          |                            |
 | Outdoor Chime             | `outdoor-chime`      | `off`, `low`, `medium`, `high`       |                            |
-| LED Brightness            | `led-brightness`     | 0-100                                |                            |
+| LED Brightness            | `led-brightness`     | `0` - `100`                          |                            |
 | LED Color                 | `led-color`          | `#000000` - `#FFFFFF`                | Must include `#` at start. |
 | Motion Sensor Sensitivity | `motion-sensitivity` | `low`, `medium`, `high`, `very_high` |                            |
 
