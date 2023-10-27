@@ -1,0 +1,89 @@
+{
+  "data": {
+    "id": 2326,
+    "type": "dealers/dealer",
+    "attributes": {
+      "name": "Surety",
+      "logoSource": "/api/PublishedImage.ashx?guid=765059B2-98DB-450B-99D6-1E01D61B8635",
+      "logoName": "Surety",
+      "dealerPath": "adc",
+      "dealerSpritePath": "adc",
+      "mobileAppBrand": "Alarm.com",
+      "favIconUrl": "/NewPublicLibraryFiles/images/favicons/adcfavicon.png",
+      "showHelpMenu": false,
+      "helpDocumentationUrl": "/web/KnowledgeBase/KnowledgeBase.aspx",
+      "shouldShowSupportEmail": true,
+      "shouldShowSupportPhone": false,
+      "supportPhone": "+18557873891",
+      "supportEmail": "support@suretyhome.com",
+      "externalSupportWebsite": "https://support.suretyhome.com",
+      "hasContactUs": false,
+      "hasSupportCenter": true,
+      "hasNewsAndUpdatesAccess": false,
+      "isCpiDealer": false,
+      "website": null,
+      "logoUrl": null
+    },
+    "relationships": {
+      "primaryColor": {
+        "data": {
+          "id": "0",
+          "type": "ui/color"
+        }
+      },
+      "secondaryColor": {
+        "data": {
+          "id": "0",
+          "type": "ui/color"
+        }
+      },
+      "navColor": {
+        "data": {
+          "id": "0",
+          "type": "ui/color"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": 0,
+      "type": "ui/color",
+      "attributes": {
+        "light": "#7fbc03",
+        "dark": "",
+        "highContrast": "",
+        "darkHighContrast": "",
+        "lightText": "#FFFFFF",
+        "highContrastText": ""
+      }
+    },
+    {
+      "id": 0,
+      "type": "ui/color",
+      "attributes": {
+        "light": "#0F86D3",
+        "dark": "",
+        "highContrast": "",
+        "darkHighContrast": "",
+        "lightText": "#FFFFFF",
+        "highContrastText": ""
+      }
+    },
+    {
+      "id": 0,
+      "type": "ui/color",
+      "attributes": {
+        "light": "#7fbc03",
+        "dark": "",
+        "highContrast": "",
+        "darkHighContrast": "",
+        "lightText": "#FFFFFF",
+        "highContrastText": ""
+      }
+    }
+  ],
+  "meta": {
+    "transformer_version": "1.1"
+  }
+}

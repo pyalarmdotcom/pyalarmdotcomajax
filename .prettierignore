@@ -7,3 +7,4 @@ tests/responses/**
 # Except
 !*.toml
 !*.yaml
+!*.md

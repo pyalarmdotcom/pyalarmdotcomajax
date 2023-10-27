@@ -1,47 +1,41 @@
 default_language_version:
-    python: python3.11
+    python: python3.13
 
 repos:
-    - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.1.1
+    - repo: local
       hooks:
           - id: ruff
-            args: [--fix, --exit-non-zero-on-fix]
-    - repo: https://github.com/psf/black
-      rev: 23.10.1
-      hooks:
-          - id: black
-            args:
-                - --safe
-                - --quiet
-    - repo: https://github.com/codespell-project/codespell
-      rev: v2.2.6
-      hooks:
-          - id: codespell
-            args:
-                - --ignore-words-list=hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo
-                - --skip="./.*,*.csv,*.json",*.html,*.aspx
-                - --quiet-level=2
-            exclude_types: [csv, json]
-    - repo: https://github.com/pre-commit/mirrors-prettier
-      rev: v3.0.3
-      hooks:
-          - id: prettier
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.6.1
-      hooks:
+            name: Ruff
+            description: Run Ruff linter and autofixer
+            entry: ruff check --fix
+            language: python
+            types: [python]
+
           - id: mypy
-            additional_dependencies: [types-all]
-            args: [--config-file=pyproject.toml]
-    - repo: https://github.com/adrienverge/yamllint.git
-      rev: v1.32.0
-      hooks:
+            name: MyPy
+            description: Run static type checking
+            entry: mypy
+            language: python
+            types: [python]
+
+          - id: codespell
+            name: Codespell
+            description: Spell check source files
+            entry: codespell
+            language: python
+            types: [text]
+
           - id: yamllint
+            name: YAMLLint
+            description: Lint YAML files using relaxed config
+            entry: yamllint -d relaxed
+            language: python
+            types: [yaml]
             exclude: (.vscode|.devcontainer|.github)
-            args:
-                - -d relaxed
+
     - repo: https://github.com/pappasam/toml-sort
       rev: v0.23.1
       hooks:
           - id: toml-sort
-            args: []
+            args: ["--in-place", "--all", "--ignore-case"]
+            types: [toml]

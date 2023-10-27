@@ -1,0 +1,25 @@
+{
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "github.codespaces",
+                "ryanluker.vscode-coverage-gutters",
+                "donjayamanne.githistory",
+                "github.vscode-pull-request-github",
+                "tamasfe.even-better-toml",
+                "marklarah.pre-commit-vscode",
+                "eamodio.gitlens",
+                "charliermarsh.ruff",
+                "esbenp.prettier-vscode",
+                "EditorConfig.EditorConfig",
+                "ms-python.python"
+            ]
+        }
+    },
+    "features": {
+        "github-cli": "latest"
+    },
+    "image": "mcr.microsoft.com/devcontainers/python:1-3.13",
+    "name": "pyalarmdotcomajax",
+    "postCreateCommand": ["chmod +x /workspaces/pyalarmdotcomajax/scripts/setup.sh && /workspaces/pyalarmdotcomajax/scripts/setup.sh"]
+}

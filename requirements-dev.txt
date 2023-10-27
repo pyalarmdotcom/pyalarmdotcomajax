@@ -1,12 +1,20 @@
-pytest>=7.2.0
-# aioresponses>=0.7.5
-git+https://github.com/pnuckowski/aioresponses.git@master #Until 0.7.5 release
-pytest-asyncio>=0.19.0
-deepdiff>=6.2.1
-beautifulsoup4 >= 4.12.2
-aiohttp >= 3.8.1
-python-dateutil >= 2.8.2
-termcolor >= 1.1.0
-# ruff >= 0.0.254
-types-python-dateutil >= 2.8.19.10
-pre-commit>=3.3.2
+ruff>=0.11.8
+codespell>=2.4.1
+yamllint>=1.37.0
+pre-commit>=4.2.0
+pytest>=8.3.5
+pytest-asyncio>=0.26.0
+tomli>=2.2.1
+tomli_w>=1.2.0
+types-requests==2.31.0.6 # Required to prevent dependency conflict with Home Assistant over urllib3
+types-PyYAML>=6.0.12.20250402
+setuptools-scm>=8.3.1
+mypy>=1.15.0
+pathspec>=0.11.1
+gitpython>=3.1.40
+# Sphinx and its dependencies
+sphinx>=7.2
+myst-parser>=2.0
+sphinx-autodoc-typehints>=1.24
+sphinx-copybutton
+furo

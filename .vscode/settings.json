@@ -1,0 +1,46 @@
+{
+    "[markdown]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.wordWrap": "off",
+    },
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "always",
+            "source.organizeImports": "always"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "mypy-type-checker.args": [
+        "--config-file=pyproject.toml"
+    ],
+    "mypy-type-checker.cwd": "${nearestConfig}",
+    "python.analysis.aiCodeActions": {
+        "generateDocstring": true,
+        "generateSymbol": true,
+        "implementAbstractClasses": true
+    },
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.generateWithTypeAnnotation": true,
+    "python.analysis.ignore": [
+        "/usr/local/python"
+    ],
+    "python.analysis.indexing": true,
+    "python.analysis.inlayHints.callArgumentNames": "off",
+    "python.analysis.inlayHints.functionReturnTypes": false,
+    "python.analysis.inlayHints.variableTypes": false,
+    "python.analysis.packageIndexDepths": [
+        {
+            "depth": 5,
+            "includeAllSymbols": true,
+            "name": "pyalarmdotcomajax"
+        }
+    ],
+    "python.testing.pytestEnabled": true
+}

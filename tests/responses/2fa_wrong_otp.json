@@ -1,0 +1,26 @@
+{
+  "metaData": {},
+  "errors": [
+    {
+      "status": "422",
+      "detail": "The entered verification code is invalid.",
+      "code": 422,
+      "source": {
+        "pointer": "data/attributes/twoFactorError"
+      }
+    }
+  ],
+  "hasErrors": true,
+  "validationErrors": [
+    {
+      "status": "422",
+      "detail": "The entered verification code is invalid.",
+      "code": 422,
+      "source": {
+        "pointer": "data/attributes/twoFactorError"
+      }
+    }
+  ],
+  "isValidationErrorResponse": true,
+  "processingErrors": []
+}
