@@ -10,7 +10,7 @@ from datetime import datetime
 from dateutil import parser
 
 from pyalarmdotcomajax.devices.registry import AllDevices_t, DeviceRegistry
-from pyalarmdotcomajax.exceptions import UnkonwnDevice, UnsupportedWebSocketMessage
+from pyalarmdotcomajax.exceptions import UnknownDevice, UnsupportedWebSocketMessage
 from pyalarmdotcomajax.helpers import CastingMixin
 from pyalarmdotcomajax.websockets.const import (
     SUPPORTED_MONITORING_EVENT_TYPES,
@@ -27,7 +27,7 @@ def process_raw_message(message: dict, device_registry: DeviceRegistry) -> WebSo
 
     try:
         device = device_registry.get(f"{message['UnitId']}-{message['DeviceId']}")
-    except UnkonwnDevice:
+    except UnknownDevice:
         # This tends to happen for devices on pyalarmdotcomajax's blacklist.
         log.debug(
             "Got a message for unknown device"

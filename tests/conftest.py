@@ -45,8 +45,8 @@ def all_base_ok_responses(response_mocker: aioresponses, all_base_ok_responses_c
 
 
 @pytest.fixture
-def login_otp_required(response_mocker: aioresponses) -> Callable:
-    """Shortcut for successful login reponses."""
+def login_otp_required(response_mocker: aioresponses) -> None:
+    """Shortcut for successful login responses."""
 
     response_mocker.get(
         url=AlarmController.LOGIN_URL.format(c.URL_BASE, ""),

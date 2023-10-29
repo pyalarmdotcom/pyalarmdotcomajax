@@ -36,7 +36,7 @@ class UnsupportedDeviceType(DeviceException):
         super().__init__(message)
 
 
-class UnkonwnDevice(DeviceException):
+class UnknownDevice(DeviceException):
     """pyalarmdotcomajax did not recognize the device ID."""
 
     def __init__(self, device_id: str) -> None:

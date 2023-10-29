@@ -19,7 +19,7 @@ from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
-from pyalarmdotcomajax.exceptions import UnkonwnDevice, UnsupportedDeviceType
+from pyalarmdotcomajax.exceptions import UnknownDevice, UnsupportedDeviceType
 from pyalarmdotcomajax.helpers import classproperty
 
 log = logging.getLogger(__name__)
@@ -298,7 +298,7 @@ class DeviceRegistry:
         try:
             return self._devices[device_id]
         except KeyError as err:
-            raise UnkonwnDevice(device_id) from err
+            raise UnknownDevice(device_id) from err
 
     def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
         """Store device or list of devices."""
