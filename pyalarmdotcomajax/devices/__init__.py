@@ -133,7 +133,7 @@ class BaseDevice(ABC, CastingMixin):
         log.debug("Initialized %s %s", raw_device_data.get("type"), self.name)
 
     #
-    # Properties
+    # Placeholder Properties
     #
 
     @property
@@ -141,101 +141,20 @@ class BaseDevice(ABC, CastingMixin):
         """Hold non-primary device state attributes. To be overridden by children."""
 
     @property
-    def raw_attributes(self) -> dict:
-        """Return raw attributes."""
-
-        return dict(self._raw.get("attributes", {}))
-
-    @property
-    def system_id(self) -> str | None:
-        """Return ID of device's parent system."""
-
-        if sys := self._raw.get("relationships", {}).get("system", {}).get("data", {}).get("id"):
-            return str(sys)
-
-        return None
-
-    @property
-    def debug_data(self) -> dict:
-        """Return data that is helpful for debugging."""
-        return self.raw_attributes
-
-    @property
-    def name(self) -> str:
-        """Return user-assigned device name."""
-
-        return str(self.raw_attributes["description"])
-
-    @property
     def models(self) -> dict:
         """Return mapping of known ADC model IDs to manufacturer and model name. To be overridden by children."""
 
         return {}  # deviceModelId: {"manufacturer": str, "model": str}
 
-    @property
-    def read_only(self) -> bool | None:
-        """Return whether logged in user has permission to change state."""
-        return (
-            not result
-            if isinstance(
-                (result := self.raw_attributes.get("hasPermissionToChangeState")),
-                bool,
-            )
-            else None
-        )
+    #
+    # Properties
+    #
 
     @property
     def available(self) -> bool:
         """Return whether the light can be manipulated."""
+
         return not self.malfunction
-
-    @property
-    def has_state(self) -> bool | None:
-        """Return whether entity reports state."""
-
-        return self.raw_attributes.get("hasState")
-
-    @property
-    def state(self) -> DeviceState | None:
-        """Return state."""
-
-        # Devices that don't report state on Alarm.com (i.e.: Smoke Detectors, phones, etc.) still have a value in the state field.
-        # Scenes do not have state at all.
-        if self.has_state:
-            with contextlib.suppress(ValueError):
-                return self.DeviceState(self.raw_attributes.get("state"))
-
-        return None
-
-    @property
-    def desired_state(self) -> DeviceState | None:
-        """Return state."""
-
-        # Devices that don't report state on Alarm.com (i.e.: Smoke Detectors, phones, etc.) still have a value in the state field.
-        # Scenes do not have state at all.
-        if self.has_state:
-            with contextlib.suppress(ValueError, KeyError):
-                return self.DeviceState(self.raw_attributes.get("desiredState"))
-
-        return None
-
-    @property
-    def settings(self) -> dict:
-        """Return user-changable settings."""
-
-        return {
-            config_option.slug: config_option
-            for config_option in self._settings.values()
-            if isinstance(config_option, ConfigurationOption) and config_option.user_configurable
-        }
-
-    @property
-    def battery_low(self) -> bool | None:
-        """Return whether battery is low."""
-
-        # TODO: Deprecate in v1.0.0. Replaced by battery_state.
-
-        return self.raw_attributes.get("lowBattery")
 
     @property
     def battery_critical(self) -> bool | None:
@@ -244,6 +163,20 @@ class BaseDevice(ABC, CastingMixin):
         # TODO: Deprecate in v1.0.0. Replaced by battery_state.
 
         return self.raw_attributes.get("criticalBattery")
+
+    @property
+    def battery_pct(self) -> int | None:
+        """Return battery fill percentage, if available."""
+
+        return self._get_int("batteryLevelNull")
+
+    @property
+    def battery_low(self) -> bool | None:
+        """Return whether battery is low."""
+
+        # TODO: Deprecate in v1.0.0. Replaced by battery_state.
+
+        return self.raw_attributes.get("lowBattery")
 
     @property
     def battery_state(self) -> BatteryState:
@@ -260,14 +193,35 @@ class BaseDevice(ABC, CastingMixin):
             return BatteryState.NORMAL
 
     @property
-    def partition_id(self) -> str | None:
-        """Return ID of device's parent partition."""
-        return self._partition_id
+    def debug_data(self) -> dict:
+        """Return data that is helpful for debugging."""
+        return self.raw_attributes
 
     @property
-    def malfunction(self) -> bool | None:
-        """Return whether device is malfunctioning."""
-        return self.raw_attributes.get("isMalfunctioning")
+    def desired_state(self) -> DeviceState | None:
+        """Return state."""
+
+        # Devices that don't report state on Alarm.com (i.e.: Smoke Detectors, phones, etc.) still have a value in the state field.
+        # Scenes do not have state at all.
+        if self.has_state:
+            with contextlib.suppress(ValueError, KeyError):
+                return self.DeviceState(self.raw_attributes.get("desiredState"))
+
+        return None
+
+    @property
+    def device_subtype(self) -> Enum | None:
+        """Return normalized device subtype const. E.g.: contact, glass break, etc."""
+        try:
+            return self.Subtype(self.raw_attributes.get("deviceType"))
+        except (ValueError, TypeError):
+            return None
+
+    @property
+    def has_state(self) -> bool | None:
+        """Return whether entity reports state."""
+
+        return self.raw_attributes.get("hasState")
 
     @property
     def mac_address(self) -> str | None:
@@ -275,9 +229,15 @@ class BaseDevice(ABC, CastingMixin):
         return str(self.raw_attributes.get("macAddress"))
 
     @property
-    def raw_state_text(self) -> str | None:
-        """Return state description as reported by ADC."""
-        return str(self.raw_attributes.get("displayStateText"))
+    def malfunction(self) -> bool | None:
+        """Return whether device is malfunctioning."""
+        return self.raw_attributes.get("isMalfunctioning")
+
+    @property
+    def manufacturer(self) -> str | None:
+        """Return device model as reported by ADC."""
+
+        return self.raw_attributes.get("manufacturer")
 
     @property
     def model_text(self) -> str:
@@ -292,17 +252,69 @@ class BaseDevice(ABC, CastingMixin):
         return ""
 
     @property
-    def manufacturer(self) -> str | None:
-        """Return device model as reported by ADC."""
-        return self.raw_attributes.get("manufacturer")
+    def name(self) -> str:
+        """Return user-assigned device name."""
+
+        return str(self.raw_attributes["description"])
 
     @property
-    def device_subtype(self) -> Enum | None:
-        """Return normalized device subtype const. E.g.: contact, glass break, etc."""
-        try:
-            return self.Subtype(self.raw_attributes.get("deviceType"))
-        except (ValueError, TypeError):
-            return None
+    def partition_id(self) -> str | None:
+        """Return ID of device's parent partition."""
+        return self._partition_id
+
+    @property
+    def raw_attributes(self) -> dict:
+        """Return raw attributes."""
+
+        return dict(self._raw.get("attributes", {}))
+
+    @property
+    def raw_state_text(self) -> str | None:
+        """Return state description as reported by ADC."""
+
+        return str(self.raw_attributes.get("displayStateText"))
+
+    @property
+    def read_only(self) -> bool | None:
+        """Return whether logged in user can change the device's state."""
+
+        if self.raw_attributes.get("hasPermissionToChangeState") and self.raw_attributes.get(
+            "remoteCommandsEnabled"
+        ):
+            return False
+
+        return True
+
+    @property
+    def settings(self) -> dict:
+        """Return user-changable settings."""
+
+        return {
+            config_option.slug: config_option
+            for config_option in self._settings.values()
+            if isinstance(config_option, ConfigurationOption) and config_option.user_configurable
+        }
+
+    @property
+    def state(self) -> DeviceState | None:
+        """Return state."""
+
+        # Devices that don't report state on Alarm.com (i.e.: Smoke Detectors, phones, etc.) still have a value in the state field.
+        # Scenes do not have state at all.
+        if self.has_state:
+            with contextlib.suppress(ValueError):
+                return self.DeviceState(self.raw_attributes.get("state"))
+
+        return None
+
+    @property
+    def system_id(self) -> str | None:
+        """Return ID of device's parent system."""
+
+        if sys := self._raw.get("relationships", {}).get("system", {}).get("data", {}).get("id"):
+            return str(sys)
+
+        return None
 
     # #
     # FUNCTIONS

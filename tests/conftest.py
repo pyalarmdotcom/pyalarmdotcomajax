@@ -45,6 +45,35 @@ def all_base_ok_responses(response_mocker: aioresponses, all_base_ok_responses_c
 
 
 @pytest.fixture
+def login_otp_required(response_mocker: aioresponses) -> Callable:
+    """Shortcut for successful login reponses."""
+
+    response_mocker.get(
+        url=AlarmController.LOGIN_URL.format(c.URL_BASE, ""),
+        status=200,
+        body=get_http_body_html("login_page"),
+        repeat=True,
+    )
+
+    response_mocker.post(
+        url=AlarmController.LOGIN_POST_URL.format(c.URL_BASE, ""),
+        status=200,
+        body=get_http_body_html("login_page"),
+        headers={"Cookie": "afg=1234567890"},
+    )
+
+    response_mocker.get(
+        url=c.IDENTITIES_URL_TEMPLATE.format(c.URL_BASE, ""), status=200, body=get_http_body_json("identities_ok")
+    )
+
+    response_mocker.get(
+        url=AlarmController.LOGIN_2FA_DETAIL_URL_TEMPLATE.format(c.URL_BASE, "98989898"),
+        status=200,
+        body=get_http_body_json("2fa_required"),
+    )
+
+
+@pytest.fixture
 def all_base_ok_responses_callable(response_mocker: aioresponses) -> Callable:
     """Shortcut for including all mocked success responses on demand."""
 

@@ -1,0 +1,29 @@
+{
+  "data": {
+    "id": 333333333,
+    "type": "twoFactorAuthentication/twoFactorAuthentication",
+    "attributes": {
+      "smsMobileNumber": {
+        "mobileNumber": "2125551212",
+        "country": "1",
+        "cellProvider": "faketelco"
+      },
+      "email": "fake@user.com",
+      "currentDeviceName": "Windows 10 CHROME Device",
+      "isCurrentDeviceTrusted": false,
+      "selectedTypeOf2FA": 0,
+      "enabledTwoFactorTypes": 3,
+      "valid2FAPermissions": [
+        1,
+        2,
+        4
+      ],
+      "canReset2FA": false,
+      "showSuggestedSetup": false,
+      "canSkipSuggestedSetup": true
+    }
+  },
+  "meta": {
+    "transformer_version": "1.1"
+  }
+}

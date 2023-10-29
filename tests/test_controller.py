@@ -7,7 +7,7 @@ import aiohttp
 import pytest
 
 from pyalarmdotcomajax import AlarmController
-from pyalarmdotcomajax.exceptions import UnexpectedResponse
+from pyalarmdotcomajax.exceptions import OtpRequired, UnexpectedResponse
 
 
 def test_property__initial_state(adc_client: AlarmController) -> None:
@@ -64,3 +64,15 @@ async def test__async_has_image_sensors(
     """Test for function that fetches image sensor images."""
 
     await adc_client.async_update()
+
+
+@pytest.mark.asyncio
+async def test__login__success(adc_client: AlarmController, login_otp_required: str) -> None:
+    """Ensure that login data is ingested correctly."""
+    assert adc_client._password == "hunter2"
+    assert adc_client._username == "test-username"
+    assert adc_client.two_factor_cookie == "test-cookie"
+    assert isinstance(adc_client._websession, aiohttp.ClientSession)
+
+    with pytest.raises(OtpRequired):
+        await adc_client.async_login()

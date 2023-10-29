@@ -48,7 +48,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.10"
+__version__ = "0.5.11"
 
 log = logging.getLogger(__name__)
 
@@ -114,6 +114,7 @@ class AlarmController:
         #
         # SET
         #
+
         self._username: str = username
         self._password: str = password
         self._websession: aiohttp.ClientSession = websession
@@ -173,6 +174,7 @@ class AlarmController:
         #
         # CLI ATTRIBUTES
         #
+
         self.raw_catalog: dict = {}
         self.raw_system: dict = {}
         self.raw_image_sensors: dict = {}
@@ -358,9 +360,7 @@ class AlarmController:
         log.debug("Url %s", url)
 
         try:
-            async with self._websession.post(
-                url=url, json=msg_body, headers=self._ajax_headers, raise_for_status=True
-            ) as resp:
+            async with self._websession.post(url=url, json=msg_body, headers=self._ajax_headers) as resp:
                 log.debug("Response from Alarm.com %s", resp.status)
 
                 json_rsp = await resp.json()
@@ -389,7 +389,7 @@ class AlarmController:
                     )
 
                 # Run standard server response checks.
-                await self._async_handle_server_errors(json_rsp, "send_command", retry_on_failure)
+                await self._async_handle_server_errors("send_command", resp.status, json_rsp, retry_on_failure)
 
                 # If above pass and we have a 200, we're good.
                 if str(resp.status) == "200":
@@ -649,7 +649,7 @@ class AlarmController:
             ) as resp:
                 json_rsp = await resp.json()
 
-            await self._async_handle_server_errors(json_rsp, "2FA requirements", False)
+            await self._async_handle_server_errors("2FA requirements", resp.status, json_rsp, False)
 
         except aiohttp.ClientResponseError as err:
             log.exception("Failed to get 2FA requirements.")
@@ -961,7 +961,7 @@ class AlarmController:
             ) as resp:
                 json_rsp = await resp.json()
 
-                await self._async_handle_server_errors(json_rsp, "active system", retry_on_failure)
+                await self._async_handle_server_errors("active system", resp.status, json_rsp, retry_on_failure)
 
                 return str(
                     next(system["id"] for system in json_rsp.get("data", []) if system["attributes"]["isSelected"])
@@ -1029,7 +1029,7 @@ class AlarmController:
             ) as resp:
                 json_rsp = await resp.json()
 
-                await self._async_handle_server_errors(json_rsp, "image sensors", retry_on_failure)
+                await self._async_handle_server_errors("image sensors", resp.status, json_rsp, retry_on_failure)
 
                 device_type_id = AttributeRegistry.get_type_id_from_devicetype(device_type)
 
@@ -1059,7 +1059,7 @@ class AlarmController:
                 # Used by adc CLI.
                 self.raw_system = json_rsp
 
-                await self._async_handle_server_errors(json_rsp, "system", retry_on_failure)
+                await self._async_handle_server_errors("system", resp.status, json_rsp, retry_on_failure)
 
                 return [json_rsp["data"]]
 
@@ -1084,7 +1084,7 @@ class AlarmController:
                 # Used by adc CLI.
                 self.raw_catalog = json_rsp
 
-                await self._async_handle_server_errors(json_rsp, "system devices", retry_on_failure)
+                await self._async_handle_server_errors("system devices", resp.status, json_rsp, retry_on_failure)
 
                 return [
                     device
@@ -1116,7 +1116,9 @@ class AlarmController:
                 if device_type == DeviceType.IMAGE_SENSOR:
                     self.raw_image_sensors = json_rsp
 
-                await self._async_handle_server_errors(json_rsp, f"get all {device_type.value}", retry_on_failure)
+                await self._async_handle_server_errors(
+                    f"get all {device_type.value}", resp.status, json_rsp, retry_on_failure
+                )
 
                 return list(json_rsp["data"])
 
@@ -1140,7 +1142,7 @@ class AlarmController:
 
                 log.debug("Trouble condition response:\n%s", json_rsp)
 
-                await self._async_handle_server_errors(json_rsp, "active system", retry_on_failure)
+                await self._async_handle_server_errors("active system", resp.status, json_rsp, retry_on_failure)
 
                 trouble_all_devices: dict = {}
                 for condition in json_rsp.get("data", []):
@@ -1180,25 +1182,35 @@ class AlarmController:
             return await self._async_get_trouble_conditions(retry_on_failure=False)
 
     async def _async_handle_server_errors(
-        self, json_rsp: dict, request_name: str, retry_on_failure: bool = False
+        self,
+        request_name: str,
+        status_code: str | int,
+        json_rsp: dict | None = None,
+        retry_on_failure: bool = False,
     ) -> None:
-        """Handle errors returned by the server."""
+        """Handle errors returned by the server. If there are multiple errors, acts on first only.
+
+        Accepts both errors within errors object of a 200 response body or errors with status code in HTTP response header.
+        """
+
+        status_str = str(status_code)
 
         log.debug(
-            "\n==============================\nServer"
-            f" Response:\n{json.dumps(json_rsp)}\n=============================="
+            "\n==============================\nServer Responded"
+            f" {status_str}:\n{json.dumps(json_rsp)}\n=============================="
         )
 
-        if not len(rsp_errors := json_rsp.get("errors", [])):
-            return
+        if status_str == "200":
+            if json_rsp and not len(rsp_errors := json_rsp.get("errors", [])):
+                return
+            # Substitute 200 status code with error code from the JSON response error object.
+            status_str = rsp_errors[0].get("status")
 
-        log.debug(
-            error_msg := f"{__name__}: Request error. Status: {rsp_errors[0].get('status')}. Response: {json_rsp}"
-        )
+        log.debug(error_msg := f"{__name__}: Request error. Status: {status_str}. Response: {json_rsp}")
 
-        match rsp_errors[0].get("status"):
+        match status_str:
             case "423":  # Processing Error
-                log.exception(
+                log.info(
                     f"Got a processing error when trying to request {request_name}. This may be caused by missing"
                     " permissions, being on an Alarm.com plan without support for a particular device type, or"
                     " having a device type disabled for this system."
