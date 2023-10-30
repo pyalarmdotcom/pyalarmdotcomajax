@@ -364,27 +364,15 @@ class BaseDevice(ABC, CastingMixin):
 
         # for external_callback, listener_name in self.external_update_callback:
         for external_callback, _ in self.external_update_callback:
-            # Trace logging for @catellie
-            # log.debug(
-            #     f"{__name__} Calling external update callback for listener {listener_name or 'Main'} by"
-            #     f" {self.name} ({self.id_})"
-            # )
-
             external_callback()
 
     def register_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
         """Register callback to be called when device state changes."""
 
-        # Trace logging for @catellie
-        # log.debug(f"Registering external update callback for {listener_name} with {self.name} ({self.id_})")
-
         self.external_update_callback.append((callback, listener_name))
 
     def unregister_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
         """Unregister callback to be called when device state changes."""
-
-        # Trace logging for @catellie
-        # log.debug(f"Unregistering external update callback for {listener_name} with {self.name} ({self.id_})")
 
         self.external_update_callback.remove((callback, listener_name))
 

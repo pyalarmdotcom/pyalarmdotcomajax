@@ -316,8 +316,6 @@ class AlarmController:
 
             raw_devices.remove(partition_raw)
 
-        # device_type: DeviceType = AttributeRegistry.get_devicetype_from_relationship_id(raw_device["type"])
-
         #
         # BUILD DEVICES
         #
