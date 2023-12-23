@@ -7,14 +7,6 @@ repos:
       hooks:
           - id: ruff
             args: [--fix, --exit-non-zero-on-fix]
-          - id: ruff-format
-    # - repo: https://github.com/psf/black
-    #   rev: 23.10.1
-    #   hooks:
-    #       - id: black
-    #         args:
-    #             - --safe
-    #             - --quiet
     - repo: https://github.com/codespell-project/codespell
       rev: v2.2.6
       hooks:
@@ -32,8 +24,8 @@ repos:
       rev: v1.6.1
       hooks:
           - id: mypy
-            additional_dependencies: [types-all]
-            args: [--config-file=pyproject.toml]
+            additional_dependencies:
+                [types-aiofiles, aiohttp, mashumaro, pyhumps]
     - repo: https://github.com/adrienverge/yamllint.git
       rev: v1.32.0
       hooks:

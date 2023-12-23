@@ -2,16 +2,9 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
-line-length = 115
-target-version = ["py311"]
-exclude = "generated"
-preview = "True"
-
 [tool.mypy]
 python_version = "3.11"
 show_error_codes = true
-# follow_imports = "silent"
 ignore_missing_imports = true
 strict_equality = true
 warn_incomplete_stub = true
@@ -21,7 +14,6 @@ warn_unused_ignores = true
 check_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = true
-disallow_untyped_decorators = false # @pytest.mark.asyncio is untyped
 disallow_untyped_defs = true
 no_implicit_optional = true
 warn_return_any = true
@@ -30,65 +22,77 @@ pretty = true
 show_absolute_path = true
 show_error_context = true
 disallow_untyped_calls = false
-exclude = ["tests/", "build/"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-norecursedirs = [".git", "testing_config"]
-asyncio_mode = "auto"
+exclude = ["tests/", "build/", ".ruff_cache/", ".mypy_cache/", "references/"]
+explicit_package_bases = true
 
 [tool.ruff]
 target-version = "py311"
 unfixable = [
-  "F841" # Unused variables
+    "F841", # Unused variables
 ]
-exclude = ["examples", "pylint", "build"]
+exclude = ["examples", "pylint", "build", "references"]
 select = [
-  "B007", # Loop control variable {name} not used within loop body
-  "B014", # Exception handler with duplicate exception
-  "B006", # Do not use mutable data structures for argument defaults
-  "C", # complexity
-  "D", # docstrings
-  "E", # pycodestyle
-  "F", # pyflakes/autoflake
-  "I", # isort
-  "PL", # pylint
-  "RUF", # ruff-specific
-  "FA", # flake-8 future annotations
-  "TID", # flake-8 tidy imports
-  "SLF", # flake-8 self
-  "SIM", # flake-8 simplify
-  "ICN001", # import concentions; {name} should be imported as {asname}
-  "PGH004", # Use specific rule codes when using noqa
-  "PLC0414", # Useless import alias. Import alias does not rename original package.
-  "RET", # flake-8 return
-  "S", # Bandit
-  "T20", # flake8-print
-  "TRY", # tryceratops
-  "UP", # pyupgrade
-  "W" # pycodestyle
+    "B007",    # Loop control variable {name} not used within loop body
+    "B014",    # Exception handler with duplicate exception
+    "B006",    # Do not use mutable data structures for argument defaults
+    "C",       # complexity
+    "D",       # docstrings
+    "E",       # pycodestyle
+    "F",       # pyflakes/autoflake
+    "I",       # isort
+    "PL",      # pylint
+    "RUF",     # ruff-specific
+    "FA",      # flake-8 future annotations
+    "TID",     # flake-8 tidy imports
+    "SLF",     # flake-8 self
+    "SIM",     # flake-8 simplify
+    "ICN001",  # import concentions; {name} should be imported as {asname}
+    "PGH004",  # Use specific rule codes when using noqa
+    "PLC0414", # Useless import alias. Import alias does not rename original package.
+    "RET",     # flake-8 return
+    "S",       # Bandit
+    "T20",     # flake8-print
+    "TRY",     # tryceratops
+    "UP",      # pyupgrade
+    "W",       # pycodestyle
 ]
 ignore = [
-  "D202", # No blank lines allowed after function docstring
-  "D203", # 1 blank line required before class docstring
-  "D213", # Multi-line docstring summary should start at the second line
-  "D404", # First word of the docstring should not be This
-  "D406", # Section name should end with a newline
-  "D407", # Section name underlining
-  "D411", # Missing blank line before section
-  "E501", # line too long
-  "E731", # do not assign a lambda expression, use a def
-  "TRY003", # Avoid messages outside of the Exception class
-  "TRY301", # Avoid raising withing a try block
-  "PLR2004", # Magic values. Often triggered by aiohttp response status check.
-  "PLR0913", # Too many arguments in a function call
-  "PLR0912", # Too many branches
-  "PLR0915", # Too many statements
-  "PLR0911", # Too many return statements
-  "UP006", # Along with UP007, make up pyupgrade's keep-runtime-typing
-  "UP007"
+    "D202",    # No blank lines allowed after function docstring
+    "D203",    # 1 blank line required before class docstring
+    "D404",    # First word of the docstring should not be This
+    "D212",    # Multi-line docstring summary should start at the first line
+    "D406",    # Section name should end with a newline
+    "D407",    # Section name underlining
+    "E731",    # do not assign a lambda expression, use a def
+    "TRY003",  # Avoid messages outside of the Exception class
+    "TRY301",  # Avoid raising within a try block
+    "PLR2004", # Magic values. Often triggered by aiohttp response status check.
+    "PLR0913", # Too many arguments in a function call
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "PLR0911", # Too many return statements
+    "S301",    # Bandit: Use of unsafe yaml load
+    "W191",    # pycodestyle: Indentation contains tabs
+    "E111",    # pycodestyle: Indentation is not a multiple of four
+    "E114",    # pycodestyle: Indentation is not a multiple of four (comment)
+    "E117",    # pycodestyle: Over-indented
+    "D206",    # pycodestyle: Docstring should be indented with spaces, not tabs
+    "Q000",    # pycodestyle: Remove bad quotes
+    "Q001",    # pycodestyle: Remove bad quotes
+    "Q002",    # pycodestyle: Remove bad quotes
+    "Q003",    # pycodestyle: Remove bad quotes
+    "COM812",  # pycodestyle: Missing trailing comma
+    "COM819",  # pycodestyle: Prohibited trailing comma
+    "ISC001",  # pycodestyle: Single line implicit string concatenation
+    "ISC002",  # pycodestyle: Multi line implicit string concatenation
+    "E501",    # pycodestyle: Line too long
+    # "D300",    # pycodestyle: Use """triple double quotes"""
 ]
 line-length = 115
+extend-safe-fixes = [
+    "UP007", # pyupgrade: Use | instead of Union, | None instead of Optional.
+    "UP006", # pyupgrade: Use list (and others) from standard library instead of typing.
+]
 
 [tool.ruff.flake8-pytest-style]
 fixture-parentheses = false
@@ -101,13 +105,3 @@ line-ending = "auto"
 
 [tool.ruff.mccabe]
 max-complexity = 25
-
-[tool.ruff.per-file-ignores]
-"tests/*" = ["S101"]
-
-[tool.tomlsort]
-all = false
-check = false
-ignore_case = true
-in_place = true
-no_header = false

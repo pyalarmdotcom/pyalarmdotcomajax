@@ -1,12 +1,14 @@
 pytest>=7.2.0
 # aioresponses>=0.7.5
-git+https://github.com/pnuckowski/aioresponses.git@master #Until 0.7.5 release
+# git+https://github.com/pnuckowski/aioresponses.git@master #Until 0.7.5 release
 pytest-asyncio>=0.19.0
 deepdiff>=6.2.1
 beautifulsoup4 >= 4.12.2
 aiohttp >= 3.8.1
 python-dateutil >= 2.8.2
 termcolor >= 1.1.0
-# ruff >= 0.0.254
-types-python-dateutil >= 2.8.19.10
-pre-commit>=3.3.2
+types-python-dateutil~=2.8.19.14
+pre-commit>=3.5.0
+types-aiofiles~=23.2.0.0
+types-PyYAML~=6.0.12.12
+mypy~=1.7.1

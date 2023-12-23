@@ -1,0 +1,28 @@
+{
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "github.codespaces",
+                "ryanluker.vscode-coverage-gutters",
+                "donjayamanne.githistory",
+                "github.vscode-pull-request-github",
+                "tamasfe.even-better-toml",
+                "donjayamanne.python-extension-pack",
+                "marklarah.pre-commit-vscode",
+                "eamodio.gitlens",
+                "ms-python.mypy-type-checker",
+                "charliermarsh.ruff",
+                "esbenp.prettier-vscode",
+                "EditorConfig.EditorConfig",
+                "ms-python.python"
+            ]
+        }
+    },
+    "features": {
+        "github-cli": "latest"
+    },
+    "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+    "name": "pyalarmdotcomajax",
+    "postCreateCommand": ["scripts/setup.sh"],
+    "remoteUser": "vscode"
+}
