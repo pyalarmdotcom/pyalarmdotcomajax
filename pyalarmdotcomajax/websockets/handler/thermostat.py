@@ -65,7 +65,7 @@ class ThermostatWebSocketHandler(BaseWebSocketHandler):
                         )
 
                     case EventType.ThermostatModeChanged:
-                        await message.device.async_handle_external_dual_state_change(
+                        await message.device.async_handle_external_state_change(
                             message.device.DeviceState(message.value + 1)
                         )
 

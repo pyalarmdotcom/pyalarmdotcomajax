@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from pyalarmdotcomajax.devices.sensor import Sensor
@@ -18,12 +17,12 @@ log = logging.getLogger(__name__)
 
 MOTION_EVENT_STATE_MAP = {
     EventType.Closed: Sensor.DeviceState.IDLE,
-    EventType.OpenedClosed: Sensor.DeviceState.IDLE,
+    EventType.OpenedClosed: Sensor.DeviceState.OPENED_CLOSED,
     EventType.Opened: Sensor.DeviceState.ACTIVE,
 }
 SENSOR_EVENT_STATE_MAP = {
     EventType.Closed: Sensor.DeviceState.CLOSED,
-    EventType.OpenedClosed: Sensor.DeviceState.CLOSED,
+    EventType.OpenedClosed: Sensor.DeviceState.OPENED_CLOSED,
     EventType.Opened: Sensor.DeviceState.OPEN,
 }
 
@@ -59,20 +58,10 @@ class SensorWebSocketHandler(BaseWebSocketHandler):
         match message:
             case EventMessage():
                 match message.event_type:
-                    case EventType.Closed | EventType.Opened:
-                        await message.device.async_handle_external_dual_state_change(
+                    case EventType.Closed | EventType.Opened | EventType.OpenedClosed:
+                        await message.device.async_handle_external_state_change(
                             self.get_state_from_event_type(message)
                         )
-
-                    case EventType.OpenedClosed:
-                        # Lock ensures that state changes are executed in order.
-                        lock = asyncio.Lock()
-
-                        async with lock:
-                            await message.device.async_handle_external_dual_state_change(Sensor.DeviceState.OPEN)
-
-                        async with lock:
-                            await message.device.async_handle_external_dual_state_change(Sensor.DeviceState.CLOSED)
                     case _:
                         log.debug(
                             f"Support for event {message.event_type} ({message.event_type_id}) not yet implemented"

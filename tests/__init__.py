@@ -21,3 +21,4 @@
 # Devices
 #
 # Locks: https://www.alarm.com/web/system/assets/customer-ember/models/devices/lock.ts
+#

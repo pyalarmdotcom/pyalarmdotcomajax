@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TypedDict
 
-from pyalarmdotcomajax.devices import DeviceType
+from pyalarmdotcomajax.devices import BaseDevice, DeviceType
 from pyalarmdotcomajax.devices.camera import Camera
 from pyalarmdotcomajax.devices.garage_door import GarageDoor
 from pyalarmdotcomajax.devices.gate import Gate
@@ -21,90 +21,31 @@ from pyalarmdotcomajax.devices.thermostat import Thermostat
 from pyalarmdotcomajax.devices.water_sensor import WaterSensor
 from pyalarmdotcomajax.exceptions import UnknownDevice, UnsupportedDeviceType
 from pyalarmdotcomajax.helpers import classproperty
+from pyalarmdotcomajax.models import DeviceRelationshipTypeId, DeviceTypeId
 
 log = logging.getLogger(__name__)
 
-AllDevices_t = (
-    Camera
-    | GarageDoor
-    | Gate
-    | ImageSensor
-    | Light
-    | Lock
-    | Partition
-    | Scene
-    | Sensor
-    | System
-    | Thermostat
-    | WaterSensor
-)
-
-AllDeviceTypes_t = (
-    type[Camera]
-    | type[GarageDoor]
-    | type[Gate]
-    | type[ImageSensor]
-    | type[Light]
-    | type[Lock]
-    | type[Partition]
-    | type[Scene]
-    | type[Sensor]
-    | type[System]
-    | type[Thermostat]
-    | type[WaterSensor]
-)
-
-
-AllDevicesLists_t = (
-    list[Camera]
-    | list[GarageDoor]
-    | list[Gate]
-    | list[ImageSensor]
-    | list[Light]
-    | list[Lock]
-    | list[Partition]
-    | list[Scene]
-    | list[Sensor]
-    | list[System]
-    | list[Thermostat]
-    | list[WaterSensor]
-)
-
-AllDevicesDicts_t = (
-    dict[str, Camera]
-    | dict[str, GarageDoor]
-    | dict[str, Gate]
-    | dict[str, ImageSensor]
-    | dict[str, Light]
-    | dict[str, Lock]
-    | dict[str, Partition]
-    | dict[str, Scene]
-    | dict[str, Sensor]
-    | dict[str, System]
-    | dict[str, Thermostat]
-    | dict[str, WaterSensor]
-)
 
 ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
     DeviceType.CAMERA: {
         "endpoints": {"primary": "{}web/api/video/devices/cameras/{}"},
         "class_": Camera,
-        "rel_id": "video/camera",
-        "type_id": "cameras",
+        "rel_id": DeviceRelationshipTypeId.CAMERA.value,
+        "type_id": DeviceTypeId.CAMERA.value,
         "device_registry_property": "cameras",
     },
     DeviceType.GARAGE_DOOR: {
         "endpoints": {"primary": "{}web/api/devices/garageDoors/{}"},
         "class_": GarageDoor,
-        "rel_id": "devices/garage-door",
-        "type_id": "garageDoors",
+        "rel_id": DeviceRelationshipTypeId.GARAGE_DOOR.value,
+        "type_id": DeviceTypeId.GARAGE_DOOR.value,
         "device_registry_property": "garage_doors",
     },
     DeviceType.GATE: {
         "endpoints": {"primary": "{}web/api/devices/gates/{}"},
         "class_": Gate,
-        "rel_id": "devices/gate",
-        "type_id": "gates",
+        "rel_id": DeviceRelationshipTypeId.GATE.value,
+        "type_id": DeviceTypeId.GATE.value,
         "device_registry_property": "gates",
     },
     DeviceType.IMAGE_SENSOR: {
@@ -113,85 +54,85 @@ ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
             "additional": {"recent_images": "{}/web/api/imageSensor/imageSensorImages/getRecentImages/{}"},
         },
         "class_": ImageSensor,
-        "rel_id": "image-sensor/image-sensor",
-        "type_id": "imageSensors",
+        "rel_id": DeviceRelationshipTypeId.IMAGE_SENSOR.value,
+        "type_id": DeviceTypeId.IMAGE_SENSOR.value,
         "device_registry_property": "image_sensors",
     },
     DeviceType.LIGHT: {
         "endpoints": {"primary": "{}web/api/devices/lights/{}"},
         "class_": Light,
-        "rel_id": "devices/light",
-        "type_id": "lights",
+        "rel_id": DeviceRelationshipTypeId.LIGHT.value,
+        "type_id": DeviceTypeId.LIGHT.value,
         "device_registry_property": "lights",
     },
     DeviceType.LOCK: {
         "endpoints": {"primary": "{}web/api/devices/locks/{}"},
         "class_": Lock,
-        "rel_id": "devices/lock",
-        "type_id": "locks",
+        "rel_id": DeviceRelationshipTypeId.LOCK.value,
+        "type_id": DeviceTypeId.LOCK.value,
         "device_registry_property": "locks",
     },
     DeviceType.PARTITION: {
         "endpoints": {"primary": "{}web/api/devices/partitions/{}"},
         "class_": Partition,
-        "rel_id": "devices/partition",
-        "type_id": "partitions",
+        "rel_id": DeviceRelationshipTypeId.PARTITION.value,
+        "type_id": DeviceTypeId.PARTITION.value,
         "device_registry_property": "partitions",
     },
     DeviceType.SCENE: {
         "endpoints": {"primary": "{}web/api/automation/scenes/{}"},
         "class_": Scene,
-        "rel_id": "automation/scene",
-        "type_id": "scenes",
+        "rel_id": DeviceRelationshipTypeId.SCENE.value,
+        "type_id": DeviceTypeId.SCENE.value,
         "device_registry_property": "scenes",
     },
     DeviceType.SENSOR: {
         "endpoints": {"primary": "{}web/api/devices/sensors/{}"},
         "class_": Sensor,
-        "rel_id": "devices/sensor",
-        "type_id": "sensors",
+        "rel_id": DeviceRelationshipTypeId.SENSOR.value,
+        "type_id": DeviceTypeId.SENSOR.value,
         "device_registry_property": "sensors",
     },
     DeviceType.SYSTEM: {
         "endpoints": {"primary": "{}web/api/systems/systems/{}"},
         "class_": System,
-        "rel_id": "systems/system",
-        "type_id": "systems",
+        "rel_id": DeviceRelationshipTypeId.SYSTEM.value,
+        "type_id": DeviceTypeId.SYSTEM.value,
         "device_registry_property": "systems",
     },
     DeviceType.THERMOSTAT: {
         "endpoints": {"primary": "{}web/api/devices/thermostats/{}"},
         "class_": Thermostat,
-        "rel_id": "devices/thermostat",
-        "type_id": "thermostats",
+        "rel_id": DeviceRelationshipTypeId.THERMOSTAT.value,
+        "type_id": DeviceTypeId.THERMOSTAT.value,
         "device_registry_property": "thermostats",
     },
     DeviceType.WATER_SENSOR: {
         "endpoints": {"primary": "{}web/api/devices/waterSensors/{}"},
         "class_": WaterSensor,
-        "rel_id": "devices/water-sensor",
-        "type_id": "waterSensors",
+        "rel_id": DeviceRelationshipTypeId.WATER_SENSOR.value,
+        "type_id": DeviceTypeId.WATER_SENSOR.value,
         "device_registry_property": "water_sensors",
     },
     DeviceType.ACCESS_CONTROL: {
         "endpoints": {"primary": "{}web/api/devices/accessControlAccessPointDevices/{}"},
-        "rel_id": "devices/access-control-access-point-device",
-        "type_id": "accessControlAccessPointDevices",
+        "rel_id": DeviceRelationshipTypeId.ACCESS_CONTROL.value,
+        "type_id": DeviceTypeId.ACCESS_CONTROL.value,
     },
     DeviceType.CAMERA_SD: {
         "endpoints": {"primary": "{}web/api/video/devices/sdCardCameras/{}"},
-        "rel_id": "video/sd-card-camera",
-        "type_id": "sdCardCameras",
+        "rel_id": DeviceRelationshipTypeId.CAMERA_SD.value,
+        "type_id": DeviceTypeId.CAMERA_SD.value,
     },
     DeviceType.CAR_MONITOR: {
         "endpoints": {"primary": "{}web/api/devices/carMonitors/{}"},
-        "rel_id": "devices/car-monitor",
-        "type_id": "carMonitors",
+        "rel_id": DeviceRelationshipTypeId.CAR_MONITOR.value,
+        "type_id": DeviceTypeId.CAR_MONITOR.value,
     },
     DeviceType.COMMERCIAL_TEMP: {
         "endpoints": {"primary": "{}web/api/devices/commercialTemperatureSensors/{}"},
-        "rel_id": "devices/commercial-temperature-sensor",
-        "type_id": "commercialTemperatureSensors",
+        "rel_id": DeviceRelationshipTypeId.COMMERCIAL_TEMP.value,
+        "type_id": DeviceTypeId.COMMERCIAL_TEMP.value,
     },
     # DeviceType.CONFIGURATION: {
     #     "endpoints": {"primary": "{}web/api/systems/configurations/{}"},
@@ -203,58 +144,58 @@ ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
     # },
     DeviceType.GEO_DEVICE: {
         "endpoints": {"primary": "{}web/api/geolocation/geoDevices/{}"},
-        "rel_id": "geolocation/geo-device",
-        "type_id": "geoDevices",
+        "rel_id": DeviceRelationshipTypeId.GEO_DEVICE.value,
+        "type_id": DeviceTypeId.GEO_DEVICE.value,
     },
     DeviceType.IQ_ROUTER: {
         "endpoints": {"primary": "{}web/api/devices/iqRouters/{}"},
-        "rel_id": "devices/iq-router",
-        "type_id": "iqRouters",
+        "rel_id": DeviceRelationshipTypeId.IQ_ROUTER.value,
+        "type_id": DeviceTypeId.IQ_ROUTER.value,
     },
     DeviceType.REMOTE_TEMP: {
         "endpoints": {"primary": "{}web/api/devices/remoteTemperatureSensors/{}"},
-        "rel_id": "devices/remote-temperature-sensor",
-        "type_id": "remoteTemperatureSensors",
+        "rel_id": DeviceRelationshipTypeId.REMOTE_TEMP.value,
+        "type_id": DeviceTypeId.REMOTE_TEMP.value,
     },
     DeviceType.SHADE: {
         "endpoints": {"primary": "{}web/api/devices/shades/{}"},
-        "rel_id": "devices/shade",
-        "type_id": "shades",
+        "rel_id": DeviceRelationshipTypeId.SHADE.value,
+        "type_id": DeviceTypeId.SHADE.value,
     },
     DeviceType.SMART_CHIME: {
         "endpoints": {"primary": "{}web/api/devices/smartChimeDevices/{}"},
-        "rel_id": "devices/smart-chime-device",
-        "type_id": "smartChimeDevices",
+        "rel_id": DeviceRelationshipTypeId.SMART_CHIME.value,
+        "type_id": DeviceTypeId.SMART_CHIME.value,
     },
     DeviceType.SUMP_PUMP: {
         "endpoints": {"primary": "{}web/api/devices/sumpPumps/{}"},
-        "rel_id": "devices/sump-pump",
-        "type_id": "sumpPumps",
+        "rel_id": DeviceRelationshipTypeId.SUMP_PUMP.value,
+        "type_id": DeviceTypeId.SUMP_PUMP.value,
     },
     DeviceType.SWITCH: {
         "endpoints": {"primary": "{}web/api/devices/switches/{}"},
-        "rel_id": "devices/switch",
-        "type_id": "switches",
+        "rel_id": DeviceRelationshipTypeId.SWITCH.value,
+        "type_id": DeviceTypeId.SWITCH.value,
     },
     DeviceType.VALVE_SWITCH: {
         "endpoints": {"primary": "{}web/api/devices/valveSwitches/{}"},
-        "rel_id": "valve-switch",
-        "type_id": "valveSwitches",
+        "rel_id": DeviceRelationshipTypeId.VALVE_SWITCH.value,
+        "type_id": DeviceTypeId.VALVE_SWITCH.value,
     },
     DeviceType.WATER_METER: {
         "endpoints": {"primary": "{}web/api/devices/waterMeters/{}"},
-        "rel_id": "devices/water-meter",
-        "type_id": "waterMeters",
+        "rel_id": DeviceRelationshipTypeId.WATER_METER.value,
+        "type_id": DeviceTypeId.WATER_METER.value,
     },
     DeviceType.WATER_VALVE: {
         "endpoints": {"primary": "{}web/api/devices/waterValves/{}"},
-        "rel_id": "devices/water-valve",
-        "type_id": "waterValves",
+        "rel_id": DeviceRelationshipTypeId.WATER_VALVE.value,
+        "type_id": DeviceTypeId.WATER_VALVE.value,
     },
     DeviceType.X10_LIGHT: {
         "endpoints": {"primary": "{}web/api/devices/x10Lights/{}"},
-        "rel_id": "devices/x10-light",
-        "type_id": "x10Lights",
+        "rel_id": DeviceRelationshipTypeId.X10_LIGHT.value,
+        "type_id": DeviceTypeId.X10_LIGHT.value,
     },
 }
 
@@ -270,7 +211,7 @@ class AttributeRegistryEntry(TypedDict, total=False):
     """Stores information about a device type."""
 
     endpoints: DeviceTypeEndpoints
-    class_: AllDeviceTypes_t
+    class_: type[BaseDevice]
     supported: bool
     rel_id: str
     type_id: str
@@ -278,21 +219,21 @@ class AttributeRegistryEntry(TypedDict, total=False):
 
 
 @dataclass
-class DeviceRegistry:
+class DeviceRegistry(BaseDevice):
     """Stores devices by type."""
 
-    _devices: dict[str, AllDevices_t] = field(default_factory=dict)
+    _devices: dict[str, BaseDevice] = field(default_factory=dict)
 
     ############
     ## PUBLIC ##
     ############
 
     @property
-    def all(self) -> dict[str, AllDevices_t]:
+    def all(self) -> dict[str, BaseDevice]:
         """Return devices."""
         return self._devices
 
-    def get(self, device_id: str) -> AllDevices_t:
+    def get(self, device_id: str) -> BaseDevice:
         """Get device by id."""
 
         try:
@@ -300,7 +241,7 @@ class DeviceRegistry:
         except KeyError as err:
             raise UnknownDevice(device_id) from err
 
-    def update(self, payload: dict[str, AllDevices_t], purge: bool = False) -> None:
+    def update(self, payload: dict[str, BaseDevice], purge: bool = False) -> None:
         """Store device or list of devices."""
 
         if purge:
@@ -386,7 +327,7 @@ class AttributeRegistry:
             raise UnsupportedDeviceType(device_type) from err
 
     @staticmethod
-    def get_class(device_type: DeviceType) -> type[AllDevices_t]:
+    def get_class(device_type: DeviceType) -> type[BaseDevice]:
         """Return primary endpoint for device type."""
 
         try:

@@ -9,7 +9,7 @@ from datetime import datetime
 
 from dateutil import parser
 
-from pyalarmdotcomajax.devices.registry import AllDevices_t, DeviceRegistry
+from pyalarmdotcomajax.devices.registry import BaseDevice, DeviceRegistry
 from pyalarmdotcomajax.exceptions import UnknownDevice, UnsupportedWebSocketMessage
 from pyalarmdotcomajax.helpers import CastingMixin
 from pyalarmdotcomajax.websockets.const import (
@@ -63,16 +63,16 @@ def process_raw_message(message: dict, device_registry: DeviceRegistry) -> WebSo
 class WebSocketMessage(CastingMixin):
     """Alarm.com websocket message base class."""
 
-    def __init__(self, message: dict, device: AllDevices_t):
+    def __init__(self, message: dict, device: BaseDevice):
         """Initialize."""
         self.id_: str = f"{message.get('UnitId', '')!s}-{message.get('DeviceId', '')!s}"
-        self.device: AllDevices_t = device
+        self.device: BaseDevice = device
 
 
 class EventMessage(WebSocketMessage):
     """Alarm.com event websocket message class."""
 
-    def __init__(self, message: dict, device: AllDevices_t):
+    def __init__(self, message: dict, device: BaseDevice):
         """Initialize."""
         super().__init__(message, device)
         self.date: datetime | None = parser.parse(message.get("EventDateUtc", ""))
@@ -102,7 +102,7 @@ class EventMessage(WebSocketMessage):
 class MonitoringEventMessage(WebSocketMessage):
     """Alarm.com monitoring event websocket message class."""
 
-    def __init__(self, message: dict, device: AllDevices_t):
+    def __init__(self, message: dict, device: BaseDevice):
         """Initialize."""
         super().__init__(message, device)
         self.date: datetime | None = parser.parse(message.get("EventDateUtc", ""))
@@ -119,7 +119,7 @@ class MonitoringEventMessage(WebSocketMessage):
 class PropertyChangeMessage(WebSocketMessage):
     """Alarm.com property change websocket message class."""
 
-    def __init__(self, message: dict, device: AllDevices_t):
+    def __init__(self, message: dict, device: BaseDevice):
         """Initialize."""
         super().__init__(message, device)
         self.change_date: datetime = parser.parse(message.get("ChangeDateUtc", ""))
@@ -141,7 +141,7 @@ class PropertyChangeMessage(WebSocketMessage):
 class StatusChangeMessage(WebSocketMessage):
     """Alarm.com status update websocket message class."""
 
-    def __init__(self, message: dict, device: AllDevices_t):
+    def __init__(self, message: dict, device: BaseDevice):
         """Initialize."""
         super().__init__(message, device)
         self.date: datetime = parser.parse(message.get("EventDateUtc", ""))

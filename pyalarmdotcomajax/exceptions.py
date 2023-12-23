@@ -8,7 +8,7 @@ from .const import OtpType
 
 
 class AlarmdotcomException(Exception):
-    """Base Alarm.com exception."""
+    """Base exception for pyalarmdotcomajax."""
 
     pass
 
@@ -56,20 +56,26 @@ class UnsupportedWebSocketMessage(DeviceException):
 
 
 #
-# AUTH EXCEPTIONS
+# SESSION EXCEPTIONS
 #
-class AuthenticationException(AlarmdotcomException):
-    """Base Alarm.com authentication exception."""
+class SessionException(AlarmdotcomException):
+    """Base exception for pyalarmdotcomajax authentication and connectivity failures."""
 
     pass
 
 
-class AuthenticationFailed(AuthenticationException):
-    """Alarm.com authentication failure."""
+class AuthenticationFailed(SessionException):
+    """Raised when the server rejects a user's login credentials."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the exception."""
+        super().__init__()
+
+        self.can_autocorrect = kwargs.pop("can_autocorrect", False)
 
 
-class OtpRequired(AuthenticationException):
-    """User has two factor authentication enabled."""
+class OtpRequired(SessionException):
+    """Raised during login if a user had two-factor authentication enabled."""
 
     def __init__(self, enabled_2fa_methods: list[OtpType]) -> None:
         """Initialize the exception."""
@@ -78,8 +84,8 @@ class OtpRequired(AuthenticationException):
         self.enabled_2fa_methods = enabled_2fa_methods
 
 
-class ConfigureTwoFactorAuthentication(AuthenticationException):
-    """Client encountered Alarm.com nag screen to setup 2 factor authentication."""
+class ConfigureTwoFactorAuthentication(SessionException):
+    """Raised during login if the user gets the Alarm.com nag screen to setup 2 factor authentication."""
 
     def __init__(self) -> None:
         """Initialize the exception."""
@@ -90,14 +96,18 @@ class ConfigureTwoFactorAuthentication(AuthenticationException):
 
 
 class SessionTimeout(AlarmdotcomException):
-    """Session has timed out and needs to be re-established."""
+    """Raised when the user's session has timed out and needs to be re-established."""
 
 
-class NotAuthorized(AuthenticationException):
-    """User does not have permission to perform requested action."""
+class ServiceUnavailable(AlarmdotcomException):
+    """Raised when multiple requests to the server have failed."""
 
 
-class TryAgain(AuthenticationException):
+class NotAuthorized(SessionException):
+    """Raised when the user does not have permission to perform requested action."""
+
+
+class TryAgain(SessionException):
     """Request that caller tries again after session has been fixed."""
 
 
@@ -109,7 +119,7 @@ class DataException(AlarmdotcomException):
 
 
 class UnexpectedResponse(DataException):
-    """Successfully received JSON object, but format is not as expected."""
+    """Successfully received server response, but format is not as expected."""
 
 
 #

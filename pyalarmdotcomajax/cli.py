@@ -23,10 +23,10 @@ from termcolor import colored, cprint
 
 import pyalarmdotcomajax
 from pyalarmdotcomajax.const import OtpType
-from pyalarmdotcomajax.devices.registry import AllDevices_t, AttributeRegistry
+from pyalarmdotcomajax.devices.registry import AttributeRegistry, BaseDevice
 
 from . import AlarmController
-from .devices import BaseDevice, BatteryState, DeviceType
+from .devices import BatteryState, DeviceType
 from .devices.sensor import Sensor
 from .exceptions import (
     AuthenticationFailed,
@@ -275,8 +275,7 @@ async def cli() -> None:
                 )
                 for device_type in DeviceType
                 if (
-                    device_type
-                    in AttributeRegistry.supported_device_types  # pylint: disable=unsupported-membership-test
+                    device_type in AttributeRegistry.supported_device_types  # pylint: disable=unsupported-membership-test
                     or args.get("include_unsupported", False)
                 )
             }
@@ -460,7 +459,7 @@ def _human_output(alarm: AlarmController) -> dict:
     output = {}
 
     for device_type in AttributeRegistry.supported_device_types:  # pylint: ignore=not-an-iterable
-        devices: dict[str, AllDevices_t] = getattr(alarm.devices, AttributeRegistry.get_storage_name(device_type))
+        devices: dict[str, BaseDevice] = getattr(alarm.devices, AttributeRegistry.get_storage_name(device_type))
         device_type_output: str = ""
         if len(devices) == 0:
             device_type_output += "\n(none found)\n"
@@ -474,7 +473,7 @@ def _human_output(alarm: AlarmController) -> dict:
 
 
 def _print_element_tearsheet(
-    element: AllDevices_t,
+    element: BaseDevice,
 ) -> str:
     output_str: str = ""
 
@@ -611,7 +610,17 @@ async def async_handle_otp_workflow(
         cprint("Requested OTP was not entered.", "red")
         sys.exit()
 
-    await alarm.async_submit_otp(code=code, method=selected_otp_method)
+    device_name = args.get("device_name")
+
+    await alarm.async_submit_otp(
+        code=code, method=selected_otp_method, device_name=device_name, remember_me=device_name is not None
+    )
+
+    if device_name:
+        cprint(
+            f"The two-factor authentication cookie for device {device_name} is {alarm.two_factor_cookie}.",
+            "green",
+        )
 
 
 class EnumAction(argparse.Action):

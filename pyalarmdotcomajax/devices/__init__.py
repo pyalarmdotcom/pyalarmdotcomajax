@@ -5,12 +5,17 @@ from __future__ import annotations
 import contextlib
 import logging
 from abc import ABC
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Final, Optional, TypedDict
+from typing import Any, Final, TypedDict, TypeVar
 
-from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
+from pyalarmdotcomajax.const import (
+    ATTR_DESIRED_STATE,
+    ATTR_STATE,
+    ItemEvent,
+    ListenerCallbackT,
+)
 from pyalarmdotcomajax.exceptions import (
     InvalidConfigurationOption,
 )
@@ -21,6 +26,16 @@ from pyalarmdotcomajax.extensions import (
 from pyalarmdotcomajax.helpers import CastingMixin, ExtendedEnumMixin
 
 log = logging.getLogger(__name__)
+
+
+class BaseDeviceStateMixin(Enum):
+    """Universal device state values."""
+
+    LOADING = -1
+
+
+class DeviceState(Enum):
+    """Hold device state values. To be extended by children."""
 
 
 class DeviceType(ExtendedEnumMixin):
@@ -96,8 +111,9 @@ class BaseDevice(ABC, CastingMixin):
     def __init__(
         self,
         id_: str,
-        send_action_callback: Callable,
+        send_action_callback: SendActionT,
         config_change_callback: Callable | None,
+        listener_callback: ListenerCallbackT,
         children: list[tuple[str, DeviceType]],
         raw_device_data: dict,
         user_profile: UserProfile,
@@ -113,8 +129,7 @@ class BaseDevice(ABC, CastingMixin):
         self._raw: dict = raw_device_data
 
         self._send_action_callback = send_action_callback
-
-        self.external_update_callback: list[tuple[Callable, Optional[str]]] = []
+        self._listener_callback = listener_callback
 
         self._device_type_specific_data: DeviceTypeSpecificData = (
             device_type_specific_data if device_type_specific_data else {}
@@ -137,7 +152,7 @@ class BaseDevice(ABC, CastingMixin):
     #
 
     @property
-    def attributes(self) -> DeviceAttributes | None:
+    def attributes(self) -> BaseDevice.DeviceAttributes | None:
         """Hold non-primary device state attributes. To be overridden by children."""
 
     @property
@@ -352,7 +367,12 @@ class BaseDevice(ABC, CastingMixin):
             f" new {new_attributes}."
         )
 
-        self._raw.setdefault("attributes", {}).update(new_attributes)
+        try:
+            self._raw["attributes"].update(new_attributes)
+        except KeyError:
+            logging.exception("Failed to update device %s with new attributes %s", self.name, new_attributes)
+            self._listener_callback(self.id_, ItemEvent.STATE_CHANGE, new_attributes)
+            return
 
         if log.level == logging.DEBUG:
             log_str = ""
@@ -362,21 +382,9 @@ class BaseDevice(ABC, CastingMixin):
             if log_str:
                 log.debug(f"ATTRIBUTE NAME:: Current_Value -> Desired_Value{log_str}")
 
-        # for external_callback, listener_name in self.external_update_callback:
-        for external_callback, _ in self.external_update_callback:
-            external_callback()
+        self._listener_callback(self.id_, ItemEvent.STATE_CHANGE, new_attributes)
 
-    def register_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
-        """Register callback to be called when device state changes."""
-
-        self.external_update_callback.append((callback, listener_name))
-
-    def unregister_external_update_callback(self, callback: Callable, listener_name: str | None = None) -> None:
-        """Unregister callback to be called when device state changes."""
-
-        self.external_update_callback.remove((callback, listener_name))
-
-    async def async_handle_external_dual_state_change(self, state: BaseDevice.DeviceState | int | None) -> None:
+    async def async_handle_external_state_change(self, state: BaseDevice.DeviceState | int | None) -> None:
         """Update device state when notified of externally-triggered change.
 
         Takes either a DeviceState or a DeviceState int value for the new state.
@@ -441,9 +449,6 @@ class BaseDevice(ABC, CastingMixin):
     class Command(Enum):
         """Hold device commands. To be overridden by children."""
 
-    class DeviceState(Enum):
-        """Hold device state values. To be overridden by children."""
-
     class Subtype(Enum):
         """Hold device subtypes. To be overridden by children."""
 
@@ -481,3 +486,7 @@ class BaseDevice(ABC, CastingMixin):
         updated_option = await self._config_change_callback(camera_name=self.name, slug=slug, new_value=new_value)
 
         self._settings["slug"] = updated_option
+
+
+SendActionT = Callable[[DeviceType, BaseDevice.Command, str, dict | None, bool], Awaitable[dict]]
+ApiDeviceT = TypeVar("ApiDeviceT", bound=BaseDevice)

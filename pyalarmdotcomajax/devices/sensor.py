@@ -23,17 +23,13 @@ class Sensor(BaseDevice):
         OPEN = 2
         IDLE = 3
         ACTIVE = 4
-
-        # Supported in WaterSensor class.
-        # DRY = 5
-        # WET = 6
-
-        # Below not currently supported.
-        # FULL = 7
-        # LOW = 8
-        # OPENED_CLOSED = 9
-        # ISSUE = 10
-        # OK = 11
+        DRY = 5
+        WET = 6
+        FULL = 7
+        LOW = 8
+        OPENED_CLOSED = 9
+        ISSUE = 10
+        OK = 11
 
     class Subtype(IntEnum):
         """Library of identified ADC device types."""

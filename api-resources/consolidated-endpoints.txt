@@ -13,3 +13,8 @@ https://www.alarm.com/web/api/systems/availableSystemItems # Get list of systems
 https://www.alarm.com/web/api/appload # Has is logged in parameter
 
 https://www.alarm.com/web/api/identities/15672471/reloadContext # Empty post refreshes session.
+
+System Behavior
+
+Sensor timeouts and statuses: https://support.suretyhome.com/t/how-do-sensors-report-sensor-activity-monitoring-statuses/19287
+Trouble conditions: https://support.suretyhome.com/t/what-is-an-offline-supervisory-malfunction-trouble-condition-and-how-to-resolve/15995

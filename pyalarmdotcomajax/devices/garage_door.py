@@ -20,6 +20,7 @@ class GarageDoor(BaseDevice):
         UNKNOWN = 0
         OPEN = 1
         CLOSED = 2
+        HIDDEN = 3
 
     class Command(BaseDevice.Command):
         """Commands for ADC garage doors."""

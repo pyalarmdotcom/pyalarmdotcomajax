@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from . import BaseDevice, DeviceType
+from . import BaseDevice, DeviceType, SendActionT
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ class Scene(BaseDevice):
         self,
         id_: str,
         raw_device_data: dict,
-        send_action_callback: Callable,
+        send_action_callback: SendActionT,
         **kwargs: Any,
     ) -> None:
         """Initialize base element class."""

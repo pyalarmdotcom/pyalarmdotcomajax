@@ -38,7 +38,7 @@ class PartitionWebSocketHandler(BaseWebSocketHandler):
             case EventMessage():
                 match message.event_type:
                     case EventType.Disarmed | EventType.ArmedAway | EventType.ArmedStay | EventType.ArmedNight:
-                        await message.device.async_handle_external_dual_state_change(
+                        await message.device.async_handle_external_state_change(
                             EVENT_TO_STATE_MAP[message.event_type]
                         )
                     case EventType.Alarm | EventType.PolicePanic:
