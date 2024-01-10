@@ -12,3 +12,6 @@ pre-commit>=3.5.0
 types-aiofiles~=23.2.0.0
 types-PyYAML~=6.0.12.12
 mypy~=1.7.1
+mashumaro~=3.11
+aiofiles~=23.2.1
+pyhumps~=3.8.0

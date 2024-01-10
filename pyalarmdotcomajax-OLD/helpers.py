@@ -71,14 +71,6 @@ class CastingMixin:
         return None
 
 
-class EnumDictMixin(Enum):
-    """Outputs the value of the enum when used within a dict."""
-
-    def __str__(self) -> str:
-        """Return the value of the enum."""
-        return str(self.value)
-
-
 class ExtendedEnumMixin(Enum):
     """Search and export-list functions to enums."""
 
@@ -155,7 +147,7 @@ def slug_to_title(slug: str) -> str:
 
 # https://stackoverflow.com/a/39542816/20207204
 class classproperty(property):
-    """Decorator for class properties. Allows class functions to be used as properties."""
+    """Decorator for class properties. Lets class functions to be used as properties."""
 
     def __get__(self, obj: Any, objtype: type | None = None) -> Any:
         """Get the value of the property."""

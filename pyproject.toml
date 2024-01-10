@@ -22,7 +22,7 @@ pretty = true
 show_absolute_path = true
 show_error_context = true
 disallow_untyped_calls = false
-exclude = ["tests/", "build/", ".ruff_cache/", ".mypy_cache/", "references/"]
+exclude = ["tests/", "build/", ".ruff_cache/", ".mypy_cache/", "references/", "pyalarmdotcomajax-OLD/"]
 explicit_package_bases = true
 
 [tool.ruff]
@@ -87,6 +87,7 @@ ignore = [
     "ISC002",  # pycodestyle: Multi line implicit string concatenation
     "E501",    # pycodestyle: Line too long
     # "D300",    # pycodestyle: Use """triple double quotes"""
+    "TRY400",  # tryceratops: Use logging.exception instead of logging.error
 ]
 line-length = 115
 extend-safe-fixes = [
