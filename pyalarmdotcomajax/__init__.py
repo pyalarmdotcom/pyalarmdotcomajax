@@ -38,6 +38,7 @@ from pyalarmdotcomajax.exceptions import (
     SessionTimeout,
     TryAgain,
     UnexpectedResponse,
+    UnkonwnDevice,
     UnsupportedDeviceType,
 )
 from pyalarmdotcomajax.extensions import (
@@ -303,6 +304,14 @@ class AlarmController:
                 device_instances.update({device_instance.id_: device_instance})
 
             except UnsupportedDeviceType:
+                continue
+
+        for existing_id in device_instances:
+            try:
+                existing_callback = self.devices.get(existing_id).external_update_callback
+                device_instances[existing_id].external_update_callback = existing_callback
+            
+            except UnkonwnDevice as e:
                 continue
 
         self.devices.update(device_instances, purge=True)
