@@ -31,14 +31,12 @@ async def test__device_partition__house__ok(
 
     if partition.attributes.extended_arming_options is not None:
         # Counter allows for comparing lists while ignoring order.
-        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter(
-            [
-                Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
-                Partition.ExtendedArmingOption.SILENT_ARMING,
-                Partition.ExtendedArmingOption.BYPASS_SENSORS,
-                Partition.ExtendedArmingOption.SELECTIVE_BYPASS,
-            ]
-        )
+        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter([
+            Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
+            Partition.ExtendedArmingOption.SILENT_ARMING,
+            Partition.ExtendedArmingOption.BYPASS_SENSORS,
+            Partition.ExtendedArmingOption.SELECTIVE_BYPASS,
+        ])
 
 
 @pytest.mark.asyncio
@@ -62,12 +60,10 @@ async def test__device_partition__garage__ok(
 
     if partition.attributes.extended_arming_options is not None:
         # Counter allows for comparing lists while ignoring order.
-        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter(
-            [
-                Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
-                Partition.ExtendedArmingOption.SILENT_ARMING,
-            ]
-        )
+        assert Counter(partition.attributes.extended_arming_options.arm_away) == Counter([
+            Partition.ExtendedArmingOption.NO_ENTRY_DELAY,
+            Partition.ExtendedArmingOption.SILENT_ARMING,
+        ])
 
 
 @pytest.mark.asyncio
