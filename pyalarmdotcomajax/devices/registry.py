@@ -14,7 +14,6 @@ from pyalarmdotcomajax.devices.image_sensor import ImageSensor
 from pyalarmdotcomajax.devices.light import Light
 from pyalarmdotcomajax.devices.lock import Lock
 from pyalarmdotcomajax.devices.partition import Partition
-from pyalarmdotcomajax.devices.scene import Scene
 from pyalarmdotcomajax.devices.sensor import Sensor
 from pyalarmdotcomajax.devices.system import System
 from pyalarmdotcomajax.devices.thermostat import Thermostat
@@ -32,7 +31,6 @@ AllDevices_t = (
     | Light
     | Lock
     | Partition
-    | Scene
     | Sensor
     | System
     | Thermostat
@@ -47,7 +45,6 @@ AllDeviceTypes_t = (
     | type[Light]
     | type[Lock]
     | type[Partition]
-    | type[Scene]
     | type[Sensor]
     | type[System]
     | type[Thermostat]
@@ -63,7 +60,6 @@ AllDevicesLists_t = (
     | list[Light]
     | list[Lock]
     | list[Partition]
-    | list[Scene]
     | list[Sensor]
     | list[System]
     | list[Thermostat]
@@ -78,7 +74,6 @@ AllDevicesDicts_t = (
     | dict[str, Light]
     | dict[str, Lock]
     | dict[str, Partition]
-    | dict[str, Scene]
     | dict[str, Sensor]
     | dict[str, System]
     | dict[str, Thermostat]
@@ -140,10 +135,8 @@ ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
     },
     DeviceType.SCENE: {
         "endpoints": {"primary": "{}web/api/automation/scenes/{}"},
-        "class_": Scene,
         "rel_id": "automation/scene",
         "type_id": "scenes",
-        "device_registry_property": "scenes",
     },
     DeviceType.SENSOR: {
         "endpoints": {"primary": "{}web/api/devices/sensors/{}"},
@@ -342,11 +335,6 @@ class DeviceRegistry:
     def partitions(self) -> dict[str, Partition]:
         """Return partitions."""
         return {device_id: device for device_id, device in self._devices.items() if type(device) == Partition}
-
-    @property
-    def scenes(self) -> dict[str, Scene]:
-        """Return sensors."""
-        return {device_id: device for device_id, device in self._devices.items() if type(device) == Scene}
 
     @property
     def sensors(self) -> dict[str, Sensor]:
