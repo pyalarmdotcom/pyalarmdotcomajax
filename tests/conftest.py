@@ -93,13 +93,6 @@ def all_base_ok_responses_callable(response_mocker: aioresponses) -> Callable:
         )
 
         response_mocker.get(
-            url=AttributeRegistry.get_endpoints(DeviceType.SCENE)["primary"].format(c.URL_BASE, ""),
-            status=200,
-            body=get_http_body_json("scenes_ok"),
-            repeat=repeat,
-        )
-
-        response_mocker.get(
             url=AlarmController.ALL_DEVICES_URL_TEMPLATE.format(c.URL_BASE, "id-system"),
             status=200,
             body=get_http_body_json("device_catalog_ok"),

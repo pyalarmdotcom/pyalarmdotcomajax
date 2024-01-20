@@ -48,7 +48,7 @@ from pyalarmdotcomajax.extensions import (
 )
 from pyalarmdotcomajax.websockets.client import WebSocketClient, WebSocketState
 
-__version__ = "0.5.10"
+__version__ = "0.5.11"
 
 log = logging.getLogger(__name__)
 
@@ -97,8 +97,6 @@ class AlarmController:
     KEEP_ALIVE_RENEW_SESSION_URL_TEMPLATE = "{}web/api/identities/{}/reloadContext"
     KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
     SESSION_REFRESH_DEFAULT_INTERVAL_MS = 780000  # 13 minutes. Sessions expire at 15.
-
-    SCENE_REFRESH_INTERVAL_M = 60
 
     # LOGIN & SESSION: END
 
@@ -162,13 +160,6 @@ class AlarmController:
         self._keep_alive_url: str = self.KEEP_ALIVE_DEFAULT_URL
         self._last_session_refresh: datetime = datetime.now()
         self._session_timer: SessionTimer | None = None
-
-        #
-        # SCENE REFRESH ATTRIBUTES
-        #
-
-        self._last_scene_update: datetime | None = None
-        self._scene_object_cache: list[dict] = []
 
         #
         # CLI ATTRIBUTES
@@ -236,14 +227,12 @@ class AlarmController:
         log.debug("Calling update on Alarm.com")
 
         has_image_sensors: bool = False
-        has_scenes: bool = False
 
         if not self._active_system_id:
             self._active_system_id = await self._async_get_active_system()
             has_image_sensors = await self._async_device_type_present(
                 self._active_system_id, DeviceType.IMAGE_SENSOR
             )
-            has_scenes = await self._async_device_type_present(self._active_system_id, DeviceType.SCENE)
 
         await self._async_get_trouble_conditions()
 
@@ -260,21 +249,6 @@ class AlarmController:
         #
 
         extension_results = await self._async_update__query_multi_device_extensions(raw_devices)
-
-        #
-        # QUERY SCENES
-        #
-        # Scenes have no state, so we only need to update for new/deleted scenes. We refresh less frequently than we do for stateful devices to save time.
-
-        if has_scenes:
-            # Refresh scene cache if stale.
-            if not self._last_scene_update or (
-                datetime.now() > self._last_scene_update + timedelta(minutes=self.SCENE_REFRESH_INTERVAL_M)
-            ):
-                self._scene_object_cache = await self._async_get_devices_by_device_type(DeviceType.SCENE)
-                self._last_scene_update = datetime.now()
-
-            raw_devices.extend(self._scene_object_cache)
 
         #
         # QUERY IMAGE SENSORS
