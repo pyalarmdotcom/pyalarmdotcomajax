@@ -310,7 +310,7 @@ class AlarmController:
             try:
                 existing_callback = self.devices.get(existing_id).external_update_callback
                 device_instances[existing_id].external_update_callback = existing_callback
-            
+
             except UnkonwnDevice as e:
                 continue
 
