@@ -222,6 +222,7 @@ class AlarmController:
             NotAuthorized: User doesn't have permission to perform the action requested.
             AuthenticationFailed: User could not be logged in, likely due to invalid credentials.
             UnsupportedDeviceType: Device type is not supported by this library.
+
         """
 
         log.debug("Calling update on Alarm.com")
@@ -323,9 +324,7 @@ class AlarmController:
         msg_body["statePollOnly"] = False
 
         try:
-            url = (
-                f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
-            )
+            url = f"{AttributeRegistry.get_endpoints(device_type)['primary'].format(c.URL_BASE, device_id)}/{event.value}"
         except KeyError as err:
             raise UnsupportedDeviceType(device_type, device_id) from err
 
@@ -474,6 +473,7 @@ class AlarmController:
             asyncio.TimeoutError: Connection error due to timeout.
             NotAuthorized: User doesn't have permission to perform the action requested.
             AuthenticationFailed: User could not be logged in, likely due to invalid credentials.
+
         """
         log.debug("Attempting to log in to Alarm.com")
 
