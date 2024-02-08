@@ -231,7 +231,7 @@ async def cli() -> None:
             )
             sys.exit()
 
-        except (aiohttp.ClientError, asyncio.TimeoutError, UnexpectedResponse, NotAuthorized):
+        except (TimeoutError, aiohttp.ClientError, UnexpectedResponse, NotAuthorized):
             cprint("Could not connect to Alarm.com.", "red")
             sys.exit()
 
@@ -366,7 +366,7 @@ async def cli() -> None:
             # Submit new value.
             try:
                 await device.async_change_setting(slug=setting_slug, new_value=typed_new_value)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 cprint("Timed out while connecting to Alarm.com.")
             except (
                 aiohttp.ClientError,

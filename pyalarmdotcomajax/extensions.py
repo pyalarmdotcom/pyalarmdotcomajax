@@ -290,11 +290,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                         # Add to camera config retrieval queue
                         additional_camera_config_ids.append(camera_config_id)
 
-        except (
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            asyncio.exceptions.CancelledError,
-        ):
+        except (TimeoutError, aiohttp.ClientError, asyncio.exceptions.CancelledError):
             log.exception("Can not load settings page from Alarm.com")
             raise
         except (AttributeError, IndexError) as err:
@@ -326,11 +322,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
 
                     # Pull data for camera on current page
                     camera_return_data.append(current_form_data := self._extract_fields(config_id, tree))
-        except (
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            asyncio.exceptions.CancelledError,
-        ):
+        except (TimeoutError, aiohttp.ClientError, asyncio.exceptions.CancelledError):
             log.exception("Can not load settings page for additional camera from Alarm.com")
 
             raise
@@ -510,11 +502,7 @@ class CameraSkybellControllerExtension(ControllerExtension):
                 # Pull data for camera on current page
                 camera_return_data = self._extract_fields(config_id, tree)
 
-        except (
-            asyncio.TimeoutError,
-            aiohttp.ClientError,
-            asyncio.exceptions.CancelledError,
-        ):
+        except (TimeoutError, aiohttp.ClientError, asyncio.exceptions.CancelledError):
             log.exception("Can not load settings page for additional camera from Alarm.com")
             raise
 
