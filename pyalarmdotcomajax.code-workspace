@@ -20,7 +20,7 @@
         },
         "python.analysis.autoImportCompletions": true,
         "terminal.integrated.scrollback": 10000,
-        "mypy-type-checker.preferDaemon": true,
+        "mypy-type-checker.preferDaemon": false,
         "win-ca.inject": "append",
         "mypy-type-checker.importStrategy": "fromEnvironment",
         "mypy-type-checker.args": ["--config-file=pyproject.toml"],
@@ -32,10 +32,9 @@
         "python.analysis.diagnosticMode": "workspace",
         "python.analysis.typeCheckingMode": "off",
         "python.analysis.include": [
-            "**/custom_components/alarmdotcom",
-            "**/pyalarmdotcomajax/pyalarmdotcomajax",
-            "**/pyalarmdotcomajax/tests",
-            "**/pyalarmdotcomajax/examples"
+            "/workspaces/pyalarmdotcomajax/pyalarmdotcomajax",
+            "/workspaces//pyalarmdotcomajax/tests",
+            "/workspaces/pyalarmdotcomajax/examples"
         ],
         "python.analysis.packageIndexDepths": [
             {
@@ -43,6 +42,9 @@
                 "depth": 5,
                 "includeAllSymbols": true
             }
+        ],
+        "python.autoComplete.extraPaths": [
+            "/workspaces/pyalarmdotcomajax/pyalarmdotcomajax",
         ]
     }
 }

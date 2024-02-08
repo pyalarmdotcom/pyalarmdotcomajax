@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .const import OtpType
+from pyalarmdotcomajax.models.auth import OtpType
 
 
 class AlarmdotcomException(Exception):
@@ -42,6 +42,14 @@ class UnknownDevice(DeviceException):
     def __init__(self, device_id: str) -> None:
         """Initialize the exception."""
         super().__init__(f"Unknown device ID '{device_id}'.")
+
+
+class UnsupportedOperation(DeviceException):
+    """Device does not support requested action."""
+
+    def __init__(self, message: str) -> None:
+        """Initialize the exception."""
+        super().__init__(f"Unsupported operation: {message}")
 
 
 #

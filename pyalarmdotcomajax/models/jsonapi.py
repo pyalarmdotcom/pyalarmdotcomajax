@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any
 
 import humps
 from mashumaro import field_options
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.types import Discriminator
-from typing_extensions import TypeVar
 
 ###########################
 # SCHEMA HELPER FUNCTOINS #
@@ -28,39 +27,9 @@ def page_number_from_link(link: Link | None | str) -> int | None:
     return int(match.group(1)) if link and (match := re.search(r"page\[number\]=(\d+)", str(link))) else None
 
 
-##########
-# MIXINS #
-##########
-
-
-# @dataclass
-# class CamelizerMixin:
-#     """Convert keys between snake_case and camelCase."""
-
-#     @classmethod
-#     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
-#         """Pre-deserialization hook to convert keys from camelCase to snake case."""
-
-#         print("pre_deserialize")
-
-#         return {humps.decamelize(k): v for k, v in d.items()}
-
-#     def __post_serialize__(self, d: dict[Any, Any]) -> dict[Any, Any]:
-#         """Post-serialization hook to convert keys from snake_case to camelCase."""
-
-#         print("pre_serialize")
-
-#         return {humps.camelize(k): v for k, v in d.items()}
-
-
-########################
-# JSON:API BASE ENTITY #
-########################
-
-
 @dataclass
-class JsonApiBaseElement(DataClassJSONMixin):
-    """Base class for JSON:API elements."""
+class CamelizerMixin:
+    """Convert keys between snake_case and camelCase."""
 
     @classmethod
     def __pre_deserialize__(cls, d: dict[Any, Any]) -> dict[Any, Any]:
@@ -72,6 +41,16 @@ class JsonApiBaseElement(DataClassJSONMixin):
         """Post-serialization hook to convert keys from snake_case to camelCase."""
 
         return humps.camelize(d)
+
+
+########################
+# JSON:API BASE ENTITY #
+########################
+
+
+@dataclass
+class JsonApiBaseElement(CamelizerMixin, DataClassJSONMixin):
+    """Base class for JSON:API elements."""
 
     class Config(BaseConfig):
         """Mashumaro settings for JSON:API elements."""
@@ -118,7 +97,7 @@ class Linkage(JsonApiBaseElement):
     Resource linkage in a compound document allows resources to link in a standard way. Each linkage contains `type` and `id` members to identify linked resources uniquely.
     """
 
-    id_: str = field(metadata=field_options(alias="id"))
+    id: str
     type_: str = field(metadata=field_options(alias="type"))
     meta: Meta | None = None
 
@@ -188,7 +167,7 @@ class Error(JsonApiBaseElement):
     This class captures details about errors in a standardized format, including a unique ID, status code, error code, human-readable title and detail, source of the error, and any additional meta-information.
     """
 
-    id_: str | None = field(metadata=field_options(alias="id"), default=None)
+    id: str | None = field(default=None)
     links: Links | None = None
     status: str | None = None
     code: str | None = None
@@ -252,67 +231,19 @@ Relationships = dict[str, RelationshipsToData | RelationshipstoLinks | Relations
 
 
 @dataclass
-class BaseAttributes(JsonApiBaseElement):
-    """Base mashumaro settings for JSON:API attribute objects."""
-
-    pass
-
-
-AttributesT = TypeVar("AttributesT", bound=BaseAttributes)
-
-
-@dataclass
-class UnsupportedResource(JsonApiBaseElement):
+class Resource(JsonApiBaseElement):
     """
     Represent a single resource object in a JSON:API document.
 
     Resource objects are key constructs in JSON:API. They include a type, id, optional attributes, relationships, links, and meta-information.
     """
 
-    supported: ClassVar[bool] = False
-
     type_: str = field(metadata=field_options(alias="type"))
-    id_: str = field(metadata=field_options(alias="id"))
-    attributes: Any
+    id: str
+    attributes: dict[str, Any]
     links: Links | None = None
     meta: Meta | None = None
     relationships: Relationships | None = None
-
-
-@dataclass
-class BaseSupportedResource(UnsupportedResource):
-    """
-    Represent a single resource object in a JSON:API document.
-
-    Resource objects are key constructs in JSON:API. They include a type, id, optional attributes, relationships, links, and meta-information.
-    """
-
-    supported: ClassVar[bool] = True
-    attributes: BaseAttributes
-
-    class Config(BaseConfig):
-        """Mashumaro config for Resource."""
-
-        # Allows aliased type_ attribute to be used as discriminator.
-        discriminator = Discriminator(
-            field="type",
-            include_subtypes=True,
-            include_supertypes=True,
-            variant_tagger_fn=lambda cls: cls.type_,
-        )
-
-
-# ResourceT = TypeVar("ResourceT", bound=BaseSupportedResource)
-
-
-# class JsonApiResponse(Generic[ResourceT], JsonApiBaseElement):
-#     """JSON:API primary response object."""
-
-#     class Config(BaseConfig):
-#         """Mashumaro config for Resource."""
-
-#         # Allows aliased type_ attribute to be used as discriminator.
-#         discriminator = Discriminator(include_subtypes=True)
 
 
 class JsonApiResponse(JsonApiBaseElement):
@@ -321,29 +252,12 @@ class JsonApiResponse(JsonApiBaseElement):
     class Config(BaseConfig):
         """Mashumaro config for Resource."""
 
-        forbid_extra_keys = True
+        forbidextra_keys = True
         discriminator = Discriminator(include_subtypes=True)
 
 
-# @dataclass
-# class SuccessResponse(JsonApiResponse, Generic[ResourceT]):
-#     """
-#     Represent a successful response in the JSON:API format.
-
-#     A successful response includes the primary data (either a single resource or a list of resources), optional included resources, meta-information, links, and JSON:API details.
-#     """
-
-#     # fmt: off
-#     data: ResourceT | list[ResourceT]
-#     included:  list[BaseSupportedResource | UnsupportedResource] | None = None
-#     meta: Meta | Meta | None = None
-#     links: LinksModel | None = None
-#     jsonapi: Jsonapi | None = None
-#     # fmt: on
-
-
 @dataclass
-class SuccessResponse(JsonApiResponse):
+class JsonApiSuccessResponse(JsonApiResponse):
     """
     Represent a successful response in the JSON:API format.
 
@@ -351,16 +265,16 @@ class SuccessResponse(JsonApiResponse):
     """
 
     # fmt: off
-    data: BaseSupportedResource | UnsupportedResource | list[BaseSupportedResource] | list[UnsupportedResource]
-    included:  list[BaseSupportedResource | UnsupportedResource] | None = None
-    meta: Meta | Meta | None = None
+    data: Resource | list[Resource]
+    included:  list[Resource] = field(default_factory=list)
+    meta: Meta | None = None
     links: LinksModel | None = None
     jsonapi: Jsonapi | None = None
     # fmt: on
 
 
 @dataclass
-class FailureResponse(JsonApiResponse):
+class JsonApiFailureResponse(JsonApiResponse):
     """
     Represent a failure response in the JSON:API format.
 
@@ -374,7 +288,7 @@ class FailureResponse(JsonApiResponse):
 
 
 @dataclass
-class InfoResponse(JsonApiResponse):
+class JsonApiInfoResponse(JsonApiResponse):
     """
     Represent informational data in the JSON:API format.
 

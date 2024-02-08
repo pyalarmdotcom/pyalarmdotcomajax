@@ -42,7 +42,7 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 Pyalarmdotcomajax supports core features (monitoring and using actions) of the device types listed below.
 
 - As of v0.2, multiples of all devices are supported.
-- All devices include the attributes: `name`, `id_`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
+- All devices include the attributes: `name`, `id`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
 
 | Device Type  | Notable Attributes                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Actions                               | Notes                                            |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |

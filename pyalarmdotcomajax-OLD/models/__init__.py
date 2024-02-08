@@ -1,1 +1,0 @@
-"""Alarm.com models."""
