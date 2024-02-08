@@ -5,7 +5,7 @@ import asyncio
 import json
 import logging
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, KeysView
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -84,7 +84,9 @@ WebSocketResourceEventCallBackT = Callable[[BaseWSMessage], Any]
 WebSocketConnectionEventCallBackT = Callable[[WebSocketState], Any]
 
 WebSocketConnectionEventSubscriptionT = WebSocketConnectionEventCallBackT
-WebSocketResourceEventSubscriptionT = tuple[WebSocketResourceEventCallBackT, SupportedResourceEvents, list[str]]
+WebSocketResourceEventSubscriptionT = tuple[
+    WebSocketResourceEventCallBackT, SupportedResourceEvents, list[str] | KeysView[str]
+]
 
 
 class WebSocketClient:
@@ -188,7 +190,7 @@ class WebSocketClient:
         self,
         callback: WebSocketResourceEventCallBackT,
         resource_event_filter: SupportedResourceEvents,
-        resource_ids: list[str] | None = None,
+        resource_ids: list[str] | KeysView[str] | None = None,
     ) -> Callable:
         """Subscribe to resource events."""
         if not resource_event_filter:

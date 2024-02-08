@@ -104,7 +104,9 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         # Subscribe to WebSocket events if supported by controller.
         if self._supported_resource_events:
-            self._bridge.ws_controller.subscribe_resource(self._base_handle_event, self._supported_resource_events)
+            self._bridge.ws_controller.subscribe_resource(
+                self._base_handle_event, self._supported_resource_events, self._resources.keys()
+            )
 
         # Bail now if we depend on another controller for API data.
         if self._api_data_provider:

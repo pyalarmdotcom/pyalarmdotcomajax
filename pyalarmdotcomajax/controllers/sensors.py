@@ -43,26 +43,45 @@ class SensorController(BaseController[Sensor]):
         """Handle light-specific WebSocket events."""
 
         if isinstance(message, EventWSMessage) and message.value and isinstance(adc_resource, Sensor):
-            state: SensorState
+            #
+            # STATE UPDATES
+            #
 
-            if message.subtype == ResourceEventType.Closed:
-                if adc_resource.subtype == SensorSubtype.MOTION_SENSOR:
-                    state = SensorState.IDLE
-                else:
-                    state = SensorState.CLOSED
-            elif message.subtype == ResourceEventType.Opened:
-                if adc_resource.subtype == SensorSubtype.MOTION_SENSOR:
-                    state = SensorState.ACTIVE
-                else:
-                    state = SensorState.OPEN
-            elif message.subtype == ResourceEventType.OpenedClosed:
-                state = SensorState.OPENED_CLOSED
+            state: SensorState | None = None
 
-            adc_resource.api_resource.attributes.update(
-                {
-                    ATTR_STATE: state.value,
-                    ATTR_DESIRED_STATE: state.value,
-                }
-            )
+            match message.subtype:
+                case ResourceEventType.Closed:
+                    state = (
+                        SensorState.IDLE
+                        if adc_resource.subtype == SensorSubtype.MOTION_SENSOR
+                        else SensorState.CLOSED
+                    )
+                case ResourceEventType.Opened:
+                    state = (
+                        SensorState.ACTIVE
+                        if adc_resource.subtype == SensorSubtype.MOTION_SENSOR
+                        else SensorState.OPEN
+                    )
+                case ResourceEventType.OpenedClosed:
+                    state = SensorState.OPENED_CLOSED
+
+            if state:
+                adc_resource.api_resource.attributes.update(
+                    {
+                        ATTR_STATE: state.value,
+                        ATTR_DESIRED_STATE: state.value,
+                    }
+                )
+
+            #
+            # BYPASS UPDATES
+            #
+
+            if message.subtype in [ResourceEventType.Bypassed, ResourceEventType.EndOfBypass]:
+                adc_resource.api_resource.attributes.update(
+                    {
+                        "isBypassed": message.subtype == ResourceEventType.Bypassed,
+                    }
+                )
 
         return adc_resource
