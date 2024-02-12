@@ -33,7 +33,6 @@ class GarageDoorController(BaseController[GarageDoor]):
 
     _resource_type = ResourceType.GARAGE_DOOR
     _resource_class = GarageDoor
-    _resource_url = "{}web/api/devices/garageDoors/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.Opened: GarageDoorState.OPEN,

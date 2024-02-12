@@ -55,7 +55,6 @@ class ThermostatController(BaseController[Thermostat]):
 
     _resource_type = ResourceType.THERMOSTAT
     _resource_class = Thermostat
-    _resource_url = "{}web/api/devices/thermostats/{}"
     _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
 
     async def set_state(

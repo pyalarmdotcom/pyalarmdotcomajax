@@ -23,7 +23,7 @@ class ImageSensorController(BaseController[ImageSensor]):
 
     _resource_type = ResourceType.IMAGE_SENSOR
     _resource_class = ImageSensor
-    _resource_url = "{}web/api/imageSensor/imageSensors/{}"
+    # _resource_url = "{}web/api/imageSensor/imageSensors/{}"
 
     async def peek_in(self, id: str) -> None:
         """Send peek in command to take photo."""
@@ -36,4 +36,4 @@ class ImageSensorImageController(BaseController[ImageSensorImage]):
 
     _resource_type = ResourceType.IMAGE_SENSOR_IMAGE
     _resource_class = ImageSensorImage
-    _resource_url = "{}web/api/imageSensor/imageSensorImages/getRecentImages/{}"
+    _resource_url_override = "imageSensor/imageSensorImages/getRecentImages"

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal, Self
 
 import humps
-from mashumaro import field_options
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.types import Discriminator
@@ -43,6 +43,65 @@ class CamelizerMixin:
         return humps.camelize(d)
 
 
+class URI(str):
+    """
+    Create a URI object from a string.
+
+    Used to satisfy mypy's strict type checking.
+    Based on regex in Appendix B of RFC3986 (https://www.rfc-editor.org/rfc/rfc3986#appendix-B)
+    """
+
+    match: re.Match
+
+    def __new__(cls, s: str) -> Self:
+        """Create a new URL object from a string."""
+
+        pattern = r"^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
+
+        if not (match := re.match(pattern, s)):
+            raise TypeError("%s is not a valid URL" % s)
+
+        url = super().__new__(cls, s)
+        url.match = match
+
+        return url
+
+    def __str__(self) -> str:
+        """Return the URL as a string."""
+
+        return self.match.string if isinstance(self.match.string, str) else ""
+
+    @property
+    def scheme(self) -> str:
+        """Return the URL scheme."""
+
+        return self.match.group(2) or ""
+
+    @property
+    def authority(self) -> str:
+        """Return the URL authority."""
+
+        return self.match.group(4) or ""
+
+    @property
+    def path(self) -> str:
+        """Return the URL path."""
+
+        return self.match.group(5) or ""
+
+    @property
+    def query(self) -> str:
+        """Return the URL query."""
+
+        return self.match.group(7) or ""
+
+    @property
+    def fragment(self) -> str:
+        """Return the URL fragment."""
+
+        return self.match.group(9) or ""
+
+
 ########################
 # JSON:API BASE ENTITY #
 ########################
@@ -62,7 +121,12 @@ class JsonApiBaseElement(CamelizerMixin, DataClassJSONMixin):
 # JSON:API CORE MODELS #
 ########################
 
-
+# fmt: off
+# https://www.iana.org/assignments/link-relations/link-relations.xhtml
+LinkRelation = Literal["about","acl","alternate","amphtml","appendix","apple-touch-icon","apple-touch-startup-image","archives","author","blocked-by","bookmark","canonical","chapter","cite-as","collection","contents","convertedfrom","copyright","create-form","current","describedby","describes","disclosure","dns-prefetch","duplicate","edit","edit-form","edit-media","enclosure","external","first","glossary","help","hosts","hub","icon","index","intervalafter","intervalbefore","intervalcontains","intervaldisjoint","intervalduring","intervalequals","intervalfinishedby","intervalfinishes","intervalin","intervalmeets","intervalmetby","intervaloverlappedby","intervaloverlaps","intervalstartedby","intervalstarts","item","last","latest-version","license","linkset","lrdd","manifest","mask-icon","me","media-feed","memento","micropub","modulepreload","monitor","monitor-group","next","next-archive","nofollow","noopener","noreferrer","opener","openid2.local_id","openid2.provider","original","p3pv1","payment","pingback","preconnect","predecessor-version","prefetch","preload","prerender","prev","preview","previous","prev-archive","privacy-policy","profile","publication","related","restconf","replies","ruleinput","search","section","self","service","service-desc","service-doc","service-meta","sip-trunking-capability","sponsored","start","status","stylesheet","subsection","successor-version","sunset","tag","terms-of-service","timegate","timemap","type","ugc","up","version-history","via","webmention","working-copy","working-copy-of"]
+# https://datatracker.ietf.org/doc/html/rfc8288#section-2.1
+LinkLang = Literal["af", "af-ZA", "ar", "ar-AE", "ar-BH", "ar-DZ", "ar-EG", "ar-IQ", "ar-JO", "ar-KW", "ar-LB", "ar-LY", "ar-MA", "ar-OM", "ar-QA", "ar-SA", "ar-SY", "ar-TN", "ar-YE", "az", "az-AZ", "az-Cyrl-AZ", "be", "be-BY", "bg", "bg-BG", "bs-BA", "ca", "ca-ES", "cs", "cs-CZ", "cy", "cy-GB", "da", "da-DK", "de", "de-AT", "de-CH", "de-DE", "de-LI", "de-LU", "dv", "dv-MV", "el", "el-GR", "en", "en-AU", "en-BZ", "en-CA", "en-CB", "en-GB", "en-IE", "en-JM", "en-NZ", "en-PH", "en-TT", "en-US", "en-ZA", "en-ZW", "eo", "es", "es-AR", "es-BO", "es-CL", "es-CO", "es-CR", "es-DO", "es-EC", "es-ES", "es-GT", "es-HN", "es-MX", "es-NI", "es-PA", "es-PE", "es-PR", "es-PY", "es-SV", "es-UY", "es-VE", "et", "et-EE", "eu", "eu-ES", "fa", "fa-IR", "fi", "fi-FI", "fo", "fo-FO", "fr", "fr-BE", "fr-CA", "fr-CH", "fr-FR", "fr-LU", "fr-MC", "gl", "gl-ES", "gu", "gu-IN", "he", "he-IL", "hi", "hi-IN", "hr", "hr-BA", "hr-HR", "hu", "hu-HU", "hy", "hy-AM", "id", "id-ID", "is", "is-IS", "it", "it-CH", "it-IT", "ja", "ja-JP", "ka", "ka-GE", "kk", "kk-KZ", "kn", "kn-IN", "ko", "ko-KR", "kok", "kok-IN", "ky", "ky-KG", "lt", "lt-LT", "lv", "lv-LV", "mi", "mi-NZ", "mk", "mk-MK", "mn", "mn-MN", "mr", "mr-IN", "ms", "ms-BN", "ms-MY", "mt", "mt-MT", "nb", "nb-NO", "nl", "nl-BE", "nl-NL", "nn-NO", "ns", "ns-ZA", "pa", "pa-IN", "pl", "pl-PL", "ps", "ps-AR", "pt", "pt-BR", "pt-PT", "qu", "qu-BO", "qu-EC", "qu-PE", "ro", "ro-RO", "ru", "ru-RU", "sa", "sa-IN", "se", "se-FI", "se-NO", "se-SE", "sk", "sk-SK", "sl", "sl-SI", "sq", "sq-AL", "sr-BA", "sr-Cyrl-BA", "sr-SP", "sr-Cyrl-SP", "sv", "sv-FI", "sv-SE", "sw", "sw-KE", "syr", "syr-SY", "ta", "ta-IN", "te", "te-IN", "th", "th-TH", "tl", "tl-PH", "tn", "tn-ZA", "tr", "tr-TR", "tt", "tt-RU", "ts", "uk", "uk-UA", "ur", "ur-PK", "uz", "uz-UZ", "uz-Cyrl-UZ", "vi", "vi-VN", "xh", "xh-ZA", "zh", "zh-CN", "zh-HK", "zh-MO", "zh-SG", "zh-TW", "zu", "zu-ZA"] # sp
+# fmt: on
 @dataclass
 class Meta(JsonApiBaseElement):
     """
@@ -73,47 +137,50 @@ class Meta(JsonApiBaseElement):
 
 
 @dataclass
-class Link1(JsonApiBaseElement):
+class Link(JsonApiBaseElement):
     """
     Define a detailed link object with href and optional meta-information.
 
     The link object is used to represent hyperlinks. The `href` attribute holds the URL of the link, and `meta` provides additional meta-information about the link.
+
+    This also allows for a string to be used as a link. Strings will be inserted into the href attribute.
     """
 
-    href: str
+    href: URI
     meta: Meta | None = None
+    rel: LinkRelation | None = None
+    describedby: Link | None = None
+    title: str | None = None
+    hreflang: LinkLang | None = None
 
 
-Link = str | Link1
+# Link = str | Link
 
 Attributes = dict[str, Any]
 
 
 @dataclass
-class Linkage(JsonApiBaseElement):
+class ResourceIdentifier(JsonApiBaseElement):
     """
-    Define resource linkage to non-empty members in a relationship object.
+    Define resource identifier to non-empty members in a relationship object.
 
-    Resource linkage in a compound document allows resources to link in a standard way. Each linkage contains `type` and `id` members to identify linked resources uniquely.
+    Resource identifier in a compound document allows resources to link in a standard way. Each resource identifier contains `type` and `id` members to identify linked resources uniquely.
     """
 
     id: str
-    type_: str = field(metadata=field_options(alias="type"))
+    type: str
     meta: Meta | None = None
 
+    # TODO: https://github.com/Fatal1ty/mashumaro/issues/42
+    # Required because identity endpoint returns ID as int.
+    class Config(JsonApiBaseElement.Config):
+        """Mashumaro settings for JSON:API elements."""
 
-@dataclass
-class Pagination(JsonApiBaseElement):
-    """
-    Provide pagination links for a collection of resources.
-
-    Pagination is essential for handling large sets of data. This class includes `first`, `last`, `prev`, and `next` links to navigate through the data pages.
-    """
-
-    first: Link | None = None
-    last: Link | None = None
-    prev: Link | None = None
-    next: Link | None = None
+        serialization_strategy = {  # noqa: RUF012
+            str: {
+                "deserialize": lambda x: str(x),
+            },
+        }
 
 
 @dataclass
@@ -141,22 +208,37 @@ class Source(JsonApiBaseElement):
 
 
 @dataclass
-class RelationshipLinks(JsonApiBaseElement):
+class RelatedLinks(JsonApiBaseElement):
     """
-    Provide links for a relationship object in a resource.
+    Provide links to related resources.
 
     Relationships may reference other resource objects and are specified in a resource's links object. This class includes `self` and `related` links to manage the relationships.
     """
 
     self: Link | None = None
     related: Link | None = None
+    describedby: Link | None = None
 
 
-Links = dict[str, Link] | None
+@dataclass
+class PaginatedLinks(RelatedLinks):
+    """
+    Provide relationship and pagination links for a document.
 
-RelationshipToOne = None | Linkage
+    Pagination is essential for handling large sets of data. This class includes `first`, `last`, `prev`, and `next` links to navigate through the data pages.
+    """
 
-RelationshipToMany = list[Linkage]
+    first: Link | None = None
+    last: Link | None = None
+    prev: Link | None = None
+    next: Link | None = None
+
+
+# Links = dict[str, Link] | None
+
+ResourceLinkage_HasOne = None | ResourceIdentifier
+
+ResourceLinkage_HasMany = list[ResourceIdentifier]
 
 
 @dataclass
@@ -168,7 +250,7 @@ class Error(JsonApiBaseElement):
     """
 
     id: str | None = field(default=None)
-    links: Links | None = None
+    links: RelatedLinks | None = None
     status: str | None = None
     code: str | None = None
     title: str | None = None
@@ -178,75 +260,110 @@ class Error(JsonApiBaseElement):
 
 
 @dataclass
-class LinksModel(Pagination):
+class Relationship(JsonApiBaseElement):
     """
-    Extend the Pagination model to include other types of links.
+    Represents a relationship object in a resource.
 
-    This class inherits from Pagination and may include additional links related to the primary data, following the JSON:API specification.
-    """
-
-    pass
-
-
-@dataclass
-class RelationshipsToData(JsonApiBaseElement):
-    """
-    Represent primary relationship data with optional links and meta-information.
-
-    This class handles relationships that include direct data, optional links to related resources, and meta-information about the relationship.
+    Must have at least one of data, links, or meta.
     """
 
-    data: RelationshipToOne | RelationshipToMany
-    links: RelationshipLinks | None = None
+    # TODO: Paginated links can only be present when data is of type ResourceLinkage_HasMany
+
+    data: ResourceLinkage_HasOne | ResourceLinkage_HasMany | None
+    links: RelatedLinks | PaginatedLinks | None
+    meta: Meta | None
+
+    class Config(BaseConfig):
+        """Mashumaro config for Resource."""
+
+        forbidextra_keys = True
+        discriminator = Discriminator(include_subtypes=True)
+
+
+@dataclass(kw_only=True)
+class DataRelationship(Relationship):
+    """Relationship variant with a mandatory data field."""
+
+    data: ResourceLinkage_HasOne | ResourceLinkage_HasMany
+    links: RelatedLinks | PaginatedLinks | None = None
     meta: Meta | None = None
 
 
-@dataclass
-class RelationshipstoMeta(JsonApiBaseElement):
-    """
-    Represent optional relationship data with meta-information and links.
-
-    Similar to Relationships1 but allows for the relationship data to be optional. Includes meta-information and links related to the relationship.
-    """
+@dataclass(kw_only=True)
+class MetaRelationship(Relationship):
+    """Relationship variant with a mandatory meta field."""
 
     meta: Meta
-    links: RelationshipLinks | None = None
-    data: RelationshipToOne | RelationshipToMany | None = None
+    links: RelatedLinks | PaginatedLinks | None = None
+    data: ResourceLinkage_HasOne | ResourceLinkage_HasMany | None = None
 
 
-@dataclass
-class RelationshipstoLinks(JsonApiBaseElement):
-    """
-    Define a fully specified relationship with mandatory fields.
+@dataclass(kw_only=True)
+class LinksRelationship(Relationship):
+    """Relationship variant with a mandatory links field."""
 
-    This class represents a relationship that includes mandatory links, optional data, and meta-information, providing a complete structure for relationship representation.
-    """
-
-    links: RelationshipLinks
-    data: RelationshipToOne | RelationshipToMany | None = None
+    links: RelatedLinks | PaginatedLinks
+    data: ResourceLinkage_HasOne | ResourceLinkage_HasMany | None = None
     meta: Meta | None = None
 
 
-Relationships = dict[str, RelationshipsToData | RelationshipstoLinks | RelationshipstoMeta]
+Relationships = dict[str, Relationship]
 
 
-@dataclass
-class Resource(JsonApiBaseElement):
+@dataclass(kw_only=True)
+class Resource(ResourceIdentifier):
     """
     Represent a single resource object in a JSON:API document.
 
     Resource objects are key constructs in JSON:API. They include a type, id, optional attributes, relationships, links, and meta-information.
     """
 
-    type_: str = field(metadata=field_options(alias="type"))
-    id: str
-    attributes: dict[str, Any]
-    links: Links | None = None
-    meta: Meta | None = None
+    links: RelatedLinks | None = None
     relationships: Relationships | None = None
+    attributes: dict[str, Any]
+
+    # Too annoying to validate types for the entire self.relationships object chain. Instead,
+    # we'll just suppress errors and return None/[] if incorrect types are encountered.
+
+    def has_many(self, key: str) -> list[ResourceIdentifier]:
+        """Return relationships that are of a specific type or have a specific key."""
+
+        with contextlib.suppress(KeyError, TypeError, AttributeError):
+            return [
+                linkage
+                for linkage in self.relationships[key].data  # type: ignore
+                if isinstance(linkage, ResourceIdentifier)
+            ]
+
+        return []
+
+    def has_one(self, key: str) -> ResourceIdentifier | None:
+        """Return a single resource identifier within a specific relationship key."""
+
+        with contextlib.suppress(KeyError, TypeError, AttributeError):
+            if isinstance(resource := self.relationships[key].data, ResourceIdentifier):  # type: ignore
+                return resource
+
+        return None
+
+    def all_related_ids(self) -> set[str]:
+        """Return resource IDs for all related resources."""
+
+        if not self.relationships:
+            return set()
+
+        results = set()
+        for value in self.relationships.values():
+            if isinstance(value, Relationship):
+                if isinstance(value.data, list):
+                    results.update([item.id for item in value.data])
+                elif isinstance(value.data, ResourceIdentifier):
+                    results.add(value.data.id)
+
+        return results
 
 
-class JsonApiResponse(JsonApiBaseElement):
+class Document(JsonApiBaseElement):
     """JSON:API primary response object."""
 
     class Config(BaseConfig):
@@ -256,8 +373,11 @@ class JsonApiResponse(JsonApiBaseElement):
         discriminator = Discriminator(include_subtypes=True)
 
 
+SuccessDocumentData = Resource | list[Resource] | ResourceIdentifier | list[ResourceIdentifier]
+
+
 @dataclass
-class JsonApiSuccessResponse(JsonApiResponse):
+class SuccessDocument(Document):
     """
     Represent a successful response in the JSON:API format.
 
@@ -265,16 +385,29 @@ class JsonApiSuccessResponse(JsonApiResponse):
     """
 
     # fmt: off
-    data: Resource | list[Resource]
-    included:  list[Resource] = field(default_factory=list)
-    meta: Meta | None = None
-    links: LinksModel | None = None
-    jsonapi: Jsonapi | None = None
+    data: SuccessDocumentData
+    included:  list[Resource] | list[ResourceIdentifier] | None = field(default=None)
+    meta: Meta | None = field(default=None)
+    links: PaginatedLinks | None = field(default=None)
+    jsonapi: Jsonapi | None = field(default=None)
     # fmt: on
+
+    def get_included(self, type: str | None) -> list[Resource]:
+        """
+        Return a list of included resources of a specific type.
+
+        Will return all included resources if no type is specified.
+        """
+
+        return [
+            resource
+            for resource in (self.included or [])
+            if (resource.type == type or not type) and isinstance(resource, Resource)
+        ]
 
 
 @dataclass
-class JsonApiFailureResponse(JsonApiResponse):
+class FailureDocument(Document):
     """
     Represent a failure response in the JSON:API format.
 
@@ -284,11 +417,11 @@ class JsonApiFailureResponse(JsonApiResponse):
     errors: list[Error]
     meta: Meta | None = None
     jsonapi: Jsonapi | None = None
-    links: Links | None = None
+    links: PaginatedLinks | None = None
 
 
 @dataclass
-class JsonApiInfoResponse(JsonApiResponse):
+class MetaDocument(Document):
     """
     Represent informational data in the JSON:API format.
 
@@ -296,5 +429,5 @@ class JsonApiInfoResponse(JsonApiResponse):
     """
 
     meta: Meta
-    links: Links | None = None
+    links: PaginatedLinks | None = None
     jsonapi: Jsonapi | None = None

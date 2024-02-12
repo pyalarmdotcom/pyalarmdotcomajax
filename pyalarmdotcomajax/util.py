@@ -9,7 +9,7 @@ from typing import Any
 
 from bs4 import Tag
 
-from pyalarmdotcomajax.models.jsonapi import Linkage, Resource
+from pyalarmdotcomajax.models.jsonapi import Resource, ResourceIdentifier
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def get_all_related_entity_ids(resource: Resource) -> set[str]:
 
     for rel_value in rel_items.values():
         if hasattr(rel_value, "data"):
-            if isinstance(rel_value.data, Linkage):
+            if isinstance(rel_value.data, ResourceIdentifier):
                 relations.add(rel_value.data.id)
             if isinstance(rel_value.data, list):
                 for item in rel_value.data:

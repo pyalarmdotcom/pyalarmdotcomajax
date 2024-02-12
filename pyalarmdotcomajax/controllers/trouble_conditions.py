@@ -12,4 +12,3 @@ class TroubleConditionController(BaseController[TroubleCondition]):
 
     _resource_type = ResourceType.TROUBLE_CONDITION
     _resource_class = TroubleCondition
-    _resource_url = "{}/web/api/troubleConditions/troubleConditions?forceRefresh=false"

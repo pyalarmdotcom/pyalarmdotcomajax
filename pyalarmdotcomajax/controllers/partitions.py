@@ -48,7 +48,6 @@ class PartitionController(BaseController[Partition]):
 
     _resource_type = ResourceType.PARTITION
     _resource_class = Partition
-    _resource_url = "{}web/api/devices/partitions/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.Disarmed: PartitionState.DISARMED,

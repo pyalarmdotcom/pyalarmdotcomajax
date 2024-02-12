@@ -18,7 +18,7 @@ class SystemAttributes(AdcResourceAttributes):
     supports_secure_arming: bool
     remaining_image_quota: int
     system_group_name: str
-    unit_id: int
+    unit_id: str
     access_control_current_system_mode: int
     is_in_partial_lockdown: bool
     icon: str

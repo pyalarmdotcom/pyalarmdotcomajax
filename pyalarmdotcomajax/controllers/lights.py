@@ -42,7 +42,6 @@ class LightController(BaseController[Light]):
 
     _resource_type = ResourceType.LIGHT
     _resource_class = Light
-    _resource_url = "{}web/api/devices/lights/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.LightTurnedOff: LightState.OFF,

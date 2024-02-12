@@ -8,17 +8,18 @@ import logging
 from abc import ABC
 from asyncio import Task, iscoroutinefunction
 from collections.abc import Awaitable, Callable, Iterator
+from dataclasses import dataclass, field
 from enum import IntEnum
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
-from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE, URL_BASE
+from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers import AdcResourceT, EventCallBackType, EventType
 from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
-    JsonApiSuccessResponse,
     Resource,
+    SuccessDocument,
 )
 from pyalarmdotcomajax.websocket.client import SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
@@ -29,6 +30,22 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+@dataclass
+class AdcSuccessDocumentSingle(SuccessDocument):
+    """Represent a successful response with a single primary resource object."""
+
+    data: Resource
+    included: list[Resource] = field(default_factory=list)
+
+
+@dataclass
+class AdcSuccessDocumentMulti(SuccessDocument):
+    """Represent a successful response with multiple primary resource objects."""
+
+    data: list[Resource]
+    included: list[Resource] = field(default_factory=list)
+
+
 class BaseController(ABC, Generic[AdcResourceT]):
     """Base controller for Ember.js/JSON:API based components."""
 
@@ -36,8 +53,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
     _resource_type: ClassVar[ResourceType]
     # AdcResource class to be created by this controller.
     _resource_class: type[AdcResourceT]
-    # URL to be used for API requests.
-    _resource_url: ClassVar[str | None]
+    # URL to be used for API requests when URL cannot be derived directly from controler's ResourceType.
+    _resource_url_override: ClassVar[str | None] = None
     # Restricts this controller to specific device IDs.
     _requires_target_ids: ClassVar[bool] = False
     # WebSocket events supported by this controller.
@@ -53,10 +70,13 @@ class BaseController(ABC, Generic[AdcResourceT]):
     ) -> None:
         """Initialize base controller."""
 
+        self._bridge = bridge
+
+        if target_device_ids:
+            self._target_device_ids.add(*target_device_ids)
+
         # Tracks whether the controller has been initialized.
         self._initialized: bool = False
-
-        self._bridge = bridge
 
         # Tracks primary resources discovered by this controller.
         self._resources: dict[str, AdcResourceT] = {}
@@ -79,9 +99,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         # Holds references to asyncio tasks to prevent them from being garbage collected before completion.
         self._background_tasks: set[Task] = set()
-
-        if target_device_ids:
-            self._target_device_ids.add(*target_device_ids)
 
     @property
     def items(self) -> list[AdcResourceT]:
@@ -137,7 +154,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # DEVICE MANAGEMENT #
     #####################
 
-    def _device_filter(self, response: JsonApiSuccessResponse) -> JsonApiSuccessResponse:
+    def _device_filter(self, response: list[Resource] | Resource) -> list[Resource] | Resource:
         """
         Filter out unsupported devices from API response.
 
@@ -146,92 +163,102 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         return response
 
-    async def _send_command(self, id: str, command: str, msg_body: dict[str, Any] | None = None) -> None:
+    async def _send_command(self, id: str, action: str, msg_body: dict[str, Any] | None = None) -> None:
         """Send command to API."""
 
         msg_body = msg_body or {}
-
-        if not self._resource_url:
-            raise NotImplementedError
 
         if not self.get(id):
             raise UnknownDevice(f"Device {id} not found.")
 
         await self._bridge.post(
-            url=f"{self._resource_url.format(URL_BASE, id)}/{command}",
+            path=self._resource_url_override or self._resource_type,
+            action=action,
+            id=id,
             json={"statePollOnly": False, **msg_body},
         )
 
-    async def _refresh(self, resources: list[Resource] | None = None, resource_id: str | None = None) -> None:
+    async def _refresh(self, pre_fetched: list[Resource] | None = None, resource_id: str | None = None) -> None:
         """
-        Update controller using API response data. If API data is not provided, fetch from API.
+        Initialize controllers using API response data, either fetched here or by another controller.
 
-        Assumes that resources list always contains complete universe of devices discoverable by this endpoint.
+        Request all devices in the controller's universe (either all available or all specified by target_device_ids):
 
-        This function is used:
-            1. To initialize controllers that retrieve resources from multi-resource (non-single-serve) endpoints.
-            2. By parent controllers to update dependent controllers with pre-fetched data.
-            3. By single-serve controllerst that can only fetch data for one resource instance at a time.
+            pre_fetched = None
+            resource_id = None
+
+            Any missing resources previously registered by this controller will be unregistered.
+
+        Request a single device:
+
+            pre_fetched = None
+            resource_id = <device_id>
+
+            If the device is not found, it will be unregistered. Other devices will be left alone.
+
+        Use resources retrieved by another controller:
+
+            pre_fetched = <list of resources>
+            resource_id = None
+
+            Any missing resources previously registered by this controller will be unregistered.
         """
 
         log.info(f"[{self._resource_type.name}] Refreshing controller...")
 
-        if (self._api_data_provider and not resources) or (
+        if pre_fetched and resource_id:
+            raise NotImplementedError
+
+        if (self._api_data_provider and not pre_fetched) or (
             self._requires_target_ids and not self._target_device_ids
         ):
             return
 
-        if not resources:
-            if not self._resource_url:
-                raise NotImplementedError
+        if not pre_fetched:
+            ids: str | set[str] | None = None
 
-            request_urls = []
-            if resource_id:
-                request_urls.append(self._resource_url.format(URL_BASE, resource_id))
+            # Requests for single devices must use the single device format (/devices/locks/12345-098), not the multi-device format (/devices/locks?id[]=12345-098).
+            if resource_id or len(self._target_device_ids) == 1:
+                ids = resource_id or self._target_device_ids.pop()
             elif self._target_device_ids:
-                request_urls.append(
-                    *[self._resource_url.format(URL_BASE, device_id) for device_id in self._target_device_ids]
-                )
+                ids = self._target_device_ids
             else:
-                request_urls.append(self._resource_url.format(URL_BASE, ""))
+                ids = None
 
-            resources = []
+            response = await self._bridge.get(self._resource_url_override or self._resource_type, ids)
 
-            for request_url in request_urls:
-                response = await self._bridge.get(url=request_url)
+            response.data = self._device_filter(response.data)
 
-                response = self._device_filter(response)
+            # Update included resources cache. If this is a full refresh, overwrite existing cache.
+            if resource_id:
+                self._included_resources.append(*(response.included or []))
+            else:
+                self._included_resources = response.included or []
 
-                # Update included resources cache. If this is a full refresh, overwrite existing cache.
-                if resource_id:
-                    self._included_resources.append(*(response.included or []))
-                else:
-                    self._included_resources = response.included or []
+            # Send included resources to downstream controllers.
+            for resource_type, callbacks in self._api_data_receivers.items():
+                included_resources = [
+                    included_resource
+                    for included_resource in self._included_resources
+                    if included_resource.type == resource_type
+                ]
+                if included_resources:
+                    for callback in callbacks:
+                        if iscoroutinefunction(callback):
+                            task = asyncio.create_task(callback(included_resources))
+                            self._background_tasks.add(task)
+                            task.add_done_callback(self._background_tasks.discard)
+                        else:
+                            callback(included_resources)
 
-                # Send included resources to downstream controllers.
-                for resource_type, callbacks in self._api_data_receivers.items():
-                    included_resources = [
-                        included_resource
-                        for included_resource in self._included_resources
-                        if included_resource.type_ == resource_type
-                    ]
-                    if included_resources:
-                        for callback in callbacks:
-                            if iscoroutinefunction(callback):
-                                task = asyncio.create_task(callback(included_resources))
-                                self._background_tasks.add(task)
-                                task.add_done_callback(self._background_tasks.discard)
-                            else:
-                                callback(included_resources)
-
-                # Return normalized response data for current resource type.
-                resources.append(*(response.data if isinstance(response.data, list) else [response.data]))
+            # Return normalized response data for current resource type.
+            pre_fetched = [*(response.data if isinstance(response.data, list) else [response.data])]
 
         # Find and instantiate supported devices.
         discovered_resource_ids = set({})
-        for resource in resources:
+        for resource in pre_fetched:
             if (
-                resource.type_ == self._resource_type
+                resource.type == self._resource_type
                 and await self._register_or_update_resource(resource) is not None
             ):
                 discovered_resource_ids.update({resource.id})
@@ -311,7 +338,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
                 resources = [
                     included_resource
                     for included_resource in self._included_resources
-                    if included_resource.type_ == resource_type
+                    if included_resource.type == resource_type
                 ]
                 if iscoroutinefunction(callback):
                     task = asyncio.create_task(callback(resources))
@@ -379,7 +406,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
             self._resources.update({resource.id: new_adc_resource})
         except Exception:
             log.exception(
-                f"[{self._resource_type.name}] Failed to instantiate {resource.type_} {resource.id}. Moving on..."
+                f"[{self._resource_type.name}] Failed to instantiate {resource.type} {resource.id}. Moving on..."
             )
             return None
 

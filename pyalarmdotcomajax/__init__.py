@@ -12,12 +12,13 @@ from types import TracebackType
 from typing import Any, TypeVar, overload
 
 import aiohttp
+import humps
 from mashumaro.exceptions import MissingField, SuitableVariantNotFoundError
 
-from pyalarmdotcomajax.const import REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT
+from pyalarmdotcomajax.const import REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, URL_BASE
 from pyalarmdotcomajax.controllers import EventType
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
-from pyalarmdotcomajax.controllers.base import EventCallBackType
+from pyalarmdotcomajax.controllers.base import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle, EventCallBackType
 from pyalarmdotcomajax.controllers.cameras import CameraController
 from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController
 from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController
@@ -41,12 +42,12 @@ from pyalarmdotcomajax.exceptions import (
     ServiceUnavailable,
     UnexpectedResponse,
 )
-from pyalarmdotcomajax.models.base import AdcResource
+from pyalarmdotcomajax.models.base import AdcResource, ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
+    FailureDocument,
     JsonApiBaseElement,
-    JsonApiFailureResponse,
-    JsonApiInfoResponse,
-    JsonApiSuccessResponse,
+    MetaDocument,
+    SuccessDocument,
 )
 from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
 
@@ -55,8 +56,8 @@ __version__ = "0.0.1"
 
 logging.basicConfig()
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-# log.setLevel(5)
+# log.setLevel(logging.DEBUG)
+log.setLevel(5)
 
 
 class AlarmBridge:
@@ -109,7 +110,6 @@ class AlarmBridge:
         # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE
         # TODO: SKYBELL HD
         # TODO: Sensor Bypass
-        # TODO: Partition WebSocket
 
     async def login(self) -> None:
         """Login to alarm.com."""
@@ -385,10 +385,9 @@ class AlarmBridge:
         self,
         method: str,
         url: str,
-        success_response_class: type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
-        allow_login_repair: bool = True,
+        success_response_class: type[T],
         **kwargs: Any,
-    ) -> JsonApiSuccessResponse:
+    ) -> T:
         ...
 
     @overload
@@ -396,24 +395,25 @@ class AlarmBridge:
         self,
         method: str,
         url: str,
-        success_response_class: type[T],
-        allow_login_repair: bool = True,
+        success_response_class: type[SuccessDocument] = SuccessDocument,
         **kwargs: Any,
-    ) -> T:
+    ) -> SuccessDocument:
         ...
 
     async def request(
         self,
         method: str,
         url: str,
-        success_response_class: type[T] | type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
+        success_response_class: type[T] | type[SuccessDocument] = SuccessDocument,
         allow_login_repair: bool = True,
         **kwargs: Any,
-    ) -> T | JsonApiSuccessResponse:
+    ) -> T | SuccessDocument:
         """Make request to the api and return response data."""
 
         # Alarm.com's implementation violates the JSON:API spec by sometimes returning a modified error response body with a non-200 response code.
-        # This response still contains an "errors" object and should validate as a JsonApiFailureResponse.
+        # This response still contains an "errors" object and should validate as a FailureDocument.
+
+        log.debug(f"Requesting {method} {url} with {kwargs.get('data') or kwargs.get('json')}")
 
         try:
             async with self.create_request(method, url, **kwargs) as resp:
@@ -421,7 +421,7 @@ class AlarmBridge:
                 if log.level < logging.DEBUG:
                     try:
                         resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
-                    except json.JSONDecodeError:
+                    except (json.JSONDecodeError, aiohttp.ContentTypeError):
                         resp_dump = await resp.text() if resp.content_length else ""
                     log.debug(
                         f"\n==============================Server Response ({resp.status})==============================\n"
@@ -439,16 +439,21 @@ class AlarmBridge:
                     # Triggered when the response is not valid JSON:API format.
                     raise UnexpectedResponse("Response was not valid JSON:API format.") from err
                 except MissingField as err:
-                    # Triggered when using a success_response_class that is not JsonApiSuccessResponse.
+                    # Triggered when using a success_response_class that is not SuccessDocument.
                     raise UnexpectedResponse("Response was missing a required field.") from err
+                except json.JSONDecodeError as err:
+                    # Triggered when the response is not valid JSON.
+                    raise UnexpectedResponse("Response was not valid JSON.") from err
 
                 if isinstance(jsonapi_response, success_response_class):
                     return jsonapi_response
 
-                if isinstance(jsonapi_response, JsonApiInfoResponse):
+                if isinstance(jsonapi_response, MetaDocument):
                     raise UnexpectedResponse("Unhandled JSON:API info response.")
 
-                if isinstance(jsonapi_response, JsonApiFailureResponse):
+                resp.raise_for_status()
+
+                if isinstance(jsonapi_response, FailureDocument):
                     # Retrieve errors from errors dict object.
                     error_codes = [int(error.code) for error in jsonapi_response.errors if error.code is not None]
 
@@ -485,7 +490,7 @@ class AlarmBridge:
                         f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}"
                     )
 
-                resp.raise_for_status()
+                # resp.raise_for_status()
 
                 # Bad things have happened if we reach this point.
                 raise UnexpectedResponse
@@ -504,36 +509,80 @@ class AlarmBridge:
 
             raise
 
+    def _generate_request_url(self, path: ResourceType | str, id: str | set[str] | None) -> str:
+        """Generate request URL."""
+
+        # Format path for appropriate resource type & pluralize.
+        if isinstance(path, ResourceType):
+            path = humps.camelize(path.value) + "s"
+        else:
+            path.rstrip("/")
+
+        if isinstance(id, set) and len(id) == 1:
+            id = id.pop()
+
+        # Format path for single/multi/all.
+        if isinstance(id, str):
+            # Set path for single resource.
+            path += f"/{id}"
+
+        elif isinstance(id, set):
+            # Explode IDs if id is a list.
+            path += "?" + "&".join([f"ids[]={n}" for n in id])
+
+        return f"{URL_BASE}web/api/{path}"
+
     @overload
     async def get(
         self,
-        url: str,
-        success_response_class: type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
+        path: ResourceType | str,
+        id: str,
         **kwargs: Any,
-    ) -> JsonApiSuccessResponse:
+    ) -> AdcSuccessDocumentSingle:
         ...
 
     @overload
     async def get(
         self,
-        url: str,
-        success_response_class: type[T],
+        path: ResourceType | str,
+        id: set[str] | None,
         **kwargs: Any,
-    ) -> T:
+    ) -> AdcSuccessDocumentMulti:
         ...
 
     async def get(
         self,
-        url: str,
-        success_response_class: type[T] | type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
+        path: ResourceType | str,
+        id: str | set[str] | None,
         **kwargs: Any,
-    ) -> T | JsonApiSuccessResponse:
-        """GET from server and return mashumaro deserialized JsonApiSuccessResponse."""
+    ) -> AdcSuccessDocumentSingle | AdcSuccessDocumentMulti:
+        """
+            Get resources from the server.
+
+        Args:
+            id:         the id(s) of the resource(s) to get. if str, get one resource. if set, get specified. if None, get all.
+                        requests for single devices must use the single device format (/devices/locks/12345-098), not the multi-device format (/devices/locks?id[]=12345-098).
+            path:       the path of the resource to get. if ResourceType, build path based on resource type. if str, use as is in place of ResourceType-generated path.
+            kwargs:     additional arguments to pass to the request.
+
+        Returns:
+            AdcSuccessDocumentMulti: the response from the server.
+
+        """
+
+        path = self._generate_request_url(path, id)
 
         retries = 0
         while True:
             try:
-                return await self.request("get", url, success_response_class, **kwargs)
+                return await self.request(
+                    method="get",
+                    url=path,
+                    success_response_class=AdcSuccessDocumentSingle
+                    if isinstance(id, str)
+                    else AdcSuccessDocumentMulti,
+                    **kwargs,
+                )
 
             except (TimeoutError, aiohttp.ClientResponseError) as e:
                 if retries == REQUEST_RETRY_LIMIT:
@@ -541,36 +590,23 @@ class AlarmBridge:
                 retries += 1
                 continue
 
-    @overload
     async def post(
         self,
-        url: str,
-        success_response_class: type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
+        path: ResourceType | str,
+        id: str | set[str] | None,
+        action: str | None,
         **kwargs: Any,
-    ) -> JsonApiSuccessResponse:
-        ...
+    ) -> AdcSuccessDocumentSingle:
+        """POST to server and return mashumaro deserialized SuccessDocument."""
 
-    @overload
-    async def post(
-        self,
-        url: str,
-        success_response_class: type[T],
-        **kwargs: Any,
-    ) -> T:
-        ...
-
-    async def post(
-        self,
-        url: str,
-        success_response_class: type[T] | type[JsonApiSuccessResponse] = JsonApiSuccessResponse,
-        **kwargs: Any,
-    ) -> T | JsonApiSuccessResponse:
-        """POST to server and return mashumaro deserialized JsonApiSuccessResponse."""
+        path = self._generate_request_url(path, id) + (f"/{action}" if action else "/")
 
         retries = 0
         while True:
             try:
-                return await self.request("post", url, success_response_class, **kwargs)
+                return await self.request(
+                    method="post", url=path, success_response_class=AdcSuccessDocumentSingle, **kwargs
+                )
 
             except (TimeoutError, aiohttp.ClientResponseError) as e:
                 if retries == SUBMIT_RETRY_LIMIT:

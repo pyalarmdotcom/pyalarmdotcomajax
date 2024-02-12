@@ -227,9 +227,15 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcResourceAttributes):
 
     @property
     def can_change_state(self) -> bool:
-        """Whether the state can be changed for this device."""
+        """Whether the logged in user can change this device's state."""
 
-        return self.can_receive_commands and self.has_permission_to_change_state and self.remote_commands_enabled
+        return self.has_permission_to_change_state and self.remote_commands_enabled
+
+    @property
+    def is_interactive(self) -> bool:
+        """Whether the device is ready to be interacted with."""
+
+        return self.can_change_state and self.state != BaseStatefulDeviceState.LOADING_STATE
 
     @property
     def is_refreshing_state(self) -> bool:

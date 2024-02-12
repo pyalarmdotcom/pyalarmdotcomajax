@@ -16,4 +16,3 @@ class SystemController(BaseController[System]):
 
     _resource_type = ResourceType.SYSTEM
     _resource_class = System
-    _resource_url = "{}web/api/systems/systems/{}"

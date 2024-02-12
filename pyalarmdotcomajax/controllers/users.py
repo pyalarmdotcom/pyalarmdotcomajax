@@ -24,7 +24,7 @@ class IdentitiesController(BaseController[Identity]):
 
     _resource_type = ResourceType.IDENTITY
     _resource_class = Identity
-    _resource_url = "{}/web/api/identities/{}"
+    _resource_url_override = "identities"
 
 
 class ProfilesController(BaseController[Profile]):
@@ -32,7 +32,6 @@ class ProfilesController(BaseController[Profile]):
 
     _resource_type = ResourceType.PROFILE
     _resource_class = Profile
-    _resource_url = None
 
     def __init__(self, bridge: AlarmBridge, data_provider: IdentitiesController) -> None:
         """Initialize profile controller."""
@@ -44,7 +43,6 @@ class AvailableSystemsController(BaseController[AvailableSystem]):
 
     _resource_type = ResourceType.AVAILABLE_SYSTEM
     _resource_class = AvailableSystem
-    _resource_url = "{}web/api/systems/availableSystemItems"
 
     @property
     def active_system_id(self) -> str | None:

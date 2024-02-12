@@ -34,7 +34,6 @@ class GateController(BaseController[Gate]):
 
     _resource_type = ResourceType.GATE
     _resource_class = Gate
-    _resource_url = "{}web/api/devices/gates/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.Opened: GateState.OPEN,

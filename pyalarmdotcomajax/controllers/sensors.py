@@ -36,7 +36,6 @@ class SensorController(BaseController[Sensor]):
 
     _resource_type = ResourceType.SENSOR
     _resource_class = Sensor
-    _resource_url = "{}web/api/devices/sensors/{}"
     _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
 
     async def _handle_event(self, adc_resource: AdcResourceT, message: BaseWSMessage) -> AdcResourceT:

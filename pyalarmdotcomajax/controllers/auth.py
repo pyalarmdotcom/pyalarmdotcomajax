@@ -27,6 +27,7 @@ from pyalarmdotcomajax.models.auth import (
     OtpType,
     TwoFactorAuthentication,
 )
+from pyalarmdotcomajax.models.jsonapi import Resource
 
 if TYPE_CHECKING:
     from pyalarmdotcomajax import AlarmBridge
@@ -35,6 +36,8 @@ VIEWSTATE_FIELD = "__VIEWSTATE"
 VIEWSTATEGENERATOR_FIELD = "__VIEWSTATEGENERATOR"
 EVENTVALIDATION_FIELD = "__EVENTVALIDATION"
 PREVIOUSPAGE_FIELD = "__PREVIOUSPAGE"
+
+TWO_FACTOR_PATH = "engines/twoFactorAuthentication/twoFactorAuthentications"
 
 log = logging.getLogger(__name__)
 
@@ -45,8 +48,6 @@ log = logging.getLogger(__name__)
 
 class AuthenticationController:
     """Controller for user identity."""
-
-    _mfa_url_template = "{}web/api/engines/twoFactorAuthentication/twoFactorAuthentications/{}"
 
     def __init__(self, bridge: AlarmBridge, username: str, password: str, mfa_cookie: str | None = None) -> None:
         """Initialize authentication controller."""
@@ -236,11 +237,10 @@ class AuthenticationController:
         if not self._identities.items:
             raise UnexpectedResponse("No identities found.")
 
-        response = await self._bridge.get(
-            url=self._mfa_url_template.format(const.URL_BASE, self._identities.items[0].id)
-        )
 
-        if isinstance(response.data, list):
+        response = await self._bridge.get(path=TWO_FACTOR_PATH, id=self._identities.items[0].id)
+
+        if not isinstance(response.data, Resource):
             raise UnexpectedResponse
 
         mfa_details = TwoFactorAuthentication(response.data)
@@ -277,15 +277,11 @@ class AuthenticationController:
             return
 
         await self._bridge.post(
-            url=self._mfa_url_template.format(
-                const.URL_BASE,
-                self._identities.items[0].id
-                + (
-                    "/sendTwoFactorAuthenticationCodeViaSms"
-                    if method == OtpType.sms
-                    else "/sendTwoFactorAuthenticationCodeViaEmail"
-                ),
-            )
+            TWO_FACTOR_PATH,
+            self._identities.items[0].id,
+            "sendTwoFactorAuthenticationCodeViaSms"
+            if method == OtpType.sms
+            else "sendTwoFactorAuthenticationCodeViaEmail",
         )
 
     async def submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> None:
@@ -295,11 +291,10 @@ class AuthenticationController:
             return
 
         await self._bridge.post(
-            url=self._mfa_url_template.format(
-                const.URL_BASE,
-                self._identities.items[0].id + "/verifyTwoFactorCode",
-                json={"code": code, "typeOf2FA": method.value},
-            )
+            path=TWO_FACTOR_PATH,
+            id=self._identities.items[0].id,
+            action="verifyTwoFactorCode",
+            json={"code": code, "typeOf2FA": method.value},
         )
 
         if not device_name:
@@ -307,11 +302,8 @@ class AuthenticationController:
             return
 
         await self._bridge.post(
-            url=self._mfa_url_template.format(
-                const.URL_BASE,
-                self._identities.items[0].id + "/trustTwoFactorDevice",
-                json={
-                    "deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"
-                },
-            )
+            path=TWO_FACTOR_PATH,
+            id=self._identities.items[0].id,
+            action="trustTwoFactorDevice",
+            json={"deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"},
         )

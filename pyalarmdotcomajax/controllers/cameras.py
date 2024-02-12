@@ -7,7 +7,7 @@ import logging
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.camera import Camera
-from pyalarmdotcomajax.models.jsonapi import JsonApiSuccessResponse, Resource
+from pyalarmdotcomajax.models.jsonapi import Resource
 
 log = logging.getLogger(__name__)
 
@@ -17,20 +17,16 @@ class CameraController(BaseController[Camera]):
 
     _resource_type = ResourceType.CAMERA
     _resource_class = Camera
-    _resource_url = "{}web/api/video/devices/cameras/{}"
+    _resource_url_override = "video/devices/cameras"
 
-    def _device_filter(self, response: JsonApiSuccessResponse) -> JsonApiSuccessResponse:
+    def _device_filter(self, data: list[Resource] | Resource) -> list[Resource] | Resource:
         """
         Only return Skybell HD cameras.
 
         We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
         """
 
-        if isinstance(response.data, Resource):
-            response.data = [response.data]
+        if isinstance(data, Resource):
+            data = [data]
 
-        response.data = [
-            resource for resource in response.data if resource.attributes.get("deviceModel") == "SKYBELLHD"
-        ]
-
-        return response
+        return [resource for resource in data if resource.attributes.get("deviceModel") == "SKYBELLHD"]

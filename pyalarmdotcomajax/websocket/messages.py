@@ -176,7 +176,7 @@ class WebSocketMessageTester(JsonApiBaseElement):
 class BaseWSMessage(JsonApiBaseElement):
     """Base alarm.com websocket message."""
 
-    unit_id: int  # Full device ID prefix
+    unit_id: str  # Full device ID prefix
     device_id: str = field(init=False)  # Full device ID (calculated in __post_init__)
 
     _device_id: int = field(metadata=field_options(alias="device_id"))  # Full device ID suffix

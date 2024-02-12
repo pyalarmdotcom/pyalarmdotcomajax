@@ -15,6 +15,8 @@ from pyalarmdotcomajax.util import get_all_related_entity_ids
 class PartitionState(IntEnum):
     """Partition states."""
 
+    # Hidden state is considered armed.
+
     UNKNOWN = 0
     DISARMED = 1
     ARMED_STAY = 2
@@ -26,15 +28,17 @@ class PartitionState(IntEnum):
 class ExtendedArmingOptionItems(IntEnum):
     """Partition arming options."""
 
+    # https://www.alarm.com/web/system/assets/customer-site/enums/ArmingOption.js
+
     BYPASS_SENSORS = 0
     NO_ENTRY_DELAY = 1
     SILENT_ARMING = 2
     NIGHT_ARMING = 3
     SELECTIVELY_BYPASS_SENSORS = 4
-    FORCE_ARM = 5
-    INSTANT_ARM = 6
-    STAY_ARM = 7
-    AWAY_ARM = 8
+    # FORCE_ARM = 5
+    # INSTANT_ARM = 6
+    # STAY_ARM = 7
+    # AWAY_ARM = 8
 
 
 @dataclass

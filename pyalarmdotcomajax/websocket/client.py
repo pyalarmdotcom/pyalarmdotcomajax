@@ -176,8 +176,8 @@ class WebSocketClient:
             await self._bridge.login()
 
         try:
-            response = await self._bridge.get(
-                url=f"{URL_BASE}web/api/websockets/token", success_response_class=WebSocketTokenResponse
+            response = await self._bridge.request(
+                "get", url=f"{URL_BASE}web/api/websockets/token", success_response_class=WebSocketTokenResponse
             )
             response.check_errors()
         except UnexpectedResponse as err:

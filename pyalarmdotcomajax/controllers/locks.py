@@ -34,7 +34,6 @@ class LockController(BaseController[Lock]):
 
     _resource_type = ResourceType.LOCK
     _resource_class = Lock
-    _resource_url = "{}web/api/devices/locks/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.DoorLocked: LockState.LOCKED,

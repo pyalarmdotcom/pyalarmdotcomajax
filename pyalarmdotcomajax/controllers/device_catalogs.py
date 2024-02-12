@@ -16,5 +16,4 @@ class DeviceCatalogController(BaseController[DeviceCatalog]):
 
     _resource_type = ResourceType.DEVICE_CATALOG
     _resource_class = DeviceCatalog
-    _resource_url = "{}web/api/settings/manageDevices/deviceCatalogs/{}"  # Substitute with base url and system ID.
     _requires_target_ids = True

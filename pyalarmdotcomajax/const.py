@@ -19,6 +19,7 @@ WS_EVENT = "ws_event"
 # fmt: off
 # URLS: BEGIN
 URL_BASE = "https://www.alarm.com/"
+API_URL_BASE = URL_BASE + "web/api/"
 # PROVIDER_INFO_TEMPLATE = "{}/web/api/appload"
 # TROUBLECONDITIONS_URL_TEMPLATE = "{}web/api/troubleConditions/troubleConditions?forceRefresh=false"
 # IMAGE_SENSOR_DATA_URL_TEMPLATE = "{}/web/api/imageSensor/imageSensorImages/getRecentImages"

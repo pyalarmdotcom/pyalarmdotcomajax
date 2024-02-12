@@ -20,7 +20,6 @@ class WaterSensorController(BaseController[WaterSensor]):
 
     _resource_type = ResourceType.WATER_SENSOR
     _resource_class = WaterSensor
-    _resource_url = "{}web/api/devices/waterSensors/{}"
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.Opened: SensorState.WET,
