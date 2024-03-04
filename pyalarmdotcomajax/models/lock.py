@@ -1,7 +1,7 @@
 """Alarm.com model for locks."""
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
@@ -10,7 +10,7 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-class LockState(IntEnum):
+class LockState(Enum):
     """Lock states."""
 
     UNKNOWN = 0

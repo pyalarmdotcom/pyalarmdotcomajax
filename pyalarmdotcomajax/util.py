@@ -4,22 +4,19 @@ from __future__ import annotations
 
 import contextlib
 import logging
+from dataclasses import asdict
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from bs4 import Tag
+from tabulate import tabulate
+from termcolor import colored
 
 from pyalarmdotcomajax.models.jsonapi import Resource, ResourceIdentifier
 
+if TYPE_CHECKING:
+    from pyalarmdotcomajax import AdcResource
+
 log = logging.getLogger(__name__)
-
-
-class EnumDictMixin(Enum):
-    """Outputs the value of the enum when used within a dict."""
-
-    def __str__(self) -> str:
-        """Return the value of the enum."""
-        return str(self.value)
 
 
 def get_related_entity_id_by_key(resource: Resource, name: str) -> str | None:
@@ -45,54 +42,143 @@ def get_all_related_entity_ids(resource: Resource) -> set[str]:
                 relations.add(rel_value.data.id)
             if isinstance(rel_value.data, list):
                 for item in rel_value.data:
-                    if isinstance(item, dict):
-                        relations.add(item["id"])
+                    if isinstance(item, ResourceIdentifier):
+                        relations.add(item.id)
 
     return relations
 
 
-def extract_field_value(field: Tag) -> str:
-    """Extract value from BeautifulSoup4 text, checkbox, and dropdown fields."""
+def slug_to_title(slug: str) -> str:
+    """Convert slug to title case."""
 
-    # log.debug("Extracting field: %s", field)
-
-    value = None
-
-    try:
-        if field.attrs.get("name") and field.name == "select":
-            value = field.findChild(attrs={"selected": "selected"}).attrs["value"]
-        elif field.attrs.get("checked") and field.attrs.get("checked"):
-            value = field.attrs["checked"] == "checked"
-        elif field.attrs.get("value"):
-            value = field.attrs["value"]
-
-    except (KeyError, AttributeError) as err:
-        raise ValueError from err
-
-    if not value:
-        raise ValueError("Value not found.")
-
-    return str(value)
+    return slug.replace("_", " ").title()
 
 
-# def slug_to_title(slug: str) -> str:
-#     """Convert slug to title case."""
-
-#     return slug.replace("_", " ").title()
+T = TypeVar("T")
 
 
-# https://stackoverflow.com/a/39542816/20207204
-class classproperty(property):
-    """Decorator for class properties. Allows class functions to be used as properties."""
+@overload
+def cli_format(value: bool | Enum) -> str: ...
 
-    def __get__(self, obj: Any, objtype: type | None = None) -> Any:
-        """Get the value of the property."""
-        return super().__get__(objtype)
 
-    def __set__(self, obj: Any, value: Any) -> None:
-        """Set the value of the property."""
-        super().__set__(type(obj), value)
+@overload
+def cli_format(value: Any) -> Any: ...
 
-    def __delete__(self, obj: Any) -> None:
-        """Delete the value of the property."""
-        super().__delete__(type(obj))
+
+def cli_format(value: T | Any) -> T | str:
+    """Format value for CLI output."""
+
+    # Change Value
+
+    if isinstance(value, Enum):
+        value = value.name.title()
+
+    if value is True:
+        value = "√"
+
+    if value is False:
+        value = "X"
+
+    # Truncate
+
+    if isinstance(value, str) and len(value) > 100:
+        value = value[:100] + "..."
+
+    # Color
+
+    if value in ["√", "Closed", "Locked", "Armed Stay", "Armed Night", "Armed Away", "On"]:
+        value = colored(str(value), "green")
+
+    if value in ["X", "Open", "Unlocked", "Disarmed", "Off"]:
+        value = colored(str(value), "red")
+
+    return value
+
+
+def resources_pretty_str(resource_type_str: str, resources: list[AdcResource]) -> str:
+    """Return string representation of resources in controller."""
+
+    # self._resource_type.name
+
+    response = (
+        "\n\n"
+        + colored(
+            f"====[ {slug_to_title(resource_type_str)} ]====",
+            "grey",
+            "on_yellow",
+            attrs=["bold"],
+        )
+        + "\n\n"
+    )
+
+    if len(resources) == 0:
+        return str(response + tabulate([["None"]], tablefmt="mixed_grid"))
+
+    table_data = []
+    for resource in resources:
+        table_row = [resource.id]
+
+        if description := getattr(resource.attributes, "description", None):
+            table_row.append(colored(description, attrs=["bold"]))
+
+        if state := getattr(resource.attributes, "state", None):
+            table_row.append(cli_format(state))
+
+        table_data.append(
+            [
+                *table_row,
+                *(
+                    [
+                        cli_format(value)
+                        for key, value in asdict(resource.attributes).items()
+                        if key not in ["description", "state"]
+                    ]
+                ),
+            ]
+        )
+
+    headers = ["ID"]
+
+    if description := getattr(resource.attributes, "description", None):
+        headers.append(colored("Name", attrs=["bold"]))
+
+    if state := getattr(resource.attributes, "state", None):
+        headers.append("State")
+
+    headers.extend([slug_to_title(k) for k in asdict(resource.attributes) if k not in ["description", "state"]])
+
+    return str(response + tabulate(table_data, headers, tablefmt="mixed_grid"))
+
+
+def resources_raw_str(resource_type_str: str, resources: list[Resource | AdcResource]) -> str:
+    """Return raw JSON for all controller resources."""
+
+    header = (
+        "\n\n"
+        + colored(
+            f"====[ {slug_to_title(resource_type_str)} ]====",
+            "grey",
+            "on_yellow",
+            attrs=["bold"],
+        )
+        + "\n\n"
+    )
+
+    if len(resources) == 0:
+        return str(header + "(None)")
+
+    body = ""
+    for resource in resources:
+        body += (
+            colored(
+                resource.attributes.get("description", "Unnamed Resource")
+                if isinstance(resource, Resource)
+                else getattr(resource.attributes, "description", ""),
+                attrs=["bold", "underline"],
+            )
+            + ": "
+            + str(resource.to_dict() if isinstance(resource, Resource) else resource.api_resource.to_dict())
+            + "\n"
+        )
+
+    return str(header + body)

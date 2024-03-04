@@ -17,12 +17,22 @@ repos:
       rev: v3.0.3
       hooks:
           - id: prettier
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.6.1
+    # - repo: https://github.com/pre-commit/mirrors-mypy
+    #   rev: v1.7.1
+    #   hooks:
+    #       - id: mypy
+    #         additional_dependencies:
+    #             [types-aiofiles, aiohttp, mashumaro, pyhumps, types-tabulate]
+    - repo: local
       hooks:
           - id: mypy
-            additional_dependencies:
-                [types-aiofiles, aiohttp, mashumaro, pyhumps]
+            name: mypy
+            # or `entry: poetry run mypy`, but perhaps both are the same
+            entry: mypy
+            require_serial: true
+            # From the docs it is not clear the difference between `language: python` VS `language: system`
+            language: system
+            types: [python]
     - repo: https://github.com/adrienverge/yamllint.git
       rev: v1.32.0
       hooks:

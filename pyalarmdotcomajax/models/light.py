@@ -1,7 +1,7 @@
 """Alarm.com model for lights."""
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
@@ -11,7 +11,7 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-class LightState(IntEnum):
+class LightState(Enum):
     """Light states."""
 
     OFFLINE = 0
@@ -21,7 +21,7 @@ class LightState(IntEnum):
     LEVEL_CHANGE = 4
 
 
-class LightColorFormat(IntEnum):
+class LightColorFormat(Enum):
     """Light color formats."""
 
     NOT_SET = 0

@@ -9,7 +9,6 @@ from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.thermostat import (
-    TemperatureUnit,
     Thermostat,
     ThermostatFanMode,
     ThermostatScheduleMode,
@@ -65,14 +64,13 @@ class ThermostatController(BaseController[Thermostat]):
         cool_setpoint: float | None = None,
         heat_setpoint: float | None = None,
         schedule_mode: ThermostatScheduleMode | None = None,
-        temperature_unit: TemperatureUnit | None = None,
     ) -> None:
         """Change thermostat state."""
 
         # Make sure that multiple attributes are not being set at the same time.
-        if (attrib_list := [state, fan_mode, cool_setpoint, heat_setpoint, schedule_mode, temperature_unit]).count(
-            None
-        ) < len(attrib_list) - 1:
+        if (attrib_list := [state, fan_mode, cool_setpoint, heat_setpoint, schedule_mode]).count(None) < len(
+            attrib_list
+        ) - 1:
             raise ValueError("Only one attribute can be set at a time.")
 
         msg_body: dict[str, Any] = {}

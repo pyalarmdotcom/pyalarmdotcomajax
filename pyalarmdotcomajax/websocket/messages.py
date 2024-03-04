@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import IntEnum
+from enum import Enum
 from typing import Any
 
 from mashumaro import field_options
@@ -15,7 +15,7 @@ from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement
 UNDEFINED = "**UNDEFINED**"
 
 
-class ResourcePropertyChangeType(IntEnum):
+class ResourcePropertyChangeType(Enum):
     """Enum for property change message types."""
 
     # Supported
@@ -28,7 +28,7 @@ class ResourcePropertyChangeType(IntEnum):
     IrrigationStatus = 5
 
 
-class ResourceEventType(IntEnum):
+class ResourceEventType(Enum):
     """Enum for event types."""
 
     # Supported
@@ -141,9 +141,9 @@ class WebSocketTokenResponse(JsonApiBaseElement):
     """
 
     # fmt: off
-    errors: list
-    validation_errors: list
-    processing_errors: list
+    errors: list = field(default_factory=list)
+    validation_errors: list = field(default_factory=list)
+    processing_errors: list = field(default_factory=list)
     value: str | None = field(default=None)
     metadata: WebSocketTokenResponseMetadata = field(default_factory=WebSocketTokenResponseMetadata, metadata=field_options(alias="meta_data"))
     # fmt: on
@@ -152,7 +152,12 @@ class WebSocketTokenResponse(JsonApiBaseElement):
         """Return True if the response has errors."""
 
         if self.errors or self.validation_errors or self.processing_errors or not self.metadata.endpoint:
-            raise UnexpectedResponse("WebSocket token request has errors.")
+            raise UnexpectedResponse(
+                "WebSocket token request has errors.\n"
+                f"Processing Errors: {self.processing_errors}\n"
+                f"Validation Errors: {self.validation_errors}\n"
+                f"Errors: {self.errors}\n"
+            )
 
 
 @dataclass(kw_only=True)

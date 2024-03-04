@@ -1,7 +1,7 @@
 """Alarm.com model for partitions."""
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
@@ -12,7 +12,7 @@ from pyalarmdotcomajax.models.base import (
 from pyalarmdotcomajax.util import get_all_related_entity_ids
 
 
-class PartitionState(IntEnum):
+class PartitionState(Enum):
     """Partition states."""
 
     # Hidden state is considered armed.
@@ -25,7 +25,7 @@ class PartitionState(IntEnum):
     HIDDEN = 5
 
 
-class ExtendedArmingOptionItems(IntEnum):
+class ExtendedArmingOptionItems(Enum):
     """Partition arming options."""
 
     # https://www.alarm.com/web/system/assets/customer-site/enums/ArmingOption.js
@@ -45,10 +45,10 @@ class ExtendedArmingOptionItems(IntEnum):
 class ExtendedArmingOptions(AdcResourceAttributes):
     """Extended arming options."""
 
-    disarmed: list[ExtendedArmingOptionItems]
-    armed_stay: list[ExtendedArmingOptionItems]
-    armed_away: list[ExtendedArmingOptionItems]
-    armed_night: list[ExtendedArmingOptionItems]
+    disarmed: list[ExtendedArmingOptionItems] | None = field(default=None)
+    armed_stay: list[ExtendedArmingOptionItems] | None = field(default=None)
+    armed_away: list[ExtendedArmingOptionItems] | None = field(default=None)
+    armed_night: list[ExtendedArmingOptionItems] | None = field(default=None)
 
 
 @dataclass
@@ -77,7 +77,7 @@ class PartitionAttributes(BaseManagedDeviceAttributes[PartitionState]):
     def supports_night_arming(self) -> bool:
         """Return whether night arming is supported."""
 
-        return ExtendedArmingOptionItems.NIGHT_ARMING in self.extended_arming_options.armed_night
+        return ExtendedArmingOptionItems.NIGHT_ARMING in (self.extended_arming_options.armed_night or [])
 
 
 @dataclass

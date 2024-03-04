@@ -9,7 +9,7 @@ from abc import ABC
 from asyncio import Task, iscoroutinefunction
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
@@ -21,6 +21,7 @@ from pyalarmdotcomajax.models.jsonapi import (
     Resource,
     SuccessDocument,
 )
+from pyalarmdotcomajax.util import resources_pretty_str, resources_raw_str
 from pyalarmdotcomajax.websocket.client import SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
 
@@ -46,7 +47,53 @@ class AdcSuccessDocumentMulti(SuccessDocument):
     included: list[Resource] = field(default_factory=list)
 
 
-class BaseController(ABC, Generic[AdcResourceT]):
+class EventTransmitterMixin:
+    """Mixin for event transmission."""
+
+    def __init__(self, bridge: AlarmBridge) -> None:
+        """Initialize event transmitter mixin."""
+        self._bridge = bridge
+
+        # Tracks event subscribers.
+        self.subscribers: list[EventCallBackType] = []
+
+        # Holds references to asyncio tasks to prevent them from being garbage collected before completion.
+        self._background_tasks: set[Task] = set()
+
+    ######################
+    # EVENT TRANSMISSION #
+    ######################
+
+    def event_subscribe(self, callback: EventCallBackType) -> Callable:
+        """
+        Subscribe to events.
+
+        Subscribes bridge to events from this controller. Returns an unsubscribe function.
+        """
+
+        self.subscribers.append(callback)
+
+        def unsubscribe() -> None:
+            """Unsubscribe from events."""
+            self.subscribers.remove(callback)
+
+        return unsubscribe
+
+    async def _send_event(
+        self, event_type: EventType, resource_id: str, resource: AdcResourceT | None = None
+    ) -> None:
+        """Send event to subscribers."""
+
+        for subscriber in self.subscribers:
+            if iscoroutinefunction(subscriber):
+                task = asyncio.create_task(subscriber(event_type, resource_id, resource))
+                self._background_tasks.add(task)
+                task.add_done_callback(self._background_tasks.discard)
+            else:
+                subscriber(event_type, resource_id, resource)
+
+
+class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
     """Base controller for Ember.js/JSON:API based components."""
 
     # ResourceTypes to be pulled from API response data object.
@@ -60,7 +107,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # WebSocket events supported by this controller.
     _supported_resource_events: ClassVar[SupportedResourceEvents | None] = None
     # Maps websocket events to states.
-    _event_state_map: ClassVar[MappingProxyType[ResourceEventType, IntEnum] | None] = None
+    _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
 
     def __init__(
         self,
@@ -69,6 +116,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
         target_device_ids: list[str] | None = None,
     ) -> None:
         """Initialize base controller."""
+
+        super().__init__(bridge)
 
         self._bridge = bridge
 
@@ -94,11 +143,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         # Restricts this controller to specific devices. Used for controllers that only support single-serve endpoints.
         self._target_device_ids: set[str] = set({})
 
-        # Tracks event subscribers.
-        self.subscribers: list[EventCallBackType] = []
-
-        # Holds references to asyncio tasks to prevent them from being garbage collected before completion.
-        self._background_tasks: set[Task] = set()
+        self._post_init_hook()
 
     @property
     def items(self) -> list[AdcResourceT]:
@@ -144,11 +189,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
         await self._refresh(resource_id=resource_id)
 
         return self._resources.get(resource_id)
-
-    async def _post_init(self) -> None:
-        """Post-initialization steps. To be overridden by subclasses."""
-
-        pass
 
     #####################
     # DEVICE MANAGEMENT #
@@ -205,6 +245,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """
 
         log.info(f"[{self._resource_type.name}] Refreshing controller...")
+
+        await self._pre_refresh_hook()
 
         if pre_fetched and resource_id:
             raise NotImplementedError
@@ -271,8 +313,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
         else:
             for missing_resource_id in self._resources.keys() - discovered_resource_ids:
                 await self._unregister_resource(missing_resource_id)
-
-        await self._post_init()
 
     #############################
     # WEBSOCKET UPDATE HANDLERS #
@@ -354,38 +394,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         return unsubscribe
 
-    ######################
-    # EVENT TRANSMISSION #
-    ######################
-
-    def event_subscribe(self, callback: EventCallBackType) -> Callable:
-        """
-        Subscribe to events.
-
-        Subscribes bridge to events from this controller. Returns an unsubscribe function.
-        """
-
-        self.subscribers.append(callback)
-
-        def unsubscribe() -> None:
-            """Unsubscribe from events."""
-            self.subscribers.remove(callback)
-
-        return unsubscribe
-
-    async def _send_event(
-        self, event_type: EventType, resource_id: str, resource: AdcResourceT | None = None
-    ) -> None:
-        """Send event to subscribers."""
-
-        for subscriber in self.subscribers:
-            if iscoroutinefunction(subscriber):
-                task = asyncio.create_task(subscriber(event_type, resource_id, resource))
-                self._background_tasks.add(task)
-                task.add_done_callback(self._background_tasks.discard)
-            else:
-                subscriber(event_type, resource_id, resource)
-
     ##################
     # DEVICE RECORDS #
     ##################
@@ -394,6 +402,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Instantiate resource, add to controller's registry, and notify subscribers."""
 
         new_adc_resource = self._resource_class(resource)
+
+        new_adc_resource = await self._pre_instantiation_hook(new_adc_resource)
 
         # Check whether any underlying data has changed. We instantiate first (above) since we only
         # want to notify subscribers if attributes used by this library have changed.
@@ -432,6 +442,25 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         await self._send_event(EventType.RESOURCE_DELETED, resource_id, resource)
 
+    #########
+    # HOOKS #
+    #########
+
+    async def _pre_refresh_hook(self) -> None:
+        """Inject code before a full refresh. To be overridden by subclasses."""
+
+        pass
+
+    def _post_init_hook(self) -> None:
+        """Post-initialization hook. To be overridden by subclasses."""
+
+        pass
+
+    async def _pre_instantiation_hook(self, resource: AdcResourceT) -> AdcResourceT:
+        """Pre-instantiation hook. To be overridden by subclasses."""
+
+        return resource
+
     ####################
     # OBJECT FUNCTIONS #
     ####################
@@ -451,3 +480,21 @@ class BaseController(ABC, Generic[AdcResourceT]):
     def __contains__(self, id: str) -> bool:
         """Return whether resource is present."""
         return id in self._resources
+
+    @property
+    def resources_pretty_str(self) -> str:
+        """Return string representation of resources in controller."""
+
+        return resources_pretty_str(self._resource_type.name, list(self._resources.values()))
+
+    @property
+    def resources_raw_str(self) -> str:
+        """Return raw JSON for all controller resources."""
+
+        return resources_raw_str(self._resource_type.name, list(self._resources.values()))
+
+    @property
+    def included_raw_str(self) -> str:
+        """Return raw JSON for all controller resources."""
+
+        return resources_raw_str(f"{self._resource_type.name} Children", list(self._included_resources))

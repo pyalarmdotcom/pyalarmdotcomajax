@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from dataclasses import dataclass, field
-from enum import IntEnum, StrEnum
+from enum import Enum, StrEnum
 from typing import Generic, TypeVar
 
 from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement, Resource
@@ -66,36 +66,36 @@ class ResourceType(StrEnum):
         return ResourceType.UNKNOWN
 
 
-class DeviceType(StrEnum):
-    """Device type ids as returned by the ADC API."""
+# class DeviceType(StrEnum):
+#     """Device type ids as returned by the ADC API."""
 
-    CAMERA = "cameras"
-    GARAGE_DOOR = "garageDoors"
-    GATE = "gates"
-    IMAGE_SENSOR = "imageSensors"
-    LIGHT = "lights"
-    LOCK = "locks"
-    PARTITION = "partitions"
-    SCENE = "scenes"
-    SENSOR = "sensors"
-    SYSTEM = "systems"
-    THERMOSTAT = "thermostats"
-    WATER_SENSOR = "waterSensors"
-    ACCESS_CONTROL = "accessControlAccessPointDevices"
-    CAMERA_SD = "sdCardCameras"
-    CAR_MONITOR = "carMonitors"
-    COMMERCIAL_TEMP = "commercialTemperatureSensors"
-    GEO_DEVICE = "geoDevices"
-    IQ_ROUTER = "iqRouters"
-    REMOTE_TEMP = "remoteTemperatureSensors"
-    SHADE = "shades"
-    SMART_CHIME = "smartChimeDevices"
-    SUMP_PUMP = "sumpPumps"
-    SWITCH = "switches"
-    VALVE_SWITCH = "valveSwitches"
-    WATER_METER = "waterMeters"
-    WATER_VALVE = "waterValves"
-    X10_LIGHT = "x10Lights"
+#     CAMERA = "cameras"
+#     GARAGE_DOOR = "garageDoors"
+#     GATE = "gates"
+#     IMAGE_SENSOR = "imageSensors"
+#     LIGHT = "lights"
+#     LOCK = "locks"
+#     PARTITION = "partitions"
+#     SCENE = "scenes"
+#     SENSOR = "sensors"
+#     SYSTEM = "systems"
+#     THERMOSTAT = "thermostats"
+#     WATER_SENSOR = "waterSensors"
+#     ACCESS_CONTROL = "accessControlAccessPointDevices"
+#     CAMERA_SD = "sdCardCameras"
+#     CAR_MONITOR = "carMonitors"
+#     COMMERCIAL_TEMP = "commercialTemperatureSensors"
+#     GEO_DEVICE = "geoDevices"
+#     IQ_ROUTER = "iqRouters"
+#     REMOTE_TEMP = "remoteTemperatureSensors"
+#     SHADE = "shades"
+#     SMART_CHIME = "smartChimeDevices"
+#     SUMP_PUMP = "sumpPumps"
+#     SWITCH = "switches"
+#     VALVE_SWITCH = "valveSwitches"
+#     WATER_METER = "waterMeters"
+#     WATER_VALVE = "waterValves"
+#     X10_LIGHT = "x10Lights"
 
 
 #
@@ -110,20 +110,28 @@ class AdcResourceAttributes(ABC, JsonApiBaseElement):
     pass
 
 
-class AdcResourceSubtype(IntEnum):
+@dataclass
+class AdcNamedDeviceAttributes(AdcResourceAttributes, ABC):
+    """Represents an Alarm.com resource."""
+
+    description: str = field(metadata={"description": "Device name"})
+
+
+class AdcResourceSubtype(Enum):
     """Represents Alarm.com resource subtypes."""
 
     pass
 
 
 AdcResourceAttributesT = TypeVar("AdcResourceAttributesT", bound=AdcResourceAttributes)
+AdcNamedDeviceAttributesT = TypeVar("AdcNamedDeviceAttributesT", bound=AdcNamedDeviceAttributes)
 AdcResourceSubtypesT = TypeVar("AdcResourceSubtypesT", bound=AdcResourceSubtype)
 
 
 @dataclass
 class AdcResource(Generic[AdcResourceAttributesT]):
     """
-    Represents an Alarm.com resource.
+    Base class for all Alarm.com resource (device, identity, etc.).
 
     Accepts a JSON:API resource object. Casts dict of attributes into a dataclass.
     """
@@ -144,12 +152,14 @@ class AdcResource(Generic[AdcResourceAttributesT]):
 
 
 @dataclass
-class AdcDeviceResource(AdcResource[AdcResourceAttributesT]):
-    """Represents an Alarm.com device resource."""
+class AdcDeviceResource(AdcResource[AdcNamedDeviceAttributesT]):
+    """Base class for Alarm.com device resource."""
 
-    resource_models: dict[int, dict[str, str]] = field(
-        init=False, repr=False
-    )  # deviceModelId: {"manufacturer": str, "model": str}
+    # Mapping of model IDs to device manufacturer / model for device type.
+    # deviceModelId: {"manufacturer": str, "model": str}
+    resource_models: dict[int, dict[str, str]] = field(init=False, repr=False)
+
+    attributes: AdcNamedDeviceAttributesT = field(init=False)
 
     system_id: str | None = field(init=False)
     model: str | None = field(init=False)
@@ -169,12 +179,20 @@ class AdcDeviceResource(AdcResource[AdcResourceAttributesT]):
             elif hasattr(self.attributes, "device_model_id"):
                 self.model = self.resource_models.get(getattr(self.attributes, "device_model_id"), {}).get("model")
 
+        # self.extension_attributes: list[ExtensionAttributes] = []
+
+    @property
+    def name(self) -> str:
+        """Name of the device."""
+
+        return self.attributes.description
+
 
 @dataclass
 class AdcSubtypedResource(
-    Generic[AdcResourceSubtypesT, AdcResourceAttributesT], AdcDeviceResource[AdcResourceAttributesT]
+    Generic[AdcResourceSubtypesT, AdcNamedDeviceAttributesT], AdcDeviceResource[AdcNamedDeviceAttributesT]
 ):
-    """Represents an Alarm.com resource with subtypes."""
+    """Base class for an Alarm.com device that uses subtypes."""
 
     resource_subtypes: type[AdcResourceSubtypesT] | None = field(default=None)
     subtype: AdcResourceSubtypesT | None = field(init=False)
@@ -191,21 +209,21 @@ class AdcSubtypedResource(
         )
 
 
-DeviceState = TypeVar("DeviceState", bound=IntEnum)
+DeviceState = TypeVar("DeviceState", bound=Enum)
 
 
-class BaseStatefulDeviceState(IntEnum):
-    """Base device state."""
+class BaseStatefulDeviceState(Enum):
+    """Base device states."""
 
     LOADING_STATE = -1
 
 
 @dataclass(kw_only=True)
-class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcResourceAttributes):
-    """Attributes of base device."""
+class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcNamedDeviceAttributes):
+    """Base attributes for an alarm.com device."""
 
     # fmt: off
-    description: str = field(metadata={"description": "Device name"})
+    # description: str = field(metadata={"description": "Device name"})
     battery_level_null: int | None = field(metadata={"description": "The current device battery level with null as the default value."})
     critical_battery: bool = field(metadata={"description": "Whether the device has a critical battery status."})
     low_battery: bool = field(metadata={"description": "Whether the device has a low battery status."})
@@ -251,9 +269,10 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcResourceAttributes):
 
 @dataclass(kw_only=True)
 class BaseManagedDeviceAttributes(
-    Generic[DeviceState], BaseStatefulDeviceAttributes[DeviceState], AdcResourceAttributes
+    BaseStatefulDeviceAttributes[DeviceState],
+    Generic[DeviceState],
 ):
-    """Attributes of base managed device."""
+    """Base attributes for an alarm.com managed device."""
 
     # fmt: off
     has_state: bool  # Does this device have a state?

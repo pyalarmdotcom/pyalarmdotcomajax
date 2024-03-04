@@ -15,7 +15,7 @@ import aiohttp
 import humps
 from mashumaro.exceptions import MissingField, SuitableVariantNotFoundError
 
-from pyalarmdotcomajax.const import REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, URL_BASE
+from pyalarmdotcomajax.const import REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, URL_BASE, ResponseTypes
 from pyalarmdotcomajax.controllers import EventType
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle, EventCallBackType
@@ -51,13 +51,10 @@ from pyalarmdotcomajax.models.jsonapi import (
 )
 from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
 
-__version__ = "0.0.1"
+__version__ = "6.0.0-beta.1"
 
 
-logging.basicConfig()
 log = logging.getLogger(__name__)
-# log.setLevel(logging.DEBUG)
-log.setLevel(5)
 
 
 class AlarmBridge:
@@ -70,7 +67,9 @@ class AlarmBridge:
 
         # Session
         self._websession: aiohttp.ClientSession | None = None
-        self._ajax_key: str | None = None
+        self.ajax_key: str | None = None
+
+        # NEW CONTROLLERS MUST BE ADDED TO __str__()
 
         # Meta Controllers
         self._auth_controller = AuthenticationController(self, username, password, mfa_token)
@@ -94,27 +93,23 @@ class AlarmBridge:
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
 
-    async def initialize(self, event_monitoring: bool = False) -> None:
+    async def initialize(self) -> None:
         """Initialize bridge."""
+
+        if self._initialized:
+            return
 
         await self.login()
 
         await self.fetch_full_state()
 
-        if event_monitoring:
-            await self._ws_controller.initialize()
+        self._initialized = True
 
-        # Always subscribe in case of websocket connection later on.
-        self._ws_controller.subscribe_connection(self._handle_connect_event)
-
-        # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE
+        # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE (DO IN INTEGRATION)
         # TODO: SKYBELL HD
-        # TODO: Sensor Bypass
 
     async def login(self) -> None:
         """Login to alarm.com."""
-
-        self._ajax_key = None
 
         return await self._auth_controller.login()
 
@@ -148,6 +143,14 @@ class AlarmBridge:
             self._thermostats.initialize(),
             self._water_sensors.initialize(),
         )
+
+    async def start_event_monitoring(self) -> None:
+        """Start real-time event monitoring."""
+
+        await self._ws_controller.initialize()
+
+        # Always subscribe in case of websocket connection later on.
+        self._ws_controller.subscribe_connection(self._handle_connect_event)
 
     def subscribe(
         self,
@@ -268,6 +271,11 @@ class AlarmBridge:
         """Get the websocket controller."""
         return self._ws_controller
 
+    @property
+    def device_catalogs(self) -> DeviceCatalogController:
+        """Get the device catalogs controller."""
+        return self._device_catalogs
+
     ##########################################
     # REQUEST MANAGEMENT / CONTEXT FUNCTIONS #
     ##########################################
@@ -275,7 +283,9 @@ class AlarmBridge:
     async def __aenter__(self) -> "AlarmBridge":  # noqa: UP037
         """Return Context manager."""
 
-        await self.initialize(event_monitoring=True)
+        await self.initialize()
+
+        await self.start_event_monitoring()
 
         return self
 
@@ -300,7 +310,12 @@ class AlarmBridge:
     # REQUEST FUNCTIONS
     #
 
-    def build_request_headers(self, **kwargs: Any) -> Any:
+    def build_request_headers(
+        self,
+        accept_types: ResponseTypes | None = ResponseTypes.JSONAPI,
+        use_ajax_key: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         """Get session and build headers for request."""
 
         if "headers" not in kwargs:
@@ -313,10 +328,11 @@ class AlarmBridge:
             }
         )
 
-        kwargs["headers"].update({"Accept": "application/vnd.api+json", "charset": "utf-8"})
+        if accept_types is not None:
+            kwargs["headers"].update(accept_types.value)
 
-        if self._ajax_key:
-            kwargs["headers"].update({"ajaxrequestuniquekey": self._ajax_key})
+        if use_ajax_key and self.ajax_key:
+            kwargs["headers"].update({"Ajaxrequestuniquekey": self.ajax_key})
 
         return kwargs
 
@@ -325,6 +341,8 @@ class AlarmBridge:
         self,
         method: str,
         url: str,
+        accept_types: ResponseTypes = ResponseTypes.JSONAPI,
+        use_ajax_key: bool = True,
         **kwargs: Any,
     ) -> AsyncIterator[aiohttp.ClientResponse]:
         """
@@ -345,7 +363,7 @@ class AlarmBridge:
 
         kwargs["cookies"].update({"twoFactorAuthenticationId": self._auth_controller.mfa_cookie})
 
-        kwargs = self.build_request_headers(**kwargs)
+        kwargs = self.build_request_headers(accept_types, use_ajax_key, **kwargs)
 
         async with self._websession.request(method, url, **kwargs) as res:
             # Update anti-forgery cookie.
@@ -355,7 +373,7 @@ class AlarmBridge:
             # When used, AFG is not always present in the response. Prior value should carry over until a new value appears.
 
             if afg := res.cookies.get("afg"):
-                self._ajax_key = afg.value
+                self.ajax_key = afg.value
 
             yield res
 
@@ -375,7 +393,7 @@ class AlarmBridge:
         if self._websession is None:
             raise NotInitialized("Cannot initiate WebSocket connection without an existing session.")
 
-        kwargs = self.build_request_headers(**kwargs)
+        kwargs = self.build_request_headers(accept_types=None, use_ajax_key=False, **kwargs)
 
         async with self._websession.ws_connect(url, **kwargs) as res:
             yield res
@@ -385,25 +403,26 @@ class AlarmBridge:
         self,
         method: str,
         url: str,
+        accept_types: ResponseTypes,
         success_response_class: type[T],
         **kwargs: Any,
-    ) -> T:
-        ...
+    ) -> T: ...
 
     @overload
     async def request(
         self,
         method: str,
         url: str,
+        accept_types: ResponseTypes,
         success_response_class: type[SuccessDocument] = SuccessDocument,
         **kwargs: Any,
-    ) -> SuccessDocument:
-        ...
+    ) -> SuccessDocument: ...
 
     async def request(
         self,
         method: str,
         url: str,
+        accept_types: ResponseTypes = ResponseTypes.JSONAPI,
         success_response_class: type[T] | type[SuccessDocument] = SuccessDocument,
         allow_login_repair: bool = True,
         **kwargs: Any,
@@ -413,22 +432,26 @@ class AlarmBridge:
         # Alarm.com's implementation violates the JSON:API spec by sometimes returning a modified error response body with a non-200 response code.
         # This response still contains an "errors" object and should validate as a FailureDocument.
 
-        log.debug(f"Requesting {method} {url} with {kwargs.get('data') or kwargs.get('json')}")
+        log.debug(
+            f"Requesting {method.upper()} {url} with {kwargs.get('data') or kwargs.get('json')} expecting {accept_types} as {success_response_class.__name__}"
+        )
 
         try:
-            async with self.create_request(method, url, **kwargs) as resp:
+            async with self.create_request(method, url, accept_types, use_ajax_key=True, **kwargs) as resp:
                 # If DEBUG logging is enabled, log the request and response.
                 if log.level < logging.DEBUG:
                     try:
                         resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
                     except (json.JSONDecodeError, aiohttp.ContentTypeError):
                         resp_dump = await resp.text() if resp.content_length else ""
+
                     log.debug(
-                        f"\n==============================Server Response ({resp.status})==============================\n"
+                        f"\n==============================Server Request / Response ({resp.status})==============================\n"
                         f"URL: {url}\n"
-                        f"{resp_dump}"
-                        f"\nURL: {url}"
-                        "\n=================================================================================\n"
+                        f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
+                        f"RESPONSE BODY:\n{resp_dump}\n"
+                        f"URL: {url}\n"
+                        "=================================================================================\n"
                     )
 
                 # Load the response as JSON:API object.
@@ -500,9 +523,14 @@ class AlarmBridge:
                 log.info("Attempting to repair session.")
 
                 try:
+                    log.info("[AlarmBridge -> request] Attempting to repair session.")
                     await self._auth_controller.login()
                     return await self.request(
-                        method, url, success_response_class, allow_login_repair=False, **kwargs
+                        method,
+                        url,
+                        success_response_class=success_response_class,
+                        allow_login_repair=False,
+                        **kwargs,
                     )
                 except Exception as err:
                     raise AuthenticationFailed from err
@@ -538,8 +566,7 @@ class AlarmBridge:
         path: ResourceType | str,
         id: str,
         **kwargs: Any,
-    ) -> AdcSuccessDocumentSingle:
-        ...
+    ) -> AdcSuccessDocumentSingle: ...
 
     @overload
     async def get(
@@ -547,8 +574,7 @@ class AlarmBridge:
         path: ResourceType | str,
         id: set[str] | None,
         **kwargs: Any,
-    ) -> AdcSuccessDocumentMulti:
-        ...
+    ) -> AdcSuccessDocumentMulti: ...
 
     async def get(
         self,
@@ -578,6 +604,7 @@ class AlarmBridge:
                 return await self.request(
                     method="get",
                     url=path,
+                    accept_types=ResponseTypes.JSONAPI,
                     success_response_class=AdcSuccessDocumentSingle
                     if isinstance(id, str)
                     else AdcSuccessDocumentMulti,
@@ -605,7 +632,11 @@ class AlarmBridge:
         while True:
             try:
                 return await self.request(
-                    method="post", url=path, success_response_class=AdcSuccessDocumentSingle, **kwargs
+                    method="post",
+                    url=path,
+                    accept_types=ResponseTypes.JSONAPI,
+                    success_response_class=AdcSuccessDocumentSingle,
+                    **kwargs,
                 )
 
             except (TimeoutError, aiohttp.ClientResponseError) as e:
@@ -613,6 +644,55 @@ class AlarmBridge:
                     raise ServiceUnavailable from e
                 retries += 1
                 continue
+
+    ############################
+    ## RESOURCE STRING OUTPUT ##
+    ############################
+
+    @property
+    def resources_pretty_str(self) -> str:
+        """Return pretty representation of resources in AlarmBridge."""
+
+        # Print all controllers
+        return (
+            self._auth_controller.resources_pretty_str
+            + self._available_device_catalogs.resources_pretty_str
+            + self._systems.resources_pretty_str
+            + self._trouble_conditions.resources_pretty_str
+            + self._device_catalogs.resources_pretty_str
+            + self._cameras.resources_pretty_str
+            + self._garage_doors.resources_pretty_str
+            + self._lights.resources_pretty_str
+            + self._gates.resources_pretty_str
+            + self._locks.resources_pretty_str
+            + self._partitions.resources_pretty_str
+            + self._sensors.resources_pretty_str
+            + self._thermostats.resources_pretty_str
+            + self._water_sensors.resources_pretty_str
+            + self._image_sensors.resources_pretty_str
+        )
+
+    @property
+    def resources_raw_str(self) -> str:
+        """Return raw JSON for all bridge resources."""
+
+        return (
+            self._auth_controller.resources_raw_str
+            + self._available_device_catalogs.resources_raw_str
+            + self._systems.resources_raw_str
+            + self._trouble_conditions.resources_raw_str
+            + self._device_catalogs.resources_raw_str
+            + self._cameras.resources_raw_str
+            + self._garage_doors.resources_raw_str
+            + self._lights.resources_raw_str
+            + self._gates.resources_raw_str
+            + self._locks.resources_raw_str
+            + self._partitions.resources_raw_str
+            + self._sensors.resources_raw_str
+            + self._thermostats.resources_raw_str
+            + self._water_sensors.resources_raw_str
+            + self._image_sensors.resources_raw_str
+        )
 
 
 async def main() -> None:
@@ -632,7 +712,8 @@ async def main() -> None:
         bridge.subscribe(event_printer)
 
         await asyncio.sleep(3600)
-    # Create an instance of AlarmConnector
+
+    # # Create an instance of AlarmConnector
     # bridge = AlarmBridge(username, password, mfa_token)
 
     # try:
@@ -640,6 +721,7 @@ async def main() -> None:
     #     await bridge.initialize()
 
     #     # Perform other tasks here
+    #     print(bridge.resources_raw_str)
 
     # finally:
     #     # Close the connector

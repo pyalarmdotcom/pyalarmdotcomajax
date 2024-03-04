@@ -1,4 +1,5 @@
 """Event controller."""
+
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 import aiohttp
 
-from pyalarmdotcomajax.const import URL_BASE
+from pyalarmdotcomajax.const import URL_BASE, ResponseTypes
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
@@ -177,7 +178,10 @@ class WebSocketClient:
 
         try:
             response = await self._bridge.request(
-                "get", url=f"{URL_BASE}web/api/websockets/token", success_response_class=WebSocketTokenResponse
+                "get",
+                url=f"{URL_BASE}web/api/websockets/token",
+                accept_types=ResponseTypes.JSON,
+                success_response_class=WebSocketTokenResponse,
             )
             response.check_errors()
         except UnexpectedResponse as err:
@@ -399,7 +403,9 @@ class WebSocketClient:
         url = f"{URL_BASE[:-1]}{self._bridge.auth_controller.keep_alive_url}?timestamp={int(round(datetime.now().timestamp()))}"
 
         try:
-            async with self._bridge.create_request("get", url, raise_for_status=True) as rsp:
+            async with self._bridge.create_request(
+                "get", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
+            ) as rsp:
                 text_rsp = await rsp.text()
 
         except aiohttp.ClientResponseError as err:

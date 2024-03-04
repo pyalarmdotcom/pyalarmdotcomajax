@@ -1,7 +1,7 @@
 """Alarm.com model for garage doors."""
 
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
@@ -10,7 +10,7 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-class GarageDoorState(IntEnum):
+class GarageDoorState(Enum):
     """Enum of gate states."""
 
     # https://www.alarm.com/web/system/assets/customer-ember/enums/GarageDoorStatus.js

@@ -1,7 +1,7 @@
 """Alarm.com model for sensors."""
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcResourceSubtype,
@@ -11,7 +11,7 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-class SensorState(IntEnum):
+class SensorState(Enum):
     """Sensor states."""
 
     UNKNOWN = -1

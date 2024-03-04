@@ -1,7 +1,7 @@
 """Alarm.com model for trouble conditions."""
 
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcResource,
@@ -10,7 +10,7 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-class TroubleConditionSeverity(IntEnum):
+class TroubleConditionSeverity(Enum):
     """Severity of trouble condition."""
 
     UNKNOWN = 0
@@ -18,7 +18,7 @@ class TroubleConditionSeverity(IntEnum):
     ISSUE = 2
 
 
-class TroubleConditionSubtype(IntEnum):
+class TroubleConditionSubtype(Enum):
     """Subtypes for trouble conditions."""
 
     UNKNOWN = -1
@@ -63,12 +63,12 @@ class TroubleConditionSubtype(IntEnum):
     CameraUnexpectedlyNotRecording_SVRAndOnboard = 37
 
     @classmethod
-    def _missing_(cls: type, value: object) -> IntEnum:
+    def _missing_(cls: type, value: object) -> Enum:
         """Set default enum member if an unknown value is provided."""
         return TroubleConditionSubtype.UNKNOWN
 
 
-class TroubleConditionType(IntEnum):
+class TroubleConditionType(Enum):
     """Types of trouble conditions."""
 
     UNKNOWN = -1
@@ -94,7 +94,7 @@ class TroubleConditionType(IntEnum):
     VideoDeviceLowBatteryAndLowTemperatureAlert = 206
 
     @classmethod
-    def _missing_(cls: type, value: object) -> IntEnum:
+    def _missing_(cls: type, value: object) -> Enum:
         """Set default enum member if an unknown value is provided."""
         return TroubleConditionType.UNKNOWN
 

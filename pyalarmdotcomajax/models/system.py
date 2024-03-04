@@ -4,16 +4,16 @@ from dataclasses import dataclass
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
-    AdcResourceAttributes,
+    AdcNamedDeviceAttributes,
     ResourceType,
 )
 
 
 @dataclass
-class SystemAttributes(AdcResourceAttributes):
+class SystemAttributes(AdcNamedDeviceAttributes):
     """Attributes of alarm system."""
 
-    description: str
+    # description: str
     has_snap_shot_cameras: bool
     supports_secure_arming: bool
     remaining_image_quota: int

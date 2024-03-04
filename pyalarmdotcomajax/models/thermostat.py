@@ -2,7 +2,7 @@
 
 from abc import ABC
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
@@ -28,7 +28,7 @@ class TemperatureDeviceAttributes(BaseManagedDeviceAttributes[DeviceState], ABC)
     # fmt: on
 
 
-class ThermostatState(IntEnum):
+class ThermostatState(Enum):
     """Thermostat states."""
 
     UNKNOWN = 0
@@ -39,7 +39,7 @@ class ThermostatState(IntEnum):
     AUXHEAT = 5
 
 
-class ThermostatReportedFanMode(IntEnum):
+class ThermostatReportedFanMode(Enum):
     """Thermostat fan modes as reported in the thermostat response object."""
 
     AUTO_LOW = 0
@@ -52,7 +52,7 @@ class ThermostatReportedFanMode(IntEnum):
     HUMIDITY = 7
 
 
-class ThermostatFanMode(IntEnum):
+class ThermostatFanMode(Enum):
     """User-facomg thermostat fan modes."""
 
     UNKNOWN = -1
@@ -61,7 +61,7 @@ class ThermostatFanMode(IntEnum):
     CIRCULATE = 2
 
 
-class ThermostatScheduleMode(IntEnum):
+class ThermostatScheduleMode(Enum):
     """Thermostat schedule modes."""
 
     MANUAL_MODE = 0
@@ -69,7 +69,7 @@ class ThermostatScheduleMode(IntEnum):
     SMART_SCHEDULES = 2
 
 
-class TemperatureUnit(IntEnum):
+class TemperatureUnit(Enum):
     """Temperature units."""
 
     FAHRENHEIT = 1
@@ -93,7 +93,6 @@ class ThermostatAttributes(TemperatureDeviceAttributes[ThermostatState]):
     away_heat_setpoint: float = field(metadata={"description": "The away preset heat setpoint."})
     cool_setpoint: float = field(metadata={"description": "The current cool setpoint."})
     desired_cool_setpoint: float = field(metadata={"description": "The desired cool setpoint."})
-    desired_fan_mode: ThermostatReportedFanMode = field(metadata={"description": "The desired fan mode."})
     desired_heat_setpoint: float = field(metadata={"description": "The desired heat setpoint."})
     fan_duration: int | None = field(metadata={"description": "The duration to run the fan. Only used to offset the commands. Fan duration is not updated in server response, even when fan is turned on for specific amount of time."})
     fan_mode: ThermostatReportedFanMode = field(metadata={"description": "The current fan mode."})
@@ -125,6 +124,7 @@ class ThermostatAttributes(TemperatureDeviceAttributes[ThermostatState]):
     supports_off_mode: bool = field(metadata={"description": "Whether the thermostat supports the off temp mode."})
     supports_schedules: bool = field(metadata={"description": "Whether the thermostat supports schedules."})
     supports_setpoints: bool = field(metadata={"description": "Whether the thermostat supports setpoints."})
+    desired_fan_mode: ThermostatReportedFanMode | None = field(default=None, metadata={"description": "The desired fan mode."})
 
     # active_sensors: List[str]  # The collection of sensors (including the thermostat) that are currently driving the HVAC system.
     # boiler_control_system: str  # The boiler control system this device belongs to.

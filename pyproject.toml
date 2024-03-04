@@ -22,7 +22,7 @@ pretty = true
 show_absolute_path = true
 show_error_context = true
 disallow_untyped_calls = false
-exclude = ["tests/", "build/", ".ruff_cache/", ".mypy_cache/", "references/", "pyalarmdotcomajax-OLD/"]
+exclude = ["tests/", "build/", ".ruff_cache/", ".mypy_cache/", "references/"]
 explicit_package_bases = true
 
 [tool.ruff]
@@ -109,7 +109,7 @@ max-complexity = 25
 
 [tool.codespell]
 # Remove jsonapi.py when https://github.com/codespell-project/codespell/issues/1212 is closed.
-skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi.py"
+skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi/*"
 count = ''
 quiet-level=2
 ignore-words-list="hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo"

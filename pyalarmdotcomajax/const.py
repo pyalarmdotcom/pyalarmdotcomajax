@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from enum import Enum
-from typing import NamedTuple, Protocol
+from typing import ClassVar, NamedTuple, Protocol
 
 # CONFIG: BEGIN
 SCENE_REFRESH_INTERVAL_M = 60
@@ -50,6 +50,15 @@ API_URL_BASE = URL_BASE + "web/api/"
 # ATTR_MAC_ADDRESS = "mac_address"
 ATTR_STATE = "state"
 ATTR_DESIRED_STATE = "desiredState"
+
+
+class ResponseTypes(Enum):
+    """Response types."""
+
+    JSON: ClassVar[dict] = {"Accept": "application/json", "charset": "utf-8"}
+    JSONAPI: ClassVar[dict] = {"Accept": "application/vnd.api+json", "charset": "utf-8"}
+    FORM: ClassVar[dict] = {"Content-Type": "application/x-www-form-urlencoded", "charset": "utf-8"}
+    HTML: ClassVar[dict] = {"Accept": "text/html,application/xhtml+xml,application/xml"}
 
 
 # EVENTS: BEGIN

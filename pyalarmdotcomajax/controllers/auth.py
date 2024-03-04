@@ -63,6 +63,16 @@ class AuthenticationController:
         self._profiles = ProfilesController(self._bridge, self._identities)
 
     @property
+    def resources_pretty_str(self) -> str:
+        """Return pretty string representation of the user."""
+        return self._identities.resources_pretty_str + self._profiles.resources_pretty_str
+
+    @property
+    def resources_raw_str(self) -> str:
+        """Return raw string representation of the user."""
+        return self._identities.resources_raw_str + self._profiles.resources_raw_str
+
+    @property
     def mfa_cookie(self) -> str:
         """2FA token."""
         return self._mfa_cookie
@@ -128,6 +138,8 @@ class AuthenticationController:
         """
         log.info("Logging in to Alarm.com")
 
+        self._bridge.ajax_key = None
+
         #
         # Step 1: Get login page and cookies
         #
@@ -135,7 +147,7 @@ class AuthenticationController:
         login_info = await self._login_preload()
 
         #
-        # Step 2: Log in and save anti-forgery key
+        # Step 2: Log in and save first anti-forgery key
         #
 
         await self._login_submit_credentials(login_info)
@@ -161,7 +173,12 @@ class AuthenticationController:
         while True:
             try:
                 # Load login page once and grab hidden fields and cookies
-                async with self._bridge.create_request(method="get", url=f"{const.URL_BASE}login") as resp:
+                async with self._bridge.create_request(
+                    method="get",
+                    accept_types=const.ResponseTypes.HTML,
+                    use_ajax_key=False,
+                    url=f"{const.URL_BASE}login",
+                ) as resp:
                     resp.raise_for_status()
 
                     text = await resp.text()
@@ -196,7 +213,9 @@ class AuthenticationController:
                 # login and grab ajax key
                 async with self._bridge.create_request(
                     method="post",
-                    url=f"{const.URL_BASE}/web/Default.aspx",
+                    accept_types=const.ResponseTypes.FORM,
+                    use_ajax_key=True,
+                    url=f"{const.URL_BASE}web/Default.aspx",
                     data={
                         "ctl00$ContentPlaceHolder1$loginform$txtUserName": self._username,
                         "txtPassword": self._password,
@@ -223,7 +242,7 @@ class AuthenticationController:
                 continue
 
             except (aiohttp.ClientResponseError, AttributeError, IndexError, Exception, KeyError) as err:
-                raise UnexpectedResponse from err
+                raise AuthenticationFailed from err
 
     async def _login_otp_discovery(self) -> None:
         """Step 3 of login process. Determine whether OTP is required."""
@@ -236,7 +255,6 @@ class AuthenticationController:
 
         if not self._identities.items:
             raise UnexpectedResponse("No identities found.")
-
 
         response = await self._bridge.get(path=TWO_FACTOR_PATH, id=self._identities.items[0].id)
 
