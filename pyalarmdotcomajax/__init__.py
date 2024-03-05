@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import json
 import logging
-import os
 from collections.abc import AsyncIterator, Callable
 from types import TracebackType
 from typing import Any, TypeVar, overload
@@ -15,8 +14,7 @@ import aiohttp
 import humps
 from mashumaro.exceptions import MissingField, SuitableVariantNotFoundError
 
-from pyalarmdotcomajax.const import REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, URL_BASE, ResponseTypes
-from pyalarmdotcomajax.controllers import EventType
+from pyalarmdotcomajax.const import API_URL_BASE, REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, ResponseTypes
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle, EventCallBackType
 from pyalarmdotcomajax.controllers.cameras import CameraController
@@ -42,7 +40,7 @@ from pyalarmdotcomajax.exceptions import (
     ServiceUnavailable,
     UnexpectedResponse,
 )
-from pyalarmdotcomajax.models.base import AdcResource, ResourceType
+from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     FailureDocument,
     JsonApiBaseElement,
@@ -352,11 +350,7 @@ class AlarmBridge:
         """
 
         if self._websession is None:
-            # Required to allow for requests to be made while event listener is holding session open.
-            connector = aiohttp.TCPConnector(
-                limit_per_host=3,
-            )
-            self._websession = aiohttp.ClientSession(connector=connector)
+            self._websession = aiohttp.ClientSession()
 
         if "cookies" not in kwargs:
             kwargs["cookies"] = {}
@@ -558,7 +552,7 @@ class AlarmBridge:
             # Explode IDs if id is a list.
             path += "?" + "&".join([f"ids[]={n}" for n in id])
 
-        return f"{URL_BASE}web/api/{path}"
+        return f"{API_URL_BASE}{path}"
 
     @overload
     async def get(
@@ -693,41 +687,3 @@ class AlarmBridge:
             + self._water_sensors.resources_raw_str
             + self._image_sensors.resources_raw_str
         )
-
-
-async def main() -> None:
-    """Run application."""
-
-    # Callable[[WebSocketNotificationType, WebSocketState | BaseWSMessage], Any]
-    def event_printer(event_type: EventType, resource_id: str, resource: AdcResource | None) -> None:
-        """Print event."""
-        log.info(f"[NEW EVENT] {event_type} {resource_id} {resource}")
-
-    # Get the credentials from environment variables
-    username = str(os.environ.get("ADC_USERNAME"))
-    password = str(os.environ.get("ADC_PASSWORD"))
-    mfa_token = str(os.environ.get("ADC_COOKIE"))
-
-    async with AlarmBridge(username, password, mfa_token) as bridge:
-        bridge.subscribe(event_printer)
-
-        await asyncio.sleep(3600)
-
-    # # Create an instance of AlarmConnector
-    # bridge = AlarmBridge(username, password, mfa_token)
-
-    # try:
-    #     # Initialize the connector
-    #     await bridge.initialize()
-
-    #     # Perform other tasks here
-    #     print(bridge.resources_raw_str)
-
-    # finally:
-    #     # Close the connector
-    #     await bridge.close()
-
-
-# Start the asyncio task
-if __name__ == "__main__":
-    asyncio.run(main())

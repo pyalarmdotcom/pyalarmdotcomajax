@@ -13,9 +13,13 @@
             "editor.defaultFormatter": "charliermarsh.ruff",
             "editor.formatOnPaste": true,
             "editor.formatOnSave": true,
-            "editor.formatOnType": true
+            // "editor.formatOnType": true
         },
         "[yaml]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[markdown]": {
+            "editor.formatOnSave": true,
             "editor.defaultFormatter": "esbenp.prettier-vscode"
         },
         "python.analysis.autoImportCompletions": true,

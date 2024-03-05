@@ -14,7 +14,7 @@ from termcolor import colored
 from pyalarmdotcomajax.models.jsonapi import Resource, ResourceIdentifier
 
 if TYPE_CHECKING:
-    from pyalarmdotcomajax import AdcResource
+    from pyalarmdotcomajax.models.base import AdcResource
 
 log = logging.getLogger(__name__)
 
@@ -98,8 +98,6 @@ def cli_format(value: T | Any) -> T | str:
 def resources_pretty_str(resource_type_str: str, resources: list[AdcResource]) -> str:
     """Return string representation of resources in controller."""
 
-    # self._resource_type.name
-
     response = (
         "\n\n"
         + colored(
@@ -154,7 +152,7 @@ def resources_raw_str(resource_type_str: str, resources: list[Resource | AdcReso
     """Return raw JSON for all controller resources."""
 
     header = (
-        "\n\n"
+        "\n"
         + colored(
             f"====[ {slug_to_title(resource_type_str)} ]====",
             "grey",
@@ -165,20 +163,22 @@ def resources_raw_str(resource_type_str: str, resources: list[Resource | AdcReso
     )
 
     if len(resources) == 0:
-        return str(header + "(None)")
+        return str(header + "(None)\n\n")
 
     body = ""
     for resource in resources:
         body += (
             colored(
-                resource.attributes.get("description", "Unnamed Resource")
+                resource.attributes.get("description", "Unnamed Resource").upper()
                 if isinstance(resource, Resource)
-                else getattr(resource.attributes, "description", ""),
+                else getattr(
+                    resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}"
+                ).upper(),
                 attrs=["bold", "underline"],
             )
             + ": "
             + str(resource.to_dict() if isinstance(resource, Resource) else resource.api_resource.to_dict())
-            + "\n"
+            + "\n\n"
         )
 
     return str(header + body)

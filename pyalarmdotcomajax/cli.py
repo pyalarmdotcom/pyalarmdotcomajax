@@ -28,7 +28,7 @@ from pyalarmdotcomajax.exceptions import (
 )
 from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import AdcResource
-from pyalarmdotcomajax.util import resources_pretty_str, slug_to_title
+from pyalarmdotcomajax.util import resources_pretty_str, resources_raw_str, slug_to_title
 
 # ruff: noqa: T201 C901
 
@@ -144,30 +144,6 @@ async def cli() -> None:
     )
 
     #
-    # Setting Subparser
-    #
-
-    set_subparser = subparsers.add_parser(
-        "set",
-        description="set device configuration option",
-        help="set device configuration option. use '%(prog)s set --help' for parameters",
-    )
-
-    set_subparser.add_argument("-i", "--device-id", help="Numeric Alarm.com device identifier.", required=True)
-    set_subparser.add_argument(
-        "-s",
-        "--setting-slug",
-        help=(
-            "Identifier for setting. Appears in parenthesis after setting name in %(prog)s human readable output."
-        ),
-    )
-    set_subparser.add_argument(
-        "-k",
-        "--new-value",
-        help="New value for setting.",
-    )
-
-    #
     # WebSocket / stream Subparser
     #
 
@@ -245,13 +221,16 @@ async def cli() -> None:
         else:
             print(bridge.resources_raw_str)
 
-    ##                                    ##
-    ## TODO: USER INPUT PARSING GOES HERE ##
-    ##                                    ##
-
     ############################
     # STREAM REAL TIME UPDATES #
     ############################
+
+    def event_printer_wrapper(event_type: EventType, resource_id: str, resource: AdcResource | None) -> None:
+        """Call event printer with verbosity flag."""
+
+        event_printer(
+            verbose=args.get("verbose", 0) > 0, event_type=event_type, resource_id=resource_id, resource=resource
+        )
 
     if args.get("action") == "stream":
         cprint(
@@ -266,7 +245,7 @@ async def cli() -> None:
         )
 
         async with bridge:
-            bridge.subscribe(event_printer)
+            bridge.subscribe(event_printer_wrapper)
 
             try:
                 # Keep event loop alive until cancelled.
@@ -276,14 +255,25 @@ async def cli() -> None:
             except asyncio.CancelledError:
                 pass
 
+    await bridge.close()
+
 
 # Callable[[WebSocketNotificationType, WebSocketState | BaseWSMessage], Any]
-def event_printer(event_type: EventType, resource_id: str, resource: AdcResource | None) -> None:
+def event_printer(verbose: bool, event_type: EventType, resource_id: str, resource: AdcResource | None) -> None:
     """Print event."""
     if resource:
-        print(
-            resources_pretty_str(f"Event Notification: {slug_to_title(event_type.name)} {resource_id}", [resource])
-        )
+        if verbose:
+            print(
+                resources_raw_str(
+                    f"Event Notification: {slug_to_title(event_type.name)} {resource_id}", [resource]
+                )
+            )
+        else:
+            print(
+                resources_pretty_str(
+                    f"Event Notification: {slug_to_title(event_type.name)} {resource_id}", [resource]
+                )
+            )
 
 
 class EnumAction(argparse.Action):

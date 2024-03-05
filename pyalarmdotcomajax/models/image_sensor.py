@@ -21,7 +21,6 @@ class ImageSensorAttributes(AdcNamedDeviceAttributes):
     # fmt: off
     is_image_sensor_deleted: bool = field(metadata={"description": "True if the device is deleted; False otherwise."})
     support_peek_in_now: bool = field(metadata={"description": "True if the device supports PeekInNow; False otherwise."})
-    # description: str = field(metadata={"description": "The name of the image sensor on the system."})
     can_view_images: bool = field(metadata={"description": "Can the currently logged in login view images for this sensor?"})
 
     # support_peek_in_next_motion: bool = field(metadata={"description": "True if the device supports PeekInNextMotion; False otherwise."})

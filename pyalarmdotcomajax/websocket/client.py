@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 import aiohttp
 
-from pyalarmdotcomajax.const import URL_BASE, ResponseTypes
+from pyalarmdotcomajax.const import API_URL_BASE, URL_BASE, ResponseTypes
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
@@ -179,7 +179,7 @@ class WebSocketClient:
         try:
             response = await self._bridge.request(
                 "get",
-                url=f"{URL_BASE}web/api/websockets/token",
+                url=f"{API_URL_BASE}websockets/token",
                 accept_types=ResponseTypes.JSON,
                 success_response_class=WebSocketTokenResponse,
             )
@@ -388,7 +388,7 @@ class WebSocketClient:
 
         log.info("Reloading session context.")
 
-        url = f"{URL_BASE}web/api/identities/{self._bridge.auth_controller.profile_id}/reloadContext"
+        url = f"{API_URL_BASE}identities/{self._bridge.auth_controller.profile_id}/reloadContext"
         payload = {"included": [], "meta": {"transformer_version": "1.1"}}
 
         async with self._bridge.create_request("post", url, json=payload, raise_for_status=True) as rsp:

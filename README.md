@@ -1,6 +1,6 @@
 <p align="center"><img src="https://user-images.githubusercontent.com/466460/175575400-44ab6ed5-acb4-4a8c-b2ab-8b757675e900.png" height="200px"></p>
 <h1 align="center" border="1px solid black">pyalarmdotcomajax</h1>
-<h3 align="center">Asynchronous Python Library for Accessing Alarm.com Services</h3>
+<h3 align="center">Asynchronous, Event-Driven Python Library for Accessing Alarm.com Services</h3>
 <p align="center">This is an unofficial project that is not affiliated with Alarm.com.</p>
 <p align="center"><em>Forked from Daren Lord's pyalarmdotcom.</em></p>
 <br />
@@ -41,22 +41,18 @@ See `examples/basic_sensor_data.py` for a basic usage example.
 
 Pyalarmdotcomajax supports core features (monitoring and using actions) of the device types listed below.
 
-- As of v0.2, multiples of all devices are supported.
-- All devices include the attributes: `name`, `id`, `state`, `battery_low`, `battery_critical`, `malfunctioning`, `parent_ids`, and a few others.
-
-| Device Type  | Notable Attributes                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Actions                               | Notes                                            |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
-| Garage Door  | (none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | open, close                           |                                                  |
-| Gate         | `supports_remote_close`                                                                                                                                                                                                                                                                                                                                                                                                                                                   | open, close                           |                                                  |
-| Image Sensor | `images`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | peek_in                               |                                                  |
-| Light        | `brightness`                                                                                                                                                                                                                                                                                                                                                                                                                                                              | turn_on (with brightness), turn_off   | No support for RGB/W, effects, temperature, etc. |
-| Locks        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | lock, unlock                          |                                                  |
-| Partition    | `uncleared_issues`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | arm away, arm stay, arm night, disarm |                                                  |
-| Scene        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | execute                               |                                                  |
-| Sensor       | `device_subtype`                                                                                                                                                                                                                                                                                                                                                                                                                                                          | (none)                                |                                                  |
-| System       | `unit_id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | (none)                                |                                                  |
-| Thermostat   | `temp_average`, `temp_at_tstat`, `step_value`, `supports_fan_mode`, `supports_fan_indefinite`, `supports_fan_circulate_when_off`, `supported_fan_durations`, `fan_mode`, `supports_heat`, `supports_heat_aux`, `supports_cool`, `supports_auto`, `min_heat_setpoint`, `min_cool_setpoint`, `max_heat_setpoint`, `max_cool_setpoint`, `heat_setpoint`, `cool_setpoint`, `supports_humidity`, `humidity`, `supports_schedules`, `supports_schedules_smart`, `schedule_mode` | set_attribute                         |                                                  |
-| Water Sensor |                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | (none)                                |                                                  |
+| Device Type  | Actions                                                 | Notes                                                                                                                                                                                                                                                                                                                   |
+| ------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Garage Door  | open, close                                             |                                                                                                                                                                                                                                                                                                                         |
+| Gate         | open, close                                             |                                                                                                                                                                                                                                                                                                                         |
+| Image Sensor | peek_in                                                 |                                                                                                                                                                                                                                                                                                                         |
+| Light        | turn_on (with brightness), turn_off                     | No support for RGB/W, effects, temperature, etc.                                                                                                                                                                                                                                                                        |
+| Locks        | lock, unlock                                            |                                                                                                                                                                                                                                                                                                                         |
+| Partition    | clear faults, arm away, arm stay, arm night, disarm     |                                                                                                                                                                                                                                                                                                                         |
+| Sensor       | bypass/unbypass (via partition)                         | Contact sensors will not report the same state within a 3-minute window. This means that this library will only show one event if, say, a door has been opened and closed multiple times within 3 minutes. See (this post)[https://support.suretyhome.com/t/alarm-com-3-minute-deduplication-window/24637] for details. |
+| System       | stop alarms, clear smoke sensor, clear alarms in memory |                                                                                                                                                                                                                                                                                                                         |
+| Thermostat   | set attributes                                          |                                                                                                                                                                                                                                                                                                                         |
+| Water Sensor | (none)                                                  |                                                                                                                                                                                                                                                                                                                         |
 
 ### Known Sensor deviceTypes
 
@@ -81,19 +77,7 @@ This list identifies deviceTypes used in the alarm.com API and is incomplete. Pl
 
 ## Device Support (Configuration)
 
-Pyalarmdotcomajax supports changing configuration options for the devices listed below.
-
-### Skybell HD
-
-#### Doorbell Camera
-
-| Configuration Option      | Slug                 | Supported Values                     | Notes                      |
-| ------------------------- | -------------------- | ------------------------------------ | -------------------------- |
-| Indoor Chime              | `indoor-chime`       | `on`, `off`                          |                            |
-| Outdoor Chime             | `outdoor-chime`      | `off`, `low`, `medium`, `high`       |                            |
-| LED Brightness            | `led-brightness`     | `0` - `100`                          |                            |
-| LED Color                 | `led-color`          | `#000000` - `#FFFFFF`                | Must include `#` at start. |
-| Motion Sensor Sensitivity | `motion-sensitivity` | `low`, `medium`, `high`, `very_high` |                            |
+Skybell HD configuration support not yet implemented in v6 beta.
 
 ## Command Line Interface
 
@@ -123,28 +107,18 @@ options:
 actions:
   {get,set}
     get                 get data from alarm.com. use 'adc get --help' for parameters.
-    set                 set device configuration option. use 'adc set --help' for parameters
+    stream              stream real-time evnt notifications to terminal
 
 get options:
   -h, --help            show this help message and exit
   -x, --include-unsupported
                         return basic data for all known unsupported devices. always outputs in verbose format.
-
-set options:
-  -h, --help            show this help message and exit
-  -i DEVICE_ID, --device-id DEVICE_ID
-                        Numeric Alarm.com device identifier.
-  -s SETTING_SLUG, --setting-slug SETTING_SLUG
-                        Identifier for setting. Appears in parenthesis after setting name in adc set human readable output.
-  -k NEW_VALUE, --new-value NEW_VALUE
-                        New value for setting.
 ```
 
 ### Examples
 
 1. Get human-readable status (and device IDs) for all devices: `adc -u "your_username" -p "your_password" get`
 2. Get raw JSON output from Alarm.com for all devices: `adc -v -u "your_username" -p "your_password" get`
-3. Turn off Skybell HD indoor chime (assume Skybell device ID is 283431032-1520): `adc -u "your_username" -p "your_password" set -i "283431032-1520" -s "indoor-chime" -k "off"`
 
 ## Development
 
@@ -164,8 +138,6 @@ This repository includes a full development environment for VS Code:
 
 #### Features
 
-1. Support additional components (lights, irrigation, etc.).
+1. Support additional components (light RGBW, irrigation, etc.).
 2. Support more sensor types (see list above in this README).
 3. Add `debug_info` property to `ADCController` that returns aggregate of raw JSON from all endpoints. This will allow users to export the entity model of unsupported devices to help maintainers implement support in this library.
-4. Similar to above, proactively populate `unsupported_device_types` property for `ADCBaseElement` to show users device id, device name, and device type for available but unsupported devices.
-5. More granular exception handling when logging in. Should report discrete error types for authentication failures due to wrong credentials, connection issues, or other.

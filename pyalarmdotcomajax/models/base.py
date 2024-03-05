@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from enum import Enum, StrEnum
 from typing import Generic, TypeVar
 
+from mashumaro import field_options
+
 from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement, Resource
 from pyalarmdotcomajax.util import get_related_entity_id_by_key
 
@@ -64,38 +66,6 @@ class ResourceType(StrEnum):
     def _missing_(cls: type, value: object) -> ResourceType:
         """Set default enum member if an unknown value is provided."""
         return ResourceType.UNKNOWN
-
-
-# class DeviceType(StrEnum):
-#     """Device type ids as returned by the ADC API."""
-
-#     CAMERA = "cameras"
-#     GARAGE_DOOR = "garageDoors"
-#     GATE = "gates"
-#     IMAGE_SENSOR = "imageSensors"
-#     LIGHT = "lights"
-#     LOCK = "locks"
-#     PARTITION = "partitions"
-#     SCENE = "scenes"
-#     SENSOR = "sensors"
-#     SYSTEM = "systems"
-#     THERMOSTAT = "thermostats"
-#     WATER_SENSOR = "waterSensors"
-#     ACCESS_CONTROL = "accessControlAccessPointDevices"
-#     CAMERA_SD = "sdCardCameras"
-#     CAR_MONITOR = "carMonitors"
-#     COMMERCIAL_TEMP = "commercialTemperatureSensors"
-#     GEO_DEVICE = "geoDevices"
-#     IQ_ROUTER = "iqRouters"
-#     REMOTE_TEMP = "remoteTemperatureSensors"
-#     SHADE = "shades"
-#     SMART_CHIME = "smartChimeDevices"
-#     SUMP_PUMP = "sumpPumps"
-#     SWITCH = "switches"
-#     VALVE_SWITCH = "valveSwitches"
-#     WATER_METER = "waterMeters"
-#     WATER_VALVE = "waterValves"
-#     X10_LIGHT = "x10Lights"
 
 
 #
@@ -224,7 +194,7 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcNamedDeviceAttribute
 
     # fmt: off
     # description: str = field(metadata={"description": "Device name"})
-    battery_level_null: int | None = field(metadata={"description": "The current device battery level with null as the default value."})
+    battery_level_pct: int | None = field(metadata=field_options(alias="battery_level_null")) # The current device battery level as a percentage with null as the default value.
     critical_battery: bool = field(metadata={"description": "Whether the device has a critical battery status."})
     low_battery: bool = field(metadata={"description": "Whether the device has a low battery status."})
     can_be_saved: bool = field(metadata={"description": "Does the logged in context have write permissions for this device?"})

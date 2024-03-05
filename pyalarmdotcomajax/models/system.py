@@ -13,7 +13,6 @@ from pyalarmdotcomajax.models.base import (
 class SystemAttributes(AdcNamedDeviceAttributes):
     """Attributes of alarm system."""
 
-    # description: str
     has_snap_shot_cameras: bool
     supports_secure_arming: bool
     remaining_image_quota: int
