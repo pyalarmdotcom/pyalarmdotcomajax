@@ -236,9 +236,7 @@ class AlarmController:
             has_image_sensors = await self._async_device_type_present(
                 self._active_system_id, DeviceType.IMAGE_SENSOR
             )
-            has_image_cameras = await self._async_device_type_present(
-                self._active_system_id, DeviceType.CAMERA
-            )
+            has_image_cameras = await self._async_device_type_present(self._active_system_id, DeviceType.CAMERA)
 
         await self._async_get_trouble_conditions()
 
@@ -961,29 +959,29 @@ class AlarmController:
                 return await self._async_get_active_system(retry_on_failure=False)
 
             raise
-    async def _async_get_live_streams(self,cameras) -> dict[str, DeviceTypeSpecificData]:
+
+    async def _async_get_live_streams(self, cameras) -> dict[str, DeviceTypeSpecificData]:
         """Get livestreams"""
         try:
             log.info("Getting livestream Urls")
             device_type_specific_data: dict[str, DeviceTypeSpecificData] = {}
             for camera in cameras:
                 async with self._websession.get(
-                    url=self.LIVESTREAM_TEMPLATE.format(c.URL_BASE,camera["id"]),
+                    url=self.LIVESTREAM_TEMPLATE.format(c.URL_BASE, camera["id"]),
                     headers=self._ajax_headers,
                 ) as resp:
                     json_rsp = await resp.json()
                     if resp.status >= 400 or not isinstance(json_rsp, dict) or not len(json_rsp.get("data", [])):
                         continue
-                    device_type_specific_data.setdefault(
-                        str(json_rsp["data"]["id"]), {}
-                    ).setdefault("raw_livestream", json_rsp["data"])
+                    device_type_specific_data.setdefault(str(json_rsp["data"]["id"]), {}).setdefault(
+                        "raw_livestream", json_rsp["data"]
+                    )
         except (aiohttp.ClientResponseError, KeyError) as err:
             log.exception("Failed to get livestreams.")
             raise UnexpectedResponse from err
 
         else:
             return device_type_specific_data
-
 
     async def _async_get_recent_images(self) -> dict[str, DeviceTypeSpecificData]:
         """Get recent images."""
