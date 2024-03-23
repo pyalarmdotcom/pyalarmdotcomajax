@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 class WaterSensorController(BaseController[WaterSensor]):
     """Controller for water sensors."""
 
-    _resource_type = ResourceType.WATER_SENSOR
+    resource_type = ResourceType.WATER_SENSOR
     _resource_class = WaterSensor
     _event_state_map = MappingProxyType(
         {

@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import contextlib
+import json
 import logging
 from dataclasses import asdict
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from tabulate import tabulate
-from termcolor import colored
+from rich.columns import Columns
+from rich.console import Group
+from rich.syntax import Syntax
+from rich.table import Table
 
 from pyalarmdotcomajax.models.jsonapi import Resource, ResourceIdentifier
 
@@ -54,6 +57,22 @@ def slug_to_title(slug: str) -> str:
     return slug.replace("_", " ").title()
 
 
+def dict_truncate(d: dict, max_length: int = 500) -> dict:
+    """
+    Recursively truncates string values in a dictionary (and nested dictionaries) to a maximum length.
+
+    :param d: The dictionary to process.
+    :param max_length: The maximum length of string values. Defaults to 500 characters.
+    """
+    for key, value in d.items():
+        if isinstance(value, str) and len(value) > max_length:
+            d[key] = value[:max_length] + "...+" + str(len(value) - max_length)  # Truncate the string
+        elif isinstance(value, dict):
+            dict_truncate(value, max_length)  # Recursively process nested dictionaries
+
+    return d
+
+
 T = TypeVar("T")
 
 
@@ -65,7 +84,7 @@ def cli_format(value: bool | Enum) -> str: ...
 def cli_format(value: Any) -> Any: ...
 
 
-def cli_format(value: T | Any) -> T | str:
+def cli_format(value: T | Any) -> T | str | dict | list:
     """Format value for CLI output."""
 
     # Change Value
@@ -87,98 +106,122 @@ def cli_format(value: T | Any) -> T | str:
     # Color
 
     if value in ["√", "Closed", "Locked", "Armed Stay", "Armed Night", "Armed Away", "On"]:
-        value = colored(str(value), "green")
-
-    if value in ["X", "Open", "Unlocked", "Disarmed", "Off"]:
-        value = colored(str(value), "red")
+        value = f"[green]{value!s}[/green]"
+    elif value in ["X", "Open", "Unlocked", "Disarmed", "Off"]:
+        value = f"[red]{value!s}[/red]"
+    else:
+        value = f"[grey50]{value!s}[/grey50]"
 
     return value
 
 
-def resources_pretty_str(resource_type_str: str, resources: list[AdcResource]) -> str:
-    """Return string representation of resources in controller."""
+def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Group:
+    """Return Rich Panel or Table representation of resources in controller."""
 
-    response = (
-        "\n\n"
-        + colored(
-            f"====[ {slug_to_title(resource_type_str)} ]====",
-            "grey",
-            "on_yellow",
-            attrs=["bold"],
-        )
-        + "\n\n"
-    )
+    def fmt_attr(x: Any, y: Any) -> Table:
+        tbl = Table.grid(expand=True, padding=(0, 2))
+        tbl.add_column(no_wrap=True, max_width=50)
+        tbl.add_column(justify="right", max_width=50, no_wrap=True)
+        tbl.add_row(f"[b]{slug_to_title(x)}[/b]", str(cli_format(y)))
+        return tbl
+
+    resource_type_banner = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str).upper()} ]===[/bold bright_white on yellow]\n"
 
     if len(resources) == 0:
-        return str(response + tabulate([["None"]], tablefmt="mixed_grid"))
+        return Group(resource_type_banner, "\nNone")
 
-    table_data = []
+    formatted_resources = []
+
     for resource in resources:
-        table_row = [resource.id]
+        resource_title = f'\n[underline bright_cyan][bold]{getattr(resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}").upper()}[/bold] ({resource.id})[/underline bright_cyan]'
 
-        if description := getattr(resource.attributes, "description", None):
-            table_row.append(colored(description, attrs=["bold"]))
+        resource_attributes = [fmt_attr("state", getattr(resource.attributes, "state", "[i]No State[/i]"))]
 
-        if state := getattr(resource.attributes, "state", None):
-            table_row.append(cli_format(state))
+        for key, value in sorted(asdict(resource.attributes).items()):
+            if key not in ["description", "state"]:
+                resource_attributes.append(fmt_attr(key, value))
 
-        table_data.append(
-            [
-                *table_row,
-                *(
-                    [
-                        cli_format(value)
-                        for key, value in asdict(resource.attributes).items()
-                        if key not in ["description", "state"]
-                    ]
-                ),
-            ]
-        )
+        formatted_resources.append(Group(resource_title, Columns(resource_attributes, padding=(0, 2), equal=True)))
 
-    headers = ["ID"]
+    return Group(resource_type_banner, *formatted_resources)
 
-    if description := getattr(resource.attributes, "description", None):
-        headers.append(colored("Name", attrs=["bold"]))
+    # #
+    # # Build Column Headers
+    # #
 
-    if state := getattr(resource.attributes, "state", None):
-        headers.append("State")
+    # headers: list[str | Column] = [Column("ID", no_wrap=True)]
 
-    headers.extend([slug_to_title(k) for k in asdict(resource.attributes) if k not in ["description", "state"]])
+    # if description := getattr(resources[0].attributes, "description", None):
+    #     headers.append(Column("Name", style="bold", header_style="bold"))
 
-    return str(response + tabulate(table_data, headers, tablefmt="mixed_grid"))
+    # if state := getattr(resources[0].attributes, "state", None):
+    #     headers.append("State")
+
+    # headers.extend(
+    #     [slug_to_title(k) for k in asdict(resources[0].attributes) if k not in ["description", "state"]]
+    # )
+
+    # #
+    # # Build Table Contents
+    # #
+
+    # rsp_tbl = Table(
+    #     *headers,
+    #     show_lines=True,
+    # )
+
+    # for resource in resources:
+    #     table_row = [resource.id]
+
+    #     if description := getattr(resource.attributes, "description", None):
+    #         table_row.append(description)
+
+    #     if state := getattr(resource.attributes, "state", None):
+    #         table_row.append(str(cli_format(state)))
+
+    #     table_row.extend(
+    #         [
+    #             str(cli_format(value))
+    #             for key, value in asdict(resource.attributes).items()
+    #             if key not in ["description", "state"]
+    #         ]
+    #     )
+
+    #     rsp_tbl.add_row(*table_row)
+
+    # return Group(resource_title, rsp_tbl)
 
 
-def resources_raw_str(resource_type_str: str, resources: list[Resource | AdcResource]) -> str:
+def resources_raw(resource_type_str: str, resources: list[Resource | AdcResource]) -> Group:
     """Return raw JSON for all controller resources."""
 
-    header = (
-        "\n"
-        + colored(
-            f"====[ {slug_to_title(resource_type_str)} ]====",
-            "grey",
-            "on_yellow",
-            attrs=["bold"],
-        )
-        + "\n\n"
-    )
+    resource_title = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str)} ]==="
 
     if len(resources) == 0:
-        return str(header + "(None)\n\n")
+        return Group(resource_title, "\nNone")
 
-    body = ""
+    output = []
+
     for resource in resources:
-        body += (
-            colored(
-                resource.attributes.get("description", "Unnamed Resource").upper()
-                if isinstance(resource, Resource)
-                else getattr(
-                    resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}"
+        output.append(
+            Group(
+                "\n[bright_white underline]"
+                + (
+                    str(resource.attributes.get("description", "Unnamed Resource"))
+                    if isinstance(resource, Resource)
+                    else getattr(resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}")
                 ).upper(),
-                attrs=["bold", "underline"],
-            )
-            + ": "
-            + str(resource.to_dict() if isinstance(resource, Resource) else resource.api_resource.to_dict())
-            + "\n\n"
+                Syntax(
+                    str(
+                        resource.to_json()
+                        if isinstance(resource, Resource)
+                        # Effectively, this is just used to truncates Image Sensor Image Base64 values.
+                        else json.dumps(dict_truncate(resource.api_resource.to_dict()))
+                    ),
+                    "JSON",
+                    word_wrap=True,
+                ),
+            ),
         )
 
-    return str(header + body)
+    return Group(resource_title, *output)

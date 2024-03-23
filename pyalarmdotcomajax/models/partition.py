@@ -56,21 +56,21 @@ class PartitionAttributes(BaseManagedDeviceAttributes[PartitionState]):
     """Attributes of partition."""
 
     # fmt: off
-    can_bypass_sensor_when_armed: bool = field(metadata={"description": "Indicates the panel supports sending bypass commands when the panel is armed."})
-    extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The extended arming options supported per arming mode."})
-    has_open_bypassable_sensors: bool = field(metadata={"description": "Indicates whether the partition has any open sensors related to 'Force Bypass' option."})
-    has_sensor_in_trouble_condition: bool = field(metadata={"description": "Indicates whether the partition has any trouble condition related to 'Force Bypass' option."})
-    hide_force_bypass: bool = field(metadata={"description": "Indicates whether the force bypass checkbox should be hidden. If hidden, force bypass is always enabled."})
-    invalid_extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The extended arming option combinations that are invalid for each arming mode."})
-    needs_clear_issues_prompt: bool = field(metadata={"description": "Should we prompt about present issues before allowing the user to arm?"})
-    partition_id: str = field(metadata={"description": "The ID for this partition."})
+    can_bypass_sensor_when_armed: bool = field(metadata={"description": "Indicates if the panel supports bypass commands when armed."})
+    extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The supported extended arming options for each arming mode."})
+    has_open_bypassable_sensors: bool = field(metadata={"description": "Indicates if the partition has any open sensors that can be bypassed."})
+    has_sensor_in_trouble_condition: bool = field(metadata={"description": "Indicates if the partition has any sensors in a trouble condition."})
+    hide_force_bypass: bool = field(metadata={"description": "Indicates if the force bypass checkbox should be hidden. If hidden, force bypass is always enabled."})
+    invalid_extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The combinations of extended arming options that are invalid for each arming mode."})
+    needs_clear_issues_prompt: bool = field(metadata={"description": "Indicates if the user should be prompted about any present issues before allowing arming."})
+    partition_id: str = field(metadata={"description": "The ID of this partition."})
 
-    # can_access_panel_wifi: bool  # Can this partition access panel-wifi route?
-    # can_enable_alexa: bool  # Can this partition enable Alexa features?
-    # dealer_enforces_force_bypass: bool  # Indicates whether to warn the user if a sensor is open while trying to arm the panel.
-    # is_alexa_enabled: bool  # Are Alexa features enabled on this partition?
+    # can_access_panel_wifi: bool  # Indicates if this partition can access the panel-wifi route.
+    # can_enable_alexa: bool  # Indicates if this partition can enable Alexa features.
+    # dealer_enforces_force_bypass: bool  # Indicates if the user should be warned if a sensor is open while trying to arm the panel.
+    # is_alexa_enabled: bool  # Indicates if Alexa features are enabled on this partition.
     # sensor_naming_format: int  # The allowed device naming format.
-    # show_new_force_bypass: bool  # Indicates whether we show the new force bypass with new text
+    # show_new_force_bypass: bool  # Indicates if the new force bypass with new text should be shown.
     # fmt: on
 
     @property

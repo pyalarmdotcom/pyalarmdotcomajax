@@ -58,14 +58,14 @@ class SensorAttributes(BaseManagedDeviceAttributes[SensorState]):
     """Attributes of sensor."""
 
     # fmt: off
-    is_bypassed: bool = field(metadata={"description": "Indicates this sensor is bypassed."})
-    is_flex_io: bool = field(metadata={"description": "Indicates if this sensor is a flex IO sensor."})
-    is_monitoring_enabled: bool = field(metadata={"description": "Does the sensor have normal activity monitoring enabled?"})
-    supports_bypass: bool = field(metadata={"description": "Indicates this sensor supports bypass."})
-    supports_immediate_bypass: bool = field(metadata={"description": "Indicates this sensor supports bypass outside an arming event."})
-    open_closed_status: int = field(metadata={"description":"Indicates if this sensor is in an 'Open' or 'Closed' state."})
+    is_bypassed: bool = field(metadata={"description": "This sensor is bypassed."})
+    is_flex_io: bool = field(metadata={"description": "This sensor is a flex IO sensor."})
+    is_monitoring_enabled: bool = field(metadata={"description": "The sensor has normal activity monitoring enabled."})
+    supports_bypass: bool = field(metadata={"description": "This sensor supports bypass."})
+    supports_immediate_bypass: bool = field(metadata={"description": "This sensor supports bypass outside an arming event."})
+    open_closed_status: int = field(metadata={"description":"This sensor is in an 'Open' or 'Closed' state."})
 
-    # device_role: int  # Indicates the current role of the sensor.
+    # device_role: int  # The current role of the sensor.
     # sensor_naming_format: int  # The allowed sensor naming format.
     # fmt: on
 

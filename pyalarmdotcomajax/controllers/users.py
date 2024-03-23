@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class IdentitiesController(BaseController[Identity]):
     """Controller for user identity."""
 
-    _resource_type = ResourceType.IDENTITY
+    resource_type = ResourceType.IDENTITY
     _resource_class = Identity
     _resource_url_override = "identities"
 
@@ -30,7 +30,7 @@ class IdentitiesController(BaseController[Identity]):
 class ProfilesController(BaseController[Profile]):
     """Controller for user profile."""
 
-    _resource_type = ResourceType.PROFILE
+    resource_type = ResourceType.PROFILE
     _resource_class = Profile
 
     def __init__(self, bridge: AlarmBridge, data_provider: IdentitiesController) -> None:
@@ -41,7 +41,7 @@ class ProfilesController(BaseController[Profile]):
 class AvailableSystemsController(BaseController[AvailableSystem]):
     """Controller for user identity."""
 
-    _resource_type = ResourceType.AVAILABLE_SYSTEM
+    resource_type = ResourceType.AVAILABLE_SYSTEM
     _resource_class = AvailableSystem
 
     @property

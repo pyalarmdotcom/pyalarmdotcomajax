@@ -1,10 +1,13 @@
 """Alarm.com controller for garage doors."""
 
+# ruff: noqa: UP007
+
 from __future__ import annotations
 
 import logging
 from types import MappingProxyType
 
+from pyalarmdotcomajax.adc.decorators import cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType, StrEnum
@@ -31,7 +34,7 @@ STATE_COMMAND_MAP = {
 class GarageDoorController(BaseController[GarageDoor]):
     """Controller for garage doors."""
 
-    _resource_type = ResourceType.GARAGE_DOOR
+    resource_type = ResourceType.GARAGE_DOOR
     _resource_class = GarageDoor
     _event_state_map = MappingProxyType(
         {
@@ -41,13 +44,15 @@ class GarageDoorController(BaseController[GarageDoor]):
     )
     _supported_resource_events = SupportedResourceEvents(events=[*_event_state_map.keys()])
 
+    @cli_action()
     async def open(self, id: str) -> None:
-        """Open garage door."""
+        """Open a garage door."""
 
         await self.set_state(id, state=GarageDoorState.OPEN)
 
+    @cli_action()
     async def close(self, id: str) -> None:
-        """Close garage door."""
+        """Close a garage door."""
 
         await self.set_state(id, state=GarageDoorState.CLOSED)
 

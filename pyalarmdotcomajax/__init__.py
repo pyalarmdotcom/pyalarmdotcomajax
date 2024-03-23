@@ -8,15 +8,17 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable
 from types import TracebackType
-from typing import Any, TypeVar, overload
+from typing import Any, Literal, TypeVar, overload
 
 import aiohttp
 import humps
-from mashumaro.exceptions import MissingField, SuitableVariantNotFoundError
+from mashumaro.exceptions import MissingField
+from rich.console import Group
 
 from pyalarmdotcomajax.const import API_URL_BASE, REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, ResponseTypes
+from pyalarmdotcomajax.controllers import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
-from pyalarmdotcomajax.controllers.base import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle, EventCallBackType
+from pyalarmdotcomajax.controllers.base import BaseController, EventCallBackType
 from pyalarmdotcomajax.controllers.cameras import CameraController
 from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController
 from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController
@@ -40,6 +42,7 @@ from pyalarmdotcomajax.exceptions import (
     ServiceUnavailable,
     UnexpectedResponse,
 )
+from pyalarmdotcomajax.models import AdcMiniSuccessResponse
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     FailureDocument,
@@ -47,19 +50,23 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
+from pyalarmdotcomajax.version import __version__
 from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
 
-__version__ = "6.0.0-beta.1"
-
-
 log = logging.getLogger(__name__)
+# log.setLevel(5)
 
 
 class AlarmBridge:
     """Alarm.com bridge."""
 
-    def __init__(self, username: str, password: str, mfa_token: str | None = None) -> None:
+    def __init__(
+        self, username: str | None = None, password: str | None = None, mfa_token: str | None = None
+    ) -> None:
         """Initialize alarm bridge."""
+
+        # We allow username and password to be set after initialization so that we can use an instantiated
+        # (but not initialized) AlarmBridge to populate the adc cli command list.
 
         self._initialized = False
 
@@ -67,16 +74,16 @@ class AlarmBridge:
         self._websession: aiohttp.ClientSession | None = None
         self.ajax_key: str | None = None
 
-        # NEW CONTROLLERS MUST BE ADDED TO __str__()
-
-        # Meta Controllers
+        # Session Controllers
         self._auth_controller = AuthenticationController(self, username, password, mfa_token)
+        self._ws_controller = WebSocketClient(self)
+
+        # Meta Resource Controllers
         self._available_device_catalogs = AvailableSystemsController(self)
         self._systems = SystemController(self)
         self._trouble_conditions = TroubleConditionController(self)
-        self._ws_controller = WebSocketClient(self)
 
-        # Device Controllers
+        # Device Resource Controllers
         self._device_catalogs = DeviceCatalogController(self)
         self._cameras = CameraController(self, self._device_catalogs)
         self._garage_doors = GarageDoorController(self, self._device_catalogs)
@@ -128,19 +135,9 @@ class AlarmBridge:
             else asyncio.sleep(0),
         )
 
-        await asyncio.gather(
-            self._systems.initialize(),
-            self._cameras.initialize(),
-            self._garage_doors.initialize(),
-            self._gates.initialize(),
-            self._image_sensors.initialize(),
-            self._image_sensor_images.initialize(),
-            self._lights.initialize(),
-            self._locks.initialize(),
-            self._sensors.initialize(),
-            self._thermostats.initialize(),
-            self._water_sensors.initialize(),
-        )
+        # Initialize remaining resource controllers. This will initialize some controllers that were
+        # just initialized above, but they'll be skipped if they're already initialized.
+        await asyncio.gather(*[controller.initialize() for controller in self.resource_controllers])
 
     async def start_event_monitoring(self) -> None:
         """Start real-time event monitoring."""
@@ -155,27 +152,13 @@ class AlarmBridge:
         callback: EventCallBackType,
     ) -> Callable:
         """
-        Subscribe to status changes for all resources.
+        Subscribe to status changes for all resource controllers.
 
         Returns:
             function to unsubscribe.
 
         """
-        unsubscribes = [
-            self._systems.event_subscribe(callback),
-            self._trouble_conditions.event_subscribe(callback),
-            self._device_catalogs.event_subscribe(callback),
-            self._cameras.event_subscribe(callback),
-            self._garage_doors.event_subscribe(callback),
-            self._lights.event_subscribe(callback),
-            self._gates.event_subscribe(callback),
-            self._locks.event_subscribe(callback),
-            self._partitions.event_subscribe(callback),
-            self._sensors.event_subscribe(callback),
-            self._thermostats.event_subscribe(callback),
-            self._water_sensors.event_subscribe(callback),
-            self._image_sensors.event_subscribe(callback),
-        ]
+        unsubscribes = [controller.event_subscribe(callback) for controller in self.resource_controllers]
 
         def unsubscribe() -> None:
             for unsub in unsubscribes:
@@ -183,7 +166,7 @@ class AlarmBridge:
 
         return unsubscribe
 
-    async def _handle_connect_event(self, state: WebSocketState) -> None:
+    async def _handle_connect_event(self, state: WebSocketState, next_attempt_s: int | None) -> None:
         """Handle reconnect event from event controller."""
 
         if state == WebSocketState.RECONNECTED:
@@ -274,6 +257,13 @@ class AlarmBridge:
         """Get the device catalogs controller."""
         return self._device_catalogs
 
+    @property
+    def resource_controllers(self) -> list[BaseController]:
+        """Get all resource controllers."""
+
+        # Build and return list of resource controllers by searching self for all attributes that inherit from BaseController
+        return [controller for controller in self.__dict__.values() if isinstance(controller, BaseController)]
+
     ##########################################
     # REQUEST MANAGEMENT / CONTEXT FUNCTIONS #
     ##########################################
@@ -352,24 +342,41 @@ class AlarmBridge:
         if self._websession is None:
             self._websession = aiohttp.ClientSession()
 
-        if "cookies" not in kwargs:
-            kwargs["cookies"] = {}
-
-        kwargs["cookies"].update({"twoFactorAuthenticationId": self._auth_controller.mfa_cookie})
+        kwargs.setdefault("cookies", {}).update({"twoFactorAuthenticationId": self._auth_controller.mfa_cookie})
 
         kwargs = self.build_request_headers(accept_types, use_ajax_key, **kwargs)
 
-        async with self._websession.request(method, url, **kwargs) as res:
+        async with self._websession.request(method, url, **kwargs) as resp:
             # Update anti-forgery cookie.
 
             # AFG cookie is not always used. This seems to depend on the specific Alarm.com vendor, so a missing AFG key should not cause a failure.
             # Ref: https://www.alarm.com/web/system/assets/addon-tree-output/@adc/ajax/services/adc-ajax.js
             # When used, AFG is not always present in the response. Prior value should carry over until a new value appears.
 
-            if afg := res.cookies.get("afg"):
+            if afg := resp.cookies.get("afg"):
                 self.ajax_key = afg.value
 
-            yield res
+            # If DEBUG logging is enabled, log the request and response.
+            if log.level < logging.DEBUG:
+                try:
+                    resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
+                except (json.JSONDecodeError, aiohttp.ContentTypeError):
+                    if resp.content_type == "text/html":
+                        resp_dump = "***OMITTING HTML OUTPUT***"
+                    else:
+                        resp_dump = await resp.text() if resp.content_length else ""
+
+                log.debug(
+                    f"\n==============================Server Request / Response ({resp.status})==============================\n"
+                    f"URL: {url}\n"
+                    f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
+                    f"REQUEST BODY:\n{kwargs.get('data') or kwargs.get('json')}\n"
+                    f"RESPONSE BODY:\n{resp_dump}\n"
+                    f"URL: {url}\n"
+                    "=================================================================================\n"
+                )
+
+            yield resp
 
     T = TypeVar("T", bound=JsonApiBaseElement)
 
@@ -431,48 +438,35 @@ class AlarmBridge:
         )
 
         try:
-            async with self.create_request(method, url, accept_types, use_ajax_key=True, **kwargs) as resp:
-                # If DEBUG logging is enabled, log the request and response.
-                if log.level < logging.DEBUG:
-                    try:
-                        resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
-                    except (json.JSONDecodeError, aiohttp.ContentTypeError):
-                        resp_dump = await resp.text() if resp.content_length else ""
-
-                    log.debug(
-                        f"\n==============================Server Request / Response ({resp.status})==============================\n"
-                        f"URL: {url}\n"
-                        f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
-                        f"RESPONSE BODY:\n{resp_dump}\n"
-                        f"URL: {url}\n"
-                        "=================================================================================\n"
-                    )
-
+            async with self.create_request(method, url, accept_types, use_ajax_key=True, **kwargs) as raw_resp:
                 # Load the response as JSON:API object.
 
+                response: FailureDocument | JsonApiBaseElement | MetaDocument | None = None
+
                 try:
-                    jsonapi_response = success_response_class.from_json(await resp.text())
-                except SuitableVariantNotFoundError as err:
-                    # Triggered when the response is not valid JSON:API format.
-                    raise UnexpectedResponse("Response was not valid JSON:API format.") from err
-                except MissingField as err:
-                    # Triggered when using a success_response_class that is not SuccessDocument.
-                    raise UnexpectedResponse("Response was missing a required field.") from err
+                    response = success_response_class.from_json(await raw_resp.text())
                 except json.JSONDecodeError as err:
                     # Triggered when the response is not valid JSON.
                     raise UnexpectedResponse("Response was not valid JSON.") from err
+                except (ValueError, MissingField):
+                    # Triggered when discriminator resolution fails or if field is missing in response.
+                    pass
 
-                if isinstance(jsonapi_response, success_response_class):
-                    return jsonapi_response
+                if isinstance(response, success_response_class):
+                    return response  # type: ignore
 
-                if isinstance(jsonapi_response, MetaDocument):
-                    raise UnexpectedResponse("Unhandled JSON:API info response.")
+                # JsonAPI and AdcMini failure responses evaluate to the standard JSON:API FailureDocument.
+                try:
+                    response = FailureDocument.from_json(await raw_resp.text())
+                except (ValueError, MissingField) as err:
+                    raise UnexpectedResponse("Response did not match requested schema definition.") from err
 
-                resp.raise_for_status()
+                # "Successful" FailureDocument requests always return a 200 response code. Non-200 responses indicate server failure.
+                # "Successful" AdcMiniResponses requests return non-200 responses for "successful" failures like an incorrect OTP code.
 
-                if isinstance(jsonapi_response, FailureDocument):
+                if hasattr(response, "errors") and isinstance(response, FailureDocument):
                     # Retrieve errors from errors dict object.
-                    error_codes = [int(error.code) for error in jsonapi_response.errors if error.code is not None]
+                    error_codes = [int(error.code) for error in response.errors if error.code is not None]
 
                     # 406: Not Authorized For Ember, 423: Processing Error
                     if all(x in error_codes for x in [403, 426]):
@@ -502,12 +496,11 @@ class AlarmBridge:
                             f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}"
                         )
 
-                    # 422: ValidationError, 500: ServerProcessingError, 503: ServiceUnavailable
                     raise UnexpectedResponse(
                         f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}"
                     )
 
-                # resp.raise_for_status()
+                raw_resp.raise_for_status()
 
                 # Bad things have happened if we reach this point.
                 raise UnexpectedResponse
@@ -559,6 +552,7 @@ class AlarmBridge:
         self,
         path: ResourceType | str,
         id: str,
+        mini_response: Literal[False] = ...,
         **kwargs: Any,
     ) -> AdcSuccessDocumentSingle: ...
 
@@ -567,23 +561,35 @@ class AlarmBridge:
         self,
         path: ResourceType | str,
         id: set[str] | None,
+        mini_response: Literal[False] = ...,
         **kwargs: Any,
     ) -> AdcSuccessDocumentMulti: ...
+
+    @overload
+    async def get(
+        self,
+        path: str,
+        id: str | None,
+        mini_response: Literal[True],
+        **kwargs: Any,
+    ) -> AdcMiniSuccessResponse: ...
 
     async def get(
         self,
         path: ResourceType | str,
         id: str | set[str] | None,
+        mini_response: bool = False,
         **kwargs: Any,
-    ) -> AdcSuccessDocumentSingle | AdcSuccessDocumentMulti:
+    ) -> AdcSuccessDocumentSingle | AdcSuccessDocumentMulti | AdcMiniSuccessResponse:
         """
             Get resources from the server.
 
         Args:
-            id:         the id(s) of the resource(s) to get. if str, get one resource. if set, get specified. if None, get all.
-                        requests for single devices must use the single device format (/devices/locks/12345-098), not the multi-device format (/devices/locks?id[]=12345-098).
-            path:       the path of the resource to get. if ResourceType, build path based on resource type. if str, use as is in place of ResourceType-generated path.
-            kwargs:     additional arguments to pass to the request.
+            id:             the id(s) of the resource(s) to get. if str, get one resource. if set, get specified. if None, get all.
+                            requests for single devices must use the single device format (/devices/locks/12345-098), not the multi-device format (/devices/locks?id[]=12345-098).
+            path:           the path of the resource to get. if ResourceType, build path based on resource type. if str, use as is in place of ResourceType-generated path.
+            mini_response:  whether the endpoint returns a JSON:API compliant response or an Alarm.com "mini" response.
+            kwargs:         additional arguments to pass to the request.
 
         Returns:
             AdcSuccessDocumentMulti: the response from the server.
@@ -598,10 +604,10 @@ class AlarmBridge:
                 return await self.request(
                     method="get",
                     url=path,
-                    accept_types=ResponseTypes.JSONAPI,
-                    success_response_class=AdcSuccessDocumentSingle
-                    if isinstance(id, str)
-                    else AdcSuccessDocumentMulti,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
+                    success_response_class=AdcMiniSuccessResponse
+                    if mini_response
+                    else (AdcSuccessDocumentSingle if isinstance(id, str) else AdcSuccessDocumentMulti),
                     **kwargs,
                 )
 
@@ -616,9 +622,14 @@ class AlarmBridge:
         path: ResourceType | str,
         id: str | set[str] | None,
         action: str | None,
+        mini_response: bool = False,
         **kwargs: Any,
-    ) -> AdcSuccessDocumentSingle:
-        """POST to server and return mashumaro deserialized SuccessDocument."""
+    ) -> AdcSuccessDocumentSingle | AdcMiniSuccessResponse:
+        """
+        POST to server and return mashumaro deserialized AdcSuccessDocumentSingle or AdcMiniResponse.
+
+        Convenience function that builds URLs based on resource type, ID, action, etc.
+        """
 
         path = self._generate_request_url(path, id) + (f"/{action}" if action else "/")
 
@@ -628,8 +639,8 @@ class AlarmBridge:
                 return await self.request(
                     method="post",
                     url=path,
-                    accept_types=ResponseTypes.JSONAPI,
-                    success_response_class=AdcSuccessDocumentSingle,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
+                    success_response_class=AdcMiniSuccessResponse if mini_response else AdcSuccessDocumentSingle,
                     **kwargs,
                 )
 
@@ -640,50 +651,17 @@ class AlarmBridge:
                 continue
 
     ############################
-    ## RESOURCE STRING OUTPUT ##
+    ## RESOURCE PRETTY OUTPUT ##
     ############################
 
     @property
-    def resources_pretty_str(self) -> str:
+    def resources_pretty(self) -> Group:
         """Return pretty representation of resources in AlarmBridge."""
 
-        # Print all controllers
-        return (
-            self._auth_controller.resources_pretty_str
-            + self._available_device_catalogs.resources_pretty_str
-            + self._systems.resources_pretty_str
-            + self._trouble_conditions.resources_pretty_str
-            + self._device_catalogs.resources_pretty_str
-            + self._cameras.resources_pretty_str
-            + self._garage_doors.resources_pretty_str
-            + self._lights.resources_pretty_str
-            + self._gates.resources_pretty_str
-            + self._locks.resources_pretty_str
-            + self._partitions.resources_pretty_str
-            + self._sensors.resources_pretty_str
-            + self._thermostats.resources_pretty_str
-            + self._water_sensors.resources_pretty_str
-            + self._image_sensors.resources_pretty_str
-        )
+        return Group(*[x.resources_pretty for x in self.resource_controllers])
 
     @property
-    def resources_raw_str(self) -> str:
+    def resources_raw(self) -> Group:
         """Return raw JSON for all bridge resources."""
 
-        return (
-            self._auth_controller.resources_raw_str
-            + self._available_device_catalogs.resources_raw_str
-            + self._systems.resources_raw_str
-            + self._trouble_conditions.resources_raw_str
-            + self._device_catalogs.resources_raw_str
-            + self._cameras.resources_raw_str
-            + self._garage_doors.resources_raw_str
-            + self._lights.resources_raw_str
-            + self._gates.resources_raw_str
-            + self._locks.resources_raw_str
-            + self._partitions.resources_raw_str
-            + self._sensors.resources_raw_str
-            + self._thermostats.resources_raw_str
-            + self._water_sensors.resources_raw_str
-            + self._image_sensors.resources_raw_str
-        )
+        return Group(*[x.resources_raw for x in self.resource_controllers])

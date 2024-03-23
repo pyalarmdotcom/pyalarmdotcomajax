@@ -36,23 +36,23 @@ class LightAttributes(BaseManagedDeviceAttributes[LightState], AdcResourceAttrib
     """Attributes of light."""
 
     # fmt: off
-    can_enable_remote_commands: bool = field(metadata={"description": "Can the remote commands be enabled or disabled?"})
-    can_enable_state_tracking: bool = field(metadata={"description": "Can state tracking be enabled for this light?"})
-    hex_color: str | None = field(metadata={"description": "A hex string representing the currently active color. For decoding this should be used in conjunction with 'lightColorFormat'."})
-    is_dimmer: bool = field(metadata={"description": "Is the light a dimmer?"})
-    light_color_format: LightColorFormat = field(metadata={"description": "The format of the color hex string. This values maps in the LightColorFormat enum. Defaults to 'Not Set'."})
-    light_level: int = field(metadata={"description": "Dimmer value for a dimmer light"})
-    percent_warmth: int = field(metadata={"description": "Represents a percentage from 0-100, the color temperature is between the minimum (cool) and maximum (100% warm) temperatures we support."})
-    remote_commands_enabled: bool = field(metadata={"description": "Whether remote commands are enabled or not."})
-    state_tracking_enabled: bool = field(metadata={"description": "Is state tracking enabled?"})
-    supports_rgb_color_control: bool = field(metadata={"description": "Does it support RGB color changing?"})
-    supports_white_light_color_control: bool = field(metadata={"description": "Does it support color temperature changing? (Selecting between variations of white light)."})
+    can_enable_remote_commands: bool = field(metadata={"description": "Indicates whether remote commands can be enabled or disabled."})
+    can_enable_state_tracking: bool = field(metadata={"description": "Indicates whether state tracking can be enabled for this light."})
+    hex_color: str | None = field(metadata={"description": "A hex string representing the currently active color. To decode, use in conjunction with 'lightColorFormat'."})
+    is_dimmer: bool = field(metadata={"description": "Specifies whether the light is a dimmer."})
+    light_color_format: LightColorFormat = field(metadata={"description": "The format of the color hex string. This value corresponds to the LightColorFormat enum. Defaults to 'Not Set'."})
+    light_level: int = field(metadata={"description": "The dimmer value for a dimmer light."})
+    percent_warmth: int = field(metadata={"description": "Represents a percentage from 0-100. The color temperature is between the minimum (cool) and maximum (100% warm) temperatures supported."})
+    remote_commands_enabled: bool = field(metadata={"description": "Indicates whether remote commands are enabled."})
+    state_tracking_enabled: bool = field(metadata={"description": "Specifies whether state tracking is enabled."})
+    supports_rgb_color_control: bool = field(metadata={"description": "Indicates whether RGB color changing is supported."})
+    supports_white_light_color_control: bool = field(metadata={"description": "Indicates whether color temperature changing (selecting between variations of white light) is supported."})
 
-    # is_favorite: bool = field(metadata={"description": "Is the light in the Favorites Group?"})
-    # is_zwave: bool = field(metadata={"description": "Is the light a ZWave device."})
-    # light_groups: bool = field(metadata={"description": "Light groups that this light belongs to"})
-    # should_show_favorites_toggle: bool = field(metadata={"description": "Should the 'Favorites' toggle be shown in the edit light modal?"})
-    # should_update_multi_level_state: bool = field(metadata={"description": "Whether or not we should update multilevel state as part of saving this model. Used to avoid turning on a multilevel light when updating non-lighting properties such as device name"})
+    # is_favorite: bool = field(metadata={"description": "Specifies whether the light is in the Favorites Group."})
+    # is_zwave: bool = field(metadata={"description": "Specifies whether the light is a ZWave device."})
+    # light_groups: bool = field(metadata={"description": "Light groups that this light belongs to."})
+    # should_show_favorites_toggle: bool = field(metadata={"description": "Specifies whether the 'Favorites' toggle should be shown in the edit light modal."})
+    # should_update_multi_level_state: bool = field(metadata={"description": "Indicates whether or not the multilevel state should be updated as part of saving this model. Used to avoid turning on a multilevel light when updating non-lighting properties such as device name."})
     # fmt: on
 
     @property

@@ -1,10 +1,13 @@
 """Alarm.com controller for thermostats."""
 
+# ruff: noqa: UP007
+
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
+from pyalarmdotcomajax.adc.decorators import cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
 from pyalarmdotcomajax.models.base import ResourceType
@@ -52,21 +55,41 @@ SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
 class ThermostatController(BaseController[Thermostat]):
     """Controller for thermostats."""
 
-    _resource_type = ResourceType.THERMOSTAT
+    resource_type = ResourceType.THERMOSTAT
     _resource_class = Thermostat
     _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
 
+    @cli_action()
     async def set_state(
         self,
         id: str,
-        state: ThermostatState | None = None,
-        fan_mode: tuple[ThermostatFanMode, int] | None = None,
-        cool_setpoint: float | None = None,
-        heat_setpoint: float | None = None,
-        schedule_mode: ThermostatScheduleMode | None = None,
+        state: Optional[ThermostatState] = None,
+        fan_mode: Optional[tuple[ThermostatFanMode, int]] = None,
+        cool_setpoint: Optional[float] = None,
+        heat_setpoint: Optional[float] = None,
+        schedule_mode: Optional[ThermostatScheduleMode] = None,
     ) -> None:
-        """Change thermostat state."""
+        """
+        Set thermostat attributes.
 
+        This method allows you to change the state of the thermostat by setting various attributes such as the state,
+        fan mode, cool setpoint, heat setpoint, and schedule mode. Only one attribute can be set at a time.
+
+        Args:
+            id (str): The ID of the thermostat.
+            state (ThermostatState | None): The desired state of the thermostat. Optional.
+            fan_mode (tuple[ThermostatFanMode, int] | None): A tuple containing the desired fan mode and fan duration. Optional.
+            cool_setpoint (float | None): The desired cool setpoint. Optional.
+            heat_setpoint (float | None): The desired heat setpoint. Optional.
+            schedule_mode (ThermostatScheduleMode | None): The desired schedule mode. Optional.
+
+        Raises:
+            ValueError: If multiple attributes are being set at the same time.
+
+        Returns:
+            None
+
+        """
         # Make sure that multiple attributes are not being set at the same time.
         if (attrib_list := [state, fan_mode, cool_setpoint, heat_setpoint, schedule_mode]).count(None) < len(
             attrib_list

@@ -10,5 +10,5 @@ from pyalarmdotcomajax.models.trouble_condition import TroubleCondition
 class TroubleConditionController(BaseController[TroubleCondition]):
     """Controller for trouble conditions."""
 
-    _resource_type = ResourceType.TROUBLE_CONDITION
+    resource_type = ResourceType.TROUBLE_CONDITION
     _resource_class = TroubleCondition

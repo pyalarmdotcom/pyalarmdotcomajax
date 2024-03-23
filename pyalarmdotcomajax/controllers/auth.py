@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 from bs4 import BeautifulSoup
+from rich.console import Group
 
 from pyalarmdotcomajax import const
 from pyalarmdotcomajax.controllers.users import (
@@ -49,13 +50,21 @@ log = logging.getLogger(__name__)
 class AuthenticationController:
     """Controller for user identity."""
 
-    def __init__(self, bridge: AlarmBridge, username: str, password: str, mfa_cookie: str | None = None) -> None:
+    def __init__(
+        self,
+        bridge: AlarmBridge,
+        username: str | None = None,
+        password: str | None = None,
+        mfa_cookie: str | None = None,
+    ) -> None:
         """Initialize authentication controller."""
         self._bridge = bridge
 
         # Credentials
-        self._username: str = username
-        self._password: str = password
+        # We allow these to be set after initialization so that we can use an instantiated (but not initialized)
+        # AlarmBridge to populate the adc cli command list.
+        self._username: str = username or ""
+        self._password: str = password or ""
         self._mfa_cookie: str = mfa_cookie or ""
 
         # Device Controllers
@@ -63,14 +72,14 @@ class AuthenticationController:
         self._profiles = ProfilesController(self._bridge, self._identities)
 
     @property
-    def resources_pretty_str(self) -> str:
+    def resources_pretty(self) -> Group:
         """Return pretty string representation of the user."""
-        return self._identities.resources_pretty_str + self._profiles.resources_pretty_str
+        return Group(self._identities.resources_pretty, self._profiles.resources_pretty)
 
     @property
-    def resources_raw_str(self) -> str:
+    def resources_raw(self) -> Group:
         """Return raw string representation of the user."""
-        return self._identities.resources_raw_str + self._profiles.resources_raw_str
+        return Group(self._identities.resources_raw, self._profiles.resources_raw)
 
     @property
     def mfa_cookie(self) -> str:
@@ -125,6 +134,13 @@ class AuthenticationController:
             else True
         )
 
+    def set_credentials(self, username: str, password: str, mfa_cookie: str | None = None) -> None:
+        """Set the user's credentials."""
+
+        self._username = username
+        self._password = password
+        self._mfa_cookie = mfa_cookie or ""
+
     async def login(self) -> None:
         """
         Log in to Alarm.com.
@@ -137,6 +153,9 @@ class AuthenticationController:
 
         """
         log.info("Logging in to Alarm.com")
+
+        if "" in [self._username, self._password]:
+            raise AuthenticationFailed("Username and password are required.")
 
         self._bridge.ajax_key = None
 
@@ -232,7 +251,8 @@ class AuthenticationController:
                 ) as resp:
                     if re.search("m=login_fail", str(resp.url)) is not None:
                         raise AuthenticationFailed
-
+                    if re.search("m=LockedOut", str(resp.url)) is not None:
+                        raise AuthenticationFailed("Account is locked.")
                     return
 
             except TimeoutError as err:
@@ -295,24 +315,23 @@ class AuthenticationController:
             return
 
         await self._bridge.post(
-            TWO_FACTOR_PATH,
-            self._identities.items[0].id,
-            "sendTwoFactorAuthenticationCodeViaSms"
+            path=TWO_FACTOR_PATH,
+            id=self._identities.items[0].id,
+            action="sendTwoFactorAuthenticationCodeViaSms"
             if method == OtpType.sms
             else "sendTwoFactorAuthenticationCodeViaEmail",
+            mini_response=True,
         )
 
     async def submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> None:
         """Submit OTP and register device."""
-
-        if method not in [OtpType.sms, OtpType.email]:
-            return
 
         await self._bridge.post(
             path=TWO_FACTOR_PATH,
             id=self._identities.items[0].id,
             action="verifyTwoFactorCode",
             json={"code": code, "typeOf2FA": method.value},
+            mini_response=True,
         )
 
         if not device_name:
@@ -324,4 +343,5 @@ class AuthenticationController:
             id=self._identities.items[0].id,
             action="trustTwoFactorDevice",
             json={"deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"},
+            mini_response=True,
         )

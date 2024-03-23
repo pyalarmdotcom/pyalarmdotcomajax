@@ -330,6 +330,11 @@ class FailureDocument(Document):
     jsonapi: Jsonapi | None = None
     links: PaginatedLinks | None = None
 
+    class Config(BaseConfig):
+        """Mashumaro config for Resource."""
+
+        forbidextra_keys = False
+
 
 @dataclass
 class MetaDocument(Document):

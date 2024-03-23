@@ -89,69 +89,42 @@ class ThermostatAttributes(TemperatureDeviceAttributes[ThermostatState]):
 
     # fmt: off
     auto_setpoint_buffer: float = field(metadata={"description": "The minimum buffer between the heat and cool setpoints."})
-    away_cool_setpoint: float = field(metadata={"description": "The away preset cool setpoint."})
-    away_heat_setpoint: float = field(metadata={"description": "The away preset heat setpoint."})
+    away_cool_setpoint: float = field(metadata={"description": "The cool setpoint when away."})
+    away_heat_setpoint: float = field(metadata={"description": "The heat setpoint when away."})
     cool_setpoint: float = field(metadata={"description": "The current cool setpoint."})
     desired_cool_setpoint: float = field(metadata={"description": "The desired cool setpoint."})
     desired_heat_setpoint: float = field(metadata={"description": "The desired heat setpoint."})
-    fan_duration: int | None = field(metadata={"description": "The duration to run the fan. Only used to offset the commands. Fan duration is not updated in server response, even when fan is turned on for specific amount of time."})
+    fan_duration: int | None = field(metadata={"description": "The duration to run the fan. Only used to offset the commands."})
     fan_mode: ThermostatReportedFanMode = field(metadata={"description": "The current fan mode."})
     forwarding_ambient_temp: float = field(metadata={"description": "The current temperature including any additional temperature sensor averaging."})
-    has_pending_setpoint_change: bool = field(metadata={"description": "Does the thermostat have a pending setpoint change?"})
-    has_pending_temp_mode_change: bool = field(metadata={"description": "Does the thermostat have a pending temp mode change?"})
+    has_pending_setpoint_change: bool = field(metadata={"description": "Indicates if there is a pending setpoint change."})
+    has_pending_temp_mode_change: bool = field(metadata={"description": "Indicates if there is a pending temperature mode change."})
     heat_setpoint: float = field(metadata={"description": "The current heat setpoint."})
-    inferred_state: str = field(metadata={"description": "The mode we think the thermostat is using when in auto mode (auto heat or auto cool)"})
-    is_controlled: bool = field(metadata={"description": "Whether the thermostat is controlled by another thermostat."})
-    is_pool_controller: bool = field(metadata={"description": "Whether the thermostat is a pool controller."})
-    max_aux_heat_setpoint: float = field(metadata={"description": "The max valid aux heat setpoint."})
-    max_cool_setpoint: float = field(metadata={"description": "The max valid cool setpoint."})
-    max_heat_setpoint: float = field(metadata={"description": "The max valid heat setpoint."})
-    min_aux_heat_setpoint: float = field(metadata={"description": "The min valid aux heat setpoint."})
-    min_cool_setpoint: float = field(metadata={"description": "The min valid cool setpoint."})
-    min_heat_setpoint: float = field(metadata={"description": "The min valid heat setpoint."})
-    requires_setup: bool = field(metadata={"description": "Does the thermostat require a setup wizard to be run before being used?"})
-    schedule_mode: str = field(metadata={"description": "The schedule mode."})
-    setpoint_offset: float = field(metadata={"description": "The amount to increment or decrement the setpoint by when changing it."})
-    supported_fan_durations: list[int] = field(metadata={"description": "The fan mode durations that the thermostat supports"})
-    supports_auto_mode: bool = field(metadata={"description": "Whether the thermostat supports the auto temp mode."})
-    supports_aux_heat_mode: bool = field(metadata={"description": "Whether the thermostat supports the aux heat temp mode."})
-    supports_circulate_fan_mode_always: bool = field(metadata={"description": "Whether the thermostat supports the circulate fan mode regardless of temp mode."})
-    supports_circulate_fan_mode_when_off: bool = field(metadata={"description": "Whether the thermostat supports the circulate fan mode when in OFF mode."})
-    supports_cool_mode: bool = field(metadata={"description": "Whether the thermostat supports the cool temp mode."})
-    supports_fan_mode: bool = field(metadata={"description": "Whether the thermostat supports fan mode control."})
-    supports_heat_mode: bool = field(metadata={"description": "Whether the thermostat supports the heat temp mode."})
-    supports_indefinite_fan_on: bool = field(metadata={"description": "Whether the thermostat supports running the fan indefinitely."})
-    supports_off_mode: bool = field(metadata={"description": "Whether the thermostat supports the off temp mode."})
-    supports_schedules: bool = field(metadata={"description": "Whether the thermostat supports schedules."})
-    supports_setpoints: bool = field(metadata={"description": "Whether the thermostat supports setpoints."})
+    inferred_state: str = field(metadata={"description": "The inferred mode when in auto mode."})
+    is_controlled: bool = field(metadata={"description": "Indicates if the thermostat is controlled by another thermostat."})
+    is_pool_controller: bool = field(metadata={"description": "Indicates if the thermostat is a pool controller."})
+    max_aux_heat_setpoint: float = field(metadata={"description": "The maximum valid aux heat setpoint."})
+    max_cool_setpoint: float = field(metadata={"description": "The maximum valid cool setpoint."})
+    max_heat_setpoint: float = field(metadata={"description": "The maximum valid heat setpoint."})
+    min_aux_heat_setpoint: float = field(metadata={"description": "The minimum valid aux heat setpoint."})
+    min_cool_setpoint: float = field(metadata={"description": "The minimum valid cool setpoint."})
+    min_heat_setpoint: float = field(metadata={"description": "The minimum valid heat setpoint."})
+    requires_setup: bool = field(metadata={"description": "Indicates if the thermostat requires a setup wizard."})
+    schedule_mode: str = field(metadata={"description": "The current schedule mode."})
+    setpoint_offset: float = field(metadata={"description": "The amount to increment or decrement the setpoint by."})
+    supported_fan_durations: list[int] = field(metadata={"description": "The supported fan mode durations."})
+    supports_auto_mode: bool = field(metadata={"description": "Indicates if the thermostat supports the auto temperature mode."})
+    supports_aux_heat_mode: bool = field(metadata={"description": "Indicates if the thermostat supports the aux heat temperature mode."})
+    supports_circulate_fan_mode_always: bool = field(metadata={"description": "Indicates if the thermostat supports the circulate fan mode regardless of temperature mode."})
+    supports_circulate_fan_mode_when_off: bool = field(metadata={"description": "Indicates if the thermostat supports the circulate fan mode when in OFF mode."})
+    supports_cool_mode: bool = field(metadata={"description": "Indicates if the thermostat supports the cool temperature mode."})
+    supports_fan_mode: bool = field(metadata={"description": "Indicates if the thermostat supports fan mode control."})
+    supports_heat_mode: bool = field(metadata={"description": "Indicates if the thermostat supports the heat temperature mode."})
+    supports_indefinite_fan_on: bool = field(metadata={"description": "Indicates if the thermostat supports running the fan indefinitely."})
+    supports_off_mode: bool = field(metadata={"description": "Indicates if the thermostat supports the off temperature mode."})
+    supports_schedules: bool = field(metadata={"description": "Indicates if the thermostat supports schedules."})
+    supports_setpoints: bool = field(metadata={"description": "Indicates if the thermostat supports setpoints."})
     desired_fan_mode: ThermostatReportedFanMode | None = field(default=None, metadata={"description": "The desired fan mode."})
-
-    # active_sensors: List[str]  # The collection of sensors (including the thermostat) that are currently driving the HVAC system.
-    # boiler_control_system: str  # The boiler control system this device belongs to.
-    # controlled_thermostats: List[str]  # The thermostats that this thermostat controls
-    # cool_rts_presets: List[float]  # The paired RTS devices on cool mode, separated by setpoint.
-    # desired_local_display_locking_mode: str  # The desired local display locking mode.
-    # has_rts_issue: bool  # Indicates an issue with RTS forwarding.
-    # heat_rts_presets: List[float]  # The paired RTS devices on heat mode, separated by setpoint.
-    # home_cool_setpoint: float  # The home preset cool setpoint.
-    # home_heat_setpoint: float  # The home preset heat setpoint.
-    # local_display_locking_mode: str  # The current local display locking mode.
-    # peak_protect: bool  # The Peak Protect
-    # pending_state_changes: List[str]  # Property that contains state changes to be committed
-    # remote_temperature_sensors: List[str]  # The remote temperature sensors associated with the thermostat.
-    # rule_suggestions: List[str]  # An array of rule alerts for this thermostat.
-    # schedule_icon_name: str  # The name for the schedule icon.
-    # sleep_cool_setpoint: float  # The sleep preset cool setpoint.
-    # sleep_heat_setpoint: float  # The sleep preset heat setpoint.
-    # supports_hvac_analytics: bool  # Whether the thermostat supports HVAC Analytics.
-    # supports_local_display_locking: bool  # Whether the thermostat supports local display locking.
-    # supports_partial_local_display_locking: bool  # Whether the thermostat supports partial local display locking.
-    # supports_smart_schedules: bool  # Whether the thermostat supports the Smart Schedule mode.
-    # supports_third_party_settings: bool  # Whether the thermostat supports third party settings.
-    # thermostat_settings_template: str  # The thermostat settings template applied to this thermostat.
-    # third_party_settings_url: str  # The URL for third party settings.
-    # third_party_settings_url_desc: str  # The description for third party settings URL.
-    # valve_switches: List[str]  # The valve switches associated with the thermostat.
     # fmt: on
 
     @property

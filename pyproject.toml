@@ -1,6 +1,57 @@
+#
+# Build System
+#
+
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyalarmdotcomajax"
+authors = [
+    {name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com"},
+    {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"},
+]
+maintainers = [{name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}]
+description = "Event Driven Python Interface for Alarm.com"
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["Alarm.com", "Security System", "Home Assistant"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Natural Language :: English",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Home Automation"
+]
+dependencies = [
+    "beautifulsoup4 ~= 4.10.0",
+    "aiohttp ~= 3.8.1",
+    "python-dateutil ~= 2.8.2",
+    "pyhumps~=3.8.0",
+    "typer[all]~=0.9.1",
+    "uvloop~=0.19.0"
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/pyalarmdotcom/pyalarmdotcomajax"
+
+[tool.setuptools.dynamic]
+version = {attr = "pyalarmdotcomajax.version.__version__"}
+
+[project.scripts]
+adc = "pyalarmdotcomajax.adc.app_main:app"
+
+
+
+#
+# Code Quality
+#
 
 [tool.mypy]
 python_version = "3.11"
@@ -91,7 +142,8 @@ ignore = [
 ]
 line-length = 115
 extend-safe-fixes = [
-    "UP007", # pyupgrade: Use | instead of Union, | None instead of Optional.
+    # Disabled for Typer support.
+    # "UP007", # pyupgrade: Use | instead of Union, | None instead of Optional.
     "UP006", # pyupgrade: Use list (and others) from standard library instead of typing.
 ]
 
@@ -113,3 +165,4 @@ skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmd
 count = ''
 quiet-level=2
 ignore-words-list="hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo"
+

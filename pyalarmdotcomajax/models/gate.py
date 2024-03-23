@@ -24,9 +24,7 @@ class GateState(Enum):
 class GateAttributes(BaseManagedDeviceAttributes[GateState]):
     """Attributes of a gate device."""
 
-    supports_remote_close: float = field(
-        metadata={"description": "Specifies whether the gate can be closed remotely."}
-    )
+    supports_remote_close: float = field(metadata={"description": "Whether the gate can be closed remotely."})
 
 
 @dataclass

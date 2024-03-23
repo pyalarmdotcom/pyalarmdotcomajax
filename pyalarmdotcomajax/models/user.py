@@ -19,11 +19,11 @@ class ApplicationSessionProperties(AdcResourceAttributes):
     """A class representing application session properties."""
 
     # fmt: off
-    should_timeout: bool = field(metadata={"description": "Whether the session should timeout"})
-    keep_alive_url: str = field(metadata={"description": "URL for keep-alive requests"})
-    enable_keep_alive: bool = field(metadata={"description": "Whether keep-alive requests are enabled"})
-    logout_timeout_ms: int = field(metadata={"description": "Timeout for logout in milliseconds"})
-    inactivity_warning_timeout_ms: int = field(metadata={"description": "Timeout for inactivity warning in milliseconds"})
+    should_timeout: bool = field(metadata={"description": "Specifies if the session should timeout"})
+    keep_alive_url: str = field(metadata={"description": "URL used for keep-alive requests"})
+    enable_keep_alive: bool = field(metadata={"description": "Indicates whether keep-alive requests are enabled"})
+    logout_timeout_ms: int = field(metadata={"description": "Timeout duration for logout in milliseconds"})
+    inactivity_warning_timeout_ms: int = field(metadata={"description": "Timeout duration for inactivity warning in milliseconds"})
     # fmt: on
 
 

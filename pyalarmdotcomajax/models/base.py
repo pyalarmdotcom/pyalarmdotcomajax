@@ -193,24 +193,16 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcNamedDeviceAttribute
     """Base attributes for an alarm.com device."""
 
     # fmt: off
-    # description: str = field(metadata={"description": "Device name"})
-    battery_level_pct: int | None = field(metadata=field_options(alias="battery_level_null")) # The current device battery level as a percentage with null as the default value.
-    critical_battery: bool = field(metadata={"description": "Whether the device has a critical battery status."})
-    low_battery: bool = field(metadata={"description": "Whether the device has a low battery status."})
-    can_be_saved: bool = field(metadata={"description": "Does the logged in context have write permissions for this device?"})
-    can_confirm_state_change: bool = field(metadata={"description": "Can the device confirm that its state changed?"})
-    can_receive_commands: bool = field(metadata={"description": "Does this device support commands being sent to it?"})
-    desired_state: BaseStatefulDeviceState | DeviceState | None = field(metadata={"description": "The desired device state."}, default=None)
-    has_permission_to_change_state: bool = field(metadata={"description": "Can the logged in login change the state of this device?"})
-    remote_commands_enabled: bool = field(metadata={"description": "Can the device status be changed remotely via app or web?"})
-    state: BaseStatefulDeviceState | DeviceState = field(metadata={"description": "The current device state."})
-
-    # animation_state: str = field(metadata={"description": "The model animation state."})
-    # can_change_description: bool = field(metadata={"description": "Can the device description be changed?"})
-    # device_icon: int = field(metadata={"description": "The icon to present the device."})
-    # display_date: str = field(metadata={"description": "Returns the display string for the current stateInfo value."})
-    # state_info: dict = field(metadata={"description": "ID for StateInfo object containing extended state information."})
-    # state_subtext: str = field(metadata={"description": "The model state subtext for home cards."})
+    battery_level_pct: int | None = field(metadata=field_options(alias="battery_level_null")) # The current battery level of the device as a percentage with null as the default value.
+    critical_battery: bool = field(metadata={"description": "Indicate whether the device has a critical battery status."})
+    low_battery: bool = field(metadata={"description": "Indicate whether the device has a low battery status."})
+    can_be_saved: bool = field(metadata={"description": "Whether the logged in context has write permissions for this device."})
+    can_confirm_state_change: bool = field(metadata={"description": "Whether the device can confirm its state change."})
+    can_receive_commands: bool = field(metadata={"description": "Whether device supports receiving commands."})
+    desired_state: BaseStatefulDeviceState | DeviceState | None = field(metadata={"description": "Desired device state."}, default=None)
+    has_permission_to_change_state: bool = field(metadata={"description": "Whether logged in user can change device state."})
+    remote_commands_enabled: bool = field(metadata={"description": "Whether device can be changed remotely via app or web."})
+    state: BaseStatefulDeviceState | DeviceState = field(metadata={"description": "Current device state."})
     # fmt: on
 
     @property
@@ -245,10 +237,10 @@ class BaseManagedDeviceAttributes(
     """Base attributes for an alarm.com managed device."""
 
     # fmt: off
-    has_state: bool  # Does this device have a state?
-    is_malfunctioning: bool  # Is the device currently set to a malfunction state.
-    mac_address: str  # The mac address for the device, if available.
-    manufacturer: str  # The manufacturer of the device.
+    has_state: bool = field(metadata={"description": "Does this device have a state?"})
+    is_malfunctioning: bool = field(metadata={"description": "Is the device currently set to a malfunction state."})
+    mac_address: str = field(metadata={"description": "The mac address for the device, if available."})
+    manufacturer: str = field(metadata={"description": "The manufacturer of the device."})
     device_model: str | None = field(metadata={"description": "The device model."}, default=None)
     device_model_id: int | None = field(metadata={"description": "The device model id."}, default=None)
 

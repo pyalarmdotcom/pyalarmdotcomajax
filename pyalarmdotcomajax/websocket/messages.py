@@ -9,7 +9,6 @@ from typing import Any
 
 from mashumaro import field_options
 
-from pyalarmdotcomajax.exceptions import UnexpectedResponse
 from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement
 
 UNDEFINED = "**UNDEFINED**"
@@ -123,41 +122,13 @@ class ResourceEventType(Enum):
         return ResourceEventType.UNKNOWN
 
 
-@dataclass
-class WebSocketTokenResponseMetadata(JsonApiBaseElement):
-    """Metadata response object within the Alarm.com WebSocket token endpoint response."""
+# @dataclass
+# class WebSocketTokenResponseMetadata(JsonApiBaseElement):
+#     """Metadata response object within the Alarm.com WebSocket token endpoint response."""
 
-    # fmt: off
-    endpoint: str | None = field(default=None)
-    # fmt: on
-
-
-@dataclass
-class WebSocketTokenResponse(JsonApiBaseElement):
-    """
-    Represents a success/failure response object from the Alarm.com WebSocket token endpoint.
-
-    This response is not JSON:API compliant.
-    """
-
-    # fmt: off
-    errors: list = field(default_factory=list)
-    validation_errors: list = field(default_factory=list)
-    processing_errors: list = field(default_factory=list)
-    value: str | None = field(default=None)
-    metadata: WebSocketTokenResponseMetadata = field(default_factory=WebSocketTokenResponseMetadata, metadata=field_options(alias="meta_data"))
-    # fmt: on
-
-    def check_errors(self) -> None:
-        """Return True if the response has errors."""
-
-        if self.errors or self.validation_errors or self.processing_errors or not self.metadata.endpoint:
-            raise UnexpectedResponse(
-                "WebSocket token request has errors.\n"
-                f"Processing Errors: {self.processing_errors}\n"
-                f"Validation Errors: {self.validation_errors}\n"
-                f"Errors: {self.errors}\n"
-            )
+#     # fmt: off
+#     endpoint: str
+#     # fmt: on
 
 
 @dataclass(kw_only=True)

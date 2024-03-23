@@ -1,11 +1,15 @@
 """Alarm.com controller for lights."""
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import logging
 from types import MappingProxyType
-from typing import Any
+from typing import Annotated, Any
 
+import typer
+
+from pyalarmdotcomajax.adc.decorators import cli_action
+from pyalarmdotcomajax.adc.params import Param_Id
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
@@ -40,7 +44,7 @@ STATE_COMMAND_MAP = {
 class LightController(BaseController[Light]):
     """Controller for lights."""
 
-    _resource_type = ResourceType.LIGHT
+    resource_type = ResourceType.LIGHT
     _resource_class = Light
     _event_state_map = MappingProxyType(
         {
@@ -53,18 +57,33 @@ class LightController(BaseController[Light]):
         events=[ResourceEventType.SwitchLevelChanged, *_event_state_map.keys()],
     )
 
-    async def turn_on(self, id: str) -> None:
-        """Turn on light."""
+    @cli_action()
+    async def turn_on(self, id: Param_Id) -> None:
+        """Turn on a light."""
 
         await self.set_state(id, state=LightState.ON)
 
-    async def turn_off(self, id: str) -> None:
-        """Turn off light."""
+    @cli_action()
+    async def turn_off(self, id: Param_Id) -> None:
+        """Turn off a light."""
 
         await self.set_state(id, state=LightState.OFF)
 
-    async def set_brightness(self, id: str, brightness: int) -> None:
-        """Set light brightness and turn on light if off."""
+    @cli_action()
+    async def set_brightness(
+        self,
+        id: Param_Id,
+        brightness: Annotated[
+            int,
+            typer.Argument(
+                help="A dimmable light's brightness. (Range: 0-100)",
+                max=100,
+                min=0,
+                show_default=False,
+            ),
+        ],
+    ) -> None:
+        """Turn on a light and set its brightness."""
 
         await self.set_state(id, state=LightState.ON, brightness=brightness)
 

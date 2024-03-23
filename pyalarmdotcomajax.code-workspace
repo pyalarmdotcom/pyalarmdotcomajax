@@ -13,7 +13,7 @@
             "editor.defaultFormatter": "charliermarsh.ruff",
             "editor.formatOnPaste": true,
             "editor.formatOnSave": true,
-            // "editor.formatOnType": true
+            "editor.formatOnType": false
         },
         "[yaml]": {
             "editor.defaultFormatter": "esbenp.prettier-vscode"

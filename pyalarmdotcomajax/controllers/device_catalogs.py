@@ -14,6 +14,6 @@ log = logging.getLogger(__name__)
 class DeviceCatalogController(BaseController[DeviceCatalog]):
     """Controller for systems."""
 
-    _resource_type = ResourceType.DEVICE_CATALOG
+    resource_type = ResourceType.DEVICE_CATALOG
     _resource_class = DeviceCatalog
     _requires_target_ids = True

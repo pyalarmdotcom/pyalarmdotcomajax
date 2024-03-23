@@ -19,14 +19,14 @@ class ImageSensorAttributes(AdcNamedDeviceAttributes):
     """
 
     # fmt: off
-    is_image_sensor_deleted: bool = field(metadata={"description": "True if the device is deleted; False otherwise."})
-    support_peek_in_now: bool = field(metadata={"description": "True if the device supports PeekInNow; False otherwise."})
-    can_view_images: bool = field(metadata={"description": "Can the currently logged in login view images for this sensor?"})
+    is_image_sensor_deleted: bool = field(metadata={"description": "Indicates whether the device has been deleted."})
+    support_peek_in_now: bool = field(metadata={"description": "Indicates whether the device supports PeekInNow feature."})
+    can_view_images: bool = field(metadata={"description": "Specifies whether the currently logged in user can view images for this sensor."})
 
-    # support_peek_in_next_motion: bool = field(metadata={"description": "True if the device supports PeekInNextMotion; False otherwise."})
-    # hide_peek_in_next_motion_button: bool = field(metadata={"description": "Should we hide the peek in next motion button?"})
-    # excluded_from_visual_verification: bool = field(metadata={"description": "Is the image sensor excluded from visual verification?"})
-    # excluded_from_escalated_events: bool = field(metadata={"description": "Is the image sensor excluded from escalated events?"})
+    # support_peek_in_next_motion: bool = field(metadata={"description": "Indicates whether the device supports PeekInNextMotion feature."})
+    # hide_peek_in_next_motion_button: bool = field(metadata={"description": "Specifies whether to hide the peek in next motion button."})
+    # excluded_from_visual_verification: bool = field(metadata={"description": "Specifies whether the image sensor is excluded from visual verification."})
+    # excluded_from_escalated_events: bool = field(metadata={"description": "Specifies whether the image sensor is excluded from escalated events."})
     # fmt: on
 
 
@@ -44,7 +44,6 @@ class ImageSensorImageAttributes(AdcNamedDeviceAttributes):
 
     image: str = field(metadata={"description": "The Base64 encoded image."})
     image_src: str = field(metadata={"description": "URI for the image sensor image source."})
-    # description: str = field(metadata={"description": "The event description for this image upload."})
     timestamp: str = field(metadata={"description": "Time stamp of when the image was taken."})
 
 

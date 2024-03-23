@@ -1,12 +1,15 @@
 """Alarm.com controller for partitions."""
 
+# ruff: noqa: UP007
+
 from __future__ import annotations
 
 import logging
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Optional
 
+from pyalarmdotcomajax.adc.decorators import cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
@@ -46,7 +49,7 @@ ARMING_EXTENSION_BODY_MAP = {
 class PartitionController(BaseController[Partition]):
     """Controller for partitions."""
 
-    _resource_type = ResourceType.PARTITION
+    resource_type = ResourceType.PARTITION
     _resource_class = Partition
     _event_state_map = MappingProxyType(
         {
@@ -70,20 +73,23 @@ class PartitionController(BaseController[Partition]):
 
         return None
 
+    @cli_action()
     async def clear_faults(self, id: str) -> None:
-        """Clear faults on partition."""
+        """Clear all faults on a partition."""
 
         await self._send_command(id, "clearIssues")
 
+    @cli_action()
     async def disarm(self, id: str) -> None:
-        """Disarm partition."""
+        """Disarm a partition."""
 
         await self.set_state(id, PartitionState.DISARMED)
 
+    @cli_action()
     async def arm_stay(
         self, id: str, force_bypass: bool = False, no_entry_delay: bool = False, silent_arming: bool = False
     ) -> None:
-        """Arm partition in stay mode."""
+        """Arm a partition in stay mode."""
 
         extended_arming_options = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
@@ -95,8 +101,9 @@ class PartitionController(BaseController[Partition]):
             id, PartitionState.ARMED_STAY, [option for option in extended_arming_options if option]
         )
 
+    @cli_action()
     async def arm_away(self, id: str, force_bypass: bool = False, no_entry_delay: bool = False) -> None:
-        """Arm partition in away mode."""
+        """Arm a partition in away mode."""
 
         extended_arming_options = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
@@ -107,8 +114,9 @@ class PartitionController(BaseController[Partition]):
             id, PartitionState.ARMED_AWAY, [option for option in extended_arming_options if option]
         )
 
+    @cli_action()
     async def arm_night(self, id: str, force_bypass: bool = False, no_entry_delay: bool = False) -> None:
-        """Arm partition in night mode."""
+        """Arm a partition in night mode."""
 
         extended_arming_options = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
@@ -124,7 +132,7 @@ class PartitionController(BaseController[Partition]):
         self,
         id: str,
         state: PartitionState,
-        extended_arming_options: list[ExtendedArmingOptionItems] | None = None,
+        extended_arming_options: Optional[list[ExtendedArmingOptionItems]] = None,
     ) -> None:
         """Change partition state."""
 
@@ -152,10 +160,11 @@ class PartitionController(BaseController[Partition]):
 
         await self._send_command(id, command.value, msg_body)
 
+    @cli_action()
     async def change_sensor_bypass(
-        self, partition_id: str, bypass_ids: list[str] | None = None, unbypass_ids: list[str] | None = None
+        self, partition_id: str, bypass_ids: Optional[list[str]] = None, unbypass_ids: Optional[list[str]] = None
     ) -> None:
-        """Change sensor bypass state."""
+        """Bypass or unbypass sensors on a partition."""
 
         if not (bypass_ids or unbypass_ids):
             raise ValueError("Either bypass_ids or unbypass_ids must be provided.")

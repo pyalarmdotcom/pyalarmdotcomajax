@@ -33,7 +33,6 @@ from pyalarmdotcomajax.websocket.messages import (
     ResourcePropertyChangeType,
     StatusUpdateWSMessage,
     WebSocketMessageTester,
-    WebSocketTokenResponse,
 )
 
 if TYPE_CHECKING:
@@ -82,7 +81,7 @@ class SupportedResourceEvents:
 
 
 WebSocketResourceEventCallBackT = Callable[[BaseWSMessage], Any]
-WebSocketConnectionEventCallBackT = Callable[[WebSocketState], Any]
+WebSocketConnectionEventCallBackT = Callable[[WebSocketState, int | None], Any]
 
 WebSocketConnectionEventSubscriptionT = WebSocketConnectionEventCallBackT
 WebSocketResourceEventSubscriptionT = tuple[
@@ -160,8 +159,7 @@ class WebSocketClient:
     def stop(self, state: WebSocketState = WebSocketState.DISCONNECTED) -> None:
         """Stop listening for events."""
 
-        self._state = state
-        self.emit_ws_state(state)
+        self._set_state(state)
 
         for task in self._background_tasks:
             task.cancel()
@@ -176,19 +174,14 @@ class WebSocketClient:
             log.info("Detected session timeout. Logging back in.")
             await self._bridge.login()
 
-        try:
-            response = await self._bridge.request(
-                "get",
-                url=f"{API_URL_BASE}websockets/token",
-                accept_types=ResponseTypes.JSON,
-                success_response_class=WebSocketTokenResponse,
-            )
-            response.check_errors()
-        except UnexpectedResponse as err:
-            raise AuthenticationFailed("Failed to get WebSocket authentication token.") from err
+        response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
 
         self._token = response.value
-        self._ws_endpoint = response.metadata.endpoint
+
+        try:
+            self._ws_endpoint = response.metadata["endpoint"]
+        except KeyError as err:
+            raise UnexpectedResponse("Failed to get WebSocket endpoint.") from err
 
     def subscribe_resource(
         self,
@@ -223,13 +216,13 @@ class WebSocketClient:
         self._connection_subscribers.append(subscription)
         return unsubscribe
 
-    def emit_ws_state(self, state: WebSocketState) -> None:
+    def emit_ws_state(self, state: WebSocketState, next_attempt_s: int | None = None) -> None:
         """Emit connection event to all listeners."""
         for callback in self._connection_subscribers:
             if asyncio.iscoroutinefunction(callback):
-                self._background_tasks.append(asyncio.create_task(callback(state)))
+                self._background_tasks.append(asyncio.create_task(callback(state, next_attempt_s)))
             else:
-                callback(state)
+                callback(state, next_attempt_s)
 
     def emit_resource(self, data: BaseWSMessage) -> None:
         """Emit resource event to all listeners."""
@@ -257,7 +250,7 @@ class WebSocketClient:
     async def _event_reader(self) -> NoReturn:
         """Maintain connection with server and read events from stream."""
 
-        self._state = WebSocketState.CONNECTING
+        self._set_state(WebSocketState.CONNECTING)
         connect_attempts = 0
 
         while True:
@@ -267,9 +260,9 @@ class WebSocketClient:
                 await self._authenticate()
 
                 async with self._bridge.ws_connect(f"{self._ws_endpoint}/?auth={self._token}") as websocket:
-                    self._state = WebSocketState.CONNECTED
+                    self._set_state(WebSocketState.CONNECTED)
 
-                    self.emit_ws_state(
+                    self._set_state(
                         WebSocketState.CONNECTED if connect_attempts == 1 else WebSocketState.RECONNECTED,
                     )
                     connect_attempts = 1
@@ -312,10 +305,10 @@ class WebSocketClient:
                 log.exception("[Event Reader]")
                 raise err  # noqa: TRY201
 
-            self._state = WebSocketState.DISCONNECTED
-            self.emit_ws_state(WebSocketState.DISCONNECTED)
-
             reconnect_wait = min(2 * connect_attempts, 600)
+
+            self._set_state(WebSocketState.DISCONNECTED, reconnect_wait)
+
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
                 reconnect_wait,
@@ -327,7 +320,9 @@ class WebSocketClient:
                     " - This might be an indication of connection issues.",
                     connect_attempts,
                 )
-            self._state = WebSocketState.CONNECTING
+
+            self._set_state(WebSocketState.CONNECTING)
+
             await asyncio.sleep(reconnect_wait)
 
     async def _event_processor(self) -> NoReturn:
@@ -378,6 +373,13 @@ class WebSocketClient:
 
             except Exception:
                 log.exception("Failed to convert message: %s", json.loads(msg_json))
+
+    def _set_state(self, state: WebSocketState, reconnect_wait: int | None = None) -> None:
+        """Set WS client state and emit message only if state has changed."""
+
+        if self._state != state:
+            self._state = state
+            self.emit_ws_state(state, reconnect_wait)
 
     ################################
     # SESSION KEEP ALIVE FUNCTIONS #

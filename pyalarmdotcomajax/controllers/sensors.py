@@ -34,7 +34,7 @@ SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
 class SensorController(BaseController[Sensor]):
     """Controller for sensors."""
 
-    _resource_type = ResourceType.SENSOR
+    resource_type = ResourceType.SENSOR
     _resource_class = Sensor
     _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
 

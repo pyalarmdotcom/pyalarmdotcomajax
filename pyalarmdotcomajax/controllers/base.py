@@ -8,10 +8,11 @@ import logging
 from abc import ABC
 from asyncio import Task, iscoroutinefunction
 from collections.abc import Awaitable, Callable, Iterator
-from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
+
+from rich.console import Group
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers import AdcResourceT, EventCallBackType, EventType
@@ -19,9 +20,8 @@ from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     Resource,
-    SuccessDocument,
 )
-from pyalarmdotcomajax.util import resources_pretty_str, resources_raw_str
+from pyalarmdotcomajax.util import resources_pretty, resources_raw
 from pyalarmdotcomajax.websocket.client import SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
 
@@ -29,22 +29,6 @@ if TYPE_CHECKING:
     from pyalarmdotcomajax import AlarmBridge
 
 log = logging.getLogger(__name__)
-
-
-@dataclass
-class AdcSuccessDocumentSingle(SuccessDocument):
-    """Represent a successful response with a single primary resource object."""
-
-    data: Resource
-    included: list[Resource] = field(default_factory=list)
-
-
-@dataclass
-class AdcSuccessDocumentMulti(SuccessDocument):
-    """Represent a successful response with multiple primary resource objects."""
-
-    data: list[Resource]
-    included: list[Resource] = field(default_factory=list)
 
 
 class EventTransmitterMixin:
@@ -97,7 +81,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
     """Base controller for Ember.js/JSON:API based components."""
 
     # ResourceTypes to be pulled from API response data object.
-    _resource_type: ClassVar[ResourceType]
+    resource_type: ClassVar[ResourceType]
     # AdcResource class to be created by this controller.
     _resource_class: type[AdcResourceT]
     # URL to be used for API requests when URL cannot be derived directly from controler's ResourceType.
@@ -143,8 +127,6 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         # Restricts this controller to specific devices. Used for controllers that only support single-serve endpoints.
         self._target_device_ids: set[str] = set({})
 
-        self._post_init_hook()
-
     @property
     def items(self) -> list[AdcResourceT]:
         """Return all resources for this controller."""
@@ -174,7 +156,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         if self._api_data_provider:
             self._initialized = True
             self._api_data_unsubscribe = await self._api_data_provider.subcontroller_data_subscribe(
-                [self._resource_type], self._refresh
+                [self.resource_type], self._refresh
             )
             return
 
@@ -212,7 +194,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             raise UnknownDevice(f"Device {id} not found.")
 
         await self._bridge.post(
-            path=self._resource_url_override or self._resource_type,
+            path=self._resource_url_override or self.resource_type,
             action=action,
             id=id,
             json={"statePollOnly": False, **msg_body},
@@ -244,9 +226,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             Any missing resources previously registered by this controller will be unregistered.
         """
 
-        log.info(f"[{self._resource_type.name}] Refreshing controller...")
-
-        await self._pre_refresh_hook()
+        log.info(f"[{self.resource_type.name}] Refreshing controller...")
 
         if pre_fetched and resource_id:
             raise NotImplementedError
@@ -267,7 +247,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             else:
                 ids = None
 
-            response = await self._bridge.get(self._resource_url_override or self._resource_type, ids)
+            response = await self._bridge.get(self._resource_url_override or self.resource_type, ids)
 
             response.data = self._device_filter(response.data)
 
@@ -300,7 +280,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         discovered_resource_ids = set({})
         for resource in pre_fetched:
             if (
-                resource.type == self._resource_type
+                resource.type == self.resource_type
                 and await self._register_or_update_resource(resource) is not None
             ):
                 discovered_resource_ids.update({resource.id})
@@ -325,7 +305,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             adc_resource = self[message.device_id]
         except KeyError:
             log.warning(
-                f"[{self._resource_type.name}] Received state change for unknown {self._resource_type.name} {message.device_id}."
+                f"[{self.resource_type.name}] Received state change for unknown {self.resource_type.name} {message.device_id}."
             )
             return
 
@@ -370,7 +350,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         for resource_type in resource_types:
             self._api_data_receivers.setdefault(resource_type, []).append(callback)
 
-        # log.debug(f"New API data subscriber for {resource_types} to {self._resource_type.name} controller.")
+        # log.debug(f"New API data subscriber for {resource_types} to {self.resource_type.name} controller.")
 
         # Send data if dependent subscribes after fetch.
         if len(self._included_resources) > 0:
@@ -403,8 +383,6 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
 
         new_adc_resource = self._resource_class(resource)
 
-        new_adc_resource = await self._pre_instantiation_hook(new_adc_resource)
-
         # Check whether any underlying data has changed. We instantiate first (above) since we only
         # want to notify subscribers if attributes used by this library have changed.
         if ((existing_adc_resource := self.get(resource.id)) is not None) and (
@@ -416,18 +394,18 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             self._resources.update({resource.id: new_adc_resource})
         except Exception:
             log.exception(
-                f"[{self._resource_type.name}] Failed to instantiate {resource.type} {resource.id}. Moving on..."
+                f"[{self.resource_type.name}] Failed to instantiate {resource.type} {resource.id}. Moving on..."
             )
             return None
 
         if existing_adc_resource:
             log.debug(
-                f"[{self._resource_type.name}] Updated {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
+                f"[{self.resource_type.name}] Updated {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
             )
             await self._send_event(EventType.RESOURCE_UPDATED, resource.id, new_adc_resource)
         else:
             log.debug(
-                f"[{self._resource_type.name}] Registered {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
+                f"[{self.resource_type.name}] Registered {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
             )
             await self._send_event(EventType.RESOURCE_ADDED, resource.id, new_adc_resource)
 
@@ -436,30 +414,11 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
     async def _unregister_resource(self, resource_id: str) -> None:
         """Remove resource from registry and notify subscribers."""
 
-        log.debug(f"[{self._resource_type.name}] Unregistering {resource_id}...")
+        log.debug(f"[{self.resource_type.name}] Unregistering {resource_id}...")
 
         resource = self._resources.pop(resource_id, None)
 
         await self._send_event(EventType.RESOURCE_DELETED, resource_id, resource)
-
-    #########
-    # HOOKS #
-    #########
-
-    async def _pre_refresh_hook(self) -> None:
-        """Inject code before a full refresh. To be overridden by subclasses."""
-
-        pass
-
-    def _post_init_hook(self) -> None:
-        """Post-initialization hook. To be overridden by subclasses."""
-
-        pass
-
-    async def _pre_instantiation_hook(self, resource: AdcResourceT) -> AdcResourceT:
-        """Pre-instantiation hook. To be overridden by subclasses."""
-
-        return resource
 
     ####################
     # OBJECT FUNCTIONS #
@@ -482,19 +441,19 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         return id in self._resources
 
     @property
-    def resources_pretty_str(self) -> str:
-        """Return string representation of resources in controller."""
+    def resources_pretty(self) -> Group:
+        """Return pretty Rich representation of resources in controller."""
 
-        return resources_pretty_str(self._resource_type.name, list(self._resources.values()))
-
-    @property
-    def resources_raw_str(self) -> str:
-        """Return raw JSON for all controller resources."""
-
-        return resources_raw_str(self._resource_type.name, list(self._resources.values()))
+        return resources_pretty(self.resource_type.name, list(self._resources.values()))
 
     @property
-    def included_raw_str(self) -> str:
-        """Return raw JSON for all controller resources."""
+    def resources_raw(self) -> Group:
+        """Return Rich representation raw JSON for all controller resources."""
 
-        return resources_raw_str(f"{self._resource_type.name} Children", list(self._included_resources))
+        return resources_raw(self.resource_type.name, list(self._resources.values()))
+
+    @property
+    def included_raw_str(self) -> Group:
+        """Return Rich representation of raw JSON for all controller resources."""
+
+        return resources_raw(f"{self.resource_type.name} Children", list(self._included_resources))

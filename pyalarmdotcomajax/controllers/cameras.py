@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class CameraController(BaseController[Camera]):
     """Controller for lights."""
 
-    _resource_type = ResourceType.CAMERA
+    resource_type = ResourceType.CAMERA
     _resource_class = Camera
     _resource_url_override = "video/devices/cameras"
 
