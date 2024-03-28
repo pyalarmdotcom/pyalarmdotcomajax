@@ -5,11 +5,11 @@
 # from __future__ import annotations
 
 import asyncio
+import platform
 from functools import partial
 from typing import Annotated, Optional
 
 import typer
-import uvloop
 from rich import print
 from rich.console import Group
 from rich.panel import Panel
@@ -231,5 +231,7 @@ app.add_typer(
 )
 
 if __name__ == "__main__":
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    # Below is necessary to prevent asyncio "Event loop is closed" error in Windows.
+    if platform.system() == "Windows" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     app()
