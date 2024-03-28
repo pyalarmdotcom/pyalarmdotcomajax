@@ -65,6 +65,8 @@ class OtpPrompt(PromptBase[OtpType]):
 async def async_handle_otp_workflow(
     alarm: AlarmBridge,
     enabled_2fa_methods: list[OtpType],
+    email: str | None = None,
+    sms_number: str | None = None,
     otp: str | None = None,
     otpmethod: OtpType | None = None,
     device_name: str | None = None,
@@ -109,7 +111,9 @@ async def async_handle_otp_workflow(
 
         if selected_otpmethod in (OtpType.email, OtpType.sms):
             # Ask Alarm.com to send OTP if selected method is EMAIL or SMS.
-            print(f"[bold yellow]Requesting One-Time Password via {selected_otpmethod.name}...")
+            print(
+                f"[bold yellow]Requesting One-Time Password via {selected_otpmethod.name} at {email if selected_otpmethod == OtpType.email else sms_number}..."
+            )
             await alarm.auth_controller.request_otp(selected_otpmethod)
 
     #
@@ -303,11 +307,13 @@ async def collect_params(
     except OtpRequired as exc:
         try:
             await async_handle_otp_workflow(
-                bridge,
-                exc.enabled_2fa_methods,
-                ctx.params.get("otp"),
-                ctx.params.get("otp_method"),
-                ctx.params.get("device_name"),
+                alarm=bridge,
+                enabled_2fa_methods=exc.enabled_2fa_methods,
+                email=exc.email,
+                sms_number=exc.formatted_sms_number,
+                otp=ctx.params.get("otp"),
+                otpmethod=ctx.params.get("otp_method"),
+                device_name=ctx.params.get("device_name"),
             )
 
             await bridge.initialize()

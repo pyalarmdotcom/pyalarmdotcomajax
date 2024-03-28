@@ -311,7 +311,16 @@ class AuthenticationController:
 
         log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
 
-        raise OtpRequired(enabled_2fa_methods)
+        raise OtpRequired(
+            enabled_2fa_methods,
+            email=mfa_details.attributes.email,
+            sms_country_code=mfa_details.attributes.sms_mobile_number.country
+            if mfa_details.attributes.sms_mobile_number
+            else None,
+            sms_number=mfa_details.attributes.sms_mobile_number.mobile_number
+            if mfa_details.attributes.sms_mobile_number
+            else None,
+        )
 
     #################
     # MFA FUNCTIONS #

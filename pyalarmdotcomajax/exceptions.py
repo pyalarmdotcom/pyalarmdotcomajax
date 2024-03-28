@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import phonenumbers
+
 from pyalarmdotcomajax.models.auth import OtpType
 
 
@@ -85,11 +87,27 @@ class AuthenticationFailed(SessionException):
 class OtpRequired(SessionException):
     """Raised during login if a user had two-factor authentication enabled."""
 
-    def __init__(self, enabled_2fa_methods: list[OtpType]) -> None:
+    def __init__(
+        self,
+        enabled_2fa_methods: list[OtpType],
+        email: str | None = None,
+        sms_number: str | None = None,
+        sms_country_code: str | None = None,
+    ) -> None:
         """Initialize the exception."""
         super().__init__()
 
         self.enabled_2fa_methods = enabled_2fa_methods
+        self.email = email
+        self.sms_number = sms_number
+        self.sms_country_code = sms_country_code
+
+        self.formatted_sms_number = None
+        if sms_number and sms_country_code:
+            parsed_number = phonenumbers.parse(f"+{sms_country_code}{sms_number}")
+            self.formatted_sms_number = phonenumbers.format_number(
+                parsed_number, phonenumbers.PhoneNumberFormat.NATIONAL
+            )
 
 
 class ConfigureTwoFactorAuthentication(SessionException):
