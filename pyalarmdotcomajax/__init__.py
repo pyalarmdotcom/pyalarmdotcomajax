@@ -7,6 +7,7 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable
+from datetime import datetime
 from types import TracebackType
 from typing import Any, Literal, TypeVar, overload
 
@@ -15,7 +16,7 @@ import humps
 from mashumaro.exceptions import MissingField
 from rich.console import Group
 
-from pyalarmdotcomajax.const import API_URL_BASE, REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, ResponseTypes
+from pyalarmdotcomajax.const import API_URL_BASE, REQUEST_RETRY_LIMIT, SUBMIT_RETRY_LIMIT, URL_BASE, ResponseTypes
 from pyalarmdotcomajax.controllers import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import BaseController, EventCallBackType
@@ -40,6 +41,7 @@ from pyalarmdotcomajax.exceptions import (
     NotAuthorized,
     NotInitialized,
     ServiceUnavailable,
+    SessionTimeout,
     UnexpectedResponse,
 )
 from pyalarmdotcomajax.models import AdcMiniSuccessResponse
@@ -99,12 +101,13 @@ class AlarmBridge:
         self._image_sensor_images = ImageSensorImageController(self)
 
     async def initialize(self) -> None:
-        """Initialize bridge."""
+        """Initialize bridge, or finish initialization after OTP has been submitted."""
 
         if self._initialized:
             return
 
-        await self.login()
+        if not await self.is_logged_in():
+            await self.login()
 
         await self.fetch_full_state()
 
@@ -112,6 +115,37 @@ class AlarmBridge:
 
         # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE (DO IN INTEGRATION)
         # TODO: SKYBELL HD
+
+    async def is_logged_in(self, throw: bool = False) -> bool:
+        """Check if we are still logged in. Also functions as keep alive signal."""
+
+        try:
+            url = f"{URL_BASE[:-1]}{self.auth_controller.keep_alive_url}?timestamp={int(round(datetime.now().timestamp()))}"
+        except IndexError:
+            # User has yet to log in.
+            if throw:
+                raise NotInitialized
+
+            return False
+
+        try:
+            async with self.create_request(
+                "get", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
+            ) as rsp:
+                text_rsp = await rsp.text()
+
+        except aiohttp.ClientResponseError as err:
+            if err.status == 403:
+                log.debug("Session expired.")
+
+                if throw:
+                    raise SessionTimeout
+
+                return False
+
+            raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
+
+        return True
 
     async def login(self) -> None:
         """Login to alarm.com."""
@@ -342,7 +376,10 @@ class AlarmBridge:
         if self._websession is None:
             self._websession = aiohttp.ClientSession()
 
-        kwargs.setdefault("cookies", {}).update({"twoFactorAuthenticationId": self._auth_controller.mfa_cookie})
+        if self._auth_controller.mfa_cookie:
+            kwargs.setdefault("cookies", {}).update(
+                {"twoFactorAuthenticationId": self._auth_controller.mfa_cookie}
+            )
 
         kwargs = self.build_request_headers(accept_types, use_ajax_key, **kwargs)
 

@@ -309,6 +309,8 @@ async def collect_params(
                 ctx.params.get("otp_method"),
                 ctx.params.get("device_name"),
             )
+
+            await bridge.initialize()
         except AuthenticationFailed as err:
             print("[bold red]Invalid OTP.")
             raise typer.Exit(1) from err

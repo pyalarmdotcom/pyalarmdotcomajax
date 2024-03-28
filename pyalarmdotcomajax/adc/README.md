@@ -79,8 +79,8 @@ $ adc action garage_door close [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -105,8 +105,8 @@ $ adc action garage_door open [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -150,8 +150,8 @@ $ adc action gate close [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -176,8 +176,8 @@ $ adc action gate open [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -220,8 +220,8 @@ $ adc action image_sensor peek_in [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -267,8 +267,8 @@ $ adc action light set_brightness [OPTIONS] DEVICE_ID BRIGHTNESS
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -293,8 +293,8 @@ $ adc action light turn_off [OPTIONS] DEVICE_ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -319,8 +319,8 @@ $ adc action light turn_on [OPTIONS] DEVICE_ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -364,8 +364,8 @@ $ adc action lock lock [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -390,8 +390,8 @@ $ adc action lock unlock [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -439,8 +439,8 @@ $ adc action partition arm_away [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `--force-bypass / --no-force-bypass`: [default: no-force-bypass]
 * `--no-entry-delay / --no-no-entry-delay`: [default: no-no-entry-delay]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
@@ -467,8 +467,8 @@ $ adc action partition arm_night [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `--force-bypass / --no-force-bypass`: [default: no-force-bypass]
 * `--no-entry-delay / --no-no-entry-delay`: [default: no-no-entry-delay]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
@@ -495,8 +495,8 @@ $ adc action partition arm_stay [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `--force-bypass / --no-force-bypass`: [default: no-force-bypass]
 * `--no-entry-delay / --no-no-entry-delay`: [default: no-no-entry-delay]
 * `--silent-arming / --no-silent-arming`: [default: no-silent-arming]
@@ -524,8 +524,8 @@ $ adc action partition change_sensor_bypass [OPTIONS] PARTITION_ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `--bypass-ids TEXT`
 * `--unbypass-ids TEXT`
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
@@ -552,8 +552,8 @@ $ adc action partition clear_faults [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -578,8 +578,8 @@ $ adc action partition disarm [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -624,8 +624,8 @@ $ adc action system clear_alarms_in_memory [OPTIONS] SYSTEM_ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -651,8 +651,8 @@ $ adc action system clear_smoke_sensor [OPTIONS] SYSTEM_ID SMOKE_SENSOR_ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -677,8 +677,8 @@ $ adc action system stop_alarms [OPTIONS] ID
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -720,8 +720,8 @@ $ adc action thermostat set_state [OPTIONS]
 **Options**:
 
 * `--id TEXT`: The ID of the thermostat.  [required]
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `--state [OFF|HEAT|COOL|AUTO|AUXHEAT]`: The desired state of the thermostat.
 * `--fan-mode [AUTO|ON|CIRCULATE]`: The desired fan mode.
 * `--fan-mode-duration INTEGER`: The duration for which the desired fan mode should run.
@@ -748,8 +748,8 @@ $ adc get [OPTIONS]
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-x, --include-unsupported`: Return basic data for all known unsupported devices. Always outputs in verbose format.
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
@@ -771,8 +771,8 @@ $ adc stream [OPTIONS]
 
 **Options**:
 
-* `--username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
-* `--password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside "cookie" argument. Defaults to [yellow]app[/yellow] if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!

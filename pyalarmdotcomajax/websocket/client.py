@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 import aiohttp
 
-from pyalarmdotcomajax.const import API_URL_BASE, URL_BASE, ResponseTypes
+from pyalarmdotcomajax.const import API_URL_BASE
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
@@ -170,7 +170,7 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        if not await self.is_logged_in():
+        if not await self._bridge.is_logged_in():
             log.info("Detected session timeout. Logging back in.")
             await self._bridge.login()
 
@@ -399,30 +399,6 @@ class WebSocketClient:
             if rsp.status >= 400:
                 raise UnexpectedResponse(f"Failed to reload session context. Response: {text_rsp}")
 
-    async def is_logged_in(self, throw: bool = False) -> bool:
-        """Check if we are still logged in. Also functions as keep alive signal."""
-
-        url = f"{URL_BASE[:-1]}{self._bridge.auth_controller.keep_alive_url}?timestamp={int(round(datetime.now().timestamp()))}"
-
-        try:
-            async with self._bridge.create_request(
-                "get", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
-            ) as rsp:
-                text_rsp = await rsp.text()
-
-        except aiohttp.ClientResponseError as err:
-            if err.status == 403:
-                log.debug("Session expired.")
-
-                if throw:
-                    raise SessionTimeout
-
-                return False
-
-            raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
-
-        return True
-
     async def _keep_alive(self) -> NoReturn:
         """
         Keep session alive.
@@ -453,7 +429,7 @@ class WebSocketClient:
                 if signals_sent >= session_refresh_interval - 1:
                     signals_sent = 0
                     await self._reload_session_context()
-                if self._bridge.auth_controller.enable_keep_alive and not await self.is_logged_in():
+                if self._bridge.auth_controller.enable_keep_alive and not await self._bridge.is_logged_in():
                     log.info("[Keep Alive] Detected expired user session.")
             except (TimeoutError, aiohttp.ClientError, SessionTimeout, AlarmdotcomException) as err:
                 log.debug(f"Error while sending keep alive: {err}")
