@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from rich.columns import Columns
 from rich.console import Group
+from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 
@@ -131,15 +132,28 @@ def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Gr
         tbl.add_row(f"[b]{slug_to_title(x)}[/b]", str(cli_format(y)))
         return tbl
 
-    resource_type_banner = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str).upper()} ]===[/bold bright_white on yellow]"
+    # resource_type_banner = f"[bold bright_white on yellow][/bold bright_white on yellow]"
+    # Panel.fit("[yellow bold]SYSTEM STATUS[/yellow bold]", border_style="yellow")
+    resource_type_banner = Panel(
+        f"[black on white bold]{slug_to_title(resource_type_str).upper()}[/black on white bold]",
+        border_style="black",
+        style="black on white",
+    )
 
     if len(resources) == 0:
-        return Group(resource_type_banner, "\nNone")
+        return Group("\n", resource_type_banner, "\nNone")
 
     formatted_resources = []
 
     for resource in resources:
-        resource_title = f'\n[underline bright_cyan][bold]{getattr(resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}").upper()}[/bold] ({resource.id})[/underline bright_cyan]'
+        title_text = str(
+            getattr(resource.attributes, "description", None)
+            or getattr(resource.attributes, "name", f"Unnamed {slug_to_title(resource_type_str)}")
+        ).upper()
+
+        resource_title = (
+            f"\n[underline bright_cyan][bold]{title_text}[/bold] ({resource.id})[/underline bright_cyan]"
+        )
 
         resource_attributes = [fmt_attr("state", getattr(resource.attributes, "state", "[i]No State[/i]"))]
 
@@ -149,7 +163,7 @@ def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Gr
 
         formatted_resources.append(Group(resource_title, Columns(resource_attributes, padding=(0, 2), equal=True)))
 
-    return Group(resource_type_banner, *formatted_resources)
+    return Group("\n", resource_type_banner, *formatted_resources)
 
 
 def resources_raw(resource_type_str: str, resources: list[Resource | AdcResource]) -> Group:

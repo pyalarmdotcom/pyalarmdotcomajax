@@ -29,6 +29,7 @@ from pyalarmdotcomajax.models.auth import (
     TwoFactorAuthentication,
 )
 from pyalarmdotcomajax.models.jsonapi import Resource
+from pyalarmdotcomajax.util import resources_pretty, resources_raw
 
 if TYPE_CHECKING:
     from pyalarmdotcomajax import AlarmBridge
@@ -73,13 +74,21 @@ class AuthenticationController:
 
     @property
     def resources_pretty(self) -> Group:
-        """Return pretty string representation of the user."""
-        return Group(self._identities.resources_pretty, self._profiles.resources_pretty)
+        """Return pretty Rich representation of resources in controller."""
+
+        return resources_pretty("Users", [*self._identities.items, *self._profiles.items])
 
     @property
     def resources_raw(self) -> Group:
-        """Return raw string representation of the user."""
-        return Group(self._identities.resources_raw, self._profiles.resources_raw)
+        """Return Rich representation raw JSON for all controller resources."""
+
+        return resources_raw("Users", [*self._identities.items, *self._profiles.items])
+
+    @property
+    def included_raw_str(self) -> Group:
+        """Return Rich representation of raw JSON for all controller resources."""
+
+        return resources_raw("Users Children", [*self._identities.items, *self._profiles.items])
 
     @property
     def mfa_cookie(self) -> str:

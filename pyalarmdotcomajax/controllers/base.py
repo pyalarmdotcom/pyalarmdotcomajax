@@ -16,6 +16,7 @@ from rich.console import Group
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers import AdcResourceT, EventCallBackType, EventType
+from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     Resource,
@@ -189,8 +190,8 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
 
         msg_body = msg_body or {}
 
-        # if not self.get(id):
-        #     raise UnknownDevice(f"Device {id} not found.")
+        if not self.get(id):
+            raise UnknownDevice(f"Device {id} not found.")
 
         await self._bridge.post(
             path=self._resource_url_override or self.resource_type,

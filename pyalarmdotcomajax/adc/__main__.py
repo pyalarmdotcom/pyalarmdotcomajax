@@ -81,8 +81,16 @@ async def stream(
 
     bridge: AlarmBridge = ctx.obj["bridge"]
 
-    print(Panel.fit("[yellow bold]EVENT MONITOR[/yellow bold]", border_style="yellow"))
-    print("[bold](Press Ctrl+C to exit.)")
+    print("\n")
+
+    print(
+        Panel(
+            "[black on yellow bold]EVENT MONITOR[/black on yellow bold]",
+            border_style="black",
+            style="black on yellow",
+        )
+    )
+    print("\n[bold](Press Ctrl+C to exit.)\n\n")
 
     async with bridge:
         bridge.subscribe(partial(event_printer, ctx.params["json"]))
@@ -118,7 +126,15 @@ async def get(
 
     bridge: AlarmBridge = ctx.obj["bridge"]
 
-    print(Panel.fit("[yellow bold]SYSTEM STATUS[/yellow bold]", border_style="yellow"))
+    print("\n")
+
+    print(
+        Panel(
+            "[black on yellow bold]GET SYSTEM STATUS[/black on yellow bold]",
+            border_style="black",
+            style="black on yellow",
+        )
+    )
 
     if include_unsupported:
         output = bridge.device_catalogs.included_raw_str

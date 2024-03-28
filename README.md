@@ -29,8 +29,9 @@ pip install pyalarmdotcomajax
 Or clone the repo:
 
 ```bash
-git clone https://github.com/uvjustin/pyalarmdotcomajax.git
-python setup.py install
+git clone https://github.com/pyalarmdotcomajax/pyalarmdotcomajax.git
+cd pyalarmdotcomajax
+pip install .
 ```
 
 ## Usage
@@ -81,39 +82,9 @@ Skybell HD configuration support not yet implemented in v6 beta.
 
 ## Command Line Interface
 
-The CLI is available by running `adc` from anywhere in your terminal. Use `adc --help`, `adc get --help`, and `adc set --help` for more information.
+The CLI is available by running `adc` from anywhere in your terminal. Use `adc --help` for more information.
 
-```bash
-usage: adc [-h] [-d] [-ver] [-v] -u USERNAME -p PASSWORD [-n DEVICE_NAME] [-c COOKIE | -o ONE_TIME_PASSWORD] {get,set} ...
-
-basic command line debug interface for alarm.com via pyalarmdotcomajax. shows device states in various formats.
-
-options:
-  -h, --help            show this help message and exit
-  -d, --debug           show pyalarmdotcomajax's debug output.
-  -ver, --version       show program's version number and exit
-  -v, --verbose         show verbose output. -vv returns base64 image data for image sensor images.
-  -u USERNAME, --username USERNAME
-                        alarm.com username
-  -p PASSWORD, --password PASSWORD
-                        alarm.com password
-  -n DEVICE_NAME, --device-name DEVICE_NAME
-                        registers a device with this name on alarm.com and requests the two-factor authentication cookie for the device.
-  -c COOKIE, --cookie COOKIE
-                        two-factor authentication cookie. cannot be used with --one-time-password!
-  -o ONE_TIME_PASSWORD, --one-time-password ONE_TIME_PASSWORD
-                        provide otp code for accounts that have two-factor authentication enabled. if not provided here, adc will prompt user for otp. cannot be used with --cookie!
-
-actions:
-  {get,set}
-    get                 get data from alarm.com. use 'adc get --help' for parameters.
-    stream              stream real-time evnt notifications to terminal
-
-get options:
-  -h, --help            show this help message and exit
-  -x, --include-unsupported
-                        return basic data for all known unsupported devices. always outputs in verbose format.
-```
+Detailed helptext for the CLI is also available in this repo at [pyalarmdotcomajax/adc/README.md](pyalarmdotcomajax/adc/README.md).
 
 ### Examples
 
@@ -127,12 +98,8 @@ get options:
 This repository includes a full development environment for VS Code:
 
 1. VS Code [dev container](https://code.visualstudio.com/docs/remote/create-dev-container). Automatically installs extensions and Python dependencies and registers Git pre-commit scripts.
-2. Configuration files for type checking ([mypy](http://mypy-lang.org/)), linting ([ruff](https://github.com/astral-sh/ruff) and [black](https://github.com/psf/black)), etc.
+2. Configuration files for type checking ([mypy](http://mypy-lang.org/)), linting & formatting ([ruff](https://github.com/astral-sh/ruff), etc.
 3. Pre-commit checks run all of the above when committing to Git and on demand via VS Code [tasks](https://code.visualstudio.com/docs/editor/tasks).
-
-### References
-
-1. Some API definitions are available in the [node-alarm-dot-com repository](https://github.com/node-alarm-dot-com/node-alarm-dot-com/tree/master/src/_models).
 
 ### Open Items
 

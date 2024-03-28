@@ -257,6 +257,9 @@ async def collect_params(
         "[bold]Password:[/bold]", "****" if password else "[grey58 italic](Not Provided)[/grey58 italic]"
     )
     login_table.add_row("[bold]MFA Cookie:[/bold]", cookie or "[grey58 italic](Not Provided)[/grey58 italic]")
+
+    print("\n")
+
     print(Panel.fit(login_table, title="[bold][yellow]Logging in as:", border_style="yellow", title_align="left"))
 
     ctx.ensure_object(dict)
