@@ -2,14 +2,17 @@
 
 # ruff: noqa: UP007
 
-from __future__ import annotations
+# from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from pyalarmdotcomajax.adc.decorators import cli_action
+import typer
+
+from pyalarmdotcomajax.adc.util import ValueEnum, cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
+from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.thermostat import (
     Thermostat,
@@ -62,38 +65,56 @@ class ThermostatController(BaseController[Thermostat]):
     @cli_action()
     async def set_state(
         self,
-        id: str,
-        state: Optional[ThermostatState] = None,
-        fan_mode: Optional[tuple[ThermostatFanMode, int]] = None,
-        cool_setpoint: Optional[float] = None,
-        heat_setpoint: Optional[float] = None,
-        schedule_mode: Optional[ThermostatScheduleMode] = None,
+        id: Annotated[str, typer.Option(help="The ID of the thermostat.", show_default=False)],
+        state: Annotated[
+            Optional[OtpType],
+            typer.Option(
+                click_type=ValueEnum(ThermostatState, "UNKNOWN"),
+                case_sensitive=False,
+                show_default=False,
+                help="The desired state of the thermostat.",
+            ),
+        ] = None,
+        fan_mode: Annotated[
+            Optional[ThermostatFanMode],
+            typer.Option(
+                click_type=ValueEnum(ThermostatFanMode, ["UNKNOWN"]),
+                case_sensitive=False,
+                show_default=False,
+                help="The desired fan mode.",
+            ),
+        ] = None,
+        fan_mode_duration: Annotated[
+            Optional[int],
+            typer.Option(help="The duration for which the desired fan mode should run.", show_default=False),
+        ] = None,
+        cool_setpoint: Annotated[
+            Optional[float], typer.Option(help="The desired cool setpoint.", show_default=False)
+        ] = None,
+        heat_setpoint: Annotated[
+            Optional[float], typer.Option(help="The desired heat setpoint.", show_default=False)
+        ] = None,
+        schedule_mode: Annotated[
+            Optional[ThermostatScheduleMode],
+            typer.Option(
+                click_type=ValueEnum(ThermostatScheduleMode),
+                case_sensitive=False,
+                show_default=False,
+                help="The desired schedule mode.",
+            ),
+        ] = None,
     ) -> None:
         """
         Set thermostat attributes.
 
-        This method allows you to change the state of the thermostat by setting various attributes such as the state,
-        fan mode, cool setpoint, heat setpoint, and schedule mode. Only one attribute can be set at a time.
-
-        Args:
-            id (str): The ID of the thermostat.
-            state (ThermostatState | None): The desired state of the thermostat. Optional.
-            fan_mode (tuple[ThermostatFanMode, int] | None): A tuple containing the desired fan mode and fan duration. Optional.
-            cool_setpoint (float | None): The desired cool setpoint. Optional.
-            heat_setpoint (float | None): The desired heat setpoint. Optional.
-            schedule_mode (ThermostatScheduleMode | None): The desired schedule mode. Optional.
-
-        Raises:
-            ValueError: If multiple attributes are being set at the same time.
-
-        Returns:
-            None
-
+        Only one attribute can be set at a time, with the exception of --fan-mode and --fan-mode-duration, which must be set together.
         """
         # Make sure that multiple attributes are not being set at the same time.
-        if (attrib_list := [state, fan_mode, cool_setpoint, heat_setpoint, schedule_mode]).count(None) < len(
-            attrib_list
-        ) - 1:
+        if [fan_mode, fan_mode_duration].count(None) == 1:
+            raise ValueError("Fan_mode and fan_mode_duration must be used together.")
+        if (
+            attrib_list := [state, fan_mode, fan_mode_duration, cool_setpoint, heat_setpoint, schedule_mode]
+        ).count(None) < len(attrib_list) - 1:
             raise ValueError("Only one attribute can be set at a time.")
 
         msg_body: dict[str, Any] = {}
@@ -101,8 +122,8 @@ class ThermostatController(BaseController[Thermostat]):
         if state:
             msg_body[ATTR_STATE] = state.value
         elif fan_mode:
-            msg_body["desiredFanMode"] = fan_mode[0].value
-            msg_body["desiredFanDuration"] = 0 if fan_mode[0] == ThermostatFanMode.AUTO else fan_mode[1]
+            msg_body["desiredFanMode"] = fan_mode.value
+            msg_body["desiredFanDuration"] = 0 if fan_mode == ThermostatFanMode.AUTO else fan_mode_duration
         elif cool_setpoint:
             msg_body[ATTR_DESIRED_COOL_SETPOINT] = cool_setpoint
         elif heat_setpoint:

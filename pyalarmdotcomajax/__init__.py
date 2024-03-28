@@ -658,10 +658,14 @@ class AlarmBridge:
     def resources_pretty(self) -> Group:
         """Return pretty representation of resources in AlarmBridge."""
 
-        return Group(*[x.resources_pretty for x in self.resource_controllers])
+        return Group(
+            *[x.resources_pretty for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
+        )
 
     @property
     def resources_raw(self) -> Group:
         """Return raw JSON for all bridge resources."""
 
-        return Group(*[x.resources_raw for x in self.resource_controllers])
+        return Group(
+            *[x.resources_raw for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
+        )

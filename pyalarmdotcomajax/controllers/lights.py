@@ -8,8 +8,7 @@ from typing import Annotated, Any
 
 import typer
 
-from pyalarmdotcomajax.adc.decorators import cli_action
-from pyalarmdotcomajax.adc.params import Param_Id
+from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation

@@ -7,9 +7,11 @@ from __future__ import annotations
 import logging
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
-from pyalarmdotcomajax.adc.decorators import cli_action
+import typer
+
+from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
@@ -74,20 +76,37 @@ class PartitionController(BaseController[Partition]):
         return None
 
     @cli_action()
-    async def clear_faults(self, id: str) -> None:
+    async def clear_faults(self, id: Param_Id) -> None:
         """Clear all faults on a partition."""
 
         await self._send_command(id, "clearIssues")
 
     @cli_action()
-    async def disarm(self, id: str) -> None:
+    async def disarm(self, id: Param_Id) -> None:
         """Disarm a partition."""
 
         await self.set_state(id, PartitionState.DISARMED)
 
     @cli_action()
     async def arm_stay(
-        self, id: str, force_bypass: bool = False, no_entry_delay: bool = False, silent_arming: bool = False
+        self,
+        id: Param_Id,
+        force_bypass: Annotated[
+            bool, typer.Option(help="Bypass all open zones before arming.", show_default=False)
+        ] = False,
+        no_entry_delay: Annotated[
+            bool,
+            typer.Option(
+                help="Bypass entry delay. This will sound the alarm immediately when an entry zone triggers.",
+                show_default=False,
+            ),
+        ] = False,
+        silent_arming: Annotated[
+            bool,
+            typer.Option(
+                help="Arm the system without emitting arming \\ exit delay tones at the panel.", show_default=False
+            ),
+        ] = False,
     ) -> None:
         """Arm a partition in stay mode."""
 

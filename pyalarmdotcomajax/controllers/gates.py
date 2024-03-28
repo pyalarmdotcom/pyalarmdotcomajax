@@ -6,7 +6,7 @@ import logging
 from enum import StrEnum
 from types import MappingProxyType
 
-from pyalarmdotcomajax.adc.decorators import cli_action
+from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
@@ -44,13 +44,13 @@ class GateController(BaseController[Gate]):
     _supported_resource_events = SupportedResourceEvents(events=[*_event_state_map.keys()])
 
     @cli_action()
-    async def open(self, id: str) -> None:
+    async def open(self, id: Param_Id) -> None:
         """Open a gate."""
 
         await self.set_state(id, state=GateState.OPEN)
 
     @cli_action()
-    async def close(self, id: str) -> None:
+    async def close(self, id: Param_Id) -> None:
         """Close a gate."""
 
         await self.set_state(id, state=GateState.CLOSED)

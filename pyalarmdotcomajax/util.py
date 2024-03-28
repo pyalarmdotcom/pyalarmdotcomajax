@@ -118,6 +118,12 @@ def cli_format(value: T | Any) -> T | str | dict | list:
 def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Group:
     """Return Rich Panel or Table representation of resources in controller."""
 
+    # Alphabetize list
+    resources = sorted(
+        resources,
+        key=lambda x: str(x.api_resource.attributes.get("description", "Unnamed Resource")),
+    )
+
     def fmt_attr(x: Any, y: Any) -> Table:
         tbl = Table.grid(expand=True, padding=(0, 2))
         tbl.add_column(no_wrap=True, max_width=50)
@@ -125,7 +131,7 @@ def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Gr
         tbl.add_row(f"[b]{slug_to_title(x)}[/b]", str(cli_format(y)))
         return tbl
 
-    resource_type_banner = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str).upper()} ]===[/bold bright_white on yellow]\n"
+    resource_type_banner = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str).upper()} ]===[/bold bright_white on yellow]"
 
     if len(resources) == 0:
         return Group(resource_type_banner, "\nNone")
@@ -145,55 +151,19 @@ def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Gr
 
     return Group(resource_type_banner, *formatted_resources)
 
-    # #
-    # # Build Column Headers
-    # #
-
-    # headers: list[str | Column] = [Column("ID", no_wrap=True)]
-
-    # if description := getattr(resources[0].attributes, "description", None):
-    #     headers.append(Column("Name", style="bold", header_style="bold"))
-
-    # if state := getattr(resources[0].attributes, "state", None):
-    #     headers.append("State")
-
-    # headers.extend(
-    #     [slug_to_title(k) for k in asdict(resources[0].attributes) if k not in ["description", "state"]]
-    # )
-
-    # #
-    # # Build Table Contents
-    # #
-
-    # rsp_tbl = Table(
-    #     *headers,
-    #     show_lines=True,
-    # )
-
-    # for resource in resources:
-    #     table_row = [resource.id]
-
-    #     if description := getattr(resource.attributes, "description", None):
-    #         table_row.append(description)
-
-    #     if state := getattr(resource.attributes, "state", None):
-    #         table_row.append(str(cli_format(state)))
-
-    #     table_row.extend(
-    #         [
-    #             str(cli_format(value))
-    #             for key, value in asdict(resource.attributes).items()
-    #             if key not in ["description", "state"]
-    #         ]
-    #     )
-
-    #     rsp_tbl.add_row(*table_row)
-
-    # return Group(resource_title, rsp_tbl)
-
 
 def resources_raw(resource_type_str: str, resources: list[Resource | AdcResource]) -> Group:
     """Return raw JSON for all controller resources."""
+
+    # Alphabetize list
+    resources = sorted(
+        resources,
+        key=lambda x: str(
+            x.attributes.get("description", "Unnamed Resource")
+            if isinstance(x, Resource)
+            else x.api_resource.attributes.get("description", "Unnamed Resource")
+        ),
+    )
 
     resource_title = f"[bold bright_white on yellow]\n\n===[ {slug_to_title(resource_type_str)} ]==="
 

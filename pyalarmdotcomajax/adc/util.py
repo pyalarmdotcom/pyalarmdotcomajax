@@ -2,37 +2,20 @@
 
 # ruff: noqa: T201 C901 UP007
 
+# from __future__ import annotations
+
 import asyncio
 import inspect
 from collections.abc import Callable
 from enum import Enum
-from functools import partial, wraps
-from typing import Any, Optional, TypeVar, get_type_hints
+from functools import wraps
+from itertools import chain, compress, groupby
+from operator import attrgetter
+from typing import Annotated, Any, Optional, TypeVar, get_type_hints
 
-import aiohttp
+import click
 import typer
 from rich import print
-from rich.panel import Panel
-from rich.prompt import InvalidResponse, Prompt, PromptBase
-from rich.table import Table
-
-from pyalarmdotcomajax import AlarmBridge
-from pyalarmdotcomajax.adc.params import (
-    Param_CookieT,
-    Param_DeviceNameT,
-    Param_OtpMethodT,
-    Param_OtpT,
-    Param_PasswordT,
-    Param_UsernameT,
-)
-from pyalarmdotcomajax.exceptions import (
-    AuthenticationFailed,
-    ConfigureTwoFactorAuthentication,
-    NotAuthorized,
-    OtpRequired,
-    UnexpectedResponse,
-)
-from pyalarmdotcomajax.models.auth import OtpType
 
 F = TypeVar("F", bound=Callable[..., Any])  # Generic type variable for functions
 
@@ -40,25 +23,14 @@ F = TypeVar("F", bound=Callable[..., Any])  # Generic type variable for function
 # TYPES #
 #########
 
-
-class OtpPrompt(PromptBase[OtpType]):
-    """
-    A prompt that returns an OTP type.
-
-    Overloads the Rich PromptBase class.
-    """
-
-    response_type = OtpType
-    validate_error_message = "[prompt.invalid]Please enter an available OTP type"
-
-    def process_response(self, value: str) -> OtpType:
-        """Convert choices to an OtpType."""
-        value = value.strip().lower()
-
-        try:
-            return OtpType[value]
-        except KeyError as err:
-            raise InvalidResponse(self.validate_error_message) from err
+Param_Id = Annotated[
+    str,
+    typer.Argument(
+        metavar="DEVICE_ID",
+        show_default=False,
+        help="A device's ID. To view a list of device IDs, use '[bright_cyan]adc get[/bright_cyan]'.",
+    ),
+]
 
 
 class UTyper(typer.Typer):
@@ -97,142 +69,41 @@ class UTyper(typer.Typer):
         return self.universal(super().callback, *args, **kwargs)
 
 
+##############
+# DECORATORS #
+##############
+
+
+def cli_action() -> Callable:
+    """
+    Decorate a method to mark it as a CLI action with a given description.
+
+    This decorator adds the method and its description to a `__cli_actions__` attribute
+    on the method, used for identifying CLI actions within a class.
+
+    Args:
+        func: The method to decorate.
+        description: Human-readable description of the CLI action.
+
+    Returns:
+        The decorated method.
+
+    """
+
+    def decorator(func: Callable) -> Callable:
+        if not hasattr(func, "__cli_actions__"):
+            func.__cli_actions__ = {}  # type: ignore  # Initialize once if not already present
+
+        func.__cli_actions__[func.__name__] = {func.__name__: func.__doc__}  # type: ignore
+
+        return func
+
+    return decorator
+
+
 ###########
 # HELPERS #
 ###########
-
-
-async def async_handle_otp_workflow(
-    alarm: AlarmBridge,
-    enabled_2fa_methods: list[OtpType],
-    otp: str | None = None,
-    otpmethod: OtpType | None = None,
-    device_name: str | None = None,
-) -> None:
-    """Handle two-factor authentication workflow."""
-
-    #
-    # Determine which OTP method to use
-    #
-
-    code: str | None
-    selected_otpmethod: OtpType
-    if otp or (otpmethod == OtpType.app):
-        # If an OTP is provided directly in the CLI, it's from an OTP app.
-        selected_otpmethod = OtpType.app
-    else:
-        print(
-            "[bold]Two factor authentication is enabled for this account.",
-        )
-
-        # Get list of enabled OTP methods.
-        if len(enabled_2fa_methods) == 1:
-            # If only one OTP method is enabled, use it without prompting user.
-            selected_otpmethod = enabled_2fa_methods[0]
-            print(f"Using {selected_otpmethod.name} for One-Time Password.")
-        elif cli_otpmethod := otpmethod:
-            # If multiple OTP methods are enabled, but the user provided one via CLI, use it.
-            selected_otpmethod = OtpType(cli_otpmethod)
-            print(f"Using {selected_otpmethod.name} for One-Time Password.")
-        elif not (
-            selected_otpmethod := OtpPrompt.ask(
-                "[magenta bold underline]Which OTP method would you like to use?[/magenta bold underline]",
-                choices=[x.name for x in enabled_2fa_methods],
-            )
-        ):
-            print("[bold red]Valid OTP method was not entered.")
-            raise AuthenticationFailed
-
-        #
-        # Request OTP
-        #
-
-        if selected_otpmethod in (OtpType.email, OtpType.sms):
-            # Ask Alarm.com to send OTP if selected method is EMAIL or SMS.
-            print(f"[bold yellow]Requesting One-Time Password via {selected_otpmethod.name}...")
-            await alarm.auth_controller.request_otp(selected_otpmethod)
-
-    #
-    # Prompt user for OTP
-    #
-
-    code = Prompt.ask("[magenta bold underline]Enter One-Time Password[/magenta bold underline]")
-
-    await alarm.auth_controller.submit_otp(code=code, method=selected_otpmethod, device_name=device_name)
-
-
-async def initialize_bridge(
-    ctx: typer.Context,
-    username: Param_UsernameT,
-    password: Param_PasswordT,
-    bridge: Optional[AlarmBridge] = None,
-    otp_method: Param_OtpMethodT = None,
-    cookie: Param_CookieT = None,
-    otp: Param_OtpT = None,
-    device_name: Param_DeviceNameT = None,
-) -> AlarmBridge:
-    """CLI for Alarm.com. View system status, monitor real-time notifications, and change device states."""
-
-    # Enforce mutual exclusivity of MFA options.
-    # Cookie parameter can be entered as "" if env vars are set for all 3 arguments, but we want to test OTP prompts.
-    if (otp_method is not None) + (otp is not None) + (cookie not in [None, ""]) > 1:
-        raise typer.BadParameter("Cannot use more than one MFA option at a time.")
-
-    # Arguments can be pulled from environment variables. Show to user to reduce confusion.
-    login_table = Table.grid(padding=(0, 2, 0, 0))
-    login_table.add_column()
-    login_table.add_column()
-    login_table.add_row("[bold]User:[/bold]", username)
-    login_table.add_row(
-        "[bold]Password:[/bold]", "****" if password else "[grey58 italic](Not Provided)[/grey58 italic]"
-    )
-    login_table.add_row("[bold]MFA Cookie:[/bold]", cookie or "[grey58 italic](Not Provided)[/grey58 italic]")
-    print(Panel.fit(login_table, title="[bold][yellow]Logging in as:", border_style="yellow", title_align="left"))
-
-    #####################
-    # INITIALIZE BRIDGE #
-    #####################
-
-    if bridge:
-        bridge.auth_controller.set_credentials(username, password, cookie)
-    else:
-        bridge = AlarmBridge(username, password, cookie)
-
-    # Typer calls bridge.close() when context is closed.
-    ctx.call_on_close(partial(asyncio.get_event_loop().run_until_complete, bridge.close()))
-
-    #
-    # LOG IN
-    #
-
-    try:
-        # Initialize the connector
-        await bridge.initialize()
-
-    except ConfigureTwoFactorAuthentication as err:
-        print("[red]Unable to log in. Please set up two-factor authentication for this account.")
-        raise typer.Exit(1) from err
-
-    except (TimeoutError, aiohttp.ClientError, UnexpectedResponse, NotAuthorized) as err:
-        print("[red]Could not connect to Alarm.com.")
-        raise typer.Exit(1) from err
-
-    except AuthenticationFailed as err:
-        print("[red]Invalid credentials.")
-        raise typer.Exit(1) from err
-
-    #
-    # HANDLE MFA
-    #
-
-    except OtpRequired as exc:
-        try:
-            await async_handle_otp_workflow(bridge, exc.enabled_2fa_methods, otp, otp_method, device_name)
-        except AuthenticationFailed as err:
-            print("[bold red]Invalid OTP.")
-            raise typer.Exit(1) from err
-
-    return bridge
 
 
 def summarize_cli_actions(cls: Any, include_params: bool = False) -> dict[str, dict[str, Any]]:
@@ -313,3 +184,154 @@ def summarize_method_params(method: Callable[..., Any]) -> list[dict[str, str | 
         )
 
     return params_summary
+
+
+###############################################
+###############################################
+## ARGUMENT & OPTION SHARING ACROSS COMMANDS ##
+###############################################
+###############################################
+#
+# Source: https://github.com/tiangolo/typer/issues/153#issuecomment-2002389855
+#
+
+
+def merge_signatures(
+    signature: inspect.Signature, other: inspect.Signature, drop: list[str] | None = None, strict: bool = True
+) -> tuple[inspect.Signature, list[int], list[int]]:
+    """
+    Merge two signatures.
+
+    Returns a new signature where the parameters of the second signature have been
+    injected in the first if they weren't already there (i.e. same name not found).
+    Also returns two maps that can be used to find out if a parameter in the new
+    signature was present in the originals (or can be used to recover the original
+    signatures).
+
+    If `strict` is true, parameters with same name in both original signatures must
+    be of same kind (positional only, keyword only or maybe keyword). Otherwise a
+    ValueError is raised.
+    """
+    # Split parameters by kind
+    groups = {k: list(g) for k, g in groupby(signature.parameters.values(), attrgetter("kind"))}
+
+    # Append parameters from other signature
+    for name, param in other.parameters.items():
+        if drop and name in drop:
+            continue
+        if name in signature.parameters:
+            if strict and param.kind != signature.parameters[name].kind:
+                raise ValueError(f"Both signature have same parameter {name!r} but with " f"different kind")
+            continue
+
+        # Variadic args (*args or **kwargs)
+        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+            if param.kind not in groups:
+                groups[param.kind] = [param]
+            elif param.name != groups[param.kind][0].name:
+                raise ValueError(
+                    f"Variadic args must have same name when present "
+                    f"on both signatures: got {groups[param.kind][0].name!r} "
+                    f"and {param.name!r}"
+                )
+        # Non variadic args
+        else:
+            groups.setdefault(param.kind, []).append(param)
+
+    # Depending on input signatures, the resulting one can be invalid as the
+    # insertion order could yield to a parameter with a default value being in
+    # front of a parameter without default value.
+    #
+    # Make sure params with default values are put after params without default.
+    # This is done on a per kind basis (?) and can lead to unintuitive parameter
+    # reordering...
+    for params in groups.values():
+        if params:
+            params.sort(key=lambda p: bool(p.default != inspect.Parameter.empty))
+
+    # Merged parameters list
+    parameters = sorted(chain(*(groups.values())), key=attrgetter("kind"))
+
+    # Memoize if parameters were present in original signatures
+    sel_0 = [1 if p.name in signature.parameters else 0 for p in parameters]
+    sel_1 = [1 if p.name in other.parameters else 0 for p in parameters]
+
+    return signature.replace(parameters=parameters), sel_0, sel_1
+
+
+def with_paremeters(shared: Callable, show_success: bool = False) -> Callable:
+    """Share parameters between commands with this decorator."""
+
+    def wrapper(command: Callable) -> Callable:
+        """Wrap the command with shared parameters."""
+        signature, sel_0, sel_1 = merge_signatures(inspect.signature(command), inspect.signature(shared))
+
+        @wraps(command)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            """Wrap this function."""
+            # Bind values
+            bound = signature.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            # Call outer function with a set of selected parameters
+            if inspect.iscoroutinefunction(shared):
+                asyncio.get_event_loop().run_until_complete(shared(*compress(bound.args, sel_1)))
+            else:
+                shared(*compress(bound.args, sel_1))
+
+            try:
+                # Call inner function with another set of selected parameters
+                if inspect.iscoroutinefunction(command):
+                    result = asyncio.get_event_loop().run_until_complete(command(*compress(bound.args, sel_0)))
+                else:
+                    result = command(*compress(bound.args, sel_0))
+            except Exception:
+                print("[red]Error")
+                raise
+
+            if not show_success:
+                return result
+
+            print("\n[green]Success!\n")
+
+            return None
+
+        wrapped.__signature__ = signature  # type: ignore
+        return wrapped
+
+    return wrapper
+
+
+class ValueEnum(click.Choice):
+    """click.ParamType for enums for which the user should interact with the member name instead of the member value."""
+
+    name = "value_enum"
+
+    def __init__(self, target_type: type[Enum], exclude: Optional[list[str]] = None) -> None:
+        """Initialize the OtpParamType class."""
+
+        self.target_type = target_type
+
+        super().__init__(
+            choices=[x.name for x in target_type if x.name not in (exclude or [])], case_sensitive=False
+        )
+
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.Parameter],
+        ctx: Optional[click.Context],
+    ) -> Any:
+        """Convert the selection to the enum member's value to meet Typer conventions."""
+
+        try:
+            return self.target_type[value].value
+        except ValueError:
+            self.fail(f"{value!r} is not a valid {self.target_type.name} type", param, ctx)
+
+    @property
+    def metavar(self) -> str:
+        """Get the metavar string for the enum choices."""
+        choices_str = "|".join(self.choices)
+
+        return f"[{choices_str}]"

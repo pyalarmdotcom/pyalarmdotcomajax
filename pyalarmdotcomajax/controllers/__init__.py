@@ -62,12 +62,3 @@ class AdcSuccessDocumentMulti(SuccessDocument):
 #
 # /JSON:API RESPONSE CLASSES
 #
-
-#
-# CLI HELPERS
-#
-
-
-#
-# /CLI HELPERS
-#

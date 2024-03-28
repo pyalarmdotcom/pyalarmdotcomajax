@@ -6,7 +6,7 @@ import logging
 from enum import StrEnum
 from types import MappingProxyType
 
-from pyalarmdotcomajax.adc.decorators import cli_action
+from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
@@ -44,13 +44,13 @@ class LockController(BaseController[Lock]):
     _supported_resource_events = SupportedResourceEvents(events=[*_event_state_map.keys()])
 
     @cli_action()
-    async def lock(self, id: str) -> None:
+    async def lock(self, id: Param_Id) -> None:
         """Lock a lock."""
 
         await self.set_state(id, state=LockState.LOCKED)
 
     @cli_action()
-    async def unlock(self, id: str) -> None:
+    async def unlock(self, id: Param_Id) -> None:
         """Unlock a lock."""
 
         await self.set_state(id, state=LockState.UNLOCKED)

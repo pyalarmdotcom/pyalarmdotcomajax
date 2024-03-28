@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from enum import StrEnum
 
-from pyalarmdotcomajax.adc.decorators import cli_action
+from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.image_sensor import ImageSensor, ImageSensorImage
@@ -26,7 +26,7 @@ class ImageSensorController(BaseController[ImageSensor]):
     _resource_class = ImageSensor
 
     @cli_action()
-    async def peek_in(self, id: str) -> None:
+    async def peek_in(self, id: Param_Id) -> None:
         """Take a peek in photo."""
 
         await self._send_command(id, ImageSensorCommand.PEEK_IN)
