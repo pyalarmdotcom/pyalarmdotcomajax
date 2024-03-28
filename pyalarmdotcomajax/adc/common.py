@@ -149,8 +149,8 @@ async def collect_params(
     username: Annotated[
         str,
         typer.Option(
-            # "--username",
-            # "-u",
+            "--username",
+            "-u",
             help="Alarm.com username",
             rich_help_panel=CREDENTIALS,
             show_default=False,
@@ -160,8 +160,8 @@ async def collect_params(
     password: Annotated[
         str,
         typer.Option(
-            # "--password",
-            # "-p",
+            "--password",
+            "-p",
             help="Alarm.com password",
             rich_help_panel=CREDENTIALS,
             show_default=False,
