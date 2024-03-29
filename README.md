@@ -84,7 +84,7 @@ Skybell HD configuration support not yet implemented in v6 beta.
 
 The CLI is available by running `adc` from anywhere in your terminal. Use `adc --help` for more information.
 
-Detailed helptext for the CLI is also available in this repo at [pyalarmdotcomajax/adc/README.md](pyalarmdotcomajax/adc/README.md).
+Detailed helptext for the CLI is also available [here](pyalarmdotcomajax/adc/README.md).
 
 ## Development
 
