@@ -86,7 +86,10 @@ class ThermostatController(BaseController[Thermostat]):
         ] = None,
         fan_mode_duration: Annotated[
             Optional[int],
-            typer.Option(help="The duration for which the desired fan mode should run.", show_default=False),
+            typer.Option(
+                help="The duration for which the desired fan mode should run. Fan duration must be in device's list of supported durations.",
+                show_default=False,
+            ),
         ] = None,
         cool_setpoint: Annotated[
             Optional[float], typer.Option(help="The desired cool setpoint.", show_default=False)
@@ -121,7 +124,9 @@ class ThermostatController(BaseController[Thermostat]):
 
         if state:
             msg_body[ATTR_STATE] = state.value
-        elif fan_mode:
+        elif fan_mode and fan_mode_duration:
+            if fan_mode_duration not in self._resources[id].supported_fan_durations:
+                raise ValueError("Requested fan duration is not supported by the device.")
             msg_body["desiredFanMode"] = fan_mode.value
             msg_body["desiredFanDuration"] = 0 if fan_mode == ThermostatFanMode.AUTO else fan_mode_duration
         elif cool_setpoint:

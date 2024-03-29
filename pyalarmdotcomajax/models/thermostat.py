@@ -162,3 +162,9 @@ class Thermostat(AdcDeviceResource[ThermostatAttributes]):
         if self.attributes.desired_fan_mode == ThermostatReportedFanMode.CIRCULATE:
             return ThermostatFanMode.CIRCULATE
         return ThermostatFanMode.UNKNOWN
+
+    @property
+    def supported_fan_durations(self) -> list[int]:
+        """Fan durations supported by device."""
+
+        return [*self.attributes.supported_fan_durations, 0] if self.attributes.supported_fan_durations else []
