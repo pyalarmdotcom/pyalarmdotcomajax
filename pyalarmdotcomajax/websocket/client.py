@@ -172,10 +172,6 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        # if not await self._bridge.is_logged_in():
-        #     log.info("Detected session timeout. Logging back in.")
-        #     await self._bridge.login()
-
         try:
             response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
         except AuthenticationFailed:
@@ -264,7 +260,9 @@ class WebSocketClient:
 
             try:
                 try:
-                    await self._authenticate()
+                    # Get a new token on the first connect attempt and on every 10 reconnect attempts.
+                    if connect_attempts == 1 or connect_attempts % 10 == 0:
+                        await self._authenticate()
                 except OtpRequired:
                     log.error(
                         "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
@@ -412,6 +410,10 @@ class WebSocketClient:
 
             if rsp.status >= 400:
                 raise UnexpectedResponse(f"Failed to reload session context. Response: {text_rsp}")
+
+        log.debug("Reloaded context. Fetching new token...")
+
+        await self._authenticate()
 
     async def _keep_alive(self) -> NoReturn:
         """
