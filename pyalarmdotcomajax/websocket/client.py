@@ -317,7 +317,8 @@ class WebSocketClient:
                 log.exception("[Event Reader] Fatal Error")
                 raise err  # noqa: TRY201
 
-            reconnect_wait = min(2 * connect_attempts, 600)
+            # Use the same 5 second minimum used by the webapp.
+            reconnect_wait = min(max(2 * connect_attempts, 10), 50)
 
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
