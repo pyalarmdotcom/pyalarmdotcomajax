@@ -54,11 +54,6 @@ class Identity(AdcResource[IdentityAttributes]):
         return self.attributes.provider_name or None
 
     @property
-    def session_refresh_interval_ms(self) -> int | None:
-        """Interval at which session should be refreshed in milliseconds."""
-        return self.attributes.application_session_properties.logout_timeout_ms or None
-
-    @property
     def keep_alive_url(self) -> str | None:
         """URL for keep-alive requests, if keep alive is enabled."""
         return (

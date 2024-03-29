@@ -172,11 +172,15 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        if not await self._bridge.is_logged_in():
+        # if not await self._bridge.is_logged_in():
+        #     log.info("Detected session timeout. Logging back in.")
+        #     await self._bridge.login()
+
+        try:
+            response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
+        except AuthenticationFailed:
             log.info("Detected session timeout. Logging back in.")
             await self._bridge.login()
-
-        response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
 
         self._token = response.value
 
@@ -309,7 +313,7 @@ class WebSocketClient:
                 status = getattr(err, "status", None)
                 if status == 403:
                     raise AuthenticationFailed from err
-                log.debug(err)
+                log.debug(f"Recoverable WebSocket error: {err}")
             except Exception as err:
                 # for debugging purpose only
                 log.exception("[Event Reader] Fatal Error")
@@ -327,8 +331,7 @@ class WebSocketClient:
             # every 10 failed connect attempts log warning
             if connect_attempts % 10 == 0:
                 log.warning(
-                    "%s attempts to (re)connect Alarm.com WebSocket endpoint failed."
-                    " - This might be an indication of connection issues.",
+                    "%s attempts to (re)connect Alarm.com WebSocket endpoint failed.",
                     connect_attempts,
                 )
 
@@ -424,7 +427,7 @@ class WebSocketClient:
             DEFAULT_SIGNALS_PER_SESSION_REFRESH,
         )
 
-        log.info(f"Keep alive interval: {session_refresh_interval_ms} ms / {session_refresh_interval} pings")
+        log.info(f"Session refresh interval: {session_refresh_interval_ms} ms / {session_refresh_interval} pings")
 
         signals_sent = 0
 
@@ -433,8 +436,9 @@ class WebSocketClient:
 
             log.debug("Sending keep alive.")
 
-            if self.state != WebSocketState.CONNECTED:
-                continue
+            # if self.state != WebSocketState.CONNECTED:
+            #     signals_sent = 0
+            #     continue
 
             try:
                 if signals_sent >= session_refresh_interval - 1:
@@ -444,3 +448,5 @@ class WebSocketClient:
                     log.info("[Keep Alive] Detected expired user session.")
             except (TimeoutError, aiohttp.ClientError, SessionTimeout, AlarmdotcomException) as err:
                 log.debug(f"Error while sending keep alive: {err}")
+
+            signals_sent += 1

@@ -107,7 +107,8 @@ class AuthenticationController:
         """Interval at which session should be refreshed in milliseconds."""
 
         return (
-            self._identities.items[0].attributes.application_session_properties.logout_timeout_ms or 5 * 60 * 1000
+            self._identities.items[0].attributes.application_session_properties.inactivity_warning_timeout_ms
+            or 5 * 60 * 1000
         )  # Default: 5 minutes
 
     @property
