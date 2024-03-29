@@ -25,8 +25,8 @@
         "type": "shell"
     },
     {
-        "command": "pur -r /workspaces/pyalarmdotcomajax/requirements-dev.txt",
-        "label": "Upgrade dependencies in requirements-dev.txt",
+        "command": "python /workspaces/pyalarmdotcomajax/scripts/upgrade_dependencies.py",
+        "label": "Upgrade dependencies in requirements-dev.txt, pyproject.toml, and .pre-commit-config",
         "problemMatcher": [],
         "type": "shell"
     }
