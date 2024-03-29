@@ -65,6 +65,8 @@ from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
 log = logging.getLogger(__name__)
 # log.setLevel(5)
 
+MFA_COOKIE_KEY = "twoFactorAuthenticationId"
+
 
 class AlarmBridge:
     """Alarm.com bridge."""
@@ -381,12 +383,11 @@ class AlarmBridge:
         """
 
         if self._websession is None:
+            log.debug("Creating new websession.")
             self._websession = aiohttp.ClientSession()
 
         if self._auth_controller.mfa_cookie:
-            kwargs.setdefault("cookies", {}).update(
-                {"twoFactorAuthenticationId": self._auth_controller.mfa_cookie}
-            )
+            kwargs.setdefault("cookies", {}).update({MFA_COOKIE_KEY: self._auth_controller.mfa_cookie})
 
         kwargs = self.build_request_headers(accept_types, use_ajax_key, **kwargs)
 
@@ -399,6 +400,15 @@ class AlarmBridge:
 
             if afg := resp.cookies.get("afg"):
                 self.ajax_key = afg.value
+
+            # Update MFA cookie.
+            # We need to store the MFA cookie locally in order to reauthenticate after a session timeout without having to reprompt for an OTP.
+
+            if (mfa_cookie := resp.cookies.get(MFA_COOKIE_KEY)) and (
+                mfa_cookie.value != self._auth_controller.mfa_cookie
+            ):
+                log.debug("Got new token from MFA cookie.")
+                self._auth_controller.mfa_cookie = mfa_cookie.value
 
             # If DEBUG logging is enabled, log the request and response.
             if log.level < logging.DEBUG:

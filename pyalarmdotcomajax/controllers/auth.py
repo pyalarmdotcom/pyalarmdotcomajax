@@ -66,7 +66,7 @@ class AuthenticationController:
         # AlarmBridge to populate the adc cli command list.
         self._username: str = username or ""
         self._password: str = password or ""
-        self._mfa_cookie: str = mfa_cookie or ""
+        self.mfa_cookie: str = mfa_cookie or ""
 
         # Device Controllers
         self._identities = IdentitiesController(self._bridge)
@@ -89,11 +89,6 @@ class AuthenticationController:
         """Return Rich representation of raw JSON for all controller resources."""
 
         return resources_raw("Users Children", [*self._identities.items, *self._profiles.items])
-
-    @property
-    def mfa_cookie(self) -> str:
-        """2FA token."""
-        return self._mfa_cookie
 
     @property
     def has_trouble_conditions_service(self) -> bool:
@@ -148,7 +143,7 @@ class AuthenticationController:
 
         self._username = username
         self._password = password
-        self._mfa_cookie = mfa_cookie or ""
+        self.mfa_cookie = mfa_cookie or ""
 
     async def login(self) -> None:
         """
@@ -341,7 +336,7 @@ class AuthenticationController:
             mini_response=True,
         )
 
-    async def submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> None:
+    async def submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> str | None:
         """Submit OTP and register device."""
 
         await self._bridge.post(
@@ -354,7 +349,7 @@ class AuthenticationController:
 
         if not device_name:
             log.debug("Skipping device registration.")
-            return
+            return None
 
         await self._bridge.post(
             path=TWO_FACTOR_PATH,
@@ -363,3 +358,8 @@ class AuthenticationController:
             json={"deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"},
             mini_response=True,
         )
+
+        if not self.mfa_cookie:
+            raise UnexpectedResponse("Could not find MFA cookie after submitting OTP and registering device.")
+
+        return self.mfa_cookie

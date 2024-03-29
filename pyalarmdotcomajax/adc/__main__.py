@@ -163,6 +163,7 @@ def ws_state_printer(state: WebSocketState, next_attempt_s: int | None) -> None:
         print(f"[red]Disconnected from Alarm.com. Next reconnect attempt in {next_attempt_s} seconds.")
     elif state == WebSocketState.DEAD:
         print("[red]Streaming stopped. Connection to Alarm.com is dead.")
+        typer.Exit(1)
     elif state == WebSocketState.CONNECTED:
         print("[green]Connected to Alarm.com.")
         print("[yellow]Streaming real-time updates...")

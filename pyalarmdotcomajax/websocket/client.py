@@ -18,6 +18,7 @@ from pyalarmdotcomajax.const import API_URL_BASE
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
+    OtpRequired,
     ServiceUnavailable,
     SessionTimeout,
     UnexpectedResponse,
@@ -163,6 +164,7 @@ class WebSocketClient:
 
         for task in self._background_tasks:
             task.cancel()
+
         self._background_tasks = []
 
     async def _authenticate(self) -> None:
@@ -170,11 +172,15 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        if not await self._bridge.is_logged_in():
+        # if not await self._bridge.is_logged_in():
+        #     log.info("Detected session timeout. Logging back in.")
+        #     await self._bridge.login()
+
+        try:
+            response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
+        except AuthenticationFailed:
             log.info("Detected session timeout. Logging back in.")
             await self._bridge.login()
-
-        response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
 
         self._token = response.value
 
@@ -257,11 +263,20 @@ class WebSocketClient:
             connect_attempts += 1
 
             try:
-                await self._authenticate()
+                try:
+                    await self._authenticate()
+                except OtpRequired:
+                    log.error(
+                        "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
+                    )
+                    raise AuthenticationFailed
+                except AuthenticationFailed:
+                    log.error(
+                        "Failed to authenticate WebSocket connection. This is likely due to a session timeout."
+                    )
+                    raise
 
                 async with self._bridge.ws_connect(f"{self._ws_endpoint}/?auth={self._token}") as websocket:
-                    self._set_state(WebSocketState.CONNECTED)
-
                     self._set_state(
                         WebSocketState.CONNECTED if connect_attempts == 1 else WebSocketState.RECONNECTED,
                     )
@@ -298,11 +313,10 @@ class WebSocketClient:
                 status = getattr(err, "status", None)
                 if status == 403:
                     raise AuthenticationFailed from err
-                if status:
-                    log.debug(err)
+                log.debug(err)
             except Exception as err:
                 # for debugging purpose only
-                log.exception("[Event Reader]")
+                log.exception("[Event Reader] Fatal Error")
                 raise err  # noqa: TRY201
 
             reconnect_wait = min(2 * connect_attempts, 600)
