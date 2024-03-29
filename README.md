@@ -86,11 +86,6 @@ The CLI is available by running `adc` from anywhere in your terminal. Use `adc -
 
 Detailed helptext for the CLI is also available in this repo at [pyalarmdotcomajax/adc/README.md](pyalarmdotcomajax/adc/README.md).
 
-### Examples
-
-1. Get human-readable status (and device IDs) for all devices: `adc -u "your_username" -p "your_password" get`
-2. Get raw JSON output from Alarm.com for all devices: `adc -v -u "your_username" -p "your_password" get`
-
 ## Development
 
 ### VS Code Support Structures
