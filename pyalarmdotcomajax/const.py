@@ -9,6 +9,7 @@ from typing import ClassVar, NamedTuple, Protocol
 # CONFIG: BEGIN
 REQUEST_RETRY_LIMIT = 3
 SUBMIT_RETRY_LIMIT = 2
+DEBUG_REQUEST_DUMP_MAX_LEN = 1000
 # CONFIG: END
 
 
