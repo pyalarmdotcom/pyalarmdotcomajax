@@ -172,15 +172,11 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        # if not await self._bridge.is_logged_in():
-        #     log.info("Detected session timeout. Logging back in.")
-        #     await self._bridge.login()
-
-        try:
-            response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
-        except AuthenticationFailed:
+        if not await self._bridge.is_logged_in():
             log.info("Detected session timeout. Logging back in.")
             await self._bridge.login()
+
+        response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
 
         self._token = response.value
 
@@ -321,12 +317,13 @@ class WebSocketClient:
 
             reconnect_wait = min(2 * connect_attempts, 600)
 
-            self._set_state(WebSocketState.DISCONNECTED, reconnect_wait)
-
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
                 reconnect_wait,
             )
+
+            self._set_state(WebSocketState.DISCONNECTED, reconnect_wait)
+
             # every 10 failed connect attempts log warning
             if connect_attempts % 10 == 0:
                 log.warning(
