@@ -2,9 +2,6 @@
     "folders": [
         {
             "path": "/workspaces/pyalarmdotcomajax"
-        },
-        {
-            "path": "../typer-cli"
         }
     ],
     "settings": {

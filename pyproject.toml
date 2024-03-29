@@ -29,12 +29,13 @@ classifiers = [
     "Topic :: Home Automation"
 ]
 dependencies = [
-    "beautifulsoup4 ~= 4.10.0",
-    "aiohttp ~= 3.8.1",
-    "python-dateutil ~= 2.8.2",
-    "pyhumps~=3.8.0",
-    "typer[all]~=0.11.0",
-    "mashumaro~=3.11"
+    "beautifulsoup4 >= 4.10.0",
+    "aiohttp >= 3.8.1",
+    "python-dateutil >= 2.8.2",
+    "pyhumps>=3.8.0",
+    "typer[all]>=0.11.0",
+    "mashumaro>=3.11",
+    "phonenumbers>=8.13.33"
 ]
 dynamic = ["version"]
 

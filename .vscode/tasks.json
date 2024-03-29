@@ -23,6 +23,12 @@
         "label": "Regenerate ADC README",
         "problemMatcher": [],
         "type": "shell"
+    },
+    {
+        "command": "pur -r /workspaces/pyalarmdotcomajax/requirements-dev.txt",
+        "label": "Upgrade dependencies in requirements-dev.txt",
+        "problemMatcher": [],
+        "type": "shell"
     }
   ],
   "version": "2.0.0"
