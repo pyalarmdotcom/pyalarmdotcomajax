@@ -304,9 +304,11 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         try:
             adc_resource = self[message.device_id]
         except KeyError:
-            log.warning(
-                f"[{self.resource_type.name}] Received state change for unknown {self.resource_type.name} {message.device_id}."
-            )
+            # Resource controllers support overlapping events. A window sensor closing, for example, will be broadcast to
+            # controllers for garage door, gate, and water sensor. We don't want errors every time this happens.
+            # log.warning(
+            #     f"[{self.resource_type.name}] Received state change for unknown {self.resource_type.name} {message.device_id}."
+            # )
             return
 
         # Handle state updates for all controllers that have a state map.
