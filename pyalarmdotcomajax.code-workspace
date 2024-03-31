@@ -37,7 +37,7 @@
         "python.analysis.typeCheckingMode": "off",
         "python.analysis.include": [
             "/workspaces/pyalarmdotcomajax/pyalarmdotcomajax",
-            "/workspaces//pyalarmdotcomajax/tests",
+            "/workspaces/pyalarmdotcomajax/tests",
             "/workspaces/pyalarmdotcomajax/examples"
         ],
         "python.analysis.packageIndexDepths": [
