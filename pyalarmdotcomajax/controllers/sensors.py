@@ -27,7 +27,13 @@ SENSOR_EVENT_STATE_MAP = {
 
 
 SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
-    events=[ResourceEventType.Bypassed, ResourceEventType.EndOfBypass, *MOTION_EVENT_STATE_MAP.keys()]
+    events=[
+        ResourceEventType.Bypassed,
+        ResourceEventType.EndOfBypass,
+        ResourceEventType.Closed,
+        ResourceEventType.OpenedClosed,
+        ResourceEventType.Opened,
+    ]
 )
 
 

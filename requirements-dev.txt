@@ -1,20 +1,7 @@
-pytest>=8.1.1
-# aioresponses>=0.7.5
-pytest-asyncio>=0.23.6
-deepdiff>=6.7.1
-beautifulsoup4 >= 4.12.3
-aiohttp >= 3.9.3
-python-dateutil >= 2.9.0.post0
-types-python-dateutil>=2.9.0.20240316
-pre-commit>=3.7.0
-types-aiofiles>=23.2.0.20240311
-types-PyYAML>=6.0.12.20240311
-types_requests>=2.31.0.20240311
-mypy>=1.9.0
-mashumaro>=3.12
-aiofiles>=23.2.1
-pyhumps>=3.8.0
-typer[all]>=0.11.1
-phonenumbers>=8.13.33
-tomli_w>=1.0.0
-tomli>=2.0.1
+mypy>=1.9
+pre-commit>=3.7
+pytest>=8.1
+pytest-asyncio>=0.23
+tomli>=2.0
+tomli_w>=1.0
+types-requests<2.31.0.7

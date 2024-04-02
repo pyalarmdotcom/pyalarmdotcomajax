@@ -13,12 +13,6 @@
       "type": "shell"
     },
     {
-        "command": "pip install --editable /workspaces/pyalarmdotcomajax --config-settings editable_mode=strict",
-        "label": "Install pyalarmdotcomajax in editable mode",
-        "problemMatcher": [],
-        "type": "shell"
-    },
-    {
         "command": "typer /workspaces/pyalarmdotcomajax/pyalarmdotcomajax/adc/__main__.py utils docs --name adc --output /workspaces/pyalarmdotcomajax/pyalarmdotcomajax/adc/README.md",
         "label": "Regenerate ADC README",
         "problemMatcher": [],

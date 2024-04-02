@@ -15,6 +15,7 @@ from rich.console import Group
 from rich.panel import Panel
 
 from pyalarmdotcomajax import AlarmBridge
+from pyalarmdotcomajax.__version__ import __version__
 from pyalarmdotcomajax.adc.common import bridge, collect_params
 from pyalarmdotcomajax.adc.util import (
     UTyper,
@@ -24,7 +25,6 @@ from pyalarmdotcomajax.adc.util import (
 from pyalarmdotcomajax.controllers import EventType
 from pyalarmdotcomajax.models.base import AdcResource
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
-from pyalarmdotcomajax.version import __version__
 from pyalarmdotcomajax.websocket.client import WebSocketState
 
 ############

@@ -1,60 +1,54 @@
 [build-system]
-requires = [
-    "setuptools",
-]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyalarmdotcomajax"
+description = "Event Driven Python Interface for Alarm.com"
+requires-python = ">=3.11,<3.13"
 authors = [
-    { name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com" },
-    { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
+  {name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com"},
+  {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
 ]
 maintainers = [
-    { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
+  {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
 ]
-description = "Event Driven Python Interface for Alarm.com"
 readme = "README.md"
-requires-python = ">=3.11"
-keywords = [
-    "Alarm.com",
-    "Security System",
-    "Home Assistant",
-]
+keywords = ["Alarm.com", "Security System", "Home Assistant"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Natural Language :: English",
-    "Environment :: Web Environment",
-    "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Home Automation",
+  "Development Status :: 5 - Production/Stable",
+  "Natural Language :: English",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Home Automation"
 ]
-dependencies = [
-    "beautifulsoup4 >= 4.12.3",
-    "aiohttp >= 3.9.3",
-    "python-dateutil >= 2.9.0.post0",
-    "pyhumps>=3.8.0",
-    "typer[all] >= 0.11.1",
-    "mashumaro >= 3.12",
-    "phonenumbers>=8.13.33",
-]
-dynamic = [
-    "version",
-]
+dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[project.scripts]
+adc = "pyalarmdotcomajax.adc.adc:app"
 
 [project.urls]
 Repository = "https://github.com/pyalarmdotcom/pyalarmdotcomajax"
 
-[project.scripts]
-adc = "pyalarmdotcomajax.adc.__main__:app"
-
-[tool.setuptools.dynamic.version]
-attr = "pyalarmdotcomajax.version.__version__"
+[tool.codespell]
+skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi/*"
+count = ""
+quiet-level = 2
+ignore-words-list = "hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo"
 
 [tool.mypy]
+exclude = [
+  "tests/",
+  "build/",
+  ".ruff_cache/",
+  ".mypy_cache/",
+  "references/",
+  ".pytest_cache"
+]
 python_version = "3.11"
 show_error_codes = true
 ignore_missing_imports = true
@@ -74,102 +68,96 @@ pretty = true
 show_absolute_path = true
 show_error_context = true
 disallow_untyped_calls = false
-exclude = [
-    "tests/",
-    "build/",
-    ".ruff_cache/",
-    ".mypy_cache/",
-    "references/",
-]
 explicit_package_bases = true
 
 [tool.ruff]
 target-version = "py311"
-lint.unfixable = [
-    "F841",
-]
 exclude = [
-    "examples",
-    "pylint",
-    "build",
-    "references",
-]
-lint.select = [
-    "B007",
-    "B014",
-    "B006",
-    "C",
-    "D",
-    "E",
-    "F",
-    "I",
-    "PL",
-    "RUF",
-    "FA",
-    "TID",
-    "SLF",
-    "SIM",
-    "ICN001",
-    "PGH004",
-    "PLC0414",
-    "RET",
-    "S",
-    "T20",
-    "TRY",
-    "UP",
-    "W",
-]
-lint.ignore = [
-    "D202",
-    "D203",
-    "D404",
-    "D212",
-    "D406",
-    "D407",
-    "E731",
-    "TRY003",
-    "TRY301",
-    "PLR2004",
-    "PLR0913",
-    "PLR0912",
-    "PLR0915",
-    "PLR0911",
-    "S301",
-    "W191",
-    "E111",
-    "E114",
-    "E117",
-    "D206",
-    "Q000",
-    "Q001",
-    "Q002",
-    "Q003",
-    "COM812",
-    "COM819",
-    "ISC001",
-    "ISC002",
-    "E501",
-    "TRY400",
+  "examples",
+  "build",
+  "references",
+  ".ruff_cache/",
+  ".mypy_cache/",
+  ".pytest_cache",
+  "**/_version.py"
 ]
 line-length = 115
-lint.extend-safe-fixes = [
-    "UP006",
-]
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+docstring-code-format = true
+
+[tool.ruff.lint]
+unfixable = ["F841"]
+select = [
+  "B007",
+  "B014",
+  "B006",
+  "C",
+  "D",
+  "E",
+  "F",
+  "I",
+  "PL",
+  "RUF",
+  "FA",
+  "TID",
+  "SLF",
+  "SIM",
+  "ICN001",
+  "PGH004",
+  "PLC0414",
+  "RET",
+  "S",
+  "T20",
+  "TRY",
+  "UP",
+  "W"
+]
+ignore = [
+  "D202",
+  "D203",
+  "D404",
+  "D212",
+  "D406",
+  "D407",
+  "E731",
+  "TRY003",
+  "TRY301",
+  "PLR2004",
+  "PLR0913",
+  "PLR0912",
+  "PLR0915",
+  "PLR0911",
+  "S301",
+  "W191",
+  "E111",
+  "E114",
+  "E117",
+  "D206",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "COM812",
+  "COM819",
+  "ISC001",
+  "ISC002",
+  "E501",
+  "TRY400"
+]
+extend-safe-fixes = ["UP006"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25
 
-[tool.codespell]
-skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi/*"
-count = ""
-quiet-level = 2
-ignore-words-list = "hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo"
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {attr = "pyalarmdotcomajax._version.__version__"}
+optional-dependencies.dev = {file = ["requirements-dev.txt"]}
+
+[tool.setuptools_scm]
+version_file = "pyalarmdotcomajax/_version.py"

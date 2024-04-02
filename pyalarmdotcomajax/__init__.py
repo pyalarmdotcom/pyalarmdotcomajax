@@ -16,6 +16,7 @@ import humps
 from mashumaro.exceptions import MissingField
 from rich.console import Group
 
+from pyalarmdotcomajax.__version__ import __version__
 from pyalarmdotcomajax.const import (
     API_URL_BASE,
     DEBUG_REQUEST_DUMP_MAX_LEN,
@@ -59,7 +60,6 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
-from pyalarmdotcomajax.version import __version__
 from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
 
 log = logging.getLogger(__name__)
