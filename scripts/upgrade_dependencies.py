@@ -52,7 +52,7 @@ def update_dependencies(
         if line_type == "dependency":
             latest_version = get_latest_version(package_name)
             if latest_version and latest_version != current_version:
-                updated_dependencies.append(f"{package_name} >= {latest_version}")
+                updated_dependencies.append(f"{package_name} >= {latest_version}\n")
                 updates.append((package_name, current_version, latest_version))
             else:
                 updated_dependencies.append(dep)
@@ -101,9 +101,11 @@ def update_pre_commit_config(directory: Path, updates_log: dict[str, list[tuple[
         file.truncate()
 
 
-def update_requirements_dev(directory: Path, updates_log: dict[str, list[tuple[str, str, str]]]) -> None:
+def update_requirements(
+    directory: Path, updates_log: dict[str, list[tuple[str, str, str]]], filename: str
+) -> None:
     """Update dependencies in 'requirements-dev.txt' to their latest versions."""
-    requirements_path = directory / "requirements-dev.txt"
+    requirements_path = directory / filename
     with requirements_path.open("r+", encoding="utf-8") as file:
         lines = file.readlines()
         updated_lines, updates = update_dependencies(lines)
@@ -113,7 +115,7 @@ def update_requirements_dev(directory: Path, updates_log: dict[str, list[tuple[s
         file.truncate()
 
         if updates:
-            updates_log["requirements-dev.txt"] = updates
+            updates_log[filename] = updates
 
 
 def main(directory_path: str = "/workspaces/pyalarmdotcomajax/") -> None:
@@ -122,7 +124,8 @@ def main(directory_path: str = "/workspaces/pyalarmdotcomajax/") -> None:
     updates_log: dict[str, list[tuple[str, str, str]]] = {}
     update_pyproject_toml(directory, updates_log)
     update_pre_commit_config(directory, updates_log)
-    update_requirements_dev(directory, updates_log)
+    update_requirements(directory, updates_log, "requirements.txt")
+    update_requirements(directory, updates_log, "requirements-dev.txt")
 
     for file, updates in updates_log.items():
         print(f"Updates in {file}:")

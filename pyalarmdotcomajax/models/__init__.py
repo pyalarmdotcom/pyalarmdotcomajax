@@ -8,6 +8,25 @@ from mashumaro import field_options
 
 from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement
 
+from . import (  # noqa: F401
+    auth,
+    base,
+    camera,
+    device_catalog,
+    garage_door,
+    gate,
+    image_sensor,
+    light,
+    lock,
+    partition,
+    sensor,
+    system,
+    thermostat,
+    trouble_condition,
+    user,
+    water_sensor,
+)
+
 
 @dataclass
 class AdcMiniSuccessResponse(JsonApiBaseElement):

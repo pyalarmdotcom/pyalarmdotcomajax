@@ -1,18 +1,19 @@
 default_language_version:
     python: python3.11
 repos:
-    - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.3.5
-      hooks:
-          - id: ruff
-            args: [--fix]
+    - hooks:
+          - args:
+                - --fix
+            id: ruff
           - id: ruff-format
-    - repo: https://github.com/codespell-project/codespell
-      rev: v2.2.4
-      hooks:
-          - id: codespell
-            additional_dependencies:
+      repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.3.5
+    - hooks:
+          - additional_dependencies:
                 - tomli
+            id: codespell
+      repo: https://github.com/codespell-project/codespell
+      rev: v2.2.4
     - hooks:
           - id: prettier
       repo: https://github.com/pre-commit/mirrors-prettier
@@ -23,18 +24,21 @@ repos:
             language: system
             name: mypy
             require_serial: true
-            types: [python]
+            types:
+                - python
       repo: local
     - hooks:
           - args:
                 - -d relaxed
-            id: yamllint
             exclude: (.vscode|.devcontainer|.github)
+            id: yamllint
       repo: https://github.com/adrienverge/yamllint.git
       rev: v1.35.1
     - hooks:
-          - id: toml-sort-fix
-            args: [--in-place]
-            types: [toml]
+          - args:
+                - --in-place
+            id: toml-sort-fix
+            types:
+                - toml
       repo: https://github.com/pappasam/toml-sort
       rev: v0.23.1

@@ -5,3 +5,4 @@ pytest-asyncio>=0.23
 tomli>=2.0
 tomli_w>=1.0
 types-requests<2.31.0.7
+types-PyYAML>=6.0

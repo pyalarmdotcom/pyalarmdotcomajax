@@ -20,7 +20,7 @@
     },
     {
         "command": "python /workspaces/pyalarmdotcomajax/scripts/upgrade_dependencies.py",
-        "label": "Upgrade dependencies in requirements-dev.txt, pyproject.toml, and .pre-commit-config",
+        "label": "Upgrade dependencies in requirements.txt, requirements-dev.txt, pyproject.toml, and .pre-commit-config",
         "problemMatcher": [],
         "type": "shell"
     }

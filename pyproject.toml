@@ -155,9 +155,11 @@ extend-safe-fixes = ["UP006"]
 max-complexity = 25
 
 [tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-version = {attr = "pyalarmdotcomajax._version.__version__"}
-optional-dependencies.dev = {file = ["requirements-dev.txt"]}
+dependencies = {file = "requirements.txt"}
+optional-dependencies.dev = {file = "requirements-dev.txt"}
+
+[tool.setuptools.dynamic.version]
+attr = "pyalarmdotcomajax._version.__version__"
 
 [tool.setuptools_scm]
 version_file = "pyalarmdotcomajax/_version.py"

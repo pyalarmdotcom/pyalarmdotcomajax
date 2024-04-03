@@ -15,7 +15,7 @@ from rich.console import Group
 from rich.panel import Panel
 
 from pyalarmdotcomajax import AlarmBridge
-from pyalarmdotcomajax.__version__ import __version__
+from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.adc.common import bridge, collect_params
 from pyalarmdotcomajax.adc.util import (
     UTyper,

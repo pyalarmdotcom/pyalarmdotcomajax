@@ -16,7 +16,7 @@ import humps
 from mashumaro.exceptions import MissingField
 from rich.console import Group
 
-from pyalarmdotcomajax.__version__ import __version__
+from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.const import (
     API_URL_BASE,
     DEBUG_REQUEST_DUMP_MAX_LEN,
@@ -61,6 +61,9 @@ from pyalarmdotcomajax.models.jsonapi import (
     SuccessDocument,
 )
 from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
+
+from . import controllers, exceptions, models  # noqa: F401
+from .models.auth import OtpType  # noqa: F401
 
 log = logging.getLogger(__name__)
 # log.setLevel(5)
