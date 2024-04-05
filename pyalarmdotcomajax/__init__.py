@@ -549,7 +549,7 @@ class AlarmBridge:
                     error_codes = [int(error.code) for error in response.errors if error.code is not None]
 
                     # 406: Not Authorized For Ember, 423: Processing Error
-                    if all(x in error_codes for x in [403, 426]):
+                    if any(x in error_codes for x in [403, 426]):
                         log.info(
                             "Got a processing error. This may be caused by missing permissions, being on an Alarm.com plan without support for a particular device type, or having a device type disabled for this system."
                         )
@@ -558,7 +558,7 @@ class AlarmBridge:
                         )
 
                     # 401: Logged Out, 403: Invalid Anti Forgery
-                    if all(x in error_codes for x in [401, 403]):
+                    if any(x in [401, 403] for x in error_codes):
                         raise AuthenticationFailed(
                             f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}",
                             can_autocorrect=True,
