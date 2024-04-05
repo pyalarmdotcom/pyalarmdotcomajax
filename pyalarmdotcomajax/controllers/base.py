@@ -15,14 +15,15 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic
 from rich.console import Group
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers import AdcResourceT, EventCallBackType, EventType
+from pyalarmdotcomajax.controllers import AdcResourceT, UpdatedResourceMessage
+from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     Resource,
 )
 from pyalarmdotcomajax.util import resources_pretty, resources_raw
-from pyalarmdotcomajax.websocket.client import SupportedResourceEvents
+from pyalarmdotcomajax.websocket.client import RawUpdatedResourceMessage, SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
 
 if TYPE_CHECKING:
@@ -31,53 +32,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class EventTransmitterMixin:
-    """Mixin for event transmission."""
-
-    def __init__(self, bridge: AlarmBridge) -> None:
-        """Initialize event transmitter mixin."""
-        self._bridge = bridge
-
-        # Tracks event subscribers.
-        self.subscribers: list[EventCallBackType] = []
-
-        # Holds references to asyncio tasks to prevent them from being garbage collected before completion.
-        self._background_tasks: set[Task] = set()
-
-    ######################
-    # EVENT TRANSMISSION #
-    ######################
-
-    def event_subscribe(self, callback: EventCallBackType) -> Callable:
-        """
-        Subscribe to events.
-
-        Subscribes bridge to events from this controller. Returns an unsubscribe function.
-        """
-
-        self.subscribers.append(callback)
-
-        def unsubscribe() -> None:
-            """Unsubscribe from events."""
-            self.subscribers.remove(callback)
-
-        return unsubscribe
-
-    async def _send_event(
-        self, event_type: EventType, resource_id: str, resource: AdcResourceT | None = None
-    ) -> None:
-        """Send event to subscribers."""
-
-        for subscriber in self.subscribers:
-            if iscoroutinefunction(subscriber):
-                task = asyncio.create_task(subscriber(event_type, resource_id, resource))
-                self._background_tasks.add(task)
-                task.add_done_callback(self._background_tasks.discard)
-            else:
-                subscriber(event_type, resource_id, resource)
-
-
-class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
+class BaseController(ABC, Generic[AdcResourceT]):
     """Base controller for Ember.js/JSON:API based components."""
 
     # ResourceTypes to be pulled from API response data object.
@@ -100,8 +55,6 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         target_device_ids: list[str] | None = None,
     ) -> None:
         """Initialize base controller."""
-
-        super().__init__(bridge)
 
         self._bridge = bridge
 
@@ -127,6 +80,9 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
         # Restricts this controller to specific devices. Used for controllers that only support single-serve endpoints.
         self._target_device_ids: set[str] = set({})
 
+        # Holds references to asyncio tasks to prevent them from being garbage collected before completion.
+        self._background_tasks: set[Task] = set()
+
     @property
     def items(self) -> list[AdcResourceT]:
         """Return all resources for this controller."""
@@ -148,9 +104,7 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
 
         # Subscribe to WebSocket events if supported by controller.
         if self._supported_resource_events:
-            self._bridge.ws_controller.subscribe_resource(
-                self._base_handle_event, self._supported_resource_events, self._resources.keys()
-            )
+            self._bridge.events.subscribe(EventBrokerTopic.RAW_RESOURCE_EVENT, self._base_handle_event)
 
         # Bail now if we depend on another controller for API data.
         if self._api_data_provider:
@@ -298,35 +252,33 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
     # WEBSOCKET UPDATE HANDLERS #
     #############################
 
-    async def _base_handle_event(self, message: BaseWSMessage) -> None:
+    async def _base_handle_event(self, message: EventBrokerMessage) -> None:
         """Universal event handling for WebSockets messages."""
 
+        if not isinstance(message, RawUpdatedResourceMessage):
+            return
+
         try:
-            adc_resource = self[message.device_id]
+            adc_resource = self[message.ws_message.device_id]
         except KeyError:
-            # Resource controllers support overlapping events. A window sensor closing, for example, will be broadcast to
-            # controllers for garage door, gate, and water sensor. We don't want errors every time this happens.
-            # log.warning(
-            #     f"[{self.resource_type.name}] Received state change for unknown {self.resource_type.name} {message.device_id}."
-            # )
             return
 
         # Handle state updates for all controllers that have a state map.
         if (
             self._event_state_map
-            and isinstance(message, EventWSMessage)
-            and message.subtype in self._event_state_map
+            and isinstance(message.ws_message, EventWSMessage)
+            and message.ws_message.subtype in self._event_state_map
         ):
             adc_resource.api_resource.attributes.update(
                 {
-                    ATTR_STATE: self._event_state_map[message.subtype].value,
-                    ATTR_DESIRED_STATE: self._event_state_map[message.subtype].value,
+                    ATTR_STATE: self._event_state_map[message.ws_message.subtype].value,
+                    ATTR_DESIRED_STATE: self._event_state_map[message.ws_message.subtype].value,
                 }
             )
 
         # Send to individual controller for additional changes.
         with contextlib.suppress(NotImplementedError):
-            adc_resource = await self._handle_event(adc_resource, message)
+            adc_resource = await self._handle_event(adc_resource, message.ws_message)
 
         # Update registry and send notification to subscribers.
         await self._register_or_update_resource(adc_resource.api_resource)
@@ -404,12 +356,20 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
             log.debug(
                 f"[{self.resource_type.name}] Updated {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
             )
-            await self._send_event(EventType.RESOURCE_UPDATED, resource.id, new_adc_resource)
+            self._bridge.events.publish(
+                UpdatedResourceMessage(
+                    topic=EventBrokerTopic.RESOURCE_UPDATED, id=resource.id, resource=new_adc_resource
+                )
+            )
         else:
             log.debug(
                 f"[{self.resource_type.name}] Registered {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
             )
-            await self._send_event(EventType.RESOURCE_ADDED, resource.id, new_adc_resource)
+            self._bridge.events.publish(
+                UpdatedResourceMessage(
+                    topic=EventBrokerTopic.RESOURCE_ADDED, id=resource.id, resource=new_adc_resource
+                )
+            )
 
         return resource.id
 
@@ -420,7 +380,9 @@ class BaseController(ABC, EventTransmitterMixin, Generic[AdcResourceT]):
 
         resource = self._resources.pop(resource_id, None)
 
-        await self._send_event(EventType.RESOURCE_DELETED, resource_id, resource)
+        self._bridge.events.publish(
+            UpdatedResourceMessage(topic=EventBrokerTopic.RESOURCE_DELETED, id=resource_id, resource=resource)
+        )
 
     ####################
     # OBJECT FUNCTIONS #

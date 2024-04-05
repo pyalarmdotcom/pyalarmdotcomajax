@@ -22,10 +22,10 @@ from pyalarmdotcomajax.adc.util import (
     summarize_cli_actions,
     with_paremeters,
 )
-from pyalarmdotcomajax.controllers import EventType
-from pyalarmdotcomajax.models.base import AdcResource
+from pyalarmdotcomajax.controllers import UpdatedResourceMessage
+from pyalarmdotcomajax.events import EventBrokerMessage
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
-from pyalarmdotcomajax.websocket.client import WebSocketState
+from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketState
 
 ############
 # MAIN APP #
@@ -93,8 +93,7 @@ async def stream(
     print("\n[bold](Press Ctrl+C to exit.)\n\n")
 
     async with bridge:
-        bridge.subscribe(partial(event_printer, ctx.params["json"]))
-        bridge.ws_controller.subscribe_connection(ws_state_printer)
+        bridge.subscribe(partial(handle_event, ctx.params["json"]))
 
         try:
             # Keep event loop alive until cancelled.
@@ -151,34 +150,47 @@ async def get(
 ###########
 
 
+def handle_event(json: bool, message: EventBrokerMessage) -> None:
+    """Handle event broker events."""
+
+    if isinstance(message, UpdatedResourceMessage):
+        event_printer(json, message)
+
+    if isinstance(message, ConnectionEvent):
+        ws_state_printer(message)
+
+
 # Callable[WebSocketState, Any]
-def ws_state_printer(state: WebSocketState, next_attempt_s: int | None) -> None:
+def ws_state_printer(message: EventBrokerMessage) -> None:
     """Print WebSocket state."""
 
-    if state in [WebSocketState.RECONNECTED]:
+    if not isinstance(message, ConnectionEvent):
+        return
+
+    if message.current_state in [WebSocketState.RECONNECTED]:
         print("[green]Reconnected to Alarm.com...")
-    elif state == WebSocketState.CONNECTING:
+    elif message.current_state == WebSocketState.CONNECTING:
         print("[orange1]Connecting to Alarm.com...")
-    elif state == WebSocketState.DISCONNECTED:
-        print(f"[red]Disconnected from Alarm.com. Next reconnect attempt in {next_attempt_s} seconds.")
-    elif state == WebSocketState.DEAD:
+    elif message.current_state == WebSocketState.DISCONNECTED:
+        print(f"[red]Disconnected from Alarm.com. Next reconnect attempt in {message.next_attempt_s} seconds.")
+    elif message.current_state == WebSocketState.DEAD:
         print("[red]Streaming stopped. Connection to Alarm.com is dead.")
         typer.Exit(1)
-    elif state == WebSocketState.CONNECTED:
+    elif message.current_state == WebSocketState.CONNECTED:
         print("[green]Connected to Alarm.com.")
         print("[yellow]Streaming real-time updates...")
 
 
 # Callable[[WebSocketNotificationType, WebSocketState | BaseWSMessage], Any]
-def event_printer(verbose: bool, event_type: EventType, resource_id: str, resource: AdcResource | None) -> None:
+def event_printer(verbose: bool, message: UpdatedResourceMessage) -> None:
     """Print event."""
 
-    if resource:
-        title = f"Event Notification > {slug_to_title(event_type.name)} > {resource_id}"
+    if message.resource:
+        title = f"Event Notification > {slug_to_title(message.topic.name)} > {message.id}"
         if verbose:
-            print(resources_raw(title, [resource]))
+            print(resources_raw(title, [message.resource]))
         else:
-            print(resources_pretty(title, [resource]))
+            print(resources_pretty(title, [message.resource]))
 
 
 ##############

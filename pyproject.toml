@@ -91,32 +91,6 @@ line-ending = "auto"
 docstring-code-format = true
 
 [tool.ruff.lint]
-unfixable = ["F841"]
-select = [
-  "B007",
-  "B014",
-  "B006",
-  "C",
-  "D",
-  "E",
-  "F",
-  "I",
-  "PL",
-  "RUF",
-  "FA",
-  "TID",
-  "SLF",
-  "SIM",
-  "ICN001",
-  "PGH004",
-  "PLC0414",
-  "RET",
-  "S",
-  "T20",
-  "TRY",
-  "UP",
-  "W"
-]
 ignore = [
   "D202",
   "D203",
@@ -147,7 +121,34 @@ ignore = [
   "ISC001",
   "ISC002",
   "E501",
-  "TRY400"
+  "TRY400",
+  "D107"
+]
+unfixable = ["F841"]
+select = [
+  "B007",
+  "B014",
+  "B006",
+  "C",
+  "D",
+  "E",
+  "F",
+  "I",
+  "PL",
+  "RUF",
+  "FA",
+  "TID",
+  "SLF",
+  "SIM",
+  "ICN001",
+  "PGH004",
+  "PLC0414",
+  "RET",
+  "S",
+  "T20",
+  "TRY",
+  "UP",
+  "W"
 ]
 extend-safe-fixes = ["UP006"]
 

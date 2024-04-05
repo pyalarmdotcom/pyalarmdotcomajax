@@ -45,7 +45,7 @@ ARMING_EXTENSION_BODY_MAP = {
 }
 
 
-# TODO: EventType.Alarm | EventType.PolicePanic:
+# TODO: EventBrokerTopic.Alarm | EventBrokerTopic.PolicePanic:
 
 
 class PartitionController(BaseController[Partition]):

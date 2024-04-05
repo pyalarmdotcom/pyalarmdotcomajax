@@ -27,7 +27,7 @@ from pyalarmdotcomajax.const import (
 )
 from pyalarmdotcomajax.controllers import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
-from pyalarmdotcomajax.controllers.base import BaseController, EventCallBackType
+from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.controllers.cameras import CameraController
 from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController
 from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController
@@ -44,6 +44,7 @@ from pyalarmdotcomajax.controllers.users import (
     AvailableSystemsController,
 )
 from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
+from pyalarmdotcomajax.events import EventBroker, EventBrokerCallbackT, EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
     NotAuthorized,
@@ -60,7 +61,11 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
-from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketConnectionEventCallBackT, WebSocketState
+from pyalarmdotcomajax.websocket.client import (
+    ConnectionEvent,
+    WebSocketClient,
+    WebSocketState,
+)
 
 from . import controllers, exceptions, models  # noqa: F401
 from .models.auth import OtpType  # noqa: F401
@@ -83,6 +88,9 @@ class AlarmBridge:
         # (but not initialized) AlarmBridge to populate the adc cli command list.
 
         self._initialized = False
+
+        # Event Broker
+        self.events = EventBroker()
 
         # Session
         self._websession: aiohttp.ClientSession | None = None
@@ -111,6 +119,9 @@ class AlarmBridge:
 
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
+
+        # Subscribe bridge to websocket connection events in case of websocket connection later on.
+        self.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, self._handle_connect_event)
 
     async def initialize(self) -> None:
         """Initialize bridge connection, or finish initialization after OTP has been submitted."""
@@ -186,24 +197,21 @@ class AlarmBridge:
         await asyncio.gather(*[controller.initialize() for controller in self.resource_controllers])
 
     async def start_event_monitoring(
-        self, ws_status_callback: WebSocketConnectionEventCallBackT | None = None
+        self, ws_status_callback: EventBrokerCallbackT | None = None
     ) -> None | Callable:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
 
-        # Always subscribe bridge in case of websocket connection later on.
-        self._ws_controller.subscribe_connection(self._handle_connect_event)
-
         if ws_status_callback:
-            return self._ws_controller.subscribe_connection(ws_status_callback)
+            return self.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, ws_status_callback)
 
         return None
 
     def subscribe(
         self,
-        callback: EventCallBackType,
-    ) -> Callable:
+        callback: EventBrokerCallbackT,
+    ) -> Callable[[], None]:
         """
         Subscribe to status changes for all resource controllers.
 
@@ -211,18 +219,23 @@ class AlarmBridge:
             function to unsubscribe.
 
         """
-        unsubscribes = [controller.event_subscribe(callback) for controller in self.resource_controllers]
+        return self.events.subscribe(
+            [
+                EventBrokerTopic.RESOURCE_ADDED,
+                EventBrokerTopic.RESOURCE_DELETED,
+                EventBrokerTopic.RESOURCE_UPDATED,
+                EventBrokerTopic.CONNECTION_EVENT,
+            ],
+            callback,
+        )
 
-        def unsubscribe() -> None:
-            for unsub in unsubscribes:
-                unsub()
-
-        return unsubscribe
-
-    async def _handle_connect_event(self, state: WebSocketState, next_attempt_s: int | None) -> None:
+    async def _handle_connect_event(self, message: EventBrokerMessage) -> None:
         """Handle reconnect event from event controller."""
 
-        if state == WebSocketState.RECONNECTED:
+        if not isinstance(message, ConnectionEvent):
+            return
+
+        if message.current_state == WebSocketState.RECONNECTED:
             await self.fetch_full_state()
 
     ###################

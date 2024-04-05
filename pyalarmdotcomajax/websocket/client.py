@@ -6,15 +6,15 @@ import asyncio
 import json
 import logging
 from collections import deque
-from collections.abc import Callable, KeysView
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, NoReturn
+from typing import TYPE_CHECKING, Literal, NoReturn
 
 import aiohttp
 
 from pyalarmdotcomajax.const import API_URL_BASE
+from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
@@ -28,12 +28,9 @@ from pyalarmdotcomajax.websocket.messages import (
     UNDEFINED,
     BaseWSMessage,
     EventWSMessage,
-    GeofenceCrossingWSMessage,
-    MonitoringEventWSMessage,
     PropertyChangeWSMessage,
     ResourceEventType,
     ResourcePropertyChangeType,
-    StatusUpdateWSMessage,
     WebSocketMessageTester,
 )
 
@@ -66,11 +63,21 @@ class WebSocketState(Enum):
     RECONNECTED = "reconnected"
 
 
-class WebSocketNotificationType(Enum):
-    """Enum with possible Events."""
+@dataclass(kw_only=True)
+class RawUpdatedResourceMessage(EventBrokerMessage):
+    """Message class for updated resources."""
 
-    RESOURCE_EVENT = "RESOURCE_EVENT"
-    CONNECTION_EVENT = "CONNECTION_EVENT"
+    topic: EventBrokerTopic = EventBrokerTopic.RAW_RESOURCE_EVENT
+    ws_message: BaseWSMessage
+
+
+@dataclass(kw_only=True)
+class ConnectionEvent(EventBrokerMessage):
+    """Message class for updated resources."""
+
+    topic: EventBrokerTopic = EventBrokerTopic.CONNECTION_EVENT
+    current_state: WebSocketState
+    next_attempt_s: int | None = None
 
 
 @dataclass
@@ -81,15 +88,6 @@ class SupportedResourceEvents:
     geofence_crossing: bool = False
     events: list[ResourceEventType | ALL_TOKEN_T] = field(default_factory=list)
     property_changes: list[ResourcePropertyChangeType | ALL_TOKEN_T] = field(default_factory=list)
-
-
-WebSocketResourceEventCallBackT = Callable[[BaseWSMessage], Any]
-WebSocketConnectionEventCallBackT = Callable[[WebSocketState, int | None], Any]
-
-WebSocketConnectionEventSubscriptionT = WebSocketConnectionEventCallBackT
-WebSocketResourceEventSubscriptionT = tuple[
-    WebSocketResourceEventCallBackT, SupportedResourceEvents, list[str] | KeysView[str]
-]
 
 
 class WebSocketClient:
@@ -103,9 +101,6 @@ class WebSocketClient:
         self._ws_endpoint: str | None = None
 
         self._state = WebSocketState.DISCONNECTED
-
-        self._connection_subscribers: list[WebSocketConnectionEventSubscriptionT] = []
-        self._resource_subscribers: list[WebSocketResourceEventSubscriptionT] = []
 
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._background_tasks: list[asyncio.Task] = []
@@ -211,69 +206,15 @@ class WebSocketClient:
         # Don't set token until we get a valid websocket endpoint.
         self._token = response.value
 
-    def subscribe_resource(
-        self,
-        callback: WebSocketResourceEventCallBackT,
-        resource_event_filter: SupportedResourceEvents,
-        resource_ids: list[str] | KeysView[str] | None = None,
-    ) -> Callable:
-        """Subscribe to resource events."""
-        if not resource_event_filter:
-            raise ValueError("Resource event subscriptions require resource_event_filter argument.")
-
-        # log.debug(f"Got subscription to WebSocket resource events: {resource_event_filter, callback}")
-
-        subscription = (callback, resource_event_filter, resource_ids if resource_ids else [ALL_TOKEN])
-
-        def unsubscribe() -> None:
-            self._resource_subscribers.remove(subscription)
-
-        self._resource_subscribers.append(subscription)
-        return unsubscribe
-
-    def subscribe_connection(
-        self,
-        callback: WebSocketConnectionEventCallBackT,
-    ) -> Callable:
-        """Subscribe to connection events."""
-        subscription = callback
-
-        def unsubscribe() -> None:
-            self._connection_subscribers.remove(subscription)
-
-        self._connection_subscribers.append(subscription)
-        return unsubscribe
-
     def emit_ws_state(self, state: WebSocketState, next_attempt_s: int | None = None) -> None:
         """Emit connection event to all listeners."""
-        for callback in self._connection_subscribers:
-            if asyncio.iscoroutinefunction(callback):
-                self._background_tasks.append(asyncio.create_task(callback(state, next_attempt_s)))
-            else:
-                callback(state, next_attempt_s)
+
+        self._bridge.events.publish(ConnectionEvent(current_state=state, next_attempt_s=next_attempt_s))
 
     def emit_resource(self, data: BaseWSMessage) -> None:
         """Emit resource event to all listeners."""
 
-        for callback, supported_resource_events, resource_ids in self._resource_subscribers:
-            if any(x in resource_ids for x in (ALL_TOKEN, data.device_id)):
-                if isinstance(data, EventWSMessage | MonitoringEventWSMessage) and not any(
-                    x in supported_resource_events.events for x in (data.subtype, ALL_TOKEN)
-                ):
-                    continue
-                if isinstance(data, PropertyChangeWSMessage) and not any(
-                    x in supported_resource_events.property_changes for x in (data.subtype, ALL_TOKEN)
-                ):
-                    continue
-                if isinstance(data, StatusUpdateWSMessage) and not supported_resource_events.state_change:
-                    continue
-                if isinstance(data, GeofenceCrossingWSMessage) and not supported_resource_events.geofence_crossing:
-                    continue
-
-            if asyncio.iscoroutinefunction(callback):
-                self._background_tasks.append(asyncio.create_task(callback(data)))
-            else:
-                callback(data)
+        self._bridge.events.publish(RawUpdatedResourceMessage(ws_message=data))
 
     async def _event_reader(self) -> NoReturn:
         """Maintain connection with server and read events from stream."""
@@ -350,7 +291,7 @@ class WebSocketClient:
                 raise err  # noqa: TRY201
 
             # Use the same 5 second minimum used by the webapp.
-            reconnect_wait = min(max(2 * connect_attempts, 10), MAX_RECONNECT_WAIT_S)
+            reconnect_wait = min(max(5 * connect_attempts, 10), MAX_RECONNECT_WAIT_S)
 
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
@@ -384,7 +325,7 @@ class WebSocketClient:
                 log.debug(f"Received WebSocket Message: {msg_json}")
 
                 # Determine and set message type class.
-                # "Passed" message types seem to be disused by Alarm.com's webapp. The same actions
+                # "Passed" message types seem to be unused by Alarm.com's webapp. The same actions
                 # are instead handled via event messages.
 
                 if UNDEFINED not in [msg_tester.fence_id, msg_tester.is_inside_now]:
