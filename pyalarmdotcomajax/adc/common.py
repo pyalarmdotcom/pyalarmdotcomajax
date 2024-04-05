@@ -125,7 +125,7 @@ async def async_handle_otp_workflow(
     code = Prompt.ask("[magenta bold underline]Enter One-Time Password[/magenta bold underline]")
 
     if mfa_cookie := await alarm.auth_controller.submit_otp(
-        code=code, method=selected_otpmethod, device_name=device_name
+        code=code, method=selected_otpmethod, device_name=device_name or "ADC CLI"
     ):
         print(f"Two-factor authentication cookie: {mfa_cookie}")
 
