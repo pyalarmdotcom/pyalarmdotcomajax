@@ -110,7 +110,7 @@ class OtpRequired(SessionException):
             )
 
 
-class ConfigureTwoFactorAuthentication(SessionException):
+class MustConfigureMfa(SessionException):
     """Raised during login if the user gets the Alarm.com nag screen to setup 2 factor authentication."""
 
     def __init__(self) -> None:

@@ -11,7 +11,7 @@ from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.types import Discriminator
 
 from pyalarmdotcomajax.models.jsonapi.types import URI
-from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin
+from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin, int_to_str
 
 ########################
 # JSON:API BASE ENTITY #
@@ -163,7 +163,9 @@ class Error(JsonApiBaseElement):
     id: str | None = field(default=None)
     links: RelatedLinks | None = field(default=None)
     status: str | None = field(default=None)
-    code: str | None = field(default=None)
+    code: str | None = field(
+        default=None, metadata={"deserialize": int_to_str}
+    )  # ADC mini responses use integers.
     title: str | None = field(default=None)
     detail: str | None = field(default=None)
     source: Source | None = field(default=None)

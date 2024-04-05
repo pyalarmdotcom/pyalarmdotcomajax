@@ -40,3 +40,12 @@ class CamelizerMixin:
         """Post-serialization hook to convert keys from snake_case to camelCase."""
 
         return humps.camelize(d)
+
+
+def int_to_str(value: Any) -> str:
+    """Convert an integer to a string during deserialization."""
+
+    if isinstance(value, str | int):
+        return str(value)
+
+    raise ValueError

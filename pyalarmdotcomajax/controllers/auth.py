@@ -19,7 +19,7 @@ from pyalarmdotcomajax.controllers.users import (
 )
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
-    ConfigureTwoFactorAuthentication,
+    MustConfigureMfa,
     OtpRequired,
     ServiceUnavailable,
     UnexpectedResponse,
@@ -151,10 +151,10 @@ class AuthenticationController:
         Log in to Alarm.com.
 
         Raises:
-            OtpRequired: Username and password are correct. User now needs to begin two-factor authentication workflow.
-            ConfigureTwoFactorAuthentication: Alarm.com requires that the user set up two-factor authentication for their account.
-            UnexpectedResponse: Server returned status code >=400 or response object was not as expected.
-            AuthenticationFailed: User could not be logged in, likely due to invalid credentials.
+            AuthenticationFailed: If login fails.
+            ServiceUnavailable: If the service is unavailable.
+            UnexpectedResponse: If an unexpected response is received.
+            OtpRequired: If two-factor authentication is required.
 
         """
         log.info("Logging in to Alarm.com")
@@ -289,7 +289,7 @@ class AuthenticationController:
         mfa_details = TwoFactorAuthentication(response.data)
 
         if mfa_details.attributes.show_suggested_setup is True:
-            raise ConfigureTwoFactorAuthentication
+            raise MustConfigureMfa
 
         enabled_otp_types_bitmask = mfa_details.attributes.enabled_two_factor_types
         enabled_2fa_methods = [

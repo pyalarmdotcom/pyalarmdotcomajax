@@ -60,7 +60,7 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
-from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketState
+from pyalarmdotcomajax.websocket.client import WebSocketClient, WebSocketConnectionEventCallBackT, WebSocketState
 
 from . import controllers, exceptions, models  # noqa: F401
 from .models.auth import OtpType  # noqa: F401
@@ -113,7 +113,10 @@ class AlarmBridge:
         self._image_sensor_images = ImageSensorImageController(self)
 
     async def initialize(self) -> None:
-        """Initialize bridge, or finish initialization after OTP has been submitted."""
+        """Initialize bridge connection, or finish initialization after OTP has been submitted."""
+
+        # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE (DO IN INTEGRATION)
+        # TODO: SKYBELL HD
 
         if self._initialized:
             return
@@ -124,9 +127,6 @@ class AlarmBridge:
         await self.fetch_full_state()
 
         self._initialized = True
-
-        # TODO: REFRESH IMAGE SENSORS / PROFILE / ETC ON SCHEDULE (DO IN INTEGRATION)
-        # TODO: SKYBELL HD
 
     async def is_logged_in(self, throw: bool = False) -> bool:
         """Check if we are still logged in. Also functions as keep alive signal."""
@@ -185,13 +185,20 @@ class AlarmBridge:
         # just initialized above, but they'll be skipped if they're already initialized.
         await asyncio.gather(*[controller.initialize() for controller in self.resource_controllers])
 
-    async def start_event_monitoring(self) -> None:
+    async def start_event_monitoring(
+        self, ws_status_callback: WebSocketConnectionEventCallBackT | None = None
+    ) -> None | Callable:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
 
-        # Always subscribe in case of websocket connection later on.
+        # Always subscribe bridge in case of websocket connection later on.
         self._ws_controller.subscribe_connection(self._handle_connect_event)
+
+        if ws_status_callback:
+            return self._ws_controller.subscribe_connection(ws_status_callback)
+
+        return None
 
     def subscribe(
         self,
@@ -335,7 +342,9 @@ class AlarmBridge:
 
     async def close(self) -> None:
         """Close connection and cleanup."""
-        # await self.events.stop()
+
+        self._ws_controller.stop()
+
         if self._websession:
             await self._websession.close()
         log.info("Connection to alarm.com closed.")
@@ -516,6 +525,7 @@ class AlarmBridge:
                 try:
                     response = FailureDocument.from_json(await raw_resp.text())
                 except (ValueError, MissingField) as err:
+                    log.exception("Failed to parse response as FailureDocument.")
                     raise UnexpectedResponse("Response did not match requested schema definition.") from err
 
                 # "Successful" FailureDocument requests always return a 200 response code. Non-200 responses indicate server failure.
@@ -726,3 +736,13 @@ class AlarmBridge:
         return Group(
             *[x.resources_raw for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
         )
+
+    ################
+    ## PROPERTIES ##
+    ################
+
+    @property
+    def initialized(self) -> bool:
+        """Return whether bridge is initialized."""
+
+        return self._initialized

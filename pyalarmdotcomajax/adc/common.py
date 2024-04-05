@@ -20,7 +20,7 @@ from pyalarmdotcomajax import AlarmBridge
 from pyalarmdotcomajax.adc.util import ValueEnum
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
-    ConfigureTwoFactorAuthentication,
+    MustConfigureMfa,
     NotAuthorized,
     OtpRequired,
     UnexpectedResponse,
@@ -31,6 +31,8 @@ from pyalarmdotcomajax.models.auth import OtpType
 MAIN_MFA = "Multi-factor Authentication Options"
 MAIN_OUTPUT = "Output Flags"
 CREDENTIALS = "User Credentials"
+
+log = logging.getLogger(__name__)
 
 #########
 # TYPES #
@@ -291,7 +293,7 @@ async def collect_params(
         # Initialize the connector
         await bridge.initialize()
 
-    except ConfigureTwoFactorAuthentication as err:
+    except MustConfigureMfa as err:
         print("[red]Unable to log in. Please set up two-factor authentication for this account.")
         raise typer.Exit(1) from err
 
@@ -309,6 +311,8 @@ async def collect_params(
 
     except OtpRequired as exc:
         try:
+            log.debug("OTP Required")
+
             await async_handle_otp_workflow(
                 alarm=bridge,
                 enabled_2fa_methods=exc.enabled_2fa_methods,

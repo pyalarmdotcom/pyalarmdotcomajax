@@ -18,6 +18,7 @@ from pyalarmdotcomajax.const import API_URL_BASE
 from pyalarmdotcomajax.exceptions import (
     AlarmdotcomException,
     AuthenticationFailed,
+    NotInitialized,
     OtpRequired,
     ServiceUnavailable,
     SessionTimeout,
@@ -45,6 +46,7 @@ ALL_TOKEN_T = Literal["*"]
 
 
 KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
+MAX_RECONNECT_WAIT_S = 30 * 60
 DEFAULT_SIGNALS_PER_SESSION_REFRESH = 1
 MAX_KEEP_ALIVE_FAILURES = 10
 
@@ -113,6 +115,9 @@ class WebSocketClient:
         self._keep_alive_url: str | None = None
         self._event_history: deque = deque(maxlen=25)
 
+        self._initialized = False
+        self._valid_token = False
+
     @property
     def connected(self) -> bool:
         """Whether client is connected to server."""
@@ -138,6 +143,12 @@ class WebSocketClient:
         Connection will be auto-reconnected if it gets lost.
         """
 
+        if not self._bridge.initialized:
+            raise NotInitialized
+
+        if self._initialized:
+            return
+
         def emergency_stop(task: asyncio.Task) -> None:
             """Stop all background tasks and state reason."""
 
@@ -157,6 +168,8 @@ class WebSocketClient:
         for task in self._background_tasks:
             task.add_done_callback(emergency_stop)
 
+        self._initialized = True
+
     def stop(self, state: WebSocketState = WebSocketState.DISCONNECTED) -> None:
         """Stop listening for events."""
 
@@ -167,23 +180,36 @@ class WebSocketClient:
 
         self._background_tasks = []
 
+        self._initialized = False
+
     async def _authenticate(self) -> None:
         """Get authentication token for websocket endpoint."""
 
         log.info("Getting WebSocket token.")
 
         try:
+            if not await self._bridge.is_logged_in():
+                log.debug("Primary session expired. Reauthenticating to Alarm.com.")
+                await self._bridge.login()
+        except (ServiceUnavailable, UnexpectedResponse):
+            log.debug("Failed to connect to Alarm.com when authenticating. Try again later.")
+            return
+
+        self._token = None
+
+        try:
             response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
         except AuthenticationFailed:
-            log.info("Detected session timeout. Logging back in.")
-            await self._bridge.login()
-
-        self._token = response.value
+            log.error("Detected session timeout, but session was just checked.")
+            raise
 
         try:
             self._ws_endpoint = response.metadata["endpoint"]
         except KeyError as err:
             raise UnexpectedResponse("Failed to get WebSocket endpoint.") from err
+
+        # Don't set token until we get a valid websocket endpoint.
+        self._token = response.value
 
     def subscribe_resource(
         self,
@@ -261,13 +287,13 @@ class WebSocketClient:
             try:
                 try:
                     # Get a new token on the first connect attempt and on every 10 reconnect attempts.
-                    if connect_attempts == 1 or connect_attempts % 10 == 0:
+                    if (not self._valid_token) or connect_attempts == 1 or connect_attempts % 10 == 0:
                         await self._authenticate()
-                except OtpRequired:
+                except OtpRequired as err:
                     log.error(
                         "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
                     )
-                    raise AuthenticationFailed
+                    raise AuthenticationFailed from err
                 except AuthenticationFailed:
                     log.error(
                         "Failed to authenticate WebSocket connection. This is likely due to a session timeout."
@@ -306,19 +332,25 @@ class WebSocketClient:
                 UnexpectedResponse,
                 ServiceUnavailable,
                 SessionTimeout,
+                aiohttp.ClientConnectorError,
             ) as err:
                 # pass expected connection errors because we will auto retry
                 status = getattr(err, "status", None)
+                log.debug(f"Encountered WebSocket error: {err}")
                 if status == 403:
-                    raise AuthenticationFailed from err
-                log.debug(f"Recoverable WebSocket error: {err}")
+                    log.debug("Need to renew connection to Alarm.com.")
+                    self._token = None
+                if status == 401:
+                    self._token = None
+                    log.debug("Need to renew authentication token.")
+                log.debug("Attempting to recover.")
             except Exception as err:
                 # for debugging purpose only
                 log.exception("[Event Reader] Fatal Error")
                 raise err  # noqa: TRY201
 
             # Use the same 5 second minimum used by the webapp.
-            reconnect_wait = min(max(2 * connect_attempts, 10), 50)
+            reconnect_wait = min(max(2 * connect_attempts, 10), MAX_RECONNECT_WAIT_S)
 
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
