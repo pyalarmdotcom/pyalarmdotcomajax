@@ -50,7 +50,7 @@ from pyalarmdotcomajax.exceptions import (
     NotAuthorized,
     NotInitialized,
     ServiceUnavailable,
-    SessionTimeout,
+    SessionExpired,
     UnexpectedResponse,
 )
 from pyalarmdotcomajax.models import AdcMiniSuccessResponse
@@ -162,7 +162,7 @@ class AlarmBridge:
                 log.debug("Session expired.")
 
                 if throw:
-                    raise SessionTimeout
+                    raise SessionExpired
 
                 return False
 

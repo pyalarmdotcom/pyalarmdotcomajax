@@ -77,12 +77,7 @@ class EventBroker:
     def publish(self, message: EventBrokerMessage) -> None:
         """Publish a message to subscribers of a topic."""
 
-        log.debug("[Event Broker] Publishing message to subscribers: %s", message)
         for callback in self._subscriptions.get(message.topic, []):
-            log.debug(
-                f"[Event Broker] Publishing message to {getattr(callback,"__name__","No Name")}: {message.topic}"
-            )
-
             if asyncio.iscoroutinefunction(callback):
                 task = asyncio.create_task(callback(message))
                 self._background_tasks.add(task)

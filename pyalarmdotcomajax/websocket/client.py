@@ -16,12 +16,11 @@ import aiohttp
 from pyalarmdotcomajax.const import API_URL_BASE
 from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import (
-    AlarmdotcomException,
     AuthenticationFailed,
     NotInitialized,
     OtpRequired,
     ServiceUnavailable,
-    SessionTimeout,
+    SessionExpired,
     UnexpectedResponse,
 )
 from pyalarmdotcomajax.websocket.messages import (
@@ -45,7 +44,7 @@ ALL_TOKEN_T = Literal["*"]
 KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
 MAX_RECONNECT_WAIT_S = 30 * 60
 DEFAULT_SIGNALS_PER_SESSION_REFRESH = 1
-MAX_KEEP_ALIVE_FAILURES = 10
+MAX_CONNECTION_FAILURES = 25
 
 
 log = logging.getLogger(__name__)
@@ -58,6 +57,7 @@ class WebSocketState(Enum):
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
     DEAD = "dead"
+    WAITING = "waiting"
 
     # Only for emit
     RECONNECTED = "reconnected"
@@ -111,7 +111,6 @@ class WebSocketClient:
         self._event_history: deque = deque(maxlen=25)
 
         self._initialized = False
-        self._valid_token = False
 
     @property
     def connected(self) -> bool:
@@ -194,7 +193,7 @@ class WebSocketClient:
 
         try:
             response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
-        except AuthenticationFailed:
+        except SessionExpired:
             log.error("Detected session timeout, but session was just checked.")
             raise
 
@@ -203,7 +202,7 @@ class WebSocketClient:
         except KeyError as err:
             raise UnexpectedResponse("Failed to get WebSocket endpoint.") from err
 
-        # Don't set token until we get a valid websocket endpoint.
+        # Set token only after we have a valid websocket endpoint.
         self._token = response.value
 
     def emit_ws_state(self, state: WebSocketState, next_attempt_s: int | None = None) -> None:
@@ -226,22 +225,11 @@ class WebSocketClient:
             connect_attempts += 1
 
             try:
-                try:
-                    # Get a new token on the first connect attempt and on every 10 reconnect attempts.
-                    if (not self._valid_token) or connect_attempts == 1 or connect_attempts % 10 == 0:
-                        await self._authenticate()
-                except OtpRequired as err:
-                    log.error(
-                        "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
-                    )
-                    raise AuthenticationFailed from err
-                except AuthenticationFailed:
-                    log.error(
-                        "Failed to authenticate WebSocket connection. This is likely due to a session timeout."
-                    )
-                    raise
+                # Get a new token on the first connect attempt and on every 10 reconnect attempts.
+                if (not self._token) or connect_attempts == 1 or connect_attempts % 10 == 0:
+                    await self._authenticate()
 
-                async with self._bridge.ws_connect(f"{self._ws_endpoint}/?auth={self._token}") as websocket:
+                async with self._bridge.ws_connect(f"{self._ws_endpoint}/?f=1&auth={self._token}") as websocket:
                     self._set_state(
                         WebSocketState.CONNECTED if connect_attempts == 1 else WebSocketState.RECONNECTED,
                     )
@@ -267,31 +255,35 @@ class WebSocketClient:
                         self._event_queue.put_nowait(msg.data)
                         self._event_history.append(msg.data)
 
+            except OtpRequired:
+                log.error(
+                    "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
+                )
+                raise
+            except (AuthenticationFailed, SessionExpired):
+                # Token request failed.
+                log.debug("Failed to authenticate WebSocket connection. This is likely due to a session timeout.")
+                self._token = None
             except (
                 TimeoutError,
                 aiohttp.ClientError,
                 UnexpectedResponse,
-                ServiceUnavailable,
-                SessionTimeout,
-                aiohttp.ClientConnectorError,
+                aiohttp.ClientConnectionError,
             ) as err:
-                # pass expected connection errors because we will auto retry
-                status = getattr(err, "status", None)
-                log.debug(f"Encountered WebSocket error: {err}")
-                if status == 403:
-                    log.debug("Need to renew connection to Alarm.com.")
+                log.debug(f"Encountered WebSocket error: {err}\nAttempting to recover.")
+                if getattr(err, "status", None) == 401:
+                    log.error("Failed to authenticate WebSocket connection.")
                     self._token = None
-                if status == 401:
-                    self._token = None
-                    log.debug("Need to renew authentication token.")
-                log.debug("Attempting to recover.")
             except Exception as err:
                 # for debugging purpose only
-                log.exception("[Event Reader] Fatal Error")
+                log.exception("Fatal Error")
                 raise err  # noqa: TRY201
 
-            # Use the same 5 second minimum used by the webapp.
-            reconnect_wait = min(max(5 * connect_attempts, 10), MAX_RECONNECT_WAIT_S)
+            if connect_attempts >= MAX_CONNECTION_FAILURES:
+                self.stop()
+
+            # Webapp uses a 15 second minimum
+            reconnect_wait = min(15 * connect_attempts, MAX_RECONNECT_WAIT_S)
 
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
@@ -307,7 +299,7 @@ class WebSocketClient:
                     connect_attempts,
                 )
 
-            self._set_state(WebSocketState.CONNECTING)
+            self._set_state(WebSocketState.WAITING)
 
             await asyncio.sleep(reconnect_wait)
 
@@ -364,7 +356,7 @@ class WebSocketClient:
         """Set WS client state and emit message only if state has changed."""
 
         if self._state != state:
-            self._state = state
+            self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state
             self.emit_ws_state(state, reconnect_wait)
 
     ################################
@@ -410,11 +402,13 @@ class WebSocketClient:
         while True:
             await asyncio.sleep(KEEP_ALIVE_SIGNAL_INTERVAL_S)
 
-            log.debug("Sending keep alive.")
+            # Don't send requests if websocket client is disconnected.
+            if self.state != WebSocketState.CONNECTED:
+                log.debug("Skipping keep alive.")
+                signals_sent = 0
+                continue
 
-            # if self.state != WebSocketState.CONNECTED:
-            #     signals_sent = 0
-            #     continue
+            log.debug("Sending keep alive.")
 
             try:
                 if signals_sent >= session_refresh_interval - 1:
@@ -422,7 +416,8 @@ class WebSocketClient:
                     await self._reload_session_context()
                 if self._bridge.auth_controller.enable_keep_alive and not await self._bridge.is_logged_in():
                     log.info("[Keep Alive] Detected expired user session.")
-            except (TimeoutError, aiohttp.ClientError, SessionTimeout, AlarmdotcomException) as err:
+            except Exception as err:
+                # All connection error handling managed by event reader.
                 log.debug(f"Error while sending keep alive: {err}")
 
             signals_sent += 1

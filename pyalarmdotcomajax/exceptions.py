@@ -121,7 +121,7 @@ class MustConfigureMfa(SessionException):
         )
 
 
-class SessionTimeout(AlarmdotcomException):
+class SessionExpired(AlarmdotcomException):
     """Raised when the user's session has timed out and needs to be re-established."""
 
 

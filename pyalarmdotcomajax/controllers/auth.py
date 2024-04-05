@@ -302,7 +302,7 @@ class AuthenticationController:
             or not enabled_otp_types_bitmask
             or not enabled_2fa_methods
         ):
-            # 2FA is disabled, we can skip 2FA altogether.
+            # 2FA is disabled (or the mfa token was accepted), we can skip 2FA altogether.
             return
 
         log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
