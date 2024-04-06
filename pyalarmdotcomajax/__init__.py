@@ -549,7 +549,7 @@ class AlarmBridge:
                     error_codes = [int(error.code) for error in response.errors if error.code is not None]
 
                     # 406: Not Authorized For Ember, 423: Processing Error
-                    if any(x in error_codes for x in [403, 426]):
+                    if any(x in error_codes for x in [406, 423]):
                         log.info(
                             "Got a processing error. This may be caused by missing permissions, being on an Alarm.com plan without support for a particular device type, or having a device type disabled for this system."
                         )
@@ -588,9 +588,7 @@ class AlarmBridge:
         except AuthenticationFailed as err:
             if err.can_autocorrect and allow_login_repair:
                 log.info("Attempting to repair session.")
-
                 try:
-                    log.info("[AlarmBridge -> request] Attempting to repair session.")
                     await self._auth_controller.login()
                     return await self.request(
                         method,
