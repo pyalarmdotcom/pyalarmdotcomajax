@@ -5,6 +5,7 @@
 # from __future__ import annotations
 
 import asyncio
+import logging
 import platform
 from functools import partial
 from typing import Annotated, Optional
@@ -12,6 +13,7 @@ from typing import Annotated, Optional
 import typer
 from rich import print
 from rich.console import Group
+from rich.logging import RichHandler
 from rich.panel import Panel
 
 from pyalarmdotcomajax import AlarmBridge
@@ -26,6 +28,11 @@ from pyalarmdotcomajax.controllers import UpdatedResourceMessage
 from pyalarmdotcomajax.events import EventBrokerMessage
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
 from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketState
+
+logging.basicConfig(
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[RichHandler(rich_tracebacks=True)],
+)
 
 ############
 # MAIN APP #

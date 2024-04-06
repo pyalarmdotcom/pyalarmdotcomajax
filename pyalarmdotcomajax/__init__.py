@@ -16,7 +16,6 @@ import humps
 from mashumaro.exceptions import MissingField
 from rich.console import Group
 
-from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.const import (
     API_URL_BASE,
     DEBUG_REQUEST_DUMP_MAX_LEN,
@@ -379,7 +378,7 @@ class AlarmBridge:
 
         kwargs["headers"].update(
             {
-                "User-Agent": f"pyalarmdotcomajax/{__version__}",
+                # "User-Agent": f"pyalarmdotcomajax/{__version__}",
                 "Referrer": "https://www.alarm.com/web/system/home",
             }
         )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import json
 import logging
 from collections import deque
@@ -270,10 +271,16 @@ class WebSocketClient:
                 UnexpectedResponse,
                 aiohttp.ClientConnectionError,
             ) as err:
-                log.debug(f"Encountered WebSocket error: {err}\nAttempting to recover.")
+                # TODO: Change to log.debug
+                # log.debug(f"Encountered WebSocket error: {err}\nAttempting to recover.")
+                log.exception("Encountered WebSocket error. Attempting to recover.")
                 if getattr(err, "status", None) == 401:
                     log.error("Failed to authenticate WebSocket connection.")
                     self._token = None
+                if getattr(err, "errno", None) == errno.ECONNRESET:
+                    log.error("Server closed connection")
+                    self._token = None
+
             except Exception as err:
                 # for debugging purpose only
                 log.exception("Fatal Error")
