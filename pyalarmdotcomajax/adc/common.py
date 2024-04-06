@@ -12,6 +12,7 @@ from typing import Annotated, Optional
 import aiohttp
 import typer
 from rich import print
+from rich.logging import RichHandler
 from rich.panel import Panel
 from rich.prompt import InvalidResponse, Prompt, PromptBase
 from rich.table import Table
@@ -32,7 +33,11 @@ MAIN_MFA = "Multi-factor Authentication Options"
 MAIN_OUTPUT = "Output Flags"
 CREDENTIALS = "User Credentials"
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[RichHandler(rich_tracebacks=True)],
+)
 log = logging.getLogger(__name__)
 
 #########
