@@ -366,7 +366,8 @@ class WebSocketClient:
         async def emit_state_after_delay(delay: int) -> None:
             """Non-blocking function that emits state after a delay."""
             await asyncio.sleep(delay)
-            self.emit_ws_state(state, None)
+            if self._state == WebSocketState.CONNECTED:
+                self.emit_ws_state(WebSocketState.RECONNECTED, None)
 
         if self._state != state:
             self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state
