@@ -152,7 +152,7 @@ class AlarmBridge:
 
         try:
             async with self.create_request(
-                "get", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
+                "post", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
             ) as rsp:
                 text_rsp = await rsp.text()
 
