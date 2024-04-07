@@ -183,21 +183,17 @@ class WebSocketClient:
 
         log.info("Getting WebSocket token.")
 
-        try:
-            if not await self._bridge.is_logged_in():
-                log.debug("Primary session expired. Reauthenticating to Alarm.com.")
-                await self._bridge.login()
-        except (ServiceUnavailable, UnexpectedResponse):
-            log.debug("Failed to connect to Alarm.com when authenticating. Try again later.")
-            return
-
         self._token = None
 
         try:
             response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
-        except SessionExpired:
-            log.error("Detected session timeout, but session was just checked.")
+        except AuthenticationFailed:
+            # _bridge.get autorepairs when logged out, so we should re-raise AuthenticationFailed.
+            log.debug("Primary session expired. Bailing on getting new token.")
             raise
+        except (ServiceUnavailable, UnexpectedResponse):
+            log.debug("Failed to connect to Alarm.com when authenticating. Try again later.")
+            return
 
         try:
             self._ws_endpoint = response.metadata["endpoint"]
@@ -277,10 +273,11 @@ class WebSocketClient:
                 log.exception("Encountered WebSocket error. Attempting to recover.")
                 if getattr(err, "status", None) == 401:
                     log.error("Failed to authenticate WebSocket connection.")
-                    self._token = None
+                    # self._token = None
                 if getattr(err, "errno", None) == errno.ECONNRESET:
                     log.error("Server closed connection")
-                    self._token = None
+                    # self._token = None
+                self._token = None
 
             except Exception as err:
                 # for debugging purpose only
@@ -290,11 +287,10 @@ class WebSocketClient:
             if connect_attempts >= MAX_CONNECTION_FAILURES:
                 self.stop()
 
-            # Webapp uses a 15 second minimum
             reconnect_wait = round(min(10 * connect_attempts * random.random(), MAX_RECONNECT_WAIT_S))  # noqa: S311
 
             log.debug(
-                "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
+                "WebSocket Disconnected" " - Reconnect will be attempted in %s seconds",
                 reconnect_wait,
             )
 
@@ -368,6 +364,8 @@ class WebSocketClient:
             await asyncio.sleep(delay)
             if self._state == WebSocketState.CONNECTED:
                 self.emit_ws_state(WebSocketState.RECONNECTED, None)
+            else:
+                log.debug("Skipping reconnect emit. No longer connected.")
 
         if self._state != state:
             self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state

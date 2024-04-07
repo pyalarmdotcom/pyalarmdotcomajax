@@ -379,6 +379,7 @@ class AlarmBridge:
         kwargs["headers"].update(
             {
                 # "User-Agent": f"pyalarmdotcomajax/{__version__}",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
                 "Referrer": "https://www.alarm.com/web/system/home",
             }
         )
@@ -445,7 +446,7 @@ class AlarmBridge:
                         resp_dump = await resp.text() if resp.content_length else ""
 
                 log.debug(
-                    f"\n==============================Server Request / Response ({resp.status})==============================\n"
+                    f"\n==============================Server Request ({resp.request_info.method}) / Response ({resp.status})==============================\n"
                     f"URL: {url}\n"
                     f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
                     f"REQUEST BODY:\n{kwargs.get('data') or kwargs.get('json')}\n"
