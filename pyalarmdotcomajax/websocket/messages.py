@@ -102,12 +102,13 @@ class ResourceEventType(Enum):
     SumpPumpAlertPossibleIssue = 116
     Tamper = 7
     UnknownCardFormatRead = 185
-    VideoAnalytics2Detection = 302
     VideoAnalyticsDetection = 210
-    VideoCameraTriggered = 71
     VideoEventTriggered = 76
     ViewedByCentralStation = 158
     WrongPinCode = 398
+
+    VideoCameraTriggered = 71  # Person Detected? Package Detected?
+    VideoAnalytics2Detection = 302  # Motion
 
     # Undocumented
     UserLoggedIn = 55

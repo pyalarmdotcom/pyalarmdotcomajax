@@ -6,6 +6,7 @@ import asyncio
 import errno
 import json
 import logging
+import random
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -290,7 +291,7 @@ class WebSocketClient:
                 self.stop()
 
             # Webapp uses a 15 second minimum
-            reconnect_wait = min(15 * connect_attempts, MAX_RECONNECT_WAIT_S)
+            reconnect_wait = round(min(10 * connect_attempts * random.random(), MAX_RECONNECT_WAIT_S))  # noqa: S311
 
             log.debug(
                 "WebSockets Disconnected" " - Reconnect will be attempted in %s seconds",
@@ -362,9 +363,19 @@ class WebSocketClient:
     def _set_state(self, state: WebSocketState, reconnect_wait: int | None = None) -> None:
         """Set WS client state and emit message only if state has changed."""
 
+        async def emit_state_after_delay(delay: int) -> None:
+            """Non-blocking function that emits state after a delay."""
+            await asyncio.sleep(delay)
+            self.emit_ws_state(state, None)
+
         if self._state != state:
             self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state
-            self.emit_ws_state(state, reconnect_wait)
+
+            if state == WebSocketState.RECONNECTED:
+                # Only emit reconnects after 5 second delay. This prevents downstream reconnect events from triggering if the Alarm.com server connects, then immediately drops the connection.
+                self._background_tasks.append(asyncio.create_task(emit_state_after_delay(5)))
+            else:
+                self.emit_ws_state(state, reconnect_wait)
 
     ################################
     # SESSION KEEP ALIVE FUNCTIONS #
