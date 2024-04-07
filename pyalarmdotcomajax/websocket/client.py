@@ -253,6 +253,8 @@ class WebSocketClient:
                         self._event_queue.put_nowait(msg.data)
                         self._event_history.append(msg.data)
 
+                log.error("========!!!!!! Unhandled graceful exit. !!!!!!========")
+
             except OtpRequired:
                 log.error(
                     "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
@@ -261,7 +263,7 @@ class WebSocketClient:
             except (AuthenticationFailed, SessionExpired):
                 # Token request failed.
                 log.debug("Failed to authenticate WebSocket connection. This is likely due to a session timeout.")
-                self._token = None
+                # self._token = None
             except (
                 TimeoutError,
                 aiohttp.ClientError,
@@ -277,12 +279,14 @@ class WebSocketClient:
                 if getattr(err, "errno", None) == errno.ECONNRESET:
                     log.error("Server closed connection")
                     # self._token = None
-                self._token = None
+                # self._token = None
 
             except Exception as err:
                 # for debugging purpose only
                 log.exception("Fatal Error")
                 raise err  # noqa: TRY201
+
+            self._token = None
 
             if connect_attempts >= MAX_CONNECTION_FAILURES:
                 self.stop()

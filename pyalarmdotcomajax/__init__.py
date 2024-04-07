@@ -152,7 +152,7 @@ class AlarmBridge:
 
         try:
             async with self.create_request(
-                "post", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True
+                "post", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True, json={}
             ) as rsp:
                 text_rsp = await rsp.text()
 
@@ -381,6 +381,7 @@ class AlarmBridge:
                 # "User-Agent": f"pyalarmdotcomajax/{__version__}",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
                 "Referrer": "https://www.alarm.com/web/system/home",
+                "Connection": "keep-alive",
             }
         )
 
@@ -450,6 +451,7 @@ class AlarmBridge:
                     f"URL: {url}\n"
                     f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
                     f"REQUEST BODY:\n{kwargs.get('data') or kwargs.get('json')}\n"
+                    f"RESPONSE HEADERS:\n{json.dumps(dict(resp.headers)) }\n"
                     f"RESPONSE BODY:\n{resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN] + '...' * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN)}\n"
                     f"URL: {url}\n"
                     "=================================================================================\n"
@@ -473,7 +475,7 @@ class AlarmBridge:
         if self._websession is None:
             raise NotInitialized("Cannot initiate WebSocket connection without an existing session.")
 
-        kwargs = self.build_request_headers(accept_types=None, use_ajax_key=False, **kwargs)
+        # kwargs = self.build_request_headers(accept_types=None, use_ajax_key=False, **kwargs)
 
         async with self._websession.ws_connect(url, **kwargs) as res:
             yield res
