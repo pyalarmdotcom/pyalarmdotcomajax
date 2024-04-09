@@ -7,7 +7,7 @@ import logging
 import random
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, NoReturn
 
@@ -111,10 +111,6 @@ class WebSocketClient:
         self._event_history: deque = deque(maxlen=25)
 
         self._initialized = False
-
-        self._disconnect_time: datetime | None = None
-        # TODO: Instead of seeding last_event_time with now, we should seed it with the time at which controllers were loaded.
-        self._last_event_time: datetime = datetime.now(UTC)
 
     @property
     def connected(self) -> bool:
@@ -314,17 +310,6 @@ class WebSocketClient:
                 converted_message: BaseWSMessage | None = None
 
                 log.debug("[EVENT PROCESSOR] Received WebSocket Message: %s", msg_json)
-
-                # Store time of event in case we get disconnected.
-
-                msg_timestamp = (
-                    datetime.strptime(msg_tester.event_date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    if msg_tester.event_date_utc
-                    else None
-                )
-
-                if (msg_timestamp and self._last_event_time) and (msg_timestamp > self._last_event_time):
-                    self._last_event_time = msg_tester.event_date_utc
 
                 # Determine and set message type class.
                 # "Passed" message types seem to be unused by Alarm.com's webapp. The same actions
