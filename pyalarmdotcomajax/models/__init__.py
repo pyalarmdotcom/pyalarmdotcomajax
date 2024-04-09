@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from mashumaro import field_options
 
-from pyalarmdotcomajax.models.jsonapi import JsonApiBaseElement
+from pyalarmdotcomajax.models.jsonapi import Error, JsonApiBaseElement
 
 from . import (  # noqa: F401
     auth,
@@ -42,7 +42,7 @@ class AdcMiniSuccessResponse(JsonApiBaseElement):
 
     # fmt: off
     value: str | None = field(default=None)
-    has_errors: bool = field(default=False)
+    errors: list[Error] = field(default_factory=list)
     metadata: dict = field(default_factory=dict, metadata=field_options(alias="meta_data"))
     # fmt: on
 
@@ -50,7 +50,7 @@ class AdcMiniSuccessResponse(JsonApiBaseElement):
     def __post_deserialize__(cls, obj: "AdcMiniSuccessResponse") -> "AdcMiniSuccessResponse":
         """Validate values after deserialization."""
 
-        if obj.has_errors:
+        if obj.errors:
             raise ValueError("Response has errors")
 
         return obj

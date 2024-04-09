@@ -14,11 +14,13 @@ log = logging.getLogger(__name__)
 
 MOTION_EVENT_STATE_MAP = {
     ResourceEventType.Closed: SensorState.IDLE,
+    ResourceEventType.DoorLeftOpenRestoral: SensorState.IDLE,
     ResourceEventType.OpenedClosed: SensorState.OPENED_CLOSED,
     ResourceEventType.Opened: SensorState.ACTIVE,
 }
 SENSOR_EVENT_STATE_MAP = {
     ResourceEventType.Closed: SensorState.CLOSED,
+    ResourceEventType.DoorLeftOpenRestoral: SensorState.CLOSED,
     ResourceEventType.OpenedClosed: SensorState.OPENED_CLOSED,
     ResourceEventType.Opened: SensorState.OPEN,
 }
@@ -31,6 +33,7 @@ SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
         ResourceEventType.Closed,
         ResourceEventType.OpenedClosed,
         ResourceEventType.Opened,
+        ResourceEventType.DoorLeftOpenRestoral,
     ]
 )
 
@@ -67,6 +70,8 @@ class SensorController(BaseController[Sensor]):
                     )
                 case ResourceEventType.OpenedClosed:
                     state = SensorState.OPENED_CLOSED
+                case ResourceEventType.DoorLeftOpenRestoral:
+                    state = SensorState.CLOSED
 
             if state:
                 adc_resource.api_resource.attributes.update(

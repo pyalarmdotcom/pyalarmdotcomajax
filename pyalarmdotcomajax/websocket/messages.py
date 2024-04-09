@@ -34,6 +34,7 @@ class ResourceEventType(Enum):
     ArmedStay = 9
     Closed = 0
     Disarmed = 8
+    DoorLeftOpenRestoral = 103  # When door is closed after being left open.
     DoorLocked = 91
     DoorUnlocked = 90
     LightTurnedOff = 316
@@ -110,7 +111,6 @@ class ResourceEventType(Enum):
 
     # Undocumented
     UserLoggedIn = 55
-    DoorLeftOpenRestoral = 103  # When door is closed after being left open. Paired with a door closed event.
     DoorLeftOpen = 101  # When door is left open for 30 minutes.
 
     UNKNOWN = -1
