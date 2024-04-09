@@ -1,7 +1,5 @@
 """Alarm.com controller for trouble conditions."""
 
-from __future__ import annotations
-
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.trouble_condition import TroubleCondition

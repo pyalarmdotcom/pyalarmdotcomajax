@@ -1,7 +1,5 @@
 """Alarm.com models."""
 
-from __future__ import annotations
-
 import logging
 from abc import ABC
 from dataclasses import dataclass, field
@@ -42,6 +40,7 @@ class ResourceType(StrEnum):
     TWO_FACTOR = "twoFactorAuthentication/twoFactorAuthentication"
     TROUBLE_CONDITION = "troubleConditions/trouble-condition"
     DEVICE_CATALOG = "settings/manage-devices/device-catalog"
+    HISTORY_EVENT = "activity/history-event"
 
     UNKNOWN = "unknown"
 
@@ -63,7 +62,7 @@ class ResourceType(StrEnum):
     # X10_LIGHT = "devices/x10-light"
 
     @classmethod
-    def _missing_(cls: type, value: object) -> ResourceType:
+    def _missing_(cls: type, value: object) -> "ResourceType":
         """Set default enum member if an unknown value is provided."""
         return ResourceType.UNKNOWN
 
@@ -77,8 +76,6 @@ class ResourceType(StrEnum):
 class AdcResourceAttributes(ABC, JsonApiBaseElement):
     """Represents an Alarm.com resource."""
 
-    pass
-
 
 @dataclass
 class AdcNamedDeviceAttributes(AdcResourceAttributes, ABC):
@@ -89,8 +86,6 @@ class AdcNamedDeviceAttributes(AdcResourceAttributes, ABC):
 
 class AdcResourceSubtype(Enum):
     """Represents Alarm.com resource subtypes."""
-
-    pass
 
 
 AdcResourceAttributesT = TypeVar("AdcResourceAttributesT", bound=AdcResourceAttributes)
@@ -144,10 +139,10 @@ class AdcDeviceResource(AdcResource[AdcNamedDeviceAttributesT]):
         # Set device model
         self.model = None
         if hasattr(self, "resource_models"):
-            if hasattr(self.attributes, "device_model") and getattr(self.attributes, "device_model"):
-                self.model = str(getattr(self.attributes, "device_model"))
+            if hasattr(self.attributes, "device_model") and self.attributes.device_model:
+                self.model = str(self.attributes.device_model)
             elif hasattr(self.attributes, "device_model_id"):
-                self.model = self.resource_models.get(getattr(self.attributes, "device_model_id"), {}).get("model")
+                self.model = self.resource_models.get(self.attributes.device_model_id, {}).get("model")
 
         # self.extension_attributes: list[ExtensionAttributes] = []
 
@@ -244,19 +239,10 @@ class BaseManagedDeviceAttributes(
     device_model: str | None = field(metadata={"description": "The device model."}, default=None)
     device_model_id: int | None = field(metadata={"description": "The device model id."}, default=None)
 
-    # addDeviceResource: int  # The add device resource of the device.
     # associatedCameraDeviceIds: dict  # { device_id: device_name } for all associated cameras.
-    # canAccessAppSettings: bool  # Can the app settings be accessed?
-    # canAccessTroubleshootingWizard: bool  # Can the troubleshooting wizard be accessed?
     # canAccessWebSettings: bool  # Can the web settings be accessed?
-    # canBeAssociatedToVideoDevice: bool  # Whether the device type can be associated to video devices.
-    # canBeDeleted: bool  # Can the device be deleted?
-    # canBeRenamed: bool  # Can the device be renamed?
-    # isAssignedToCareReceiver: bool  # Is this mobile device assigned to a care receiver?
     # isOAuth: bool  # Is the device an OAuth device?
     # isZWave: bool  # Is the device a ZWave device.
     # managedDeviceType: int  # The type of device.
-    # supportsCommandClassBasic: bool  # Does the Z-Wave device support CC Basic.
-    # troubleshootingWizard # The route where the user can edit the troubleshooting wizard.
     # webSettings: int # The route where the user can edit the device settings on the web.
     # fmt: on

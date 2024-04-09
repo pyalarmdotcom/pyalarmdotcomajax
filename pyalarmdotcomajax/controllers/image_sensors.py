@@ -1,7 +1,5 @@
 """Alarm.com controller for image sensors."""
 
-from __future__ import annotations
-
 import logging
 from enum import StrEnum
 

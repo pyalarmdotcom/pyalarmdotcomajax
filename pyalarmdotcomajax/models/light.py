@@ -47,12 +47,7 @@ class LightAttributes(BaseManagedDeviceAttributes[LightState], AdcResourceAttrib
     state_tracking_enabled: bool = field(metadata={"description": "Specifies whether state tracking is enabled."})
     supports_rgb_color_control: bool = field(metadata={"description": "Indicates whether RGB color changing is supported."})
     supports_white_light_color_control: bool = field(metadata={"description": "Indicates whether color temperature changing (selecting between variations of white light) is supported."})
-
-    # is_favorite: bool = field(metadata={"description": "Specifies whether the light is in the Favorites Group."})
-    # is_zwave: bool = field(metadata={"description": "Specifies whether the light is a ZWave device."})
-    # light_groups: bool = field(metadata={"description": "Light groups that this light belongs to."})
-    # should_show_favorites_toggle: bool = field(metadata={"description": "Specifies whether the 'Favorites' toggle should be shown in the edit light modal."})
-    # should_update_multi_level_state: bool = field(metadata={"description": "Indicates whether or not the multilevel state should be updated as part of saving this model. Used to avoid turning on a multilevel light when updating non-lighting properties such as device name."})
+    should_update_multi_level_state: bool = field(metadata={"description": "Indicates whether or not the multilevel state should be updated as part of saving this model. Used to avoid turning on a multilevel light when updating non-lighting properties such as device name."})
     # fmt: on
 
     @property

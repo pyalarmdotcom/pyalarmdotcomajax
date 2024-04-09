@@ -25,8 +25,6 @@ class GarageDoorState(Enum):
 class GarageDoorAttributes(BaseManagedDeviceAttributes[GarageDoorState]):
     """Attributes of a garage door device."""
 
-    pass
-
 
 @dataclass
 class GarageDoor(AdcDeviceResource[GarageDoorAttributes]):

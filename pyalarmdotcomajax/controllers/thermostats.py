@@ -2,7 +2,7 @@
 
 # ruff: noqa: UP007
 
-# from __future__ import annotations
+#
 
 import logging
 from typing import Annotated, Any, Optional
@@ -12,7 +12,6 @@ import typer
 from pyalarmdotcomajax.adc.util import ValueEnum, cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers.base import AdcResourceT, BaseController
-from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.thermostat import (
     Thermostat,
@@ -67,7 +66,7 @@ class ThermostatController(BaseController[Thermostat]):
         self,
         id: Annotated[str, typer.Option(help="The ID of the thermostat.", show_default=False)],
         state: Annotated[
-            Optional[OtpType],
+            Optional[ThermostatState],
             typer.Option(
                 click_type=ValueEnum(ThermostatState, "UNKNOWN"),
                 case_sensitive=False,

@@ -1,7 +1,5 @@
 """pyalarmdotcomajax - A Python library for interacting with Alarm.com's API."""
 
-from __future__ import annotations
-
 import asyncio
 import contextlib
 import json
@@ -43,16 +41,21 @@ from pyalarmdotcomajax.controllers.users import (
     AvailableSystemsController,
 )
 from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
-from pyalarmdotcomajax.events import EventBroker, EventBrokerCallbackT, EventBrokerMessage, EventBrokerTopic
+from pyalarmdotcomajax.events import EventBroker, EventBrokerCallbackT, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
+    MustConfigureMfa,
     NotAuthorized,
     NotInitialized,
+    OtpRequired,
     ServiceUnavailable,
     SessionExpired,
     UnexpectedResponse,
+    UnknownDevice,
+    UnsupportedOperation,
 )
 from pyalarmdotcomajax.models import AdcMiniSuccessResponse
+from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.jsonapi import (
     FailureDocument,
@@ -61,16 +64,27 @@ from pyalarmdotcomajax.models.jsonapi import (
     SuccessDocument,
 )
 from pyalarmdotcomajax.websocket.client import (
-    ConnectionEvent,
     WebSocketClient,
-    WebSocketState,
 )
 
-from . import controllers, exceptions, models  # noqa: F401
-from .models.auth import OtpType  # noqa: F401
+__all__: tuple[str, ...] = (
+    # exceptions
+    "UnsupportedOperation",
+    "UnknownDevice",
+    "AuthenticationFailed",
+    "OtpRequired",
+    "MustConfigureMfa",
+    "SessionExpired",
+    "ServiceUnavailable",
+    "NotAuthorized",
+    "NotInitialized",
+    "UnexpectedResponse",
+    # models.auth
+    "OtpType",
+)
+
 
 log = logging.getLogger(__name__)
-# log.setLevel(5)
 
 MFA_COOKIE_KEY = "twoFactorAuthenticationId"
 
@@ -119,9 +133,6 @@ class AlarmBridge:
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
 
-        # Subscribe bridge to websocket connection events in case of websocket connection later on.
-        self.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, self._handle_connect_event)
-
     async def initialize(self) -> None:
         """Initialize bridge connection, or finish initialization after OTP has been submitted."""
 
@@ -138,21 +149,26 @@ class AlarmBridge:
 
         self._initialized = True
 
-    async def is_logged_in(self, throw: bool = False) -> bool:
+    async def is_logged_in(self, *, throw: bool = False) -> bool:
         """Check if we are still logged in. Also functions as keep alive signal."""
 
         try:
             url = f"{URL_BASE[:-1]}{self.auth_controller.keep_alive_url}?timestamp={int(round(datetime.now().timestamp()))}"
-        except IndexError:
+        except IndexError as err:
             # User has yet to log in.
             if throw:
-                raise NotInitialized
+                raise NotInitialized from err
 
             return False
 
         try:
             async with self.create_request(
-                "post", url, accept_types=ResponseTypes.JSON, use_ajax_key=True, raise_for_status=True, json={}
+                "post",
+                url,
+                accept_types=ResponseTypes.JSON,
+                use_ajax_key=True,
+                raise_for_status=True,
+                json={},
             ) as rsp:
                 text_rsp = await rsp.text()
 
@@ -161,7 +177,7 @@ class AlarmBridge:
                 log.debug("Session expired.")
 
                 if throw:
-                    raise SessionExpired
+                    raise SessionExpired from err
 
                 return False
 
@@ -197,7 +213,7 @@ class AlarmBridge:
 
     async def start_event_monitoring(
         self, ws_status_callback: EventBrokerCallbackT | None = None
-    ) -> None | Callable:
+    ) -> "None | Callable":
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
@@ -210,7 +226,7 @@ class AlarmBridge:
     def subscribe(
         self,
         callback: EventBrokerCallbackT,
-    ) -> Callable[[], None]:
+    ) -> "Callable[[], None]":
         """
         Subscribe to status changes for all resource controllers.
 
@@ -227,15 +243,6 @@ class AlarmBridge:
             ],
             callback,
         )
-
-    async def _handle_connect_event(self, message: EventBrokerMessage) -> None:
-        """Handle reconnect event from event controller."""
-
-        if not isinstance(message, ConnectionEvent):
-            return
-
-        if message.current_state == WebSocketState.RECONNECTED:
-            await self.fetch_full_state()
 
     ###################
     # GET CONTROLLERS #
@@ -333,7 +340,7 @@ class AlarmBridge:
     # REQUEST MANAGEMENT / CONTEXT FUNCTIONS #
     ##########################################
 
-    async def __aenter__(self) -> "AlarmBridge":  # noqa: UP037
+    async def __aenter__(self) -> "AlarmBridge":
         """Return Context manager."""
 
         await self.initialize()
@@ -346,7 +353,7 @@ class AlarmBridge:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+        exc_tb: "TracebackType | None",
     ) -> None:
         """Exit context manager."""
 
@@ -368,6 +375,7 @@ class AlarmBridge:
     def build_request_headers(
         self,
         accept_types: ResponseTypes | None = ResponseTypes.JSONAPI,
+        *,
         use_ajax_key: bool = True,
         **kwargs: Any,
     ) -> Any:
@@ -378,7 +386,6 @@ class AlarmBridge:
 
         kwargs["headers"].update(
             {
-                # "User-Agent": f"pyalarmdotcomajax/{__version__}",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
                 "Referrer": "https://www.alarm.com/web/system/home",
                 "Connection": "keep-alive",
@@ -399,9 +406,10 @@ class AlarmBridge:
         method: str,
         url: str,
         accept_types: ResponseTypes = ResponseTypes.JSONAPI,
+        *,
         use_ajax_key: bool = True,
         **kwargs: Any,
-    ) -> AsyncIterator[aiohttp.ClientResponse]:
+    ) -> "AsyncIterator[aiohttp.ClientResponse]":
         """
         Make a request to the Alarm.com API.
 
@@ -415,7 +423,7 @@ class AlarmBridge:
         if self._auth_controller.mfa_cookie:
             kwargs.setdefault("cookies", {}).update({MFA_COOKIE_KEY: self._auth_controller.mfa_cookie})
 
-        kwargs = self.build_request_headers(accept_types, use_ajax_key, **kwargs)
+        kwargs = self.build_request_headers(accept_types=accept_types, use_ajax_key=use_ajax_key, **kwargs)
 
         async with self._websession.request(method, url, **kwargs) as resp:
             # Update anti-forgery cookie.
@@ -447,14 +455,22 @@ class AlarmBridge:
                         resp_dump = await resp.text() if resp.content_length else ""
 
                 log.debug(
-                    f"\n==============================Server Request ({resp.request_info.method}) / Response ({resp.status})==============================\n"
-                    f"URL: {url}\n"
-                    f"REQUEST HEADERS:\n{json.dumps(dict(resp.request_info.headers)) }\n"
-                    f"REQUEST BODY:\n{kwargs.get('data') or kwargs.get('json')}\n"
-                    f"RESPONSE HEADERS:\n{json.dumps(dict(resp.headers)) }\n"
-                    f"RESPONSE BODY:\n{resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN] + '...' * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN)}\n"
-                    f"URL: {url}\n"
-                    "=================================================================================\n"
+                    "\n==============================Server Request (%s) / Response (%s)==============================\n"
+                    "URL: %s\n"
+                    "REQUEST HEADERS:\n%s\n"
+                    "REQUEST BODY:\n%s\n"
+                    "RESPONSE HEADERS:\n%s\n"
+                    "RESPONSE BODY:\n%s\n"
+                    "URL: %s\n"
+                    "=================================================================================\n",
+                    resp.request_info.method,
+                    resp.status,
+                    url,
+                    json.dumps(dict(resp.request_info.headers)),
+                    kwargs.get("data") or kwargs.get("json"),
+                    json.dumps(dict(resp.headers)),
+                    resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN] + "..." * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN),
+                    url,
                 )
 
             yield resp
@@ -466,7 +482,7 @@ class AlarmBridge:
         self,
         url: str,
         **kwargs: Any,
-    ) -> AsyncIterator[aiohttp.ClientWebSocketResponse]:
+    ) -> "AsyncIterator[aiohttp.ClientWebSocketResponse]":
         """
         Establish a WebSocket connection with Alarm.com.
 
@@ -475,7 +491,7 @@ class AlarmBridge:
         if self._websession is None:
             raise NotInitialized("Cannot initiate WebSocket connection without an existing session.")
 
-        # kwargs = self.build_request_headers(accept_types=None, use_ajax_key=False, **kwargs)
+        # Don't generate/use GET/POST request headers. WebSocket connection uses token in place of cookies, etc.
 
         async with self._websession.ws_connect(url, **kwargs) as res:
             yield res
@@ -506,6 +522,7 @@ class AlarmBridge:
         url: str,
         accept_types: ResponseTypes = ResponseTypes.JSONAPI,
         success_response_class: type[T] | type[SuccessDocument] = SuccessDocument,
+        *,
         allow_login_repair: bool = True,
         **kwargs: Any,
     ) -> T | SuccessDocument:
@@ -514,8 +531,13 @@ class AlarmBridge:
         # Alarm.com's implementation violates the JSON:API spec by sometimes returning a modified error response body with a non-200 response code.
         # This response still contains an "errors" object and should validate as a FailureDocument.
 
-        log.debug(
-            f"Requesting {method.upper()} {url} with {kwargs.get('data') or kwargs.get('json')} expecting {accept_types} as {success_response_class.__name__}"
+        log.info(
+            "Requesting %s %s with %s expecting %s as %s",
+            method.upper(),
+            url,
+            kwargs.get("data") or kwargs.get("json"),
+            accept_types,
+            success_response_class.__name__,
         )
 
         try:
@@ -605,7 +627,12 @@ class AlarmBridge:
             raise
 
     def _generate_request_url(self, path: ResourceType | str, id: str | set[str] | None) -> str:
-        """Generate request URL."""
+        """
+        Generate endpoint URL for request.
+
+        When path is a ResourceType, the URL is generated based on the resource type.
+        When path is str, the path is appended to the end of the API base URL.
+        """
 
         # Format path for appropriate resource type & pluralize.
         if isinstance(path, ResourceType):
@@ -632,6 +659,7 @@ class AlarmBridge:
         self,
         path: ResourceType | str,
         id: str,
+        *,
         mini_response: Literal[False] = ...,
         **kwargs: Any,
     ) -> AdcSuccessDocumentSingle: ...
@@ -641,6 +669,7 @@ class AlarmBridge:
         self,
         path: ResourceType | str,
         id: set[str] | None,
+        *,
         mini_response: Literal[False] = ...,
         **kwargs: Any,
     ) -> AdcSuccessDocumentMulti: ...
@@ -650,6 +679,7 @@ class AlarmBridge:
         self,
         path: str,
         id: str | None,
+        *,
         mini_response: Literal[True],
         **kwargs: Any,
     ) -> AdcMiniSuccessResponse: ...
@@ -658,6 +688,7 @@ class AlarmBridge:
         self,
         path: ResourceType | str,
         id: str | set[str] | None,
+        *,
         mini_response: bool = False,
         **kwargs: Any,
     ) -> AdcSuccessDocumentSingle | AdcSuccessDocumentMulti | AdcMiniSuccessResponse:
@@ -702,6 +733,7 @@ class AlarmBridge:
         path: ResourceType | str,
         id: str | set[str] | None,
         action: str | None,
+        *,
         mini_response: bool = False,
         **kwargs: Any,
     ) -> AdcSuccessDocumentSingle | AdcMiniSuccessResponse:

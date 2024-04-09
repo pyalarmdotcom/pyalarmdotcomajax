@@ -6,6 +6,7 @@ from asyncio import Task
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 from typing import Any
 
 log = logging.getLogger(__name__)
@@ -50,22 +51,22 @@ class EventBroker:
         if isinstance(topics, EventBrokerTopic):
             topics = [topics]
 
+        def unsubscribe_topic(
+            topic: EventBrokerTopic, callback: EventBrokerCallbackT = callback
+        ) -> None:  # Fixed closure issue
+            """Unregister the callback from a specific topic."""
+            if topic in self._subscriptions:
+                self._subscriptions[topic].remove(callback)
+                if not self._subscriptions[topic]:  # If list is empty, remove the entry
+                    del self._subscriptions[topic]
+
         unsubscribe_functions = []
         for topic in topics:
             if topic not in self._subscriptions:
                 self._subscriptions[topic] = []
             self._subscriptions[topic].append(callback)
 
-            def unsubscribe_topic(
-                topic: EventBrokerTopic = topic, callback: EventBrokerCallbackT = callback
-            ) -> None:  # Fixed closure issue
-                """Unregister the callback from a specific topic."""
-                if topic in self._subscriptions:
-                    self._subscriptions[topic].remove(callback)
-                    if not self._subscriptions[topic]:  # If list is empty, remove the entry
-                        del self._subscriptions[topic]
-
-            unsubscribe_functions.append(lambda: unsubscribe_topic(topic, callback))
+            unsubscribe_functions.append(partial(unsubscribe_topic, topic, callback))
 
         def unsubscribe_all() -> None:
             """Unregister the callback from all topics."""

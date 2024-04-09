@@ -64,9 +64,6 @@ class SensorAttributes(BaseManagedDeviceAttributes[SensorState]):
     supports_bypass: bool = field(metadata={"description": "This sensor supports bypass."})
     supports_immediate_bypass: bool = field(metadata={"description": "This sensor supports bypass outside an arming event."})
     open_closed_status: int = field(metadata={"description":"This sensor is in an 'Open' or 'Closed' state."})
-
-    # device_role: int  # The current role of the sensor.
-    # sensor_naming_format: int  # The allowed sensor naming format.
     # fmt: on
 
 

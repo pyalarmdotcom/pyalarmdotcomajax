@@ -2,8 +2,6 @@
 
 # ruff: noqa: UP007
 
-from __future__ import annotations
-
 import logging
 from types import MappingProxyType
 

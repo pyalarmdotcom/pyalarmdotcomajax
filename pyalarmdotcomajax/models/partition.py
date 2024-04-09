@@ -64,13 +64,6 @@ class PartitionAttributes(BaseManagedDeviceAttributes[PartitionState]):
     invalid_extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The combinations of extended arming options that are invalid for each arming mode."})
     needs_clear_issues_prompt: bool = field(metadata={"description": "Indicates if the user should be prompted about any present issues before allowing arming."})
     partition_id: str = field(metadata={"description": "The ID of this partition."})
-
-    # can_access_panel_wifi: bool  # Indicates if this partition can access the panel-wifi route.
-    # can_enable_alexa: bool  # Indicates if this partition can enable Alexa features.
-    # dealer_enforces_force_bypass: bool  # Indicates if the user should be warned if a sensor is open while trying to arm the panel.
-    # is_alexa_enabled: bool  # Indicates if Alexa features are enabled on this partition.
-    # sensor_naming_format: int  # The allowed device naming format.
-    # show_new_force_bypass: bool  # Indicates if the new force bypass with new text should be shown.
     # fmt: on
 
     @property

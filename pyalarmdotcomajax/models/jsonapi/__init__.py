@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import contextlib
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from mashumaro.config import BaseConfig
 from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.types import Discriminator
 
-from pyalarmdotcomajax.models.jsonapi.types import URI
 from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin, int_to_str
+
+if TYPE_CHECKING:
+    from pyalarmdotcomajax.models.jsonapi.types import URI
 
 ########################
 # JSON:API BASE ENTITY #

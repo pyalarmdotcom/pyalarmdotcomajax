@@ -1,14 +1,12 @@
 """adc core CLI functions."""
 
-# ruff: noqa: T201 C901 UP007
-
-# from __future__ import annotations
+# ruff: noqa: T201 C901 UP007 FBT002 FBT001
 
 import asyncio
 import logging
 import platform
 from functools import partial
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, Optional
 
 import typer
 from rich import print
@@ -16,7 +14,6 @@ from rich.console import Group
 from rich.logging import RichHandler
 from rich.panel import Panel
 
-from pyalarmdotcomajax import AlarmBridge
 from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.adc.common import bridge, collect_params
 from pyalarmdotcomajax.adc.util import (
@@ -25,9 +22,12 @@ from pyalarmdotcomajax.adc.util import (
     with_paremeters,
 )
 from pyalarmdotcomajax.controllers import UpdatedResourceMessage
-from pyalarmdotcomajax.events import EventBrokerMessage
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
 from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketState
+
+if TYPE_CHECKING:
+    from pyalarmdotcomajax import AlarmBridge
+    from pyalarmdotcomajax.events import EventBrokerMessage
 
 logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -67,8 +67,6 @@ def adc_callback(
     ] = False,
 ) -> None:
     """Interact with your Alarm.com alarm system from the command line."""
-
-    pass
 
 
 ############
@@ -157,7 +155,7 @@ async def get(
 ###########
 
 
-def handle_event(json: bool, message: EventBrokerMessage) -> None:
+def handle_event(json: bool, message: "EventBrokerMessage") -> None:
     """Handle event broker events."""
 
     if isinstance(message, UpdatedResourceMessage):
@@ -167,8 +165,7 @@ def handle_event(json: bool, message: EventBrokerMessage) -> None:
         ws_state_printer(message)
 
 
-# Callable[WebSocketState, Any]
-def ws_state_printer(message: EventBrokerMessage) -> None:
+def ws_state_printer(message: "EventBrokerMessage") -> None:
     """Print WebSocket state."""
 
     if not isinstance(message, ConnectionEvent):
@@ -188,7 +185,6 @@ def ws_state_printer(message: EventBrokerMessage) -> None:
         print("[yellow]Streaming real-time updates...")
 
 
-# Callable[[WebSocketNotificationType, WebSocketState | BaseWSMessage], Any]
 def event_printer(verbose: bool, message: UpdatedResourceMessage) -> None:
     """Print event."""
 

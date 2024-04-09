@@ -1,6 +1,6 @@
 """Alarm.com controller for lights."""
 
-# from __future__ import annotations
+#
 
 import logging
 from types import MappingProxyType

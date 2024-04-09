@@ -1,7 +1,5 @@
 """JSON:API custom types."""
 
-from __future__ import annotations
-
 import re
 from typing import Self
 
@@ -77,7 +75,7 @@ class RangeInt(int, SerializableType):
     __min_value__: int
     __max_value__: int
 
-    def __new__(cls, value: int, *, min_value: int | None = None, max_value: int | None = None) -> RangeInt:
+    def __new__(cls, value: int, *, min_value: int | None = None, max_value: int | None = None) -> "RangeInt":
         """Create a new RangeInt object."""
         if min_value is not None:
             cls.__min_value__ = min_value
@@ -88,14 +86,14 @@ class RangeInt(int, SerializableType):
         return int.__new__(cls, value)
 
     @classmethod
-    def _deserialize(cls, value: int) -> RangeInt:
+    def _deserialize(cls, value: int) -> "RangeInt":
         return cls(value, min_value=cls.__min_value__, max_value=cls.__max_value__)
 
 
 class LedColor(SerializableType):
     """Represents an LED color with serialization and deserialization from/to HEX format."""
 
-    def __init__(self, hex: str | None = None, rgb: tuple[int, int, int] | None = None) -> None:
+    def __init__(self, hex: str | None = None, rgb: tuple[int, int, int] | None = None) -> None:  # noqa: A002
         """Initialize with either HEX or RGB format."""
         if hex:
             self.hex = self._validate_and_format_hex(hex)
@@ -105,7 +103,7 @@ class LedColor(SerializableType):
             raise ValueError("Must initialize with either hex or rgb")
 
     @classmethod
-    def _deserialize(cls, value: str) -> LedColor:
+    def _deserialize(cls, value: str) -> "LedColor":
         """Deserialize from HEX format."""
         return cls(hex=value)
 

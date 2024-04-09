@@ -1,7 +1,5 @@
 """Alarm.com models."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 
 from mashumaro import field_options
@@ -49,7 +47,7 @@ class AdcMiniSuccessResponse(JsonApiBaseElement):
     # fmt: on
 
     @classmethod
-    def __post_deserialize__(cls, obj: AdcMiniSuccessResponse) -> AdcMiniSuccessResponse:
+    def __post_deserialize__(cls, obj: "AdcMiniSuccessResponse") -> "AdcMiniSuccessResponse":
         """Validate values after deserialization."""
 
         if obj.has_errors:

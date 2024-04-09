@@ -22,8 +22,6 @@ class TemperatureDeviceAttributes(BaseManagedDeviceAttributes[DeviceState], ABC)
     humidity_level: int = field(metadata={"description": "The current humidity level reported by the device."})
     is_paired: bool = field(metadata={"description": "Is this device paired to another?"})
     supports_humidity: bool = field(metadata={"description": "Whether the device supports humidity."})
-
-    # supports_pairing: bool  # Does this device support pairing? Does a thermostat support pairing to temperature sensors or does a temperature sensor support pairing to thermostats?
     # temp_forwarding_active: bool  # Is this device's temperature currently being used to drive itself or another device?
     # fmt: on
 

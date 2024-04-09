@@ -1,8 +1,6 @@
 """Alarm.com controller for partitions."""
 
-# ruff: noqa: UP007
-
-from __future__ import annotations
+# ruff: noqa: UP007 FBT002 FBT001
 
 import logging
 from enum import StrEnum

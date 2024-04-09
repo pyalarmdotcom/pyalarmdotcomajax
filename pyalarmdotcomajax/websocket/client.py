@@ -1,15 +1,13 @@
 """Event controller."""
 
-from __future__ import annotations
-
 import asyncio
-import errno
+import contextlib
 import json
 import logging
 import random
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, NoReturn
 
@@ -95,7 +93,7 @@ class SupportedResourceEvents:
 class WebSocketClient:
     """Control WebSocket connection and distribute messages."""
 
-    def __init__(self, bridge: AlarmBridge) -> None:
+    def __init__(self, bridge: "AlarmBridge") -> None:
         """Initialize authentication controller."""
         self._bridge = bridge
 
@@ -113,6 +111,10 @@ class WebSocketClient:
         self._event_history: deque = deque(maxlen=25)
 
         self._initialized = False
+
+        self._disconnect_time: datetime | None = None
+        # TODO: Instead of seeding last_event_time with now, we should seed it with the time at which controllers were loaded.
+        self._last_event_time: datetime = datetime.now(UTC)
 
     @property
     def connected(self) -> bool:
@@ -149,9 +151,11 @@ class WebSocketClient:
             """Stop all background tasks and state reason."""
 
             if task.cancelled():
-                log.debug(f"WebSocket client task {task.get_name()} was killed.")
+                log.debug("WebSocket client task %s was killed.", task.get_name())
             else:
-                log.error(f"WebSocket client ran into an error with the {task.get_name()} task. Killing siblings.")
+                log.error(
+                    "WebSocket client ran into an error with the %s task. Killing siblings.", task.get_name()
+                )
                 self.stop(WebSocketState.DEAD)
 
         if len(self._background_tasks) > 0:
@@ -178,30 +182,9 @@ class WebSocketClient:
 
         self._initialized = False
 
-    async def _authenticate(self) -> None:
-        """Get authentication token for websocket endpoint."""
-
-        log.info("Getting WebSocket token.")
-
-        self._token = None
-
-        try:
-            response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
-        except AuthenticationFailed:
-            # _bridge.get autorepairs when logged out, so we should re-raise AuthenticationFailed.
-            log.debug("Primary session expired. Bailing on getting new token.")
-            raise
-        except (ServiceUnavailable, UnexpectedResponse):
-            log.debug("Failed to connect to Alarm.com when authenticating. Try again later.")
-            return
-
-        try:
-            self._ws_endpoint = response.metadata["endpoint"]
-        except KeyError as err:
-            raise UnexpectedResponse("Failed to get WebSocket endpoint.") from err
-
-        # Set token only after we have a valid websocket endpoint.
-        self._token = response.value
+    #############################
+    # NOTIFICATION TRANSMISSION #
+    #############################
 
     def emit_ws_state(self, state: WebSocketState, next_attempt_s: int | None = None) -> None:
         """Emit connection event to all listeners."""
@@ -213,6 +196,10 @@ class WebSocketClient:
 
         self._bridge.events.publish(RawUpdatedResourceMessage(ws_message=data))
 
+    #################################
+    # LONG-RUNNING BACKGROUND TASKS #
+    #################################
+
     async def _event_reader(self) -> NoReturn:
         """Maintain connection with server and read events from stream."""
 
@@ -223,9 +210,9 @@ class WebSocketClient:
             connect_attempts += 1
 
             try:
-                # Get a new token on the first connect attempt and on every 10 reconnect attempts.
-                if (not self._token) or connect_attempts == 1 or connect_attempts % 10 == 0:
-                    await self._authenticate()
+                await self._authenticate()
+
+                log.info("[EVENT READER] Connecting to Alarm.com WebSocket endpoint...")
 
                 async with self._bridge.ws_connect(f"{self._ws_endpoint}/?f=1&auth={self._token}") as websocket:
                     self._set_state(
@@ -233,60 +220,64 @@ class WebSocketClient:
                     )
                     connect_attempts = 1
 
-                    log.info("Connected to WebSocket")
+                    log.info("[EVENT READER] Connected to WebSocket")
 
                     async for msg in websocket:
                         if msg.type == aiohttp.WSMsgType.CLOSED:
                             log.info(
-                                "aiohttp WebSocket connection closed: Code: %s, Message: '%s'", msg.data, msg.extra
+                                "[EVENT READER]aiohttp WebSocket connection closed: Code: %s, Message: '%s'",
+                                msg.data,
+                                msg.extra,
                             )
                             continue
 
                         if msg.type == aiohttp.WSMsgType.ERROR:
-                            log.info("aiohttp WebSocket error: '%s'", msg.data)
+                            log.info("[EVENT READER]aiohttp WebSocket error: '%s'", msg.data)
                             continue
 
                         if msg.type != aiohttp.WSMsgType.TEXT:
-                            log.debug("Got non-text WebSocket message: '%s'", msg.data)
+                            log.debug("[EVENT READER]Got non-text WebSocket message: '%s'", msg.data)
                             continue
 
                         self._event_queue.put_nowait(msg.data)
                         self._event_history.append(msg.data)
 
-                log.error("========!!!!!! Unhandled graceful exit. !!!!!!========")
+                if log.level < logging.DEBUG:
+                    close_code: aiohttp.WSCloseCode | int | None = websocket.close_code
+                    with contextlib.suppress(AttributeError):
+                        if websocket.close_code:
+                            close_code = aiohttp.WSCloseCode(int(websocket.close_code))
+
+                    log.debug("[EVENT READER] WebSocket Connection Closed (%s)", close_code)
 
             except OtpRequired:
                 log.error(
-                    "Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
+                    "[EVENT READER] Server requested OTP when attempting to keep session alive. This was most likely caused by an issue extracting the MFA token during sign-in."
                 )
                 raise
             except (AuthenticationFailed, SessionExpired):
                 # Token request failed.
-                log.debug("Failed to authenticate WebSocket connection. This is likely due to a session timeout.")
-                # self._token = None
+                log.debug(
+                    "[EVENT READER] Failed to authenticate WebSocket connection. This is likely due to a session timeout."
+                )
             except (
                 TimeoutError,
                 aiohttp.ClientError,
                 UnexpectedResponse,
                 aiohttp.ClientConnectionError,
             ) as err:
-                # TODO: Change to log.debug
-                # log.debug(f"Encountered WebSocket error: {err}\nAttempting to recover.")
-                log.exception("Encountered WebSocket error. Attempting to recover.")
-                if getattr(err, "status", None) == 401:
-                    log.error("Failed to authenticate WebSocket connection.")
-                    # self._token = None
-                if getattr(err, "errno", None) == errno.ECONNRESET:
-                    log.error("Server closed connection")
-                    # self._token = None
-                # self._token = None
-
+                # status = 401 (HTTP):                      WebSocket Authentication failure
+                # errno = 104 (Socket errno.ECONNRESET):    Connection reset by peer
+                log.debug(
+                    "[EVENT READER] Encountered WebSocket error. Attempting to recover.\nHTTP STATUS: %s\nSOCKET ERROR: %s %s",
+                    getattr(err, "status", None),
+                    getattr(err, "errno", None),
+                    getattr(err, "strerror", None),
+                )
             except Exception as err:
                 # for debugging purpose only
-                log.exception("Fatal Error")
+                log.exception("[EVENT READER] Fatal Error")
                 raise err  # noqa: TRY201
-
-            self._token = None
 
             if connect_attempts >= MAX_CONNECTION_FAILURES:
                 self.stop()
@@ -294,7 +285,7 @@ class WebSocketClient:
             reconnect_wait = round(min(10 * connect_attempts * random.random(), MAX_RECONNECT_WAIT_S))  # noqa: S311
 
             log.debug(
-                "WebSocket Disconnected" " - Reconnect will be attempted in %s seconds",
+                "[EVENT READER] WebSocket Disconnected" " - Reconnect will be attempted in %s seconds",
                 reconnect_wait,
             )
 
@@ -303,7 +294,7 @@ class WebSocketClient:
             # every 10 failed connect attempts log warning
             if connect_attempts % 10 == 0:
                 log.warning(
-                    "%s attempts to (re)connect Alarm.com WebSocket endpoint failed.",
+                    "[EVENT READER] %s attempts to (re)connect Alarm.com WebSocket endpoint failed.",
                     connect_attempts,
                 )
 
@@ -322,7 +313,18 @@ class WebSocketClient:
 
                 converted_message: BaseWSMessage | None = None
 
-                log.debug(f"Received WebSocket Message: {msg_json}")
+                log.debug("[EVENT PROCESSOR] Received WebSocket Message: %s", msg_json)
+
+                # Store time of event in case we get disconnected.
+
+                msg_timestamp = (
+                    datetime.strptime(msg_tester.event_date_utc, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    if msg_tester.event_date_utc
+                    else None
+                )
+
+                if (msg_timestamp and self._last_event_time) and (msg_timestamp > self._last_event_time):
+                    self._last_event_time = msg_tester.event_date_utc
 
                 # Determine and set message type class.
                 # "Passed" message types seem to be unused by Alarm.com's webapp. The same actions
@@ -350,39 +352,93 @@ class WebSocketClient:
                 elif UNDEFINED not in [msg_tester.property_, msg_tester.property_value]:
                     converted_message = PropertyChangeWSMessage.from_json(msg_json)
 
-                log.debug(f"WebSocket message type identified as {converted_message.__class__.__name__}")
+                log.debug(
+                    "[EVENT PROCESSOR] WebSocket message type identified as %s",
+                    converted_message.__class__.__name__,
+                )
 
                 if converted_message:
                     self.emit_resource(converted_message)
                 else:
-                    log.warning("Unprocessable message received: %s", json.loads(msg_json))
+                    log.warning("[EVENT PROCESSOR] Unprocessable message received: %s", json.loads(msg_json))
 
             except Exception:
-                log.exception("Failed to convert message: %s", json.loads(msg_json))
+                log.exception("[EVENT PROCESSOR] Failed to convert message.\n")
+                log.debug(json.loads(msg_json))
 
-    def _set_state(self, state: WebSocketState, reconnect_wait: int | None = None) -> None:
-        """Set WS client state and emit message only if state has changed."""
+    async def _keep_alive(self) -> NoReturn:
+        """
+        Keep session alive.
 
-        async def emit_state_after_delay(delay: int) -> None:
-            """Non-blocking function that emits state after a delay."""
-            await asyncio.sleep(delay)
-            if self._state == WebSocketState.CONNECTED:
-                self.emit_ws_state(WebSocketState.RECONNECTED, None)
-            else:
-                log.debug("Skipping reconnect emit. No longer connected.")
+        Alarm.com's webapp uses the keep alive to handle session timeouts. We'll use the event reader to do that, instead.
+        """
 
-        if self._state != state:
-            self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state
+        # Determine number of keep_alives to send between session refreshes.
+        session_refresh_interval_ms = self._bridge.auth_controller.session_refresh_interval_ms
+        session_refresh_interval = max(
+            int(session_refresh_interval_ms / (KEEP_ALIVE_SIGNAL_INTERVAL_S * 1000)),
+            DEFAULT_SIGNALS_PER_SESSION_REFRESH,
+        )
 
-            if state == WebSocketState.RECONNECTED:
-                # Only emit reconnects after 5 second delay. This prevents downstream reconnect events from triggering if the Alarm.com server connects, then immediately drops the connection.
-                self._background_tasks.append(asyncio.create_task(emit_state_after_delay(5)))
-            else:
-                self.emit_ws_state(state, reconnect_wait)
+        log.info(
+            "[KEEP ALIVE] Session refresh interval: %s ms / %s pings",
+            session_refresh_interval_ms,
+            session_refresh_interval,
+        )
 
-    ################################
-    # SESSION KEEP ALIVE FUNCTIONS #
-    ################################
+        signals_sent = 0
+
+        while True:
+            await asyncio.sleep(KEEP_ALIVE_SIGNAL_INTERVAL_S)
+
+            # Don't send requests if websocket client is disconnected.
+            if self.state != WebSocketState.CONNECTED:
+                log.debug("[KEEP ALIVE] Skipping keep alive.")
+                signals_sent = 0
+                continue
+
+            log.debug("[KEEP ALIVE] Sending keep alive.")
+
+            try:
+                if signals_sent >= session_refresh_interval - 1:
+                    signals_sent = 0
+                    await self._reload_session_context()
+                if self._bridge.auth_controller.enable_keep_alive and not await self._bridge.is_logged_in():
+                    log.info("[Keep Alive] Detected expired user session.")
+            except Exception:
+                # All connection error handling managed by event reader.
+                log.debug("[KEEP ALIVE] Error while sending keep alive.", exc_info=True)
+
+            signals_sent += 1
+
+    #####################
+    # REQUEST FUNCTIONS #
+    #####################
+
+    async def _authenticate(self) -> None:
+        """Get authentication token for websocket endpoint."""
+
+        log.info("Getting WebSocket token.")
+
+        self._token = None
+
+        try:
+            response = await self._bridge.get(path="websockets/token", id=None, mini_response=True)
+        except AuthenticationFailed:
+            # _bridge.get autorepairs when logged out, so we should re-raise AuthenticationFailed.
+            log.debug("Primary session expired. Bailing on getting new token.")
+            raise
+        except (ServiceUnavailable, UnexpectedResponse):
+            log.debug("Failed to connect to Alarm.com when authenticating. Try again later.")
+            return
+
+        try:
+            self._ws_endpoint = response.metadata["endpoint"]
+        except KeyError as err:
+            raise UnexpectedResponse("Failed to get WebSocket endpoint.") from err
+
+        # Set token only after we have a valid websocket endpoint.
+        self._token = response.value
 
     async def _reload_session_context(self) -> None:
         """Check if we are still logged in."""
@@ -402,43 +458,23 @@ class WebSocketClient:
 
         await self._authenticate()
 
-    async def _keep_alive(self) -> NoReturn:
-        """
-        Keep session alive.
+    def _set_state(self, state: WebSocketState, reconnect_wait: int | None = None) -> None:
+        """Set WS client state and emit message only if state has changed."""
 
-        Alarm.com's webapp uses the keep alive to handle session timeouts. We'll use the event reader to do that, instead.
-        """
+        async def emit_state_after_delay(delay: int) -> None:
+            """Non-blocking function that emits state after a delay."""
+            await asyncio.sleep(delay)
+            if self._state == WebSocketState.CONNECTED:
+                await self._bridge.fetch_full_state()
+                self.emit_ws_state(WebSocketState.RECONNECTED, None)
+            else:
+                log.debug("Skipping reconnect emit. No longer connected.")
 
-        # Determine number of keep_alives to send between session refreshes.
-        session_refresh_interval_ms = self._bridge.auth_controller.session_refresh_interval_ms
-        session_refresh_interval = max(
-            int(session_refresh_interval_ms / (KEEP_ALIVE_SIGNAL_INTERVAL_S * 1000)),
-            DEFAULT_SIGNALS_PER_SESSION_REFRESH,
-        )
+        if self._state != state:
+            self._state = WebSocketState.CONNECTED if state == WebSocketState.RECONNECTED else state
 
-        log.info(f"Session refresh interval: {session_refresh_interval_ms} ms / {session_refresh_interval} pings")
-
-        signals_sent = 0
-
-        while True:
-            await asyncio.sleep(KEEP_ALIVE_SIGNAL_INTERVAL_S)
-
-            # Don't send requests if websocket client is disconnected.
-            if self.state != WebSocketState.CONNECTED:
-                log.debug("Skipping keep alive.")
-                signals_sent = 0
-                continue
-
-            log.debug("Sending keep alive.")
-
-            try:
-                if signals_sent >= session_refresh_interval - 1:
-                    signals_sent = 0
-                    await self._reload_session_context()
-                if self._bridge.auth_controller.enable_keep_alive and not await self._bridge.is_logged_in():
-                    log.info("[Keep Alive] Detected expired user session.")
-            except Exception as err:
-                # All connection error handling managed by event reader.
-                log.debug(f"Error while sending keep alive: {err}")
-
-            signals_sent += 1
+            if state == WebSocketState.RECONNECTED:
+                # Only emit reconnects after 5 second delay. This prevents downstream reconnect events from triggering if the Alarm.com server connects, then immediately drops the connection.
+                self._background_tasks.append(asyncio.create_task(emit_state_after_delay(5)))
+            else:
+                self.emit_ws_state(state, reconnect_wait)

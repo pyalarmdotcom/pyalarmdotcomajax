@@ -132,8 +132,6 @@ def resources_pretty(resource_type_str: str, resources: list[AdcResource]) -> Gr
         tbl.add_row(f"[b]{slug_to_title(x)}[/b]", str(cli_format(y)))
         return tbl
 
-    # resource_type_banner = f"[bold bright_white on yellow][/bold bright_white on yellow]"
-    # Panel.fit("[yellow bold]SYSTEM STATUS[/yellow bold]", border_style="yellow")
     resource_type_banner = Panel(
         f"[black on white bold]{slug_to_title(resource_type_str).upper()}[/black on white bold]",
         border_style="black",
@@ -184,28 +182,25 @@ def resources_raw(resource_type_str: str, resources: list[Resource | AdcResource
     if len(resources) == 0:
         return Group(resource_title, "\nNone")
 
-    output = []
-
-    for resource in resources:
-        output.append(
-            Group(
-                "\n[bright_white underline]"
-                + (
-                    str(resource.attributes.get("description", "Unnamed Resource"))
+    output = [
+        Group(
+            "\n[bright_white underline]"
+            + (
+                str(resource.attributes.get("description", "Unnamed Resource"))
+                if isinstance(resource, Resource)
+                else getattr(resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}")
+            ).upper(),
+            Syntax(
+                str(
+                    resource.to_json()
                     if isinstance(resource, Resource)
-                    else getattr(resource.attributes, "description", f"Unnamed {slug_to_title(resource_type_str)}")
-                ).upper(),
-                Syntax(
-                    str(
-                        resource.to_json()
-                        if isinstance(resource, Resource)
-                        # Effectively, this is just used to truncates Image Sensor Image Base64 values.
-                        else json.dumps(dict_truncate(resource.api_resource.to_dict()))
-                    ),
-                    "JSON",
-                    word_wrap=True,
+                    else json.dumps(dict_truncate(resource.api_resource.to_dict()))
                 ),
+                "JSON",
+                word_wrap=True,
             ),
         )
+        for resource in resources
+    ]
 
     return Group(resource_title, *output)

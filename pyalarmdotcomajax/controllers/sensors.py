@@ -1,7 +1,5 @@
 """Alarm.com controller for sensors."""
 
-from __future__ import annotations
-
 import logging
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE

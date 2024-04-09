@@ -1,8 +1,6 @@
 """Common commands for the adc CLI."""
 
-# ruff: noqa: T201 C901 UP007
-
-# from __future__ import annotations
+# ruff: noqa: T201 C901 UP007 FBT002 FBT001
 
 import asyncio
 import logging
@@ -17,7 +15,7 @@ from rich.prompt import InvalidResponse, Prompt, PromptBase
 from rich.table import Table
 
 from pyalarmdotcomajax import AlarmBridge
-from pyalarmdotcomajax.adc.util import ValueEnum
+from pyalarmdotcomajax.adc.util import ValueEnum  # noqa: TCH001
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
     MustConfigureMfa,

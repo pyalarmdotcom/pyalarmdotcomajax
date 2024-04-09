@@ -24,9 +24,6 @@ class ImageSensorAttributes(AdcNamedDeviceAttributes):
     can_view_images: bool = field(metadata={"description": "Specifies whether the currently logged in user can view images for this sensor."})
 
     # support_peek_in_next_motion: bool = field(metadata={"description": "Indicates whether the device supports PeekInNextMotion feature."})
-    # hide_peek_in_next_motion_button: bool = field(metadata={"description": "Specifies whether to hide the peek in next motion button."})
-    # excluded_from_visual_verification: bool = field(metadata={"description": "Specifies whether the image sensor is excluded from visual verification."})
-    # excluded_from_escalated_events: bool = field(metadata={"description": "Specifies whether the image sensor is excluded from escalated events."})
     # fmt: on
 
 

@@ -1,7 +1,5 @@
 """Alarm.com controller for systems."""
 
-from __future__ import annotations
-
 import logging
 
 from pyalarmdotcomajax.controllers.base import BaseController

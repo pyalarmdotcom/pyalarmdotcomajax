@@ -1,7 +1,5 @@
 """Module containing dataclasses for identity-related objects."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 
 from mashumaro import field_options

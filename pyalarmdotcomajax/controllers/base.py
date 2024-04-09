@@ -18,16 +18,14 @@ from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
 from pyalarmdotcomajax.controllers import AdcResourceT, UpdatedResourceMessage
 from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import UnknownDevice
-from pyalarmdotcomajax.models.base import ResourceType
-from pyalarmdotcomajax.models.jsonapi import (
-    Resource,
-)
 from pyalarmdotcomajax.util import resources_pretty, resources_raw
 from pyalarmdotcomajax.websocket.client import RawUpdatedResourceMessage, SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
 
 if TYPE_CHECKING:
     from pyalarmdotcomajax import AlarmBridge
+    from pyalarmdotcomajax.models.base import ResourceType
+    from pyalarmdotcomajax.models.jsonapi import Resource
 
 log = logging.getLogger(__name__)
 
@@ -180,7 +178,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
             Any missing resources previously registered by this controller will be unregistered.
         """
 
-        log.info(f"[{self.resource_type.name}] Refreshing controller...")
+        log.info("[%s] Refreshing controller...", self.resource_type.name)
 
         if pre_fetched and resource_id:
             raise NotImplementedError
@@ -348,13 +346,19 @@ class BaseController(ABC, Generic[AdcResourceT]):
             self._resources.update({resource.id: new_adc_resource})
         except Exception:
             log.exception(
-                f"[{self.resource_type.name}] Failed to instantiate {resource.type} {resource.id}. Moving on..."
+                "[%s] Failed to instantiate %s, %s. Moving on...",
+                self.resource_type.name,
+                resource.type,
+                resource.id,
             )
             return None
 
         if existing_adc_resource:
             log.debug(
-                f"[{self.resource_type.name}] Updated {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
+                "[%s] Updated %s %s.",
+                self.resource_type.name,
+                resource.id,
+                getattr(new_adc_resource.attributes, "description", ""),
             )
             self._bridge.events.publish(
                 UpdatedResourceMessage(
@@ -363,7 +367,10 @@ class BaseController(ABC, Generic[AdcResourceT]):
             )
         else:
             log.debug(
-                f"[{self.resource_type.name}] Registered {resource.id} {getattr(new_adc_resource.attributes, 'description', '')}."
+                "[%s] Registered %s %s.",
+                self.resource_type.name,
+                resource.id,
+                getattr(new_adc_resource.attributes, "description", ""),
             )
             self._bridge.events.publish(
                 UpdatedResourceMessage(
@@ -376,7 +383,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     async def _unregister_resource(self, resource_id: str) -> None:
         """Remove resource from registry and notify subscribers."""
 
-        log.debug(f"[{self.resource_type.name}] Unregistering {resource_id}...")
+        log.debug("[%s] Unregistering %s...", self.resource_type.name, resource_id)
 
         resource = self._resources.pop(resource_id, None)
 

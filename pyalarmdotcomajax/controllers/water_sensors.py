@@ -1,7 +1,5 @@
 """Alarm.com controller for water sensors."""
 
-from __future__ import annotations
-
 import logging
 from types import MappingProxyType
 

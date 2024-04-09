@@ -1,7 +1,5 @@
 """Base models for WebSocket messages."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -118,18 +116,9 @@ class ResourceEventType(Enum):
     UNKNOWN = -1
 
     @classmethod
-    def _missing_(cls: type, value: object) -> ResourceEventType:
+    def _missing_(cls: type, value: object) -> "ResourceEventType":
         """Set default enum member if an unknown value is provided."""
         return ResourceEventType.UNKNOWN
-
-
-# @dataclass
-# class WebSocketTokenResponseMetadata(JsonApiBaseElement):
-#     """Metadata response object within the Alarm.com WebSocket token endpoint response."""
-
-#     # fmt: off
-#     endpoint: str
-#     # fmt: on
 
 
 @dataclass(kw_only=True)

@@ -1,7 +1,5 @@
 """Session, login, and user management."""
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING
 
@@ -33,7 +31,7 @@ class ProfilesController(BaseController[Profile]):
     resource_type = ResourceType.PROFILE
     _resource_class = Profile
 
-    def __init__(self, bridge: AlarmBridge, data_provider: IdentitiesController) -> None:
+    def __init__(self, bridge: "AlarmBridge", data_provider: IdentitiesController) -> None:
         """Initialize profile controller."""
         super().__init__(bridge, data_provider)
 

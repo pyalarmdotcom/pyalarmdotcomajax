@@ -2,7 +2,7 @@
 
 # ruff: noqa: T201 C901 UP007
 
-# from __future__ import annotations
+#
 
 import asyncio
 import inspect
@@ -106,7 +106,7 @@ def cli_action() -> Callable:
 ###########
 
 
-def summarize_cli_actions(cls: Any, include_params: bool = False) -> dict[str, dict[str, Any]]:
+def summarize_cli_actions(cls: Any, *, include_params: bool = False) -> dict[str, dict[str, Any]]:
     """
     Summarize CLI action methods within a class, including their descriptions.
 
@@ -197,7 +197,7 @@ def summarize_method_params(method: Callable[..., Any]) -> list[dict[str, str | 
 
 
 def merge_signatures(
-    signature: inspect.Signature, other: inspect.Signature, drop: list[str] | None = None, strict: bool = True
+    signature: inspect.Signature, other: inspect.Signature, drop: list[str] | None = None, *, strict: bool = True
 ) -> tuple[inspect.Signature, list[int], list[int]]:
     """
     Merge two signatures.
@@ -259,7 +259,7 @@ def merge_signatures(
     return signature.replace(parameters=parameters), sel_0, sel_1
 
 
-def with_paremeters(shared: Callable, show_success: bool = False) -> Callable:
+def with_paremeters(shared: Callable, *, show_success: bool = False) -> Callable:
     """Share parameters between commands with this decorator."""
 
     def wrapper(command: Callable) -> Callable:

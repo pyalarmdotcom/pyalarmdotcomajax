@@ -7,24 +7,24 @@ name = "pyalarmdotcomajax"
 description = "Event Driven Python Interface for Alarm.com"
 requires-python = ">=3.11,<3.13"
 authors = [
-  {name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com"},
-  {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
+    {name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com"},
+    {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
 ]
 maintainers = [
-  {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
+    {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
 ]
 readme = "README.md"
 keywords = ["Alarm.com", "Security System", "Home Assistant"]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "Natural Language :: English",
-  "Environment :: Web Environment",
-  "Intended Audience :: Developers",
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Home Automation"
+    "Development Status :: 5 - Production/Stable",
+    "Natural Language :: English",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Home Automation"
 ]
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
@@ -42,12 +42,12 @@ ignore-words-list = "hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightse
 
 [tool.mypy]
 exclude = [
-  "tests/",
-  "build/",
-  ".ruff_cache/",
-  ".mypy_cache/",
-  "references/",
-  ".pytest_cache"
+    "tests/",
+    "build/",
+    ".ruff_cache/",
+    ".mypy_cache/",
+    "references/",
+    ".pytest_cache"
 ]
 python_version = "3.11"
 show_error_codes = true
@@ -73,15 +73,16 @@ explicit_package_bases = true
 [tool.ruff]
 target-version = "py311"
 exclude = [
-  "examples",
-  "build",
-  "references",
-  ".ruff_cache/",
-  ".mypy_cache/",
-  ".pytest_cache",
-  "**/_version.py"
+    "examples",
+    "build",
+    "references",
+    ".ruff_cache/",
+    ".mypy_cache/",
+    ".pytest_cache",
+    "**/_version.py"
 ]
 line-length = 115
+respect-gitignore = true
 
 [tool.ruff.format]
 quote-style = "double"
@@ -92,65 +93,94 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 ignore = [
-  "D202",
-  "D203",
-  "D404",
-  "D212",
-  "D406",
-  "D407",
-  "E731",
-  "TRY003",
-  "TRY301",
-  "PLR2004",
-  "PLR0913",
-  "PLR0912",
-  "PLR0915",
-  "PLR0911",
-  "S301",
-  "W191",
-  "E111",
-  "E114",
-  "E117",
-  "D206",
-  "Q000",
-  "Q001",
-  "Q002",
-  "Q003",
-  "COM812",
-  "COM819",
-  "ISC001",
-  "ISC002",
-  "E501",
-  "TRY400",
-  "D107"
+    "D202",
+    "D203",
+    "D404",
+    "D212",
+    "D406",
+    "D407",
+    "E731",
+    "TRY003",
+    "TRY301",
+    "PLR2004",
+    "PLR0913",
+    "PLR0912",
+    "PLR0915",
+    "PLR0911",
+    "S301",
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+    "E501",
+    "TRY400",
+    "D107",
+    "TD002",
+    "TD003",
+    "TCH003",
+    "TCH002"
 ]
 unfixable = ["F841"]
 select = [
-  "B007",
-  "B014",
-  "B006",
-  "C",
-  "D",
-  "E",
-  "F",
-  "I",
-  "PL",
-  "RUF",
-  "FA",
-  "TID",
-  "SLF",
-  "SIM",
-  "ICN001",
-  "PGH004",
-  "PLC0414",
-  "RET",
-  "S",
-  "T20",
-  "TRY",
-  "UP",
-  "W"
+    "A",
+    "ASYNC",
+    # "B007",
+    # "B014",
+    # "B006",
+    "B",
+    "C",
+    "D",
+    "E",
+    # "ERA001",
+    "F",
+    "I",
+    "G",
+    "PL",
+    "RUF",
+    "FA",
+    "FBT",
+    "TID",
+    "SLF",
+    "SIM",
+    "ICN001",
+    "PGH004",
+    "PLC0414",
+    "RET",
+    "S",
+    "LOG",
+    "PERF",
+    # "FURB",
+    "PIE",
+    "ICN",
+    "TCH",
+    "TD",
+    "T20",
+    "PT",
+    "Q",
+    "YTT",
+    "TRY",
+    "UP",
+    "W"
 ]
 extend-safe-fixes = ["UP006"]
+
+[tool.ruff.lint.flake8-builtins]
+builtins-ignorelist = ["id", "type"]
+
+[tool.ruff.lint.flake8-type-checking]
+quote-annotations = true
+
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25
@@ -164,3 +194,9 @@ attr = "pyalarmdotcomajax._version.__version__"
 
 [tool.setuptools_scm]
 version_file = "pyalarmdotcomajax/_version.py"
+
+[tool.tomlsort]
+in_place = true
+spaces_before_inline_comment = 4
+spaces_indent_inline_array = 4
+trailing_comma_inline_array = false

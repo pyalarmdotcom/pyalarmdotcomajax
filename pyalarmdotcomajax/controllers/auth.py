@@ -1,7 +1,5 @@
 """Authentication management."""
 
-from __future__ import annotations
-
 import asyncio
 import logging
 import re
@@ -53,7 +51,7 @@ class AuthenticationController:
 
     def __init__(
         self,
-        bridge: AlarmBridge,
+        bridge: "AlarmBridge",
         username: str | None = None,
         password: str | None = None,
         mfa_cookie: str | None = None,
@@ -73,19 +71,19 @@ class AuthenticationController:
         self._profiles = ProfilesController(self._bridge, self._identities)
 
     @property
-    def resources_pretty(self) -> Group:
+    def resources_pretty(self) -> "Group":
         """Return pretty Rich representation of resources in controller."""
 
         return resources_pretty("Users", [*self._identities.items, *self._profiles.items])
 
     @property
-    def resources_raw(self) -> Group:
+    def resources_raw(self) -> "Group":
         """Return Rich representation raw JSON for all controller resources."""
 
         return resources_raw("Users", [*self._identities.items, *self._profiles.items])
 
     @property
-    def included_raw_str(self) -> Group:
+    def included_raw_str(self) -> "Group":
         """Return Rich representation of raw JSON for all controller resources."""
 
         return resources_raw("Users Children", [*self._identities.items, *self._profiles.items])
@@ -305,7 +303,7 @@ class AuthenticationController:
             # 2FA is disabled (or the mfa token was accepted), we can skip 2FA altogether.
             return
 
-        log.info(f"Requires two-factor authentication. Enabled methods are {enabled_2fa_methods}")
+        log.info("Requires two-factor authentication. Enabled methods are %s", enabled_2fa_methods)
 
         raise OtpRequired(
             enabled_2fa_methods,

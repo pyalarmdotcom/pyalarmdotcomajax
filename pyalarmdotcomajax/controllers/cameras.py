@@ -1,11 +1,8 @@
 """Alarm.com controller for cameras."""
 
-from __future__ import annotations
-
 import logging
 
 from pyalarmdotcomajax.controllers.base import BaseController
-from pyalarmdotcomajax.controllers.extensions.skybell import is_skybell
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.camera import Camera
 from pyalarmdotcomajax.models.jsonapi import Resource
@@ -30,7 +27,9 @@ class CameraController(BaseController[Camera]):
         if isinstance(data, Resource):
             data = [data]
 
-        return [resource for resource in data if is_skybell(resource)]
+        # TODO: Make this work.
+        # return [resource for resource in data if is_skybell(resource)]
+        return []
 
     async def _post_init(self) -> None:
         """Post init hook."""
