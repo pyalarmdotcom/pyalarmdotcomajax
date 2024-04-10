@@ -44,7 +44,7 @@ ALL_TOKEN_T = Literal["*"]
 KEEP_ALIVE_SIGNAL_INTERVAL_S = 60
 MAX_RECONNECT_WAIT_S = 30 * 60
 DEFAULT_SIGNALS_PER_SESSION_REFRESH = 1
-MAX_CONNECTION_FAILURES = 25
+MAX_CONNECTION_ATTEMPTS = 25
 
 
 log = logging.getLogger(__name__)
@@ -275,13 +275,16 @@ class WebSocketClient:
                 log.exception("[EVENT READER] Fatal Error")
                 raise err  # noqa: TRY201
 
-            if connect_attempts >= MAX_CONNECTION_FAILURES:
+            if connect_attempts >= MAX_CONNECTION_ATTEMPTS:
                 self.stop()
 
             reconnect_wait = round(min(10 * connect_attempts * random.random(), MAX_RECONNECT_WAIT_S))  # noqa: S311
 
             log.debug(
-                "[EVENT READER] WebSocket Disconnected" " - Reconnect will be attempted in %s seconds",
+                "[EVENT READER] WebSocket Disconnected"
+                " - Reconnect attempt %s of %s will be attempted in %s seconds.",
+                connect_attempts,
+                MAX_CONNECTION_ATTEMPTS,
                 reconnect_wait,
             )
 
