@@ -17,6 +17,8 @@ class AlarmdotcomException(Exception):
 #
 # DEVICE EXCEPTIONS
 #
+
+
 class DeviceException(AlarmdotcomException):
     """Base Alarm.com device exception."""
 
@@ -38,13 +40,15 @@ class UnsupportedOperation(DeviceException):
 
 
 #
-# SESSION EXCEPTIONS
+# AUTHENTICATION EXCEPTIONS
 #
-class SessionException(AlarmdotcomException):
+
+
+class AuthenticationException(AlarmdotcomException):
     """Base exception for pyalarmdotcomajax authentication and connectivity failures."""
 
 
-class AuthenticationFailed(SessionException):
+class AuthenticationFailed(AuthenticationException):
     """Raised when the server rejects a user's login credentials."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -54,7 +58,7 @@ class AuthenticationFailed(SessionException):
         self.can_autocorrect = kwargs.pop("can_autocorrect", False)
 
 
-class OtpRequired(SessionException):
+class OtpRequired(AuthenticationException):
     """Raised during login if a user had two-factor authentication enabled."""
 
     def __init__(
@@ -80,7 +84,7 @@ class OtpRequired(SessionException):
             )
 
 
-class MustConfigureMfa(SessionException):
+class MustConfigureMfa(AuthenticationException):
     """Raised during login if the user gets the Alarm.com nag screen to setup 2 factor authentication."""
 
     def __init__(self) -> None:
@@ -91,15 +95,7 @@ class MustConfigureMfa(SessionException):
         )
 
 
-class SessionExpired(AlarmdotcomException):
-    """Raised when the user's session has timed out and needs to be re-established."""
-
-
-class ServiceUnavailable(AlarmdotcomException):
-    """Raised when multiple requests to the server have failed."""
-
-
-class NotAuthorized(SessionException):
+class NotAuthorized(AuthenticationException):
     """Raised when the user does not have permission to perform requested action."""
 
 
@@ -110,6 +106,14 @@ class NotAuthorized(SessionException):
 
 class MiscException(AlarmdotcomException):
     """Base Alarm.com misc exception."""
+
+
+class SessionExpired(MiscException):
+    """Raised when the user's session has timed out and needs to be re-established."""
+
+
+class ServiceUnavailable(MiscException):
+    """Raised when multiple requests to the server have failed."""
 
 
 class NotInitialized(MiscException):

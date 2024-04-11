@@ -38,6 +38,8 @@ class AdcMiniSuccessResponse(JsonApiBaseElement):
     This response is not JSON:API compliant.
 
     Class will fail validation by AlarmBridge.request() if errors are present; response will then be processed as FailureDocument.
+
+    This is likely a modified hapi/boom response object: https://hapi.dev/module/boom/api/?v=10.0.1
     """
 
     # fmt: off

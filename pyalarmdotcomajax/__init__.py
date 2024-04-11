@@ -41,8 +41,10 @@ from pyalarmdotcomajax.controllers.users import (
     AvailableSystemsController,
 )
 from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
-from pyalarmdotcomajax.events import EventBroker, EventBrokerCallbackT, EventBrokerTopic
+from pyalarmdotcomajax.events import EventBroker, EventBrokerCallbackT, EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import (
+    AlarmdotcomException,
+    AuthenticationException,
     AuthenticationFailed,
     MustConfigureMfa,
     NotAuthorized,
@@ -63,15 +65,15 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
-from pyalarmdotcomajax.websocket.client import (
-    WebSocketClient,
-)
+from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketClient, WebSocketState
 
 __all__: tuple[str, ...] = (
     # exceptions
+    "AlarmdotcomException",
     "UnsupportedOperation",
     "UnknownDevice",
     "AuthenticationFailed",
+    "AuthenticationException",
     "OtpRequired",
     "MustConfigureMfa",
     "SessionExpired",
@@ -81,6 +83,12 @@ __all__: tuple[str, ...] = (
     "UnexpectedResponse",
     # models.auth
     "OtpType",
+    # websocket
+    "WebSocketState",
+    "ConnectionEvent",
+    # events
+    "EventBrokerMessage",
+    "EventBrokerCallbackT",
 )
 
 
