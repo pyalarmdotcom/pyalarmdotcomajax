@@ -21,7 +21,7 @@ from pyalarmdotcomajax.adc.util import (
     summarize_cli_actions,
     with_paremeters,
 )
-from pyalarmdotcomajax.controllers import UpdatedResourceMessage
+from pyalarmdotcomajax.controllers import ResourceEventMessage
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
 from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketState
 
@@ -158,7 +158,7 @@ async def get(
 def handle_event(json: bool, message: "EventBrokerMessage") -> None:
     """Handle event broker events."""
 
-    if isinstance(message, UpdatedResourceMessage):
+    if isinstance(message, ResourceEventMessage):
         event_printer(json, message)
 
     if isinstance(message, ConnectionEvent):
@@ -185,7 +185,7 @@ def ws_state_printer(message: "EventBrokerMessage") -> None:
         print("[yellow]Streaming real-time updates...")
 
 
-def event_printer(verbose: bool, message: UpdatedResourceMessage) -> None:
+def event_printer(verbose: bool, message: ResourceEventMessage) -> None:
     """Print event."""
 
     if message.resource:

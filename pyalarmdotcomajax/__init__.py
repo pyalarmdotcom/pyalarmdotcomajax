@@ -1,5 +1,7 @@
 """pyalarmdotcomajax - A Python library for interacting with Alarm.com's API."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import json
@@ -22,7 +24,7 @@ from pyalarmdotcomajax.const import (
     URL_BASE,
     ResponseTypes,
 )
-from pyalarmdotcomajax.controllers import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle
+from pyalarmdotcomajax.controllers import AdcSuccessDocumentMulti, AdcSuccessDocumentSingle, ResourceEventMessage
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.controllers.cameras import CameraController
@@ -56,9 +58,31 @@ from pyalarmdotcomajax.exceptions import (
     UnknownDevice,
     UnsupportedOperation,
 )
-from pyalarmdotcomajax.models import AdcMiniSuccessResponse
+from pyalarmdotcomajax.models import (
+    AdcManagedDeviceT,
+    AdcMiniSuccessResponse,
+    AdcResourceT,
+    camera,
+    garage_door,
+    gate,
+    image_sensor,
+    light,
+    lock,
+    partition,
+    sensor,
+    system,
+    thermostat,
+    trouble_condition,
+    user,
+    water_sensor,
+)
 from pyalarmdotcomajax.models.auth import OtpType
-from pyalarmdotcomajax.models.base import ResourceType
+from pyalarmdotcomajax.models.base import (
+    AdcDeviceResource,
+    AdcResource,
+    BaseManagedDeviceAttributes,
+    ResourceType,
+)
 from pyalarmdotcomajax.models.jsonapi import (
     FailureDocument,
     JsonApiBaseElement,
@@ -87,8 +111,28 @@ __all__: tuple[str, ...] = (
     "WebSocketState",
     "ConnectionEvent",
     # events
+    "EventBrokerTopic",
     "EventBrokerMessage",
     "EventBrokerCallbackT",
+    # models
+    "AdcResourceT",
+    "AdcManagedDeviceT",
+    "camera",
+    "garage_door",
+    "gate",
+    "image_sensor",
+    "light",
+    "lock",
+    "partition",
+    "sensor",
+    "system",
+    "thermostat",
+    "trouble_condition",
+    "user",
+    "water_sensor",
+    # controllers
+    "AdcControllerT",
+    "ResourceEventMessage",
 )
 
 
@@ -221,7 +265,7 @@ class AlarmBridge:
 
     async def start_event_monitoring(
         self, ws_status_callback: EventBrokerCallbackT | None = None
-    ) -> "None | Callable":
+    ) -> None | Callable:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
@@ -234,7 +278,8 @@ class AlarmBridge:
     def subscribe(
         self,
         callback: EventBrokerCallbackT,
-    ) -> "Callable[[], None]":
+        ids: list[str] | str | None = None,
+    ) -> Callable[[], None]:
         """
         Subscribe to status changes for all resource controllers.
 
@@ -250,6 +295,7 @@ class AlarmBridge:
                 EventBrokerTopic.CONNECTION_EVENT,
             ],
             callback,
+            ids,
         )
 
     ###################
@@ -344,11 +390,44 @@ class AlarmBridge:
         # Build and return list of resource controllers by searching self for all attributes that inherit from BaseController
         return [controller for controller in self.__dict__.values() if isinstance(controller, BaseController)]
 
+    ###################################
+    ## PROPERTIES & RESOURCE FINDERS ##
+    ###################################
+
+    @property
+    def initialized(self) -> bool:
+        """Return whether bridge is initialized."""
+
+        return self._initialized
+
+    @property
+    def resources(self) -> dict[str, AdcResource]:
+        """Get ADC resources across all controllers."""
+
+        return {
+            resource.id: resource
+            for controller in self.resource_controllers
+            for resource in controller.items
+            if isinstance(resource, AdcResource)
+        }
+
+    @property
+    def managed_devices(self) -> dict[str, AdcDeviceResource[BaseManagedDeviceAttributes]]:
+        """Get ADC resources across all controllers."""
+
+        return {
+            resource.id: resource
+            for controller in self.resource_controllers
+            for resource in controller.items
+            if isinstance(resource, AdcDeviceResource)
+            and isinstance(resource.attributes, BaseManagedDeviceAttributes)
+        }
+
     ##########################################
     # REQUEST MANAGEMENT / CONTEXT FUNCTIONS #
     ##########################################
 
-    async def __aenter__(self) -> "AlarmBridge":
+    async def __aenter__(self) -> AlarmBridge:
         """Return Context manager."""
 
         await self.initialize()
@@ -361,7 +440,7 @@ class AlarmBridge:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: "TracebackType | None",
+        exc_tb: TracebackType | None,
     ) -> None:
         """Exit context manager."""
 
@@ -417,7 +496,7 @@ class AlarmBridge:
         *,
         use_ajax_key: bool = True,
         **kwargs: Any,
-    ) -> "AsyncIterator[aiohttp.ClientResponse]":
+    ) -> AsyncIterator[aiohttp.ClientResponse]:
         """
         Make a request to the Alarm.com API.
 
@@ -490,7 +569,7 @@ class AlarmBridge:
         self,
         url: str,
         **kwargs: Any,
-    ) -> "AsyncIterator[aiohttp.ClientWebSocketResponse]":
+    ) -> AsyncIterator[aiohttp.ClientWebSocketResponse]:
         """
         Establish a WebSocket connection with Alarm.com.
 
@@ -789,13 +868,3 @@ class AlarmBridge:
         return Group(
             *[x.resources_raw for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
         )
-
-    ################
-    ## PROPERTIES ##
-    ################
-
-    @property
-    def initialized(self) -> bool:
-        """Return whether bridge is initialized."""
-
-        return self._initialized

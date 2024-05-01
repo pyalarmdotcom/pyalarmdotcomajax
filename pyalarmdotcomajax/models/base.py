@@ -207,16 +207,26 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcNamedDeviceAttribute
         return self.has_permission_to_change_state and self.remote_commands_enabled
 
     @property
-    def is_interactive(self) -> bool:
+    def interactive(self) -> bool:
         """Whether the device is ready to be interacted with."""
 
         return self.can_change_state and self.state != BaseStatefulDeviceState.LOADING_STATE
 
     @property
-    def is_refreshing_state(self) -> bool:
+    def refreshing_state(self) -> bool:
         """Whether the device is in the refreshing state."""
 
-        return (self.state == BaseStatefulDeviceState.LOADING_STATE) or (self.state != self.desired_state)
+        return self.loading or (self.state != self.desired_state)
+
+    @property
+    def loading(self) -> bool:
+        """
+        Whether the device is loading.
+
+        None means undetermined.
+        """
+
+        return self.state == BaseStatefulDeviceState.LOADING_STATE
 
 
 #

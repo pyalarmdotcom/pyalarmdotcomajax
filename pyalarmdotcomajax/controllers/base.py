@@ -15,11 +15,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic
 from rich.console import Group
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers import AdcResourceT, UpdatedResourceMessage
+from pyalarmdotcomajax.controllers import ResourceEventMessage
 from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
 from pyalarmdotcomajax.exceptions import UnknownDevice
+from pyalarmdotcomajax.models import AdcResourceT
 from pyalarmdotcomajax.util import resources_pretty, resources_raw
-from pyalarmdotcomajax.websocket.client import RawUpdatedResourceMessage, SupportedResourceEvents
+from pyalarmdotcomajax.websocket.client import RawResourceEventMessage, SupportedResourceEvents
 from pyalarmdotcomajax.websocket.messages import BaseWSMessage, EventWSMessage, ResourceEventType
 
 if TYPE_CHECKING:
@@ -253,7 +254,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     async def _base_handle_event(self, message: EventBrokerMessage) -> None:
         """Universal event handling for WebSockets messages."""
 
-        if not isinstance(message, RawUpdatedResourceMessage):
+        if not isinstance(message, RawResourceEventMessage):
             return
 
         try:
@@ -361,7 +362,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
                 getattr(new_adc_resource.attributes, "description", ""),
             )
             self._bridge.events.publish(
-                UpdatedResourceMessage(
+                ResourceEventMessage(
                     topic=EventBrokerTopic.RESOURCE_UPDATED, id=resource.id, resource=new_adc_resource
                 )
             )
@@ -373,7 +374,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
                 getattr(new_adc_resource.attributes, "description", ""),
             )
             self._bridge.events.publish(
-                UpdatedResourceMessage(
+                ResourceEventMessage(
                     topic=EventBrokerTopic.RESOURCE_ADDED, id=resource.id, resource=new_adc_resource
                 )
             )
@@ -388,7 +389,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         resource = self._resources.pop(resource_id, None)
 
         self._bridge.events.publish(
-            UpdatedResourceMessage(topic=EventBrokerTopic.RESOURCE_DELETED, id=resource_id, resource=resource)
+            ResourceEventMessage(topic=EventBrokerTopic.RESOURCE_DELETED, id=resource_id, resource=resource)
         )
 
     ####################

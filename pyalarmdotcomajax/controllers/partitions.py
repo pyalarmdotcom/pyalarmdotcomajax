@@ -64,7 +64,7 @@ class PartitionController(BaseController[Partition]):
     # Special handling of 422 status.
     # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
 
-    def get_partition_id_from_resource_id(self, resource_id: str) -> str | None:
+    def get_device_partition(self, resource_id: str) -> str | None:
         """Get the partition to which a device belongs."""
 
         for partition in self.items:

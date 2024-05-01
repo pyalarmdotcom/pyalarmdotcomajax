@@ -64,7 +64,7 @@ class WebSocketState(Enum):
 
 
 @dataclass(kw_only=True)
-class RawUpdatedResourceMessage(EventBrokerMessage):
+class RawResourceEventMessage(EventBrokerMessage):
     """Message class for updated resources."""
 
     topic: EventBrokerTopic = EventBrokerTopic.RAW_RESOURCE_EVENT
@@ -190,7 +190,7 @@ class WebSocketClient:
     def emit_resource(self, data: BaseWSMessage) -> None:
         """Emit resource event to all listeners."""
 
-        self._bridge.events.publish(RawUpdatedResourceMessage(ws_message=data))
+        self._bridge.events.publish(RawResourceEventMessage(ws_message=data))
 
     #################################
     # LONG-RUNNING BACKGROUND TASKS #

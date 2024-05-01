@@ -101,6 +101,12 @@ class AuthenticationController:
         return self._identities.items[0].attributes.provider_name or None
 
     @property
+    def user_email(self) -> str | None:
+        """The user's email address."""
+
+        return self._profiles.items[0].attributes.email
+
+    @property
     def session_refresh_interval_ms(self) -> int:
         """Interval at which session should be refreshed in milliseconds."""
 
