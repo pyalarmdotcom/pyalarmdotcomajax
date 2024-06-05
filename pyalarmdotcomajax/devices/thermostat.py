@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 
-from pyalarmdotcomajax.const import ATTR_STATE
+from pyalarmdotcomajax.const import ATTR_DESIRED_STATE
 from pyalarmdotcomajax.exceptions import UnexpectedResponse
 
 from . import BaseDevice, DeviceType
@@ -191,7 +191,7 @@ class Thermostat(BaseDevice):
 
         # Build the request body.
         if state:
-            msg_body = {ATTR_STATE: state.value}
+            msg_body = {ATTR_DESIRED_STATE: state.value}
         elif fan:
             msg_body = {
                 self.ATTRIB_DESIRED_FAN_MODE: self.FanMode(fan[0]).value,
