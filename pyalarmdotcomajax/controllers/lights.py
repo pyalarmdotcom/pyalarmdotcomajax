@@ -1,7 +1,5 @@
 """Alarm.com controller for lights."""
 
-#
-
 import logging
 from types import MappingProxyType
 from typing import Annotated, Any

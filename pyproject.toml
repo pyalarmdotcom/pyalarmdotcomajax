@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = [
+    "setuptools",
+    "setuptools-scm",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,14 +10,18 @@ name = "pyalarmdotcomajax"
 description = "Event Driven Python Interface for Alarm.com"
 requires-python = ">=3.11,<3.13"
 authors = [
-    {name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com"},
-    {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
+    { name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com" },
+    { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
 ]
 maintainers = [
-    {name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com"}
+    { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
 ]
 readme = "README.md"
-keywords = ["Alarm.com", "Security System", "Home Assistant"]
+keywords = [
+    "Alarm.com",
+    "Security System",
+    "Home Assistant",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Natural Language :: English",
@@ -24,9 +31,14 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Home Automation"
+    "Topic :: Home Automation",
 ]
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = [
+    "version",
+    "dependencies",
+    "optional-dependencies",
+]
+dependencies = []
 
 [project.scripts]
 adc = "pyalarmdotcomajax.adc.adc:app"
@@ -47,7 +59,7 @@ exclude = [
     ".ruff_cache/",
     ".mypy_cache/",
     "references/",
-    ".pytest_cache"
+    ".pytest_cache",
 ]
 python_version = "3.11"
 show_error_codes = true
@@ -71,25 +83,12 @@ disallow_untyped_calls = false
 explicit_package_bases = true
 
 [tool.ruff]
-target-version = "py311"
-exclude = [
-    "examples",
-    "build",
-    "references",
-    ".ruff_cache/",
-    ".mypy_cache/",
-    ".pytest_cache",
-    "**/_version.py"
-]
+target-version = "py312"
 line-length = 115
 respect-gitignore = true
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-format = true
+exclude = [
+    "pyalarmdotcomajax/_version.py",
+]
 
 [tool.ruff.lint]
 ignore = [
@@ -126,21 +125,21 @@ ignore = [
     "D107",
     "TD002",
     "TD003",
-    "TCH003",
-    "TCH002"
+    "TC003",
+    "TC002",
+    "T201",
+    "TID252",
 ]
-unfixable = ["F841"]
+unfixable = [
+    "F841",
+]
 select = [
     "A",
     "ASYNC",
-    # "B007",
-    # "B014",
-    # "B006",
     "B",
     "C",
     "D",
     "E",
-    # "ERA001",
     "F",
     "I",
     "G",
@@ -158,10 +157,9 @@ select = [
     "S",
     "LOG",
     "PERF",
-    # "FURB",
     "PIE",
     "ICN",
-    "TCH",
+    "TC",
     "TD",
     "T20",
     "PT",
@@ -169,15 +167,19 @@ select = [
     "YTT",
     "TRY",
     "UP",
-    "W"
+    "W",
 ]
-extend-safe-fixes = ["UP006"]
+extend-safe-fixes = [
+    "UP006",
+]
 
 [tool.ruff.lint.flake8-builtins]
-builtins-ignorelist = ["id", "type"]
-
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
+builtins-ignorelist = [
+    "id",
+    "type",
+    "print",
+    "hex",
+]
 
 [tool.ruff.lint.flake8-type-checking]
 quote-annotations = true
@@ -188,9 +190,18 @@ ignore-variadic-names = true
 [tool.ruff.lint.mccabe]
 max-complexity = 25
 
-[tool.setuptools.dynamic]
-dependencies = {file = "requirements.txt"}
-optional-dependencies.dev = {file = "requirements-dev.txt"}
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+
+[tool.setuptools.dynamic.dependencies]
+file = "requirements.txt"
+
+[tool.setuptools.dynamic.optional-dependencies.dev]
+file = "requirements-dev.txt"
 
 [tool.setuptools.dynamic.version]
 attr = "pyalarmdotcomajax._version.__version__"

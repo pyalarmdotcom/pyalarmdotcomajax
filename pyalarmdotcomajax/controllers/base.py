@@ -15,8 +15,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic
 from rich.console import Group
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers import ResourceEventMessage
-from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic
+from pyalarmdotcomajax.events import EventBrokerMessage, EventBrokerTopic, ResourceEventMessage
 from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models import AdcResourceT
 from pyalarmdotcomajax.util import resources_pretty, resources_raw

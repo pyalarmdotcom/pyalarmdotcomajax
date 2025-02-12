@@ -2,8 +2,6 @@
 
 # ruff: noqa: T201 C901 UP007
 
-#
-
 import asyncio
 import inspect
 from collections.abc import Callable
@@ -221,7 +219,7 @@ def merge_signatures(
             continue
         if name in signature.parameters:
             if strict and param.kind != signature.parameters[name].kind:
-                raise ValueError(f"Both signature have same parameter {name!r} but with " f"different kind")
+                raise ValueError(f"Both signature have same parameter {name!r} but with different kind")
             continue
 
         # Variadic args (*args or **kwargs)

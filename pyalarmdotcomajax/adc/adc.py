@@ -21,7 +21,7 @@ from pyalarmdotcomajax.adc.util import (
     summarize_cli_actions,
     with_paremeters,
 )
-from pyalarmdotcomajax.controllers import ResourceEventMessage
+from pyalarmdotcomajax.events import ResourceEventMessage
 from pyalarmdotcomajax.util import resources_pretty, resources_raw, slug_to_title
 from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketState
 
@@ -102,7 +102,7 @@ async def stream(
 
         try:
             # Keep event loop alive until cancelled.
-            while True:
+            while True:  # noqa: ASYNC110
                 await asyncio.sleep(1)
 
         except asyncio.CancelledError:

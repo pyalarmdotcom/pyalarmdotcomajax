@@ -2,11 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from pyalarmdotcomajax.models.base import (
-    AdcDeviceResource,
-    AdcNamedDeviceAttributes,
-    ResourceType,
-)
+from pyalarmdotcomajax.models.base import AdcDeviceResource, AdcNamedDeviceAttributes, BatteryLevel, ResourceType
 
 
 @dataclass
@@ -15,7 +11,7 @@ class CameraAttributes(AdcNamedDeviceAttributes):
 
     # fmt: off
     battery_level_null: int | None = field(metadata={"description": "The current battery level of the device, with null as the default value."})
-    critical_battery: bool = field(metadata={"description": "Indicates whether the device has a critical battery status."})
+    battery_level_classification: BatteryLevel  = field(metadata={"description": "Indicate battery level status."})
     low_battery: bool = field(metadata={"description": "Indicates whether the device has a low battery status."})
     is_malfunctioning: bool = field(metadata={"description": "Indicates whether the camera is currently in a malfunction state."})
 

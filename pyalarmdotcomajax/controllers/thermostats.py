@@ -2,8 +2,6 @@
 
 # ruff: noqa: UP007
 
-#
-
 import logging
 from typing import Annotated, Any, Optional
 

@@ -213,12 +213,12 @@ class AuthenticationController:
 
                     tree = BeautifulSoup(text, "html.parser")
                     return {
-                        VIEWSTATE_FIELD: tree.select(f"#{VIEWSTATE_FIELD}")[0].attrs.get("value"),
-                        VIEWSTATEGENERATOR_FIELD: tree.select(f"#{VIEWSTATEGENERATOR_FIELD}")[0].attrs.get(
-                            "value"
+                        VIEWSTATE_FIELD: str(tree.select(f"#{VIEWSTATE_FIELD}")[0].attrs.get("value")),
+                        VIEWSTATEGENERATOR_FIELD: str(
+                            tree.select(f"#{VIEWSTATEGENERATOR_FIELD}")[0].attrs.get("value")
                         ),
-                        EVENTVALIDATION_FIELD: tree.select(f"#{EVENTVALIDATION_FIELD}")[0].attrs.get("value"),
-                        PREVIOUSPAGE_FIELD: tree.select(f"#{PREVIOUSPAGE_FIELD}")[0].attrs.get("value"),
+                        EVENTVALIDATION_FIELD: str(tree.select(f"#{EVENTVALIDATION_FIELD}")[0].attrs.get("value")),
+                        PREVIOUSPAGE_FIELD: str(tree.select(f"#{PREVIOUSPAGE_FIELD}")[0].attrs.get("value")),
                     }
 
             # Only retry for connection/server errors. No expectation of being logged in here, so we don't need to single out authentication errors.

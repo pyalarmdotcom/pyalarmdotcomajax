@@ -15,7 +15,7 @@ from rich.prompt import InvalidResponse, Prompt, PromptBase
 from rich.table import Table
 
 from pyalarmdotcomajax import AlarmBridge
-from pyalarmdotcomajax.adc.util import ValueEnum  # noqa: TCH001
+from pyalarmdotcomajax.adc.util import ValueEnum
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
     MustConfigureMfa,
@@ -97,14 +97,15 @@ async def async_handle_otp_workflow(
             # If multiple OTP methods are enabled, but the user provided one via CLI, use it.
             selected_otpmethod = OtpType(cli_otpmethod)
             print(f"Using {selected_otpmethod.name} for One-Time Password.")
-        elif not (
-            selected_otpmethod := OtpPrompt.ask(
-                "[magenta bold underline]Which OTP method would you like to use?[/magenta bold underline]",
-                choices=[x.name for x in enabled_2fa_methods],
-            )
-        ):
-            print("[bold red]Valid OTP method was not entered.")
-            raise AuthenticationFailed
+        else:
+            try:
+                selected_otpmethod = OtpPrompt.ask(
+                    "[magenta bold underline]Which OTP method would you like to use?[/magenta bold underline]",
+                    choices=[x.name for x in enabled_2fa_methods],
+                )
+            except InvalidResponse as err:
+                print("[bold red]Valid OTP method was not entered.")
+                raise AuthenticationFailed from err
 
         #
         # Request OTP

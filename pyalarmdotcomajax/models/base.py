@@ -183,14 +183,23 @@ class BaseStatefulDeviceState(Enum):
     LOADING_STATE = -1
 
 
+class BatteryLevel(Enum):
+    """Battery level."""
+
+    CRITICAL = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 4
+    NONE = None
+
+
 @dataclass(kw_only=True)
 class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcNamedDeviceAttributes):
     """Base attributes for an alarm.com device."""
 
     # fmt: off
     battery_level_pct: int | None = field(metadata=field_options(alias="battery_level_null")) # The current battery level of the device as a percentage with null as the default value.
-    critical_battery: bool = field(metadata={"description": "Indicate whether the device has a critical battery status."})
-    low_battery: bool = field(metadata={"description": "Indicate whether the device has a low battery status."})
+    battery_level_classification: BatteryLevel = field(metadata={"description": "Indicate battery level status."})
     can_be_saved: bool = field(metadata={"description": "Whether the logged in context has write permissions for this device."})
     can_confirm_state_change: bool = field(metadata={"description": "Whether the device can confirm its state change."})
     can_receive_commands: bool = field(metadata={"description": "Whether device supports receiving commands."})

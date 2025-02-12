@@ -1,8 +1,8 @@
-mypy>=1.9
-pre-commit>=3.7
-pytest>=8.1
-pytest-asyncio>=0.23
-tomli>=2.0
-tomli_w>=1.0
-types-requests<2.31.0.7
-types-PyYAML>=6.0
+mypy>=1.15.0
+pre-commit>=4.1.0
+pytest>=8.3.4
+pytest-asyncio>=0.25.3
+tomli>=2.2.1
+tomli_w>=1.2.0
+types-requests >= 2.32.0.20241016
+types-PyYAML>=6.0.12.20241230

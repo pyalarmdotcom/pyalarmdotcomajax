@@ -7,6 +7,10 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyalarmdotcomajax.models.base import AdcResource
 
 log = logging.getLogger(__name__)
 
@@ -92,3 +96,21 @@ class EventBroker:
                 task.add_done_callback(self._background_tasks.discard)
             else:
                 callback(message)
+
+
+#
+# CONTROLLER EVENTS
+#
+
+
+@dataclass(kw_only=True)
+class ResourceEventMessage(EventBrokerMessage):
+    """Message class for updated resources."""
+
+    id: str
+    resource: "AdcResource | None" = None
+
+
+#
+# /CONTROLLER EVENTS
+#

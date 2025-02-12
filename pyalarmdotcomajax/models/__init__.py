@@ -27,6 +27,7 @@ __all__: tuple[str, ...] = (
     "Camera",
     "GarageDoor",
     "Gate",
+    "Identity",
     "ImageSensor",
     "Light",
     "Lock",
@@ -35,7 +36,6 @@ __all__: tuple[str, ...] = (
     "System",
     "Thermostat",
     "TroubleCondition",
-    "Identity",
     "WaterSensor",
 )
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from enum import Enum
-from typing import ClassVar, NamedTuple, Protocol
+from typing import NamedTuple, Protocol
 
 # CONFIG: BEGIN
 REQUEST_RETRY_LIMIT = 3
@@ -49,7 +49,7 @@ class ItemEvent(Enum):
 class ResponseTypes(Enum):
     """Response types."""
 
-    JSON: ClassVar[dict] = {"Accept": "application/json", "charset": "utf-8"}
-    JSONAPI: ClassVar[dict] = {"Accept": "application/vnd.api+json", "charset": "utf-8"}
-    FORM: ClassVar[dict] = {"Content-Type": "application/x-www-form-urlencoded", "charset": "utf-8"}
-    HTML: ClassVar[dict] = {"Accept": "text/html,application/xhtml+xml,application/xml"}
+    JSON = {"Accept": "application/json", "charset": "utf-8"}  # noqa: RUF012
+    JSONAPI = {"Accept": "application/vnd.api+json", "charset": "utf-8"}  # noqa: RUF012
+    FORM = {"Content-Type": "application/x-www-form-urlencoded", "charset": "utf-8"}  # noqa: RUF012
+    HTML = {"Accept": "text/html,application/xhtml+xml,application/xml"}  # noqa: RUF012

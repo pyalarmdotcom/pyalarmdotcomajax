@@ -26,7 +26,7 @@ class URI(str):
         pattern = r"^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?"
 
         if not (match := re.match(pattern, s)):
-            raise TypeError("%s is not a valid URL" % s)
+            raise TypeError(f"{s} is not a valid URL")
 
         url = super().__new__(cls, s)
         url.match = match
@@ -93,7 +93,7 @@ class RangeInt(int, SerializableType):
 class LedColor(SerializableType):
     """Represents an LED color with serialization and deserialization from/to HEX format."""
 
-    def __init__(self, hex: str | None = None, rgb: tuple[int, int, int] | None = None) -> None:  # noqa: A002
+    def __init__(self, hex: str | None = None, rgb: tuple[int, int, int] | None = None) -> None:
         """Initialize with either HEX or RGB format."""
         if hex:
             self.hex = self._validate_and_format_hex(hex)
