@@ -1,8 +1,5 @@
 [build-system]
-requires = [
-    "setuptools",
-    "setuptools-scm",
-]
+requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,11 +14,7 @@ maintainers = [
     { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
 ]
 readme = "README.md"
-keywords = [
-    "Alarm.com",
-    "Security System",
-    "Home Assistant",
-]
+keywords = ["Alarm.com", "Security System", "Home Assistant"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Natural Language :: English",
@@ -33,12 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Home Automation",
 ]
-dynamic = [
-    "version",
-    "dependencies",
-    "optional-dependencies",
-]
-dependencies = []
+dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
 adc = "pyalarmdotcomajax.adc.adc:app"
@@ -86,9 +74,7 @@ explicit_package_bases = true
 target-version = "py312"
 line-length = 115
 respect-gitignore = true
-exclude = [
-    "pyalarmdotcomajax/_version.py",
-]
+exclude = ["pyalarmdotcomajax/_version.py"]
 
 [tool.ruff.lint]
 ignore = [
@@ -130,9 +116,7 @@ ignore = [
     "T201",
     "TID252",
 ]
-unfixable = [
-    "F841",
-]
+unfixable = ["F841"]
 select = [
     "A",
     "ASYNC",
@@ -169,17 +153,10 @@ select = [
     "UP",
     "W",
 ]
-extend-safe-fixes = [
-    "UP006",
-]
+extend-safe-fixes = ["UP006"]
 
 [tool.ruff.lint.flake8-builtins]
-builtins-ignorelist = [
-    "id",
-    "type",
-    "print",
-    "hex",
-]
+builtins-ignorelist = ["id", "type", "print", "hex"]
 
 [tool.ruff.lint.flake8-type-checking]
 quote-annotations = true
