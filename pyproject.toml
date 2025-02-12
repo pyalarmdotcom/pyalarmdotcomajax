@@ -185,6 +185,8 @@ attr = "pyalarmdotcomajax._version.__version__"
 
 [tool.setuptools_scm]
 version_file = "pyalarmdotcomajax/_version.py"
+version_scheme = "post-release"
+local_scheme = "node-and-date"
 
 [tool.tomlsort]
 in_place = true
