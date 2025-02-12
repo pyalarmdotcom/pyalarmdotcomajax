@@ -6,3 +6,4 @@ tomli>=2.2.1
 tomli_w>=1.2.0
 types-requests >= 2.32.0.20241016
 types-PyYAML>=6.0.12.20241230
+setuptools-scm>=8.1.0
