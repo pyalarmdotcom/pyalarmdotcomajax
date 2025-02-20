@@ -120,7 +120,7 @@ class ThermostatController(BaseController[Thermostat]):
         msg_body: dict[str, Any] = {}
 
         if state:
-            msg_body[ATTR_STATE] = state.value
+            msg_body[ATTR_DESIRED_STATE] = state.value
         elif fan_mode and fan_mode_duration:
             if fan_mode_duration not in self._resources[id].supported_fan_durations:
                 raise ValueError("Requested fan duration is not supported by the device.")
