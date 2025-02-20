@@ -82,9 +82,12 @@ AllDevicesDicts_t = (
 
 ATTRIBUTES: dict[DeviceType, AttributeRegistryEntry] = {
     DeviceType.CAMERA: {
-        "endpoints": {"primary": "{}web/api/video/devices/cameras/{}"},
+        "endpoints": {
+            "primary": "{}web/api/video/devices/cameras/{}",
+            "additional": {"liveVideoSources": "{}/web/api/video/videoSources/liveVideoSources/{}"},
+        },
         "class_": Camera,
-        "rel_id": "video/camera",
+        "rel_id": "video/devices/camera",
         "type_id": "cameras",
         "device_registry_property": "cameras",
     },
