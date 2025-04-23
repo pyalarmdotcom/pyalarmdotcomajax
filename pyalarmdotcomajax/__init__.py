@@ -569,9 +569,12 @@ class AlarmController:
             json_rsp = await resp.json()
 
             try:
+                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
+            except (KeyError, IndexError) as err:
+                self._provider_name = "Alarm.com"
+
+            try:
                 self._user_id = json_rsp["data"][0]["id"]
-                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
-                self._provider_name = json_rsp["data"][0]["attributes"]["logoName"]
 
                 for inclusion in json_rsp["included"]:
                     if inclusion["id"] == self._user_id and inclusion["type"] == "profile/profile":
