@@ -211,7 +211,7 @@ class AlarmBridge:
         """Check if we are still logged in. Also functions as keep alive signal."""
 
         try:
-            url = f"{URL_BASE[:-1]}{self.auth_controller.keep_alive_url}?timestamp={int(round(datetime.now().timestamp()))}"
+            url = f"{URL_BASE[:-1]}{self.auth_controller.keep_alive_url}?timestamp={round(datetime.now().timestamp())}"
         except IndexError as err:
             # User has yet to log in.
             if throw:

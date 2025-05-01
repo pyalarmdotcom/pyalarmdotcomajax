@@ -242,6 +242,7 @@ class WebSocketClient:
                     close_code: aiohttp.WSCloseCode | int | None = websocket.close_code
                     with contextlib.suppress(AttributeError):
                         if websocket.close_code:
+                            # TODO: Close code 1008 means rejected token. Adc web portal initiated immediate reconnect.
                             close_code = aiohttp.WSCloseCode(int(websocket.close_code))
 
                     log.debug("[EVENT READER] WebSocket Connection Closed (%s)", close_code)

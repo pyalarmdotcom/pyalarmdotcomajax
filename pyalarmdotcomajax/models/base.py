@@ -36,6 +36,7 @@ class ResourceType(StrEnum):
     # Meta
     AVAILABLE_SYSTEM = "systems/availableSystemItem"
     IDENTITY = "identity"
+    DEALER = "dealers/dealer"
     PROFILE = "profile/profile"
     TWO_FACTOR = "twoFactorAuthentication/twoFactorAuthentication"
     TROUBLE_CONDITION = "troubleConditions/trouble-condition"

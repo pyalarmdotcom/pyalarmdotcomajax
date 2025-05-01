@@ -13,7 +13,7 @@ from mashumaro.types import Discriminator
 from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin, int_to_str
 
 if TYPE_CHECKING:
-    from pyalarmdotcomajax.models.jsonapi.types import URI
+    from pyalarmdotcomajax.models.jsonapi.jsonapi_types import URI
 
 ########################
 # JSON:API BASE ENTITY #

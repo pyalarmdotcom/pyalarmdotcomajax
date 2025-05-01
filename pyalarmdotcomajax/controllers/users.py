@@ -5,11 +5,7 @@ from typing import TYPE_CHECKING
 
 from pyalarmdotcomajax.controllers.base import BaseController
 from pyalarmdotcomajax.models.base import ResourceType
-from pyalarmdotcomajax.models.user import (
-    AvailableSystem,
-    Identity,
-    Profile,
-)
+from pyalarmdotcomajax.models.user import AvailableSystem, Dealer, Identity, Profile
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +30,13 @@ class ProfilesController(BaseController[Profile]):
     def __init__(self, bridge: "AlarmBridge", data_provider: IdentitiesController) -> None:
         """Initialize profile controller."""
         super().__init__(bridge, data_provider)
+
+
+class DealersController(BaseController[Dealer]):
+    """Controller for user profile."""
+
+    resource_type = ResourceType.DEALER
+    _resource_class = Dealer
 
 
 class AvailableSystemsController(BaseController[AvailableSystem]):

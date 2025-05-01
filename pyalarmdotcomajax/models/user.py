@@ -34,7 +34,6 @@ class IdentityAttributes(AdcResourceAttributes):
     preferred_timezone: str
     application_session_properties: ApplicationSessionProperties
     localize_temp_units_to_celsius: bool
-    provider_name: str = field(metadata=field_options(alias="logo_name"))
     has_trouble_conditions_service: bool
     # fmt: on
 
@@ -45,11 +44,6 @@ class Identity(AdcResource[IdentityAttributes]):
 
     resource_type = ResourceType.IDENTITY
     attributes_type = IdentityAttributes
-
-    @property
-    def provider_name(self) -> str | None:
-        """The name of the Alarm.com provider."""
-        return self.attributes.provider_name or None
 
     @property
     def keep_alive_url(self) -> str | None:
@@ -71,6 +65,12 @@ class Identity(AdcResource[IdentityAttributes]):
 
         return get_related_entity_id_by_key(self.api_resource, "selected_system")
 
+    @property
+    def dealer(self) -> str | None:
+        """The ID of the Alarm.com reseller / dealer."""
+
+        return get_related_entity_id_by_key(self.api_resource, "dealer")
+
 
 #
 # API USER PROFILE RESPONSE
@@ -90,6 +90,26 @@ class Profile(AdcResource[ProfileAttributes]):
 
     resource_type = ResourceType.PROFILE
     attributes_type = ProfileAttributes
+
+
+#
+# API DEALER RESPONSE
+#
+
+
+@dataclass
+class DealerAttributes(AdcResourceAttributes):
+    """A class representing a user profile inclusion list entry."""
+
+    name: str
+
+
+@dataclass
+class Dealer(AdcResource[DealerAttributes]):
+    """Identity resource."""
+
+    resource_type = ResourceType.DEALER
+    attributes_type = DealerAttributes
 
 
 #

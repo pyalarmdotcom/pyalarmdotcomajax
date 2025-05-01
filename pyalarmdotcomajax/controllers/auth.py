@@ -12,6 +12,7 @@ from rich.console import Group
 
 from pyalarmdotcomajax import const
 from pyalarmdotcomajax.controllers.users import (
+    DealersController,
     IdentitiesController,
     ProfilesController,
 )
@@ -45,6 +46,9 @@ log = logging.getLogger(__name__)
 # API AVAILABLE SYSTEM RESPONSE
 #
 
+# Known Issues:
+# Identities, Profiles, and Dealers are only loaded when a user first logs in. Once an auth cookie is stored and the user is logged in, these resources are not reloaded.
+
 
 class AuthenticationController:
     """Controller for user identity."""
@@ -69,6 +73,7 @@ class AuthenticationController:
         # Device Controllers
         self._identities = IdentitiesController(self._bridge)
         self._profiles = ProfilesController(self._bridge, self._identities)
+        self._dealers = DealersController(self._bridge)
 
     @property
     def resources_pretty(self) -> "Group":
@@ -95,10 +100,10 @@ class AuthenticationController:
         return self._identities.items[0].attributes.has_trouble_conditions_service
 
     @property
-    def provider_name(self) -> str | None:
+    def dealer(self) -> str | None:
         """The name of the Alarm.com provider."""
 
-        return self._identities.items[0].attributes.provider_name or None
+        return self._identities.items[0].dealer or "Alarm.com"
 
     @property
     def user_email(self) -> str | None:
@@ -284,6 +289,9 @@ class AuthenticationController:
 
         if not self._identities.items:
             raise UnexpectedResponse("No identities found.")
+
+        if dealer_id := self._identities.items[0].dealer:
+            await self._dealers.initialize([dealer_id])
 
         response = await self._bridge.get(path=TWO_FACTOR_PATH, id=self._identities.items[0].id)
 
