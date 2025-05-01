@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pyalarmdotcomajax"
 description = "Event Driven Python Interface for Alarm.com"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.13"
 authors = [
     { name = "Justin Wong", email = "46082645+uvjustin@users.noreply.github.com" },
     { name = "Elahd Bar-Shai", email = "466460+elahd@users.noreply.github.com" },
@@ -71,7 +71,7 @@ disallow_untyped_calls = false
 explicit_package_bases = true
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 115
 respect-gitignore = true
 exclude = ["pyalarmdotcomajax/_version.py"]

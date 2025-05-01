@@ -1,32 +1,32 @@
 default_language_version:
-  python: python3.12
+    python: python3.13
 repos:
-- hooks:
-  - args:
-    - --fix
-    id: ruff
-  - id: ruff-format
-  repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.9.6
-- hooks:
-  - additional_dependencies:
-    - tomli
-    id: codespell
-  repo: https://github.com/codespell-project/codespell
-  rev: v2.4.1
-- hooks:
-  - entry: mypy
-    id: mypy
-    language: system
-    name: mypy
-    require_serial: true
-    types:
-    - python
-  repo: local
-- hooks:
-  - args:
-    - -d relaxed
-    exclude: (.vscode|.devcontainer|.github)
-    id: yamllint
-  repo: https://github.com/adrienverge/yamllint.git
-  rev: v1.35.1
+    - hooks:
+          - args:
+                - --fix
+            id: ruff
+          - id: ruff-format
+      repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.9.6
+    - hooks:
+          - additional_dependencies:
+                - tomli
+            id: codespell
+      repo: https://github.com/codespell-project/codespell
+      rev: v2.4.1
+    - hooks:
+          - entry: mypy
+            id: mypy
+            language: system
+            name: mypy
+            require_serial: true
+            types:
+                - python
+      repo: local
+    - hooks:
+          - args:
+                - -d relaxed
+            exclude: (.vscode|.devcontainer|.github)
+            id: yamllint
+      repo: https://github.com/adrienverge/yamllint.git
+      rev: v1.35.1
