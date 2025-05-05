@@ -1,32 +1,55 @@
 {
-  "tasks": [
-    {
-      "command": "pre-commit run --all-files",
-      "label": "Run pre-commit checks.",
-      "problemMatcher": [],
-      "type": "shell"
-    },
-    {
-      "command": "pytest",
-      "label": "Run integration tests.",
-      "problemMatcher": [],
-      "type": "shell"
-    },
-    {
-        "command": "typer /workspaces/pyalarmdotcomajax/pyalarmdotcomajax/adc/__main__.py utils docs --name adc --output /workspaces/pyalarmdotcomajax/pyalarmdotcomajax/adc/README.md",
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Run pre-commit checks",
+        "type": "shell",
+        "command": "pre-commit run --all-files",
+        "group": "test"
+      },
+      {
+        "label": "Run integration tests",
+        "type": "shell",
+        "command": "pytest",
+        "group": "test"
+      },
+      {
         "label": "Regenerate ADC README",
-        "problemMatcher": [],
-        "type": "shell"
-    },
-    {
-        "command": "python /workspaces/pyalarmdotcomajax/scripts/upgrade_dependencies.py",
-        "label": "Upgrade dependencies in requirements.txt, requirements-dev.txt, pyproject.toml, and .pre-commit-config",
-        "problemMatcher": [],
-        "type": "shell"
-    }
-  ],
-  "version": "2.0.0"
-}
-
-
-
+        "type": "shell",
+        "command": "typer",
+        "args": [
+          "pyalarmdotcomajax/adc/__main__.py",
+          "utils",
+          "docs",
+          "--name",
+          "adc",
+          "--output",
+          "pyalarmdotcomajax/adc/README.md"
+        ],
+        "group": "build"
+      },
+      {
+        "label": "Upgrade dependencies",
+        "type": "shell",
+        "command": "python",
+        "args": [
+          "scripts/upgrade_dependencies.py",
+          "--dir",
+          "${workspaceFolder}"
+        ],
+        "group": "build"
+      },
+      {
+        "label": "Check for dependency updates (dry-run)",
+        "type": "shell",
+        "command": "python",
+        "args": [
+          "scripts/upgrade_dependencies.py",
+          "--dir",
+          "${workspaceFolder}",
+          "--dry-run"
+        ],
+        "group": "build"
+      }
+    ]
+  }

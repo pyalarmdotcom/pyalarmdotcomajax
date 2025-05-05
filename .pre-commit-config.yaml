@@ -1,32 +1,34 @@
 default_language_version:
     python: python3.13
+
 repos:
-    - hooks:
-          - args:
-                - --fix
-            id: ruff
-          - id: ruff-format
-      repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.11.7
-    - hooks:
-          - additional_dependencies:
-                - tomli
-            id: codespell
-      repo: https://github.com/codespell-project/codespell
-      rev: v2.4.1
-    - hooks:
-          - entry: mypy
-            id: mypy
-            language: system
-            name: mypy
-            require_serial: true
-            types:
-                - python
-      repo: local
-    - hooks:
-          - args:
-                - -d relaxed
+    - repo: local
+      hooks:
+          - id: ruff
+            name: Ruff
+            description: Run Ruff linter and autofixer
+            entry: ruff check --fix
+            language: python
+            types: [python]
+
+          - id: mypy
+            name: MyPy
+            description: Run static type checking
+            entry: mypy
+            language: python
+            types: [python]
+
+          - id: codespell
+            name: Codespell
+            description: Spell check source files
+            entry: codespell
+            language: python
+            types: [text]
+
+          - id: yamllint
+            name: YAMLLint
+            description: Lint YAML files using relaxed config
+            entry: yamllint -d relaxed
+            language: python
+            types: [yaml]
             exclude: (.vscode|.devcontainer|.github)
-            id: yamllint
-      repo: https://github.com/adrienverge/yamllint.git
-      rev: v1.37.0

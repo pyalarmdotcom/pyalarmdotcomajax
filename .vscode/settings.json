@@ -1,12 +1,40 @@
 {
-    "python.analysis.exclude": [
-        "**/node_modules",
-        "**/dist",
-        "**/__pycache__",
-        "**/.pytest_cache",
-        "**/.mypy_cache",
-        "**/.tox",
-        "**/.venv",
-        "**/.env"
+    "python.analysis.extraPaths": [
+        "."
     ],
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.useLibraryCodeForTypes": true,
+    "python.analysis.exclude": [
+        "**/__pycache__",
+        "**/.mypy_cache",
+        "**/.pytest_cache",
+        "build",
+        "dist",
+        ".venv",
+        "scripts/upgrade_dependencies.py"
+    ],
+    "python.testing.pytestEnabled": true,
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": false
+    },
+    "[yaml]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "mypy-type-checker.preferDaemon": false,
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "mypy-type-checker.args": [
+        "--config-file=pyproject.toml"
+    ],
+    "mypy-type-checker.reportingScope": "workspace",
+    "terminal.integrated.scrollback": 10000,
 }

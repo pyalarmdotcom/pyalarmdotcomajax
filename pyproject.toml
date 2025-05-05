@@ -26,6 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Home Automation",
 ]
+license = { file = "LICENSE" }
 dynamic = ["version", "dependencies", "optional-dependencies"]
 
 [project.scripts]
@@ -48,6 +49,8 @@ exclude = [
     ".mypy_cache/",
     "references/",
     ".pytest_cache",
+    "old",
+    "scripts/upgrade_dependencies.py",
 ]
 python_version = "3.13"
 show_error_codes = true
@@ -68,7 +71,11 @@ pretty = true
 show_absolute_path = true
 show_error_context = true
 disallow_untyped_calls = false
-explicit_package_bases = true
+# explicit_package_bases = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D", "PLR0913"]
+"scripts/upgrade_dependencies.py" = ["ALL"]
 
 [tool.ruff]
 target-version = "py313"
@@ -186,8 +193,18 @@ attr = "pyalarmdotcomajax._version.__version__"
 [tool.setuptools_scm]
 version_file = "pyalarmdotcomajax/_version.py"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyalarmdotcomajax*"]
+
 [tool.tomlsort]
 in_place = true
 spaces_before_inline_comment = 4
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+asyncio_mode = "auto"
