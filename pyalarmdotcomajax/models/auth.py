@@ -34,15 +34,15 @@ class TwoFactorAuthenticationAttributes(AdcResourceAttributes):
     """Attributes for a user's two factor authentication options."""
 
     sms_mobile_number: SmsMobileNumber | None
-    email: str
     current_device_name: str
-    is_current_device_trusted: bool
-    selected_type_of_2fa: int = field(metadata=field_options(alias="selected_type_of2_fa"))
+    selected_type_of_2fa: int = field(metadata=field_options(alias="selected2_fatype"))
     enabled_two_factor_types: int
     valid2fa_permissions: list[OtpType] = field(metadata=field_options(alias="valid2_fa_permissions"))
-    can_reset_2fa: bool = field(metadata=field_options(alias="can_reset2_fa"))
     show_suggested_setup: bool
     can_skip_suggested_setup: bool
+    is_current_device_trusted: bool = False
+    can_reset_2fa: bool = field(metadata=field_options(alias="can_reset2_fa"), default=False)
+    email: str = ""
 
 
 @dataclass

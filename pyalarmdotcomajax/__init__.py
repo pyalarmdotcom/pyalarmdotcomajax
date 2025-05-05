@@ -46,43 +46,20 @@ from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
 from pyalarmdotcomajax.events import (
     EventBroker,
     EventBrokerCallbackT,
-    EventBrokerMessage,
     EventBrokerTopic,
-    ResourceEventMessage,
 )
 from pyalarmdotcomajax.exceptions import (
-    AlarmdotcomException,
-    AuthenticationException,
     AuthenticationFailed,
-    MustConfigureMfa,
     NotAuthorized,
     NotInitialized,
-    OtpRequired,
     ServiceUnavailable,
     SessionExpired,
     UnexpectedResponse,
-    UnknownDevice,
-    UnsupportedOperation,
 )
 from pyalarmdotcomajax.models import (
-    AdcManagedDeviceT,
     AdcMiniSuccessResponse,
-    AdcResourceT,
-    camera,
-    garage_door,
-    gate,
-    image_sensor,
-    light,
-    lock,
-    partition,
-    sensor,
-    system,
-    thermostat,
-    trouble_condition,
-    user,
-    water_sensor,
+    System,
 )
-from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import (
     AdcDeviceResource,
     AdcResource,
@@ -95,52 +72,52 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
-from pyalarmdotcomajax.websocket.client import ConnectionEvent, WebSocketClient, WebSocketState
+from pyalarmdotcomajax.websocket.client import WebSocketClient
 
-__all__: tuple[str, ...] = (  # noqa: RUF022
-    # exceptions
-    "AlarmdotcomException",
-    "UnsupportedOperation",
-    "UnknownDevice",
-    "AuthenticationFailed",
-    "AuthenticationException",
-    "OtpRequired",
-    "MustConfigureMfa",
-    "SessionExpired",
-    "ServiceUnavailable",
-    "NotAuthorized",
-    "NotInitialized",
-    "UnexpectedResponse",
-    # models.auth
-    "OtpType",
-    # websocket
-    "WebSocketState",
-    "ConnectionEvent",
-    # events
-    "EventBrokerTopic",
-    "EventBrokerMessage",
-    "EventBrokerCallbackT",
-    # models
-    "AdcResourceT",
-    "AdcManagedDeviceT",
-    "camera",
-    "garage_door",
-    "gate",
-    "image_sensor",
-    "light",
-    "lock",
-    "partition",
-    "sensor",
-    "system",
-    "thermostat",
-    "trouble_condition",
-    "user",
-    "water_sensor",
-    # controllers
-    "AdcControllerT",
-    "ResourceEventMessage",
-)
-
+# __all__: tuple[str, ...] = (
+#     # exceptions
+#     "AlarmdotcomException",
+#     "UnsupportedOperation",
+#     "UnknownDevice",
+#     "AuthenticationFailed",
+#     "AuthenticationException",
+#     "OtpRequired",
+#     "MustConfigureMfa",
+#     "SessionExpired",
+#     "ServiceUnavailable",
+#     "NotAuthorized",
+#     "NotInitialized",
+#     "UnexpectedResponse",
+#     # models.auth
+#     "OtpType",
+#     # websocket
+#     "WebSocketState",
+#     "ConnectionEvent",
+#     # events
+#     "EventBrokerTopic",
+#     "EventBrokerMessage",
+#     "EventBrokerCallbackT",
+#     # models
+#     "AdcResourceT",
+#     "AdcManagedDeviceT",
+#     "camera",
+#     "garage_door",
+#     "gate",
+#     "image_sensor",
+#     "light",
+#     "lock",
+#     "partition",
+#     "sensor",
+#     "system",
+#     "thermostat",
+#     "trouble_condition",
+#     "user",
+#     "water_sensor",
+#     # controllers
+#     "AdcControllerT",
+#     "ResourceEventMessage",
+# )
+T = TypeVar("T", bound=JsonApiBaseElement)
 
 log = logging.getLogger(__name__)
 
@@ -355,7 +332,7 @@ class AlarmBridge:
         return self._sensors
 
     @property
-    def system(self) -> SystemController:
+    def systems(self) -> SystemController:
         """Get the system controller."""
         return self._systems
 
@@ -405,6 +382,15 @@ class AlarmBridge:
         """Return whether bridge is initialized."""
 
         return self._initialized
+
+    @property
+    def active_system(self) -> System:
+        """Get the active system."""
+
+        if not self._available_device_catalogs.active_system_id:
+            raise AuthenticationFailed("No active system found.")
+
+        return self._systems[self._available_device_catalogs.active_system_id]
 
     @property
     def resources(self) -> dict[str, AdcResource]:
@@ -567,8 +553,6 @@ class AlarmBridge:
                 )
 
             yield resp
-
-    T = TypeVar("T", bound=JsonApiBaseElement)
 
     @contextlib.asynccontextmanager
     async def ws_connect(

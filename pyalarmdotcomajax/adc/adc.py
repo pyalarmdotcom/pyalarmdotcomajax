@@ -17,7 +17,7 @@ from rich.panel import Panel
 from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.adc.common import bridge, collect_params
 from pyalarmdotcomajax.adc.util import (
-    UTyper,
+    AsyncTyper,
     summarize_cli_actions,
     with_paremeters,
 )
@@ -38,7 +38,7 @@ logging.basicConfig(
 # MAIN APP #
 ############
 
-app = UTyper(
+app = AsyncTyper(
     add_completion=False,
     no_args_is_help=True,
     rich_markup_mode="rich",
@@ -200,7 +200,7 @@ def event_printer(verbose: bool, message: ResourceEventMessage) -> None:
 # ACTION APP #
 ##############
 
-action_app = UTyper(
+action_app = AsyncTyper(
     no_args_is_help=True,
     add_completion=False,
     add_help_option=True,
@@ -215,7 +215,7 @@ for controller in bridge.resource_controllers:
     if len(summary := summarize_cli_actions(controller, include_params=False)):
         # Create device type command group
         # (e.g.: Thermostat)
-        device_type_app = UTyper(
+        device_type_app = AsyncTyper(
             help=f"Perform an action on a {slug_to_title(controller.resource_type.name).lower()}.",
             short_help=f"Perform an action on a {slug_to_title(controller.resource_type.name).lower()}. Use '[bright_cyan]adc {controller.resource_type.name.lower()} --help[/bright_cyan]' for details.",
             add_help_option=True,

@@ -31,7 +31,7 @@ Param_Id = Annotated[
 ]
 
 
-class UTyper(typer.Typer):
+class AsyncTyper(typer.Typer):
     """
     Define a Typer subclass with async command support.
 
