@@ -69,6 +69,7 @@ class AlarmController:
     )
     ALL_SYSTEMS_URL_TEMPLATE = "{}web/api/systems/availableSystemItems?searchString="
     ALL_RECENT_IMAGES_TEMPLATE = "{}web/api/imageSensor/imageSensorImages/getRecentImages"
+    LIVESTREAM_TEMPLATE = "{}web/api/video/videoSources/liveVideoSources/{}"
 
     # LOGIN & SESSION: BEGIN
     LOGIN_TWO_FACTOR_COOKIE_NAME = "twoFactorAuthenticationId"
@@ -235,6 +236,7 @@ class AlarmController:
             has_image_sensors = await self._async_device_type_present(
                 self._active_system_id, DeviceType.IMAGE_SENSOR
             )
+            has_image_cameras = await self._async_device_type_present(self._active_system_id, DeviceType.CAMERA)
 
         await self._async_get_trouble_conditions()
 
@@ -264,10 +266,12 @@ class AlarmController:
         if has_image_sensors:
             # Get detailed image sensor data and add to raw device list.
             raw_devices.extend(await self._async_get_devices_by_device_type(DeviceType.IMAGE_SENSOR))
-
             # Get recent images
             device_type_specific_data = await self._async_get_recent_images()
-
+        if has_image_cameras:
+            cameras = await self._async_get_devices_by_device_type(DeviceType.CAMERA)
+            raw_devices.extend(cameras)
+            device_type_specific_data = await self._async_get_live_streams(cameras)
         #
         # BUILD PARTITIONS
         #
@@ -817,11 +821,8 @@ class AlarmController:
         #
         # SKIP UNSUPPORTED DEVICE TYPES
         #
-        # There is a hack here for cameras. We don't really support cameras (no images / streaming), we only support settings for the Skybell HD.
-        if not AttributeRegistry.is_supported(device_type) or (
-            (device_type == DeviceType.CAMERA)
-            and (raw_device.get("attributes", {}).get("deviceModel") != "SKYBELLHD")
-        ):
+
+        if not AttributeRegistry.is_supported(device_type):
             raise UnsupportedDeviceType(device_type, raw_device.get("id"))
 
         children: list[tuple[str, DeviceType]] = []
@@ -961,6 +962,29 @@ class AlarmController:
                 return await self._async_get_active_system(retry_on_failure=False)
 
             raise
+
+    async def _async_get_live_streams(self, cameras) -> dict[str, DeviceTypeSpecificData]:
+        """Get livestreams"""
+        try:
+            log.info("Getting livestream Urls")
+            device_type_specific_data: dict[str, DeviceTypeSpecificData] = {}
+            for camera in cameras:
+                async with self._websession.get(
+                    url=self.LIVESTREAM_TEMPLATE.format(c.URL_BASE, camera["id"]),
+                    headers=self._ajax_headers,
+                ) as resp:
+                    json_rsp = await resp.json()
+                    if resp.status >= 400 or not isinstance(json_rsp, dict) or not len(json_rsp.get("data", [])):
+                        continue
+                    device_type_specific_data.setdefault(str(json_rsp["data"]["id"]), {}).setdefault(
+                        "raw_livestream", json_rsp["data"]
+                    )
+        except (aiohttp.ClientResponseError, KeyError) as err:
+            log.exception("Failed to get livestreams.")
+            raise UnexpectedResponse from err
+
+        else:
+            return device_type_specific_data
 
     async def _async_get_recent_images(self) -> dict[str, DeviceTypeSpecificData]:
         """Get recent images."""
