@@ -50,10 +50,17 @@ jobs:
         pip install .[dev]
         pip install sphinx myst-parser furo
 
-    - name: Extract version from _version.py
+    # - name: Extract version from _version.py
+    #   id: get_version
+    #   run: |
+    #     version=$(grep -oP "__version__ = '\K[^']+" ./pyalarmdotcomajax/_version.py)
+    #     echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Extract version from git using setuptools_scm
       id: get_version
       run: |
-        version=$(grep -oP "__version__ = '\K[^']+" ./pyalarmdotcomajax/_version.py)
+        pip install setuptools_scm
+        version=$(python -c "import setuptools_scm; print(setuptools_scm.get_version())")
         echo "version=$version" >> "$GITHUB_OUTPUT"
 
     - name: Build documentation
