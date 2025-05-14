@@ -25,6 +25,8 @@ jobs:
         pip install build setuptools_scm
 
     - name: Build package
+      env:
+        SETUPTOOLS_SCM_LOCAL_SCHEME: no-local-version
       run: python -m build
 
     - name: Publish package to PyPI
@@ -45,10 +47,10 @@ jobs:
       with:
         python-version: "3.13"
 
-    - name: Install documentation dependencies
-      run: |
-        pip install .[dev]
-        pip install sphinx myst-parser furo
+    # - name: Install documentation dependencies
+    #   run: |
+    #     pip install .[dev]
+    #     pip install sphinx myst-parser furo
 
     # - name: Extract version from _version.py
     #   id: get_version
@@ -56,18 +58,11 @@ jobs:
     #     version=$(grep -oP "__version__ = '\K[^']+" ./pyalarmdotcomajax/_version.py)
     #     echo "version=$version" >> "$GITHUB_OUTPUT"
 
-    - name: Extract version from git using setuptools_scm
-      id: get_version
-      run: |
-        pip install setuptools_scm
-        version=$(python -c "import setuptools_scm; print(setuptools_scm.get_version())")
-        echo "version=$version" >> "$GITHUB_OUTPUT"
-
-    - name: Build documentation
-      run: |
-        sphinx-build -b html docs/ docs/_build/html \
-          -D version="${{ steps.get_version.outputs.version }}" \
-          -D release="${{ steps.get_version.outputs.version }}"
+    # - name: Build documentation
+    #   run: |
+    #     sphinx-build -b html docs/ docs/_build/html \
+    #       -D version="${{ steps.get_version.outputs.version }}" \
+    #       -D release="${{ steps.get_version.outputs.version }}"
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
