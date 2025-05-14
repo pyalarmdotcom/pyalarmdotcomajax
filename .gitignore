@@ -3,6 +3,7 @@ test.py
 temp/
 node_modules/
 .ruff_cache
+_version.py
 
 # misc
 .coverage
