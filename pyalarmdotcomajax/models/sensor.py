@@ -1,5 +1,7 @@
 """Alarm.com model for sensors."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import IntEnum
 
@@ -14,7 +16,7 @@ from pyalarmdotcomajax.models.base import (
 class SensorState(IntEnum):
     """Sensor states."""
 
-    UNKNOWN = -1
+    UNKNOWN = 0
     CLOSED = 1
     OPEN = 2
     IDLE = 3
@@ -26,6 +28,11 @@ class SensorState(IntEnum):
     OPENED_CLOSED = 9
     ISSUE = 10
     OK = 11
+
+    @classmethod
+    def _missing_(cls: type, value: object) -> SensorState:
+        """Set default enum member if an unknown value is provided."""
+        return SensorState.UNKNOWN
 
 
 class SensorSubtype(AdcResourceSubtype):
@@ -48,7 +55,7 @@ class SensorSubtype(AdcResourceSubtype):
     MOBILE_PHONE = 69
 
     @classmethod
-    def _missing_(cls: type, value: object) -> AdcResourceSubtype:
+    def _missing_(cls: type, value: object) -> SensorSubtype:
         """Set default enum member if an unknown value is provided."""
         return SensorSubtype.UNKNOWN
 
