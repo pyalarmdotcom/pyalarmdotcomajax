@@ -1,6 +1,6 @@
-ruff>=0.11.8
-codespell>=2.4.1
-yamllint>=1.37.0
+# ruff>=0.11.8
+# codespell>=2.4.1
+# yamllint>=1.37.0
 pre-commit>=4.2.0
 pytest>=8.3.5
 pytest-asyncio>=0.26.0
@@ -9,7 +9,7 @@ tomli_w>=1.2.0
 types-requests==2.31.0.6 # Required to prevent dependency conflict with Home Assistant over urllib3
 types-PyYAML>=6.0.12.20250402
 setuptools-scm>=8.3.1
-mypy>=1.15.0
+# mypy>=1.15.0
 pathspec>=0.11.1
 gitpython>=3.1.40
 # Sphinx and its dependencies

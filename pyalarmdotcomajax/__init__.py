@@ -50,6 +50,7 @@ from pyalarmdotcomajax.controllers.users import (
     AvailableSystemsController,
 )
 from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
+from pyalarmdotcomajax.controllers.water_valve import WaterValveController
 from pyalarmdotcomajax.events import (
     EventBroker,
     EventBrokerCallbackT,
@@ -89,6 +90,7 @@ from pyalarmdotcomajax.models import (
     trouble_condition,
     user,
     water_sensor,
+    water_valve,
 )
 from pyalarmdotcomajax.models.auth import OtpType
 from pyalarmdotcomajax.models.base import (
@@ -153,6 +155,7 @@ __all__: tuple[str, ...] = (  # noqa: RUF022
     "trouble_condition",
     "user",
     "water_sensor",
+    "water_valve",
     # controllers
     "AdcControllerT",
     "ResourceEventMessage",
@@ -209,6 +212,7 @@ class AlarmBridge:
         self._sensors = SensorController(self, self._device_catalogs)
         self._thermostats = ThermostatController(self, self._device_catalogs)
         self._water_sensors = WaterSensorController(self, self._device_catalogs)
+        self._water_valves = WaterValveController(self, self._device_catalogs)
 
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
@@ -406,6 +410,11 @@ class AlarmBridge:
     def water_sensors(self) -> WaterSensorController:
         """Get the water sensors controller."""
         return self._water_sensors
+
+    @property
+    def water_valves(self) -> WaterValveController:
+        """Get the water valves controller."""
+        return self._water_valves
 
     @property
     def auth_controller(self) -> AuthenticationController:
