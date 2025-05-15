@@ -23,11 +23,11 @@ repos:
         types: [python]
         args: [--config-file, pyproject.toml]
         additional_dependencies:
-          - "tomli"
-          - "types-PyYaml"
-          - "types-requests"
-          - "-r/workspaces/pyalarmdotcomajax/requirements.txt"
-          - "-r/workspaces/pyalarmdotcomajax/requirements-dev.txt"
+          - types-PyYaml
+          - types-requests
+          - mashumaro
+          - typer
+          - pyhumps
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
