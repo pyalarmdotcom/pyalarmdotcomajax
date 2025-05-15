@@ -2,8 +2,7 @@ default_language_version:
   python: python3.13
 
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.9
+  - repo: local
     hooks:
       - id: ruff
         name: Ruff
@@ -12,8 +11,7 @@ repos:
         language: python
         types: [python]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+  - repo: local
     hooks:
       - id: mypy
         name: MyPy
@@ -22,15 +20,8 @@ repos:
         language: python
         types: [python]
         args: [--config-file, pyproject.toml]
-        additional_dependencies:
-          - types-PyYaml
-          - types-requests
-          - mashumaro
-          - typer
-          - pyhumps
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+  - repo: local
     hooks:
       - id: codespell
         name: Codespell
@@ -40,8 +31,7 @@ repos:
         types: [text]
         additional_dependencies: [tomli]
 
-  - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+  - repo: local
     hooks:
       - id: yamllint
         name: YAMLLint
@@ -51,9 +41,11 @@ repos:
         types: [yaml]
         exclude: (\.vscode|\.devcontainer|\.github)
 
-  - repo: https://github.com/pappasam/toml-sort
-    rev: v0.24.2
+  - repo: local
     hooks:
       - id: toml-sort
-        args: ["--in-place", "--all", "--ignore-case"]
+        name: toml-sort
+        description: Sort TOML files in place
+        entry: toml-sort --in-place --all --ignore-case
+        language: python
         types: [toml]

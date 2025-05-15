@@ -8,10 +8,10 @@ types-PyYAML>=6.0.12.20250402
 setuptools-scm>=8.3.1
 pathspec>=0.11.1
 gitpython>=3.1.40
-# mypy>=1.15.0
-# ruff>=0.11.8
-# codespell>=2.4.1
-# yamllint>=1.37.0
+mypy>=1.15.0
+ruff>=0.11.8
+codespell>=2.4.1
+yamllint>=1.37.0
 # Sphinx and its dependencies
 sphinx>=7.2
 myst-parser>=2.0
