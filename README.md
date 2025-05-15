@@ -32,7 +32,7 @@ pip install .
 
 ## Usage
 
-See `examples/basic_sensor_data.py` for a basic usage example.
+Usage examples not yet posted for v0.6 beta.
 
 ## Device Support (Core Functions)
 
@@ -50,31 +50,11 @@ Pyalarmdotcomajax supports core features (monitoring and using actions) of the d
 | System       | stop alarms, clear smoke sensor, clear alarms in memory |                                                                                                                                                                                                                                                                                                                         |
 | Thermostat   | set attributes                                          |                                                                                                                                                                                                                                                                                                                         |
 | Water Sensor | (none)                                                  |                                                                                                                                                                                                                                                                                                                         |
-
-### Known Sensor deviceTypes
-
-This list identifies deviceTypes used in the alarm.com API and is incomplete. Please help by submitting missing values.
-
-| deviceType | Description                            |
-| ---------- | -------------------------------------- |
-| 1          | Contact Sensor                         |
-| 2          | Motion Sensor                          |
-| 5          | Smoke Detector                         |
-| 6          | CO Detector                            |
-| 8          | Freeze Sensor                          |
-| 9          | Panic Button                           |
-| 10         | Fixed Panic Button                     |
-| 14         | Siren                                  |
-| 19         | Glass Break Detector                   |
-| 52         | Vibration Contact Sensor               |
-| 68         | Panel Image Sensor                     |
-| 69         | Mobile Phone (for Bluetooth Disarming) |
-| 83         | Panel Glass Break Sensor               |
-| 89         | Panel Motion Sensor                    |
+| Water Valve  | open, close                                             |                                                                                                                                                                                                                                                                                                                         |
 
 ## Device Support (Configuration)
 
-Skybell HD configuration support not yet implemented in v6 beta.
+Skybell HD configuration support not yet implemented in v0.6 beta.
 
 ## Command Line Interface
 

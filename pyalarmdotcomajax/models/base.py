@@ -31,6 +31,7 @@ class ResourceType(StrEnum):
     THERMOSTAT = "devices/thermostat"
     WATER_SENSOR = "devices/water-sensor"
     SWITCH = "devices/switch"
+    WATER_VALVE = "devices/water-valve"
 
     IMAGE_SENSOR = "image-sensor/image-sensor"
     IMAGE_SENSOR_IMAGE = "image-sensor/image-sensor-image"
@@ -61,7 +62,6 @@ class ResourceType(StrEnum):
     # SUMP_PUMP = "devices/sump-pump"
     # VALVE_SWITCH = "valve-switch"
     # WATER_METER = "devices/water-meter"
-    # WATER_VALVE = "devices/water-valve"
     # X10_LIGHT = "devices/x10-light"
 
     @classmethod
