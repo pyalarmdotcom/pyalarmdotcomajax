@@ -37,6 +37,7 @@ class ResourceEventType(Enum):
     DoorLeftOpenRestoral = 103  # When door is closed after being left open.
     DoorLocked = 91
     DoorUnlocked = 90
+    ImageSensorUpload = 99
     LightTurnedOff = 316
     LightTurnedOn = 315
     Opened = 15
@@ -75,7 +76,6 @@ class ResourceEventType(Enum):
     ExitButtonPressed = 141
     FirePanic = 24
     GoogleSdmEvent = 346
-    ImageSensorUpload = 99
     InAppAuxiliaryPanic = 201
     InAppFirePanic = 200
     InAppPolicePanic = 202
@@ -145,7 +145,9 @@ class BaseWSMessage(JsonApiBaseElement):
     unit_id: str  # Full device ID prefix
     device_id: str = field(init=False)  # Full device ID (calculated in __post_init__)
 
-    _device_id: int = field(metadata=field_options(alias="device_id"))  # Full device ID suffix
+    _device_id: int = field(
+        metadata=field_options(alias="device_id")
+    )  # Full device ID suffix
 
     def __post_init__(self) -> None:
         """Post init hook."""
@@ -177,7 +179,9 @@ class MonitoringEventWSMessage(BaseWSMessage):
 class PropertyChangeWSMessage(BaseWSMessage):
     """Alarm.com property change websocket message."""
 
-    subtype: ResourcePropertyChangeType = field(metadata=field_options(alias="property"))
+    subtype: ResourcePropertyChangeType = field(
+        metadata=field_options(alias="property")
+    )
     value: int = field(metadata=field_options(alias="property_value"))
 
 
