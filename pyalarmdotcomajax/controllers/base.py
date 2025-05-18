@@ -41,6 +41,32 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+def device_controller(
+    resource_type: ResourceType, resource_class: type[AdcResourceT]
+) -> Callable[[type[BaseController[AdcResourceT]]], type[BaseController[AdcResourceT]]]:
+    """
+    Simplify controller definitions by setting common attributes.
+
+    Args:
+        resource_type (ResourceType): The type of resource the controller manages.
+        resource_class (type[AdcResourceT]): The class of the resource managed by the controller.
+
+    Returns:
+        type[BaseController[AdcResourceT]]: The decorated controller class.
+
+    """
+
+    def decorator(
+        cls: type[BaseController[AdcResourceT]],
+    ) -> type[BaseController[AdcResourceT]]:
+        cls.resource_type = resource_type
+        cls._resource_class = resource_class
+        cls._is_device_controller = True
+        return cls
+
+    return decorator
+
+
 class BaseController(ABC, Generic[AdcResourceT]):
     """Base controller for Ember.js/JSON:API based components."""
 
@@ -60,6 +86,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
     _supported_resource_events: ClassVar[SupportedResourceEvents | None] = None
     # Maps websocket events to states.
     _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
+    # Indicates whether this controller is a device controller.
+    _is_device_controller: ClassVar[bool] = False
 
     def __init__(
         self,
@@ -104,6 +132,11 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Return all resources for this controller."""
         return list(self._resources.values())
 
+    @property
+    def is_device_controller(self) -> bool:
+        """Return whether this controller is a device controller."""
+        return self._is_device_controller
+
     ##################
     # INITIALIZATION #
     ##################
@@ -114,7 +147,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         Controllers with a delegated API data provider should only be initialized by that data provider.
         """
-
         if self._initialized:
             return
 
@@ -134,8 +166,15 @@ class BaseController(ABC, Generic[AdcResourceT]):
             )
             return
 
-        if target_device_ids:
-            self._target_device_ids.add(*target_device_ids)
+        if target_device_ids is not None:
+            self._target_device_ids.update(target_device_ids)
+            # If this is a device controller and no device IDs are provided, mark as initialized and skip
+            if (
+                getattr(self, "_is_device_controller", False)
+                and not self._target_device_ids
+            ):
+                self._initialized = True
+                return
 
         await self._refresh()
 
@@ -293,9 +332,11 @@ class BaseController(ABC, Generic[AdcResourceT]):
         if not isinstance(message, RawResourceEventMessage):
             return
 
-        try:
-            adc_resource = self[message.ws_message.device_id]
-        except KeyError:
+        # Image sensors use device_id instead of full_device_id.
+        adc_resource = self.get(message.ws_message.full_device_id) or self.get(
+            str(message.ws_message.device_id)
+        )
+        if not adc_resource:
             return
 
         # Handle state updates for all controllers that have a state map.

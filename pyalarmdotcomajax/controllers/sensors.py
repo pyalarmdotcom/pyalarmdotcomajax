@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers.base import BaseController
+from pyalarmdotcomajax.controllers.base import BaseController, device_controller
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.sensor import Sensor, SensorState, SensorSubtype
 from pyalarmdotcomajax.websocket.client import SupportedResourceEvents
@@ -46,11 +46,10 @@ SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
 )
 
 
+@device_controller(ResourceType.SENSOR, Sensor)
 class SensorController(BaseController[Sensor]):
     """Controller for sensors."""
 
-    resource_type = ResourceType.SENSOR
-    _resource_class = Sensor
     _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
 
     async def _handle_event(

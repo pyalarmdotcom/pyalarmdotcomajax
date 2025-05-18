@@ -1,5 +1,7 @@
 """General event broker for all events in the system."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from asyncio import Task
@@ -42,7 +44,9 @@ class EventBroker:
     """Manage subscriptions and distribute messages to subscribers."""
 
     def __init__(self) -> None:
-        self._subscriptions: dict[EventBrokerTopic, dict[EventBrokerCallbackT, list[str] | None]] = {}
+        self._subscriptions: dict[
+            EventBrokerTopic, dict[EventBrokerCallbackT, list[str] | None]
+        ] = {}
         self._background_tasks: set[Task] = set()
 
     def subscribe(
@@ -87,7 +91,11 @@ class EventBroker:
         """Publish a message to subscribers of a topic."""
 
         for callback, ids in self._subscriptions.get(message.topic, {}).items():
-            if hasattr(message, "id") and ids and getattr(message, "id", None) not in ids:
+            if (
+                hasattr(message, "id")
+                and ids
+                and getattr(message, "id", None) not in ids
+            ):
                 continue
 
             if asyncio.iscoroutinefunction(callback):
@@ -108,7 +116,7 @@ class ResourceEventMessage(EventBrokerMessage):
     """Message class for updated resources."""
 
     id: str
-    resource: "AdcResource | None" = None
+    resource: AdcResource | None = None
 
 
 #
