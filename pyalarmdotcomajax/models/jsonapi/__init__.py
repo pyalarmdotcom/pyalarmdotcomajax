@@ -10,7 +10,7 @@ from mashumaro.config import BaseConfig
 from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.types import Discriminator
 
-from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin, int_to_str
+from pyalarmdotcomajax.models.jsonapi.utils import CamelizerMixin
 
 if TYPE_CHECKING:
     from pyalarmdotcomajax.models.jsonapi.jsonapi_types import URI
@@ -84,17 +84,6 @@ class ResourceIdentifier(JsonApiBaseElement):
     type: str
     meta: Meta | None = None
 
-    # TODO: https://github.com/Fatal1ty/mashumaro/issues/42
-    # Required because identity endpoint returns ID as int.
-    class Config(JsonApiBaseElement.Config):
-        """Mashumaro settings for JSON:API elements."""
-
-        serialization_strategy = {  # noqa: RUF012
-            str: {
-                "deserialize": lambda x: str(x),
-            },
-        }
-
 
 @dataclass
 class Jsonapi(JsonApiBaseElement):
@@ -165,9 +154,7 @@ class Error(JsonApiBaseElement):
     id: str | None = field(default=None)
     links: RelatedLinks | None = field(default=None)
     status: str | None = field(default=None)
-    code: str | None = field(
-        default=None, metadata={"deserialize": int_to_str}
-    )  # ADC mini responses use integers.
+    code: str | None = field(default=None)
     title: str | None = field(default=None)
     detail: str | None = field(default=None)
     source: Source | None = field(default=None)
@@ -193,6 +180,16 @@ class Relationship(JsonApiBaseElement):
 
         forbidextra_keys = True
         discriminator = Discriminator(include_subtypes=True)
+
+    @property
+    def data_list(self) -> list[ResourceIdentifier]:
+        """Return data as a list of resource identifiers if applicable."""
+
+        if isinstance(self.data, list):
+            return self.data
+        if isinstance(self.data, ResourceIdentifier):
+            return [self.data]
+        return []
 
 
 @dataclass(kw_only=True)
@@ -277,6 +274,22 @@ class Resource(ResourceIdentifier):
 
         return results
 
+    def all_related_types(self) -> set[str]:
+        """Return resource types for all related resources."""
+
+        if not self.relationships:
+            return set()
+
+        results = set()
+        for relationship in self.relationships.values():
+            if str(getattr(relationship.meta, "count", 0)) > "0":
+                if isinstance(relationship.data, list):
+                    results.update([item.type for item in relationship.data])
+                elif isinstance(relationship.data, ResourceIdentifier):
+                    results.add(relationship.data.type)
+
+        return results
+
 
 class Document(JsonApiBaseElement):
     """JSON:API primary response object."""
@@ -288,7 +301,9 @@ class Document(JsonApiBaseElement):
         discriminator = Discriminator(include_subtypes=True)
 
 
-SuccessDocumentData = Resource | list[Resource] | ResourceIdentifier | list[ResourceIdentifier]
+SuccessDocumentData = (
+    Resource | list[Resource] | ResourceIdentifier | list[ResourceIdentifier]
+)
 
 
 @dataclass

@@ -9,7 +9,7 @@ import typer
 
 from pyalarmdotcomajax.adc.util import ValueEnum, cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers.base import BaseController
+from pyalarmdotcomajax.controllers.base import BaseController, device_controller
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.thermostat import (
     Thermostat,
@@ -41,27 +41,17 @@ ATTR_DESIRED_HEAT_SETPOINT = "desiredHeatSetpoint"
 ATTR_DESIRED_SCHEDULE_MODE = "desiredScheduleMode"
 
 
-SUPPORTED_RESOURCE_EVENTS = SupportedResourceEvents(
-    property_changes=[
-        ResourcePropertyChangeType.CoolSetPoint,
-        ResourcePropertyChangeType.HeatSetPoint,
-        ResourcePropertyChangeType.AmbientTemperature,
-    ],
-    events=[
-        ResourceEventType.ThermostatOffset,
-        ResourceEventType.ThermostatModeChanged,
-        ResourceEventType.ThermostatFanModeChanged,
-        ResourceEventType.ThermostatSetPointChanged,
-    ],
-)
-
-
+@device_controller(ResourceType.THERMOSTAT, Thermostat)
 class ThermostatController(BaseController[Thermostat]):
     """Controller for thermostats."""
 
-    resource_type = ResourceType.THERMOSTAT
-    _resource_class = Thermostat
-    _supported_resource_events = SUPPORTED_RESOURCE_EVENTS
+    _supported_resource_events = SupportedResourceEvents(
+        events=[
+            ResourceEventType.ThermostatModeChanged,
+            ResourceEventType.ThermostatFanModeChanged,
+            ResourceEventType.ThermostatOffset,
+        ]
+    )
 
     def __init__(
         self,
@@ -84,8 +74,7 @@ class ThermostatController(BaseController[Thermostat]):
     async def set_state(
         self,
         id: Annotated[
-            str, typer.Option(
-                help="The ID of the thermostat.", show_default=False)
+            str, typer.Option(help="The ID of the thermostat.", show_default=False)
         ],
         state: Annotated[
             Optional[ThermostatState],
@@ -114,13 +103,11 @@ class ThermostatController(BaseController[Thermostat]):
         ] = None,
         cool_setpoint: Annotated[
             Optional[float],
-            typer.Option(help="The desired cool setpoint.",
-                         show_default=False),
+            typer.Option(help="The desired cool setpoint.", show_default=False),
         ] = None,
         heat_setpoint: Annotated[
             Optional[float],
-            typer.Option(help="The desired heat setpoint.",
-                         show_default=False),
+            typer.Option(help="The desired heat setpoint.", show_default=False),
         ] = None,
         schedule_mode: Annotated[
             Optional[ThermostatScheduleMode],
@@ -139,8 +126,7 @@ class ThermostatController(BaseController[Thermostat]):
         """
         # Make sure that multiple attributes are not being set at the same time.
         if [fan_mode, fan_mode_duration].count(None) == 1:
-            raise ValueError(
-                "Fan_mode and fan_mode_duration must be used together.")
+            raise ValueError("Fan_mode and fan_mode_duration must be used together.")
         if (
             attrib_list := [
                 state,
@@ -195,7 +181,6 @@ class ThermostatController(BaseController[Thermostat]):
                 updated_data[ATTR_SETPOINT_OFFSET] = message.value
 
         if isinstance(message, PropertyChangeWSMessage) and message.value is not None:
-
             adjusted_value = message.value / 100
 
             if self._bridge.auth_controller.use_celsius:

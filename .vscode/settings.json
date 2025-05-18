@@ -19,6 +19,8 @@
         "--config-file=pyproject.toml"
     ],
     "mypy-type-checker.cwd": "${nearestConfig}",
+    "mypy-type-checker.reportingScope": "workspace",
+    "mypy-type-checker.preferDaemon": false,
     "python.analysis.aiCodeActions": {
         "generateDocstring": true,
         "generateSymbol": true,

@@ -282,27 +282,49 @@ class AlarmBridge:
     async def fetch_full_state(self) -> None:
         """Fetch full state from alarm.com."""
 
-        # Get active system
+        # 1. Initialize system and device catalog controllers first
         await self._available_device_catalogs.initialize()
-
         if not self._available_device_catalogs.active_system_id:
             raise AuthenticationFailed("No active system found.")
-
-        await asyncio.gather(
-            self._device_catalogs.initialize(
-                [self._available_device_catalogs.active_system_id]
-            ),
-            self._partitions.initialize(),
-            self._trouble_conditions.initialize()
-            if self._auth_controller.has_trouble_conditions_service
-            else asyncio.sleep(0),
+        await self._systems.initialize()
+        await self._device_catalogs.initialize(
+            [self._available_device_catalogs.active_system_id]
         )
+        await self._partitions.initialize()
+        if self._auth_controller.has_trouble_conditions_service:
+            await self._trouble_conditions.initialize()
 
-        # Initialize remaining resource controllers. This will initialize some controllers that were
-        # just initialized above, but they'll be skipped if they're already initialized.
-        await asyncio.gather(
-            *[controller.initialize() for controller in self.resource_controllers]
-        )
+        # 2. Gather device IDs for each device controller type
+        device_ids_by_type: dict[type, list[str]] = {}
+        for controller in self.resource_controllers:
+            if controller.is_device_controller:
+                resource_type = controller.resource_type
+                # Use the system controller's items for device discovery
+                # Within each relationship entry in relationships, we're looking at type in each ResourceIdentifier in data.
+                if resource_type and (
+                    relationships := self._systems.items[0].api_resource.relationships
+                ):
+                    for relationship in relationships.values():
+                        for resource_identifier in relationship.data_list:
+                            if resource_identifier.type == resource_type:
+                                device_ids_by_type.setdefault(
+                                    type(controller), []
+                                ).append(resource_identifier.id)
+
+        log.debug("Discovered device IDs by type: %s", device_ids_by_type)
+
+        # 3. Initialize device controllers with discovered device IDs (or empty list)
+        init_tasks = []
+        for controller in self.resource_controllers:
+            if controller.is_device_controller:
+                ids = device_ids_by_type.get(type(controller), [])
+                # Most controllers have already been initialized as dependents of the device catalog controller.
+                # We're counting on the initialize() method to check if the controller is already initialized.
+                # This entire process is to ensure that we don't hit the image sensor endpoint if we don't have
+                # any image sensors. Doing so causes a 423 error.
+                init_tasks.append(controller.initialize(target_device_ids=ids))
+        if init_tasks:
+            await asyncio.gather(*init_tasks)
 
     async def start_event_monitoring(
         self, ws_status_callback: EventBrokerCallbackT | None = None

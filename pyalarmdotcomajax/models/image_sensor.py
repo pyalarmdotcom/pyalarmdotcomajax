@@ -1,5 +1,7 @@
 """Alarm.com model for image sensors."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import ClassVar
 
@@ -35,6 +37,32 @@ class ImageSensor(AdcDeviceResource[ImageSensorAttributes]):
 
     resource_type = ResourceType.IMAGE_SENSOR
     attributes_type = ImageSensorAttributes
+
+    latest_image: ImageSensorImage | None = field(init=False, default=None)
+
+    async def _on_new_image(self, images: list[ImageSensorImage]) -> None:
+        """Handle new image event."""
+
+        if not images:
+            return
+
+        # Get the latest image by checking for the most recent time stamp for an image associated with this image sensor.
+        # Filter images to only those associated with this image sensor's id
+        filtered_images = [
+            image for image in images if image.image_sensor_id == self.id
+        ]
+        if not filtered_images:
+            return
+
+        latest_image = max(
+            filtered_images, key=lambda image: image.attributes.timestamp
+        )
+
+        # Check if the latest image is different from the current one
+        if self.latest_image and self.latest_image.id == latest_image.id:
+            return
+
+        self.latest_image = latest_image
 
 
 @dataclass

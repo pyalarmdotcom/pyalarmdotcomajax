@@ -129,7 +129,9 @@ class WebSocketMessageTester(JsonApiBaseElement):
     event_value: Any = field(default=UNDEFINED)
     event_date_utc: Any = field(default=UNDEFINED)
     qstring_for_extra_data: Any = field(default=UNDEFINED)
-    correlated_event_id: Any = field(default=UNDEFINED)
+    correlated_id: Any = field(
+        default=UNDEFINED
+    )  # In webapp as correlatedEventId, but in API as correlatedId
     property_: Any = field(default=UNDEFINED, metadata=field_options(alias="property"))
     property_value: Any = field(default=UNDEFINED)
     fence_id: Any = field(default=UNDEFINED)
@@ -143,16 +145,16 @@ class BaseWSMessage(JsonApiBaseElement):
     """Base alarm.com websocket message."""
 
     unit_id: str  # Full device ID prefix
-    device_id: str = field(init=False)  # Full device ID (calculated in __post_init__)
+    device_id: int  # Full device ID suffix
 
-    _device_id: int = field(
-        metadata=field_options(alias="device_id")
-    )  # Full device ID suffix
+    full_device_id: str = field(
+        init=False
+    )  # Full device ID (calculated in __post_init__)
 
     def __post_init__(self) -> None:
         """Post init hook."""
 
-        self.device_id = f"{self.unit_id}-{self._device_id}"
+        self.full_device_id = f"{self.unit_id}-{self.device_id}"
 
 
 @dataclass
@@ -169,8 +171,11 @@ class EventWSMessage(BaseWSMessage):
 class MonitoringEventWSMessage(BaseWSMessage):
     """Alarm.com monitoring event websocket message."""
 
-    # Alarm.com's webapp doesn't seem to use this message type. Monitoring events are handled via event messages.
+    # Alarm.com's webapp ignores this message type, instead handling monitoring events via event messages.
+    # This message type appears to be the only endpoind for ImageSensorUpload events, even though
+    # they're ignored by the webapp.
 
+    event_date_utc: datetime
     subtype: ResourceEventType = field(metadata=field_options(alias="event_type"))
     subvalue: str = field(metadata=field_options(alias="correlated_id"))
 

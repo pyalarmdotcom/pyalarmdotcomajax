@@ -5,7 +5,7 @@ from enum import StrEnum
 from types import MappingProxyType
 
 from pyalarmdotcomajax.adc.util import Param_Id, cli_action
-from pyalarmdotcomajax.controllers.base import BaseController
+from pyalarmdotcomajax.controllers.base import BaseController, device_controller
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.water_valve import WaterValve, WaterValveState
@@ -28,11 +28,10 @@ STATE_COMMAND_MAP = {
 }
 
 
+@device_controller(ResourceType.WATER_VALVE, WaterValve)
 class WaterValveController(BaseController[WaterValve]):
-    """Controller for WaterValves."""
+    """Controller for water valves."""
 
-    resource_type = ResourceType.WATER_VALVE
-    _resource_class = WaterValve
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.Opened: WaterValveState.OPEN,
@@ -46,19 +45,15 @@ class WaterValveController(BaseController[WaterValve]):
     @cli_action()
     async def open(self, id: Param_Id) -> None:
         """Open a water valve."""
-
         await self.set_state(id, state=WaterValveState.OPEN)
 
     @cli_action()
     async def close(self, id: Param_Id) -> None:
         """Close a water valve."""
-
         await self.set_state(id, state=WaterValveState.CLOSED)
 
     async def set_state(self, id: str, state: WaterValveState) -> None:
         """Change water valve state."""
-
         if not (command := STATE_COMMAND_MAP.get(state)):
             raise UnsupportedOperation(f"State {state} not implemented.")
-
         await self._send_command(id, command)

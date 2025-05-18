@@ -9,7 +9,7 @@ import typer
 
 from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.const import ATTR_DESIRED_STATE, ATTR_STATE
-from pyalarmdotcomajax.controllers.base import BaseController
+from pyalarmdotcomajax.controllers.base import BaseController, device_controller
 from pyalarmdotcomajax.exceptions import UnsupportedOperation
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.light import Light, LightState
@@ -42,11 +42,10 @@ STATE_COMMAND_MAP = {
 }
 
 
+@device_controller(ResourceType.LIGHT, Light)
 class LightController(BaseController[Light]):
     """Controller for lights."""
 
-    resource_type = ResourceType.LIGHT
-    _resource_class = Light
     _event_state_map = MappingProxyType(
         {
             ResourceEventType.LightTurnedOff: LightState.OFF,
@@ -61,13 +60,11 @@ class LightController(BaseController[Light]):
     @cli_action()
     async def turn_on(self, id: Param_Id) -> None:
         """Turn on a light."""
-
         await self.set_state(id, state=LightState.ON)
 
     @cli_action()
     async def turn_off(self, id: Param_Id) -> None:
         """Turn off a light."""
-
         await self.set_state(id, state=LightState.OFF)
 
     @cli_action()
@@ -85,28 +82,23 @@ class LightController(BaseController[Light]):
         ],
     ) -> None:
         """Turn on a light and set its brightness."""
-
         await self.set_state(id, state=LightState.ON, brightness=brightness)
 
     async def set_state(
         self, id: str, state: LightState, brightness: int | None = None
     ) -> None:
         """Change light state."""
-
         msg_body: dict[str, Any] = {}
-
         if state == LightState.ON:
             command = LightCommand.ON
         elif state == LightState.OFF:
             command = LightCommand.OFF
         else:
             raise UnsupportedOperation(f"Light state {state} not implemented.")
-
         if brightness:
             if not self[id].attributes.is_dimmer:
                 raise UnsupportedOperation("Light does not support brightness.")
             msg_body["dimmerLevel"] = brightness
-
         await self._send_command(id, command.value, msg_body)
 
     async def _handle_event(

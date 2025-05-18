@@ -27,6 +27,7 @@ from pyalarmdotcomajax.websocket.messages import (
     UNDEFINED,
     BaseWSMessage,
     EventWSMessage,
+    MonitoringEventWSMessage,
     PropertyChangeWSMessage,
     ResourceEventType,
     ResourcePropertyChangeType,
@@ -352,16 +353,15 @@ class WebSocketClient:
 
                 if UNDEFINED not in [
                     msg_tester.event_type,
-                    msg_tester.correlated_event_id,
+                    msg_tester.correlated_id,
                 ]:
-                    # converted_message = MonitoringEventWSMessage.from_json(msg_json)
-                    continue
+                    converted_message = MonitoringEventWSMessage.from_json(msg_json)
 
-                if UNDEFINED not in [msg_tester.new_state, msg_tester.flag_mask]:
+                elif UNDEFINED not in [msg_tester.new_state, msg_tester.flag_mask]:
                     # converted_message = StatusUpdateWSMessage.from_json(msg_json)
                     continue
 
-                if UNDEFINED not in [
+                elif UNDEFINED not in [
                     msg_tester.event_type,
                     msg_tester.event_value,
                     msg_tester.qstring_for_extra_data,
