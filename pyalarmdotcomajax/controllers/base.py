@@ -10,7 +10,7 @@ from asyncio import Task, iscoroutinefunction
 from collections.abc import Awaitable, Callable, Iterator
 from enum import Enum
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Generic
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
 from rich.console import Group
 
@@ -40,10 +40,12 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+C = TypeVar("C", bound="BaseController[Any]")
+
 
 def device_controller(
     resource_type: ResourceType, resource_class: type[AdcResourceT]
-) -> Callable[[type[BaseController[AdcResourceT]]], type[BaseController[AdcResourceT]]]:
+) -> Callable[[type[C]], type[C]]:
     """
     Simplify controller definitions by setting common attributes.
 
@@ -56,14 +58,11 @@ def device_controller(
 
     """
 
-    def decorator(
-        cls: type[BaseController[AdcResourceT]],
-    ) -> type[BaseController[AdcResourceT]]:
+    def decorator(cls: type[C]) -> type[C]:
         cls.resource_type = resource_type
         cls._resource_class = resource_class
         cls._is_device_controller = True
         return cls
-
     return decorator
 
 
@@ -85,7 +84,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # WebSocket events supported by this controller.
     _supported_resource_events: ClassVar[SupportedResourceEvents | None] = None
     # Maps websocket events to states.
-    _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
+    _event_state_map: ClassVar[MappingProxyType[ResourceEventType,
+                                                Enum] | None] = None
     # Indicates whether this controller is a device controller.
     _is_device_controller: ClassVar[bool] = False
 
@@ -292,9 +292,11 @@ class BaseController(ABC, Generic[AdcResourceT]):
                 if included_resources:
                     for callback in callbacks:
                         if iscoroutinefunction(callback):
-                            task = asyncio.create_task(callback(included_resources))
+                            task = asyncio.create_task(
+                                callback(included_resources))
                             self._background_tasks.add(task)
-                            task.add_done_callback(self._background_tasks.discard)
+                            task.add_done_callback(
+                                self._background_tasks.discard)
                         else:
                             callback(included_resources)
 
@@ -384,7 +386,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Register controller that depends on this controller for API updates."""
 
         for resource_type in resource_types:
-            self._api_data_receivers.setdefault(resource_type, []).append(callback)
+            self._api_data_receivers.setdefault(
+                resource_type, []).append(callback)
 
         # log.debug(f"New API data subscriber for {resource_types} to {self.resource_type.name} controller.")
 
@@ -480,7 +483,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
     async def _unregister_resource(self, resource_id: str) -> None:
         """Remove resource from registry and notify subscribers."""
 
-        log.debug("[%s] Unregistering %s...", self.resource_type.name, resource_id)
+        log.debug("[%s] Unregistering %s...",
+                  self.resource_type.name, resource_id)
 
         resource = self._resources.pop(resource_id, None)
 
@@ -516,7 +520,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Combine resources from two controllers."""
 
         if not isinstance(other, BaseController):
-            raise TypeError("Can only add two BaseController instances together.")
+            raise TypeError(
+                "Can only add two BaseController instances together.")
 
         return list(self._resources.values()) + list(other._resources.values())
 
@@ -537,5 +542,6 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Return Rich representation of raw JSON for all controller resources."""
 
         return resources_raw(
-            f"{self.resource_type.name} Children", list(self._included_resources)
+            f"{self.resource_type.name} Children", list(
+                self._included_resources)
         )
