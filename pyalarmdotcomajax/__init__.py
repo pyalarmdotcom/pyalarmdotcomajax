@@ -214,8 +214,10 @@ class AlarmBridge:
         self._water_sensors = WaterSensorController(self, self._device_catalogs)
         self._water_valves = WaterValveController(self, self._device_catalogs)
 
-        self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
+        self._image_sensors = ImageSensorController(
+            self, get_images_fn=self._image_sensor_images.get_images_by_sensor
+        )
 
     async def initialize(self) -> None:
         """Initialize bridge connection, or finish initialization after OTP has been submitted."""
@@ -320,8 +322,8 @@ class AlarmBridge:
                 ids = device_ids_by_type.get(type(controller), [])
                 # Most controllers have already been initialized as dependents of the device catalog controller.
                 # We're counting on the initialize() method to check if the controller is already initialized.
-                # This entire process is to ensure that we don't hit the image sensor endpoint if we don't have
-                # any image sensors. Doing so causes a 423 error.
+                # This entire process is to ensure that we don't hit the image sensor & image sensor images endpoint
+                # if we don't have any image sensors. Doing so causes a 423 error.
                 init_tasks.append(controller.initialize(target_device_ids=ids))
         if init_tasks:
             await asyncio.gather(*init_tasks)

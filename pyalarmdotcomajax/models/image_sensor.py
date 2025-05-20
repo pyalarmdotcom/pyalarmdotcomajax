@@ -26,6 +26,8 @@ class ImageSensorAttributes(AdcResourceAttributes):
     support_peek_in_now: bool = field(metadata={"description": "Indicates whether the device supports PeekInNow feature."})
     can_view_images: bool = field(metadata={"description": "Specifies whether the currently logged in user can view images for this sensor."})
 
+    # ulatest_image is stored in the ImageSensorImage model, not the ImageSensor model. This value will be injected into the ImageSensor model by the controller's _inject_attributes method.
+    latest_image: ImageSensorImage | None = field(default=None)
     # support_peek_in_next_motion: bool = field(metadata={"description": "Indicates whether the device supports
     # PeekInNextMotion feature."})
     # fmt: on
@@ -38,31 +40,29 @@ class ImageSensor(AdcDeviceResource[ImageSensorAttributes]):
     resource_type = ResourceType.IMAGE_SENSOR
     attributes_type = ImageSensorAttributes
 
-    latest_image: ImageSensorImage | None = field(init=False, default=None)
+    # async def _on_new_image(self, images: list[ImageSensorImage]) -> None:
+    #     """Handle new image event."""
 
-    async def _on_new_image(self, images: list[ImageSensorImage]) -> None:
-        """Handle new image event."""
+    #     if not images:
+    #         return
 
-        if not images:
-            return
+    #     # Get the latest image by checking for the most recent time stamp for an image associated with this image sensor.
+    #     # Filter images to only those associated with this image sensor's id
+    #     filtered_images = [
+    #         image for image in images if image.image_sensor_id == self.id
+    #     ]
+    #     if not filtered_images:
+    #         return
 
-        # Get the latest image by checking for the most recent time stamp for an image associated with this image sensor.
-        # Filter images to only those associated with this image sensor's id
-        filtered_images = [
-            image for image in images if image.image_sensor_id == self.id
-        ]
-        if not filtered_images:
-            return
+    #     latest_image = max(
+    #         filtered_images, key=lambda image: image.attributes.timestamp
+    #     )
 
-        latest_image = max(
-            filtered_images, key=lambda image: image.attributes.timestamp
-        )
+    #     # Check if the latest image is different from the current one
+    #     if self.latest_image and self.latest_image.id == latest_image.id:
+    #         return
 
-        # Check if the latest image is different from the current one
-        if self.latest_image and self.latest_image.id == latest_image.id:
-            return
-
-        self.latest_image = latest_image
+    #     self.latest_image = latest_image
 
 
 @dataclass
