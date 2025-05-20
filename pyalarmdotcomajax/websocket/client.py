@@ -27,7 +27,6 @@ from pyalarmdotcomajax.websocket.messages import (
     UNDEFINED,
     BaseWSMessage,
     EventWSMessage,
-    MonitoringEventWSMessage,
     PropertyChangeWSMessage,
     ResourceEventType,
     ResourcePropertyChangeType,
@@ -339,37 +338,39 @@ class WebSocketClient:
 
                 msg_tester = WebSocketMessageTester.from_json(msg_json)
 
+                # log.debug("Tester message: %s", msg_tester)
+
                 converted_message: BaseWSMessage | None = None
 
                 log.debug("[EVENT PROCESSOR] Received WebSocket Message: %s", msg_json)
 
                 # Determine and set message type class.
-                # "Passed" message types seem to be unused by Alarm.com's webapp. The same actions
+                # Skipped message types seem to be unused by Alarm.com's webapp. The same actions
                 # are instead handled via event messages.
-
-                if UNDEFINED not in [msg_tester.fence_id, msg_tester.is_inside_now]:
-                    # converted_message = GeofenceCrossingWSMessage.from_json(msg_json)
-                    continue
 
                 if UNDEFINED not in [
                     msg_tester.event_type,
+                    msg_tester.event_value,
+                    msg_tester.qstring_for_extra_data,
+                    msg_tester.event_date_utc,
+                ]:
+                    converted_message = EventWSMessage.from_json(msg_json)
+                elif UNDEFINED not in [
+                    msg_tester.event_type,
                     msg_tester.correlated_id,
                 ]:
-                    converted_message = MonitoringEventWSMessage.from_json(msg_json)
-
+                    # converted_message = MonitoringEventWSMessage.from_json(msg_json)
+                    # These messages will be picked up as EventWSMessage, and that's fine.
+                    # Device WS controllers will need to interpret them the same way.
+                    continue
+                elif UNDEFINED not in [msg_tester.property_, msg_tester.property_value]:
+                    converted_message = PropertyChangeWSMessage.from_json(msg_json)
+                elif UNDEFINED not in [msg_tester.fence_id, msg_tester.is_inside_now]:
+                    # converted_message = GeofenceCrossingWSMessage.from_json(msg_json)
+                    continue
                 elif UNDEFINED not in [msg_tester.new_state, msg_tester.flag_mask]:
                     # converted_message = StatusUpdateWSMessage.from_json(msg_json)
                     continue
-
-                elif UNDEFINED not in [
-                    msg_tester.event_type,
-                    msg_tester.event_value,
-                    msg_tester.qstring_for_extra_data,
-                ]:
-                    converted_message = EventWSMessage.from_json(msg_json)
-
-                elif UNDEFINED not in [msg_tester.property_, msg_tester.property_value]:
-                    converted_message = PropertyChangeWSMessage.from_json(msg_json)
 
                 log.debug(
                     "[EVENT PROCESSOR] WebSocket message type identified as %s",
