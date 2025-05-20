@@ -172,7 +172,7 @@ class MonitoringEventWSMessage(BaseWSMessage):
     """Alarm.com monitoring event websocket message."""
 
     # Alarm.com's webapp ignores this message type, instead handling monitoring events via event messages.
-    # This message type appears to be the only endpoind for ImageSensorUpload events, even though
+    # This message type appears to be the only endpoint for ImageSensorUpload events, even though
     # they're ignored by the webapp.
 
     event_date_utc: datetime

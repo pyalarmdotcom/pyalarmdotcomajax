@@ -24,8 +24,10 @@ from pyalarmdotcomajax.exceptions import UnknownDevice
 from pyalarmdotcomajax.models import AdcResourceT
 from pyalarmdotcomajax.util import resources_pretty, resources_raw
 from pyalarmdotcomajax.websocket.client import (
+    ConnectionEvent,
     RawResourceEventMessage,
     SupportedResourceEvents,
+    WebSocketState,
 )
 from pyalarmdotcomajax.websocket.messages import (
     BaseWSMessage,
@@ -63,6 +65,7 @@ def device_controller(
         cls._resource_class = resource_class
         cls._is_device_controller = True
         return cls
+
     return decorator
 
 
@@ -84,8 +87,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # WebSocket events supported by this controller.
     _supported_resource_events: ClassVar[SupportedResourceEvents | None] = None
     # Maps websocket events to states.
-    _event_state_map: ClassVar[MappingProxyType[ResourceEventType,
-                                                Enum] | None] = None
+    _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
     # Indicates whether this controller is a device controller.
     _is_device_controller: ClassVar[bool] = False
 
@@ -141,7 +143,10 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # INITIALIZATION #
     ##################
 
-    async def initialize(self, target_device_ids: list[str] | None = None) -> None:
+    async def initialize(
+        self,
+        target_device_ids: list[str] | None = None,
+    ) -> None:
         """
         Initialize controller.
 
@@ -175,6 +180,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
             ):
                 self._initialized = True
                 return
+
+        self._initialized = True
 
         await self._refresh()
 
@@ -292,11 +299,9 @@ class BaseController(ABC, Generic[AdcResourceT]):
                 if included_resources:
                     for callback in callbacks:
                         if iscoroutinefunction(callback):
-                            task = asyncio.create_task(
-                                callback(included_resources))
+                            task = asyncio.create_task(callback(included_resources))
                             self._background_tasks.add(task)
-                            task.add_done_callback(
-                                self._background_tasks.discard)
+                            task.add_done_callback(self._background_tasks.discard)
                         else:
                             callback(included_resources)
 
@@ -331,15 +336,22 @@ class BaseController(ABC, Generic[AdcResourceT]):
     async def _base_handle_event(self, message: EventBrokerMessage) -> None:
         """Universal event handling for WebSockets messages."""
 
+        # Refresh endpoint on websocket reconnect.
+        if (
+            isinstance(message, ConnectionEvent)
+            and message.current_state == WebSocketState.RECONNECTED
+        ):
+            return await self._refresh()
+
         if not isinstance(message, RawResourceEventMessage):
-            return
+            return None
 
         # Image sensors use device_id instead of full_device_id.
         adc_resource = self.get(message.ws_message.full_device_id) or self.get(
             str(message.ws_message.device_id)
         )
         if not adc_resource:
-            return
+            return None
 
         # Handle state updates for all controllers that have a state map.
         if (
@@ -362,6 +374,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         # Update registry and send notification to subscribers.
         await self._register_or_update_resource(adc_resource.api_resource)
+
+        return None
 
     async def _handle_event(
         self, adc_resource: AdcResourceT, message: BaseWSMessage
@@ -386,8 +400,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Register controller that depends on this controller for API updates."""
 
         for resource_type in resource_types:
-            self._api_data_receivers.setdefault(
-                resource_type, []).append(callback)
+            self._api_data_receivers.setdefault(resource_type, []).append(callback)
 
         # log.debug(f"New API data subscriber for {resource_types} to {self.resource_type.name} controller.")
 
@@ -483,8 +496,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     async def _unregister_resource(self, resource_id: str) -> None:
         """Remove resource from registry and notify subscribers."""
 
-        log.debug("[%s] Unregistering %s...",
-                  self.resource_type.name, resource_id)
+        log.debug("[%s] Unregistering %s...", self.resource_type.name, resource_id)
 
         resource = self._resources.pop(resource_id, None)
 
@@ -520,8 +532,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Combine resources from two controllers."""
 
         if not isinstance(other, BaseController):
-            raise TypeError(
-                "Can only add two BaseController instances together.")
+            raise TypeError("Can only add two BaseController instances together.")
 
         return list(self._resources.values()) + list(other._resources.values())
 
@@ -542,6 +553,5 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Return Rich representation of raw JSON for all controller resources."""
 
         return resources_raw(
-            f"{self.resource_type.name} Children", list(
-                self._included_resources)
+            f"{self.resource_type.name} Children", list(self._included_resources)
         )
