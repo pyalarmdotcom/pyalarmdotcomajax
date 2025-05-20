@@ -95,10 +95,17 @@ class LightController(BaseController[Light]):
             command = LightCommand.OFF
         else:
             raise UnsupportedOperation(f"Light state {state} not implemented.")
-        if brightness:
-            if not self[id].attributes.is_dimmer:
-                raise UnsupportedOperation("Light does not support brightness.")
+
+        # Only dimmers can dim.
+        if brightness and not self[id].attributes.is_dimmer:
+            raise UnsupportedOperation("Light does not support brightness.")
+
+        # Dimmers need to send a brightness level when turning on AND OFF. If a brightness level is not provided,
+        # we need to set it to the current level when turning off.
+        if self[id].attributes.is_dimmer:
+            brightness = brightness or self[id].attributes.light_level
             msg_body["dimmerLevel"] = brightness
+
         await self._send_command(id, command.value, msg_body)
 
     async def _handle_event(

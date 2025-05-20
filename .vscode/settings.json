@@ -18,6 +18,8 @@
     "mypy-type-checker.args": [
         "--config-file=pyproject.toml"
     ],
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "off",
     "mypy-type-checker.cwd": "${nearestConfig}",
     "mypy-type-checker.reportingScope": "workspace",
     "mypy-type-checker.preferDaemon": false,
