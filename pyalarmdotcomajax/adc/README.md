@@ -87,6 +87,7 @@ $ adc action [OPTIONS] DEVICE_TYPE
 * `lock`: Perform an action on a lock. Use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc lock --help</span>&#x27; for details.
 * `partition`: Perform an action on a partition. Use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc partition --help</span>&#x27; for details.
 * `thermostat`: Perform an action on a thermostat. Use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc thermostat --help</span>&#x27; for details.
+* `water_valve`: Perform an action on a water valve. Use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc water_valve --help</span>&#x27; for details.
 * `image_sensor`: Perform an action on a image sensor. Use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc image_sensor --help</span>&#x27; for details.
 
 ### `adc action system`
@@ -737,6 +738,77 @@ $ adc action thermostat set_state [OPTIONS]
 * `-j, --json`: Return JSON output from device endpoints instead of formatted output.
 * `--help`: Show this message and exit.
 
+### `adc action water_valve`
+
+Perform an action on a water valve.
+
+**Usage**:
+
+```console
+$ adc action water_valve [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `close`: Close a water valve.
+* `open`: Open a water valve.
+
+#### `adc action water_valve close`
+
+Close a water valve.
+
+**Usage**:
+
+```console
+$ adc action water_valve close [OPTIONS] DEVICE_ID
+```
+
+**Arguments**:
+
+* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
+
+**Options**:
+
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
+* `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside &quot;cookie&quot; argument. Defaults to <span style="color: #808000; text-decoration-color: #808000">app</span> if --otp is provided, otherwise prompts you for otp.
+* `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
+* `-n, --device-name TEXT`: Registers a device with this name on alarm.com and requests the two-factor authentication cookie for the device.
+* `-d, --debug`: Enable pyalarmdotcomajax&#x27;s debug logging.
+* `-j, --json`: Return JSON output from device endpoints instead of formatted output.
+* `--help`: Show this message and exit.
+
+#### `adc action water_valve open`
+
+Open a water valve.
+
+**Usage**:
+
+```console
+$ adc action water_valve open [OPTIONS] DEVICE_ID
+```
+
+**Arguments**:
+
+* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
+
+**Options**:
+
+* `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
+* `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
+* `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
+* `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside &quot;cookie&quot; argument. Defaults to <span style="color: #808000; text-decoration-color: #808000">app</span> if --otp is provided, otherwise prompts you for otp.
+* `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
+* `-n, --device-name TEXT`: Registers a device with this name on alarm.com and requests the two-factor authentication cookie for the device.
+* `-d, --debug`: Enable pyalarmdotcomajax&#x27;s debug logging.
+* `-j, --json`: Return JSON output from device endpoints instead of formatted output.
+* `--help`: Show this message and exit.
+
 ### `adc action image_sensor`
 
 Perform an action on a image sensor.
@@ -762,12 +834,12 @@ Take a peek in photo.
 **Usage**:
 
 ```console
-$ adc action image_sensor peek_in [OPTIONS] DEVICE_ID
+$ adc action image_sensor peek_in [OPTIONS] ID
 ```
 
 **Arguments**:
 
-* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
+* `ID`: [required]
 
 **Options**:
 

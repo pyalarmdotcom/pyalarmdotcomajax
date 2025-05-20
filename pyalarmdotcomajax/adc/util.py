@@ -15,8 +15,8 @@ import click
 import typer
 from rich import print
 
-F = TypeVar("F", bound=Callable[..., Any])  # Generic type variable for functions
-
+# Generic type variable for functions
+F = TypeVar("F", bound=Callable[..., Any])
 #########
 # TYPES #
 #########
@@ -72,7 +72,7 @@ class AsyncTyper(typer.Typer):
 ##############
 
 
-def cli_action() -> Callable:
+def cli_action() -> Callable[[F], F]:
     """
     Decorate a method to mark it as a CLI action with a given description.
 
@@ -88,12 +88,10 @@ def cli_action() -> Callable:
 
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: F) -> F:
         if not hasattr(func, "__cli_actions__"):
-            func.__cli_actions__ = {}  # type: ignore  # Initialize once if not already present
-
+            func.__cli_actions__ = {}  # type: ignore
         func.__cli_actions__[func.__name__] = {func.__name__: func.__doc__}  # type: ignore
-
         return func
 
     return decorator
@@ -104,7 +102,9 @@ def cli_action() -> Callable:
 ###########
 
 
-def summarize_cli_actions(cls: Any, *, include_params: bool = False) -> dict[str, dict[str, Any]]:
+def summarize_cli_actions(
+    cls: Any, *, include_params: bool = False
+) -> dict[str, dict[str, Any]]:
     """
     Summarize CLI action methods within a class, including their descriptions.
 
@@ -130,7 +130,9 @@ def summarize_cli_actions(cls: Any, *, include_params: bool = False) -> dict[str
     return cli_actions_summary
 
 
-def summarize_method_params(method: Callable[..., Any]) -> list[dict[str, str | list[str] | list[type] | bool]]:
+def summarize_method_params(
+    method: Callable[..., Any],
+) -> list[dict[str, str | list[str] | list[type] | bool]]:
     """
     Summarize method parameters, excluding 'self' and 'return'. Handle unions and Enums properly.
 
@@ -195,7 +197,11 @@ def summarize_method_params(method: Callable[..., Any]) -> list[dict[str, str | 
 
 
 def merge_signatures(
-    signature: inspect.Signature, other: inspect.Signature, drop: list[str] | None = None, *, strict: bool = True
+    signature: inspect.Signature,
+    other: inspect.Signature,
+    drop: list[str] | None = None,
+    *,
+    strict: bool = True,
 ) -> tuple[inspect.Signature, list[int], list[int]]:
     """
     Merge two signatures.
@@ -211,7 +217,10 @@ def merge_signatures(
     ValueError is raised.
     """
     # Split parameters by kind
-    groups = {k: list(g) for k, g in groupby(signature.parameters.values(), attrgetter("kind"))}
+    groups = {
+        k: list(g)
+        for k, g in groupby(signature.parameters.values(), attrgetter("kind"))
+    }
 
     # Append parameters from other signature
     for name, param in other.parameters.items():
@@ -219,11 +228,16 @@ def merge_signatures(
             continue
         if name in signature.parameters:
             if strict and param.kind != signature.parameters[name].kind:
-                raise ValueError(f"Both signature have same parameter {name!r} but with different kind")
+                raise ValueError(
+                    f"Both signature have same parameter {name!r} but with different kind"
+                )
             continue
 
         # Variadic args (*args or **kwargs)
-        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+        if param.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
             if param.kind not in groups:
                 groups[param.kind] = [param]
             elif param.name != groups[param.kind][0].name:
@@ -262,7 +276,9 @@ def with_paremeters(shared: Callable, *, show_success: bool = False) -> Callable
 
     def wrapper(command: Callable) -> Callable:
         """Wrap the command with shared parameters."""
-        signature, sel_0, sel_1 = merge_signatures(inspect.signature(command), inspect.signature(shared))
+        signature, sel_0, sel_1 = merge_signatures(
+            inspect.signature(command), inspect.signature(shared)
+        )
 
         @wraps(command)
         def wrapped(*args: Any, **kwargs: Any) -> Any:
@@ -273,14 +289,18 @@ def with_paremeters(shared: Callable, *, show_success: bool = False) -> Callable
 
             # Call outer function with a set of selected parameters
             if inspect.iscoroutinefunction(shared):
-                asyncio.get_event_loop().run_until_complete(shared(*compress(bound.args, sel_1)))
+                asyncio.get_event_loop().run_until_complete(
+                    shared(*compress(bound.args, sel_1))
+                )
             else:
                 shared(*compress(bound.args, sel_1))
 
             try:
                 # Call inner function with another set of selected parameters
                 if inspect.iscoroutinefunction(command):
-                    result = asyncio.get_event_loop().run_until_complete(command(*compress(bound.args, sel_0)))
+                    result = asyncio.get_event_loop().run_until_complete(
+                        command(*compress(bound.args, sel_0))
+                    )
                 else:
                     result = command(*compress(bound.args, sel_0))
             except Exception:
@@ -305,13 +325,16 @@ class ValueEnum(click.Choice):
 
     name = "value_enum"
 
-    def __init__(self, target_type: type[Enum], exclude: Optional[list[str]] = None) -> None:
+    def __init__(
+        self, target_type: type[Enum], exclude: Optional[list[str]] = None
+    ) -> None:
         """Initialize the OtpParamType class."""
 
         self.target_type = target_type
 
         super().__init__(
-            choices=[x.name for x in target_type if x.name not in (exclude or [])], case_sensitive=False
+            choices=[x.name for x in target_type if x.name not in (exclude or [])],
+            case_sensitive=False,
         )
 
     def convert(
@@ -325,7 +348,9 @@ class ValueEnum(click.Choice):
         try:
             return self.target_type[value].value
         except ValueError:
-            self.fail(f"{value!r} is not a valid {self.target_type.name} type", param, ctx)
+            self.fail(
+                f"{value!r} is not a valid {self.target_type.name} type", param, ctx
+            )
 
     @property
     def metavar(self) -> str:
