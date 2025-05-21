@@ -24,7 +24,7 @@ class LockAttributes(BaseManagedDeviceAttributes[LockState]):
     """Attributes of lock."""
 
     # fmt: off
-    supports_latch_control: bool = field(metadata={"description": "Indicates if the lock supports remote latch control."})
+    supports_latch_control: bool = field(metadata={"description": "Indicates if the lock supports remote latch control."}, default=False)
 
     # available_temporary_access_codes: int | None = field(metadata={"description": "The count of Temporary Access
     # Codes that have been pushed to the locks on the unit."})

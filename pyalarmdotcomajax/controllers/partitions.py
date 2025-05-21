@@ -117,7 +117,7 @@ class PartitionController(BaseController[Partition]):
     ) -> None:
         """Arm a partition in stay mode."""
 
-        extended_arming_options = [
+        extended_arming_options: list[ExtendedArmingOptionItems | None] = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
             ExtendedArmingOptionItems.NO_ENTRY_DELAY if no_entry_delay else None,
             ExtendedArmingOptionItems.SILENT_ARMING if silent_arming else None,
@@ -131,13 +131,35 @@ class PartitionController(BaseController[Partition]):
 
     @cli_action()
     async def arm_away(
-        self, id: str, force_bypass: bool = False, no_entry_delay: bool = False
+        self,
+        id: Param_Id,
+        force_bypass: Annotated[
+            bool,
+            typer.Option(
+                help="Bypass all open zones before arming.", show_default=False
+            ),
+        ] = False,
+        no_entry_delay: Annotated[
+            bool,
+            typer.Option(
+                help="Bypass entry delay. This will sound the alarm immediately when an entry zone triggers.",
+                show_default=False,
+            ),
+        ] = False,
+        silent_arming: Annotated[
+            bool,
+            typer.Option(
+                help="Arm the system without emitting arming \\ exit delay tones at the panel.",
+                show_default=False,
+            ),
+        ] = False,
     ) -> None:
         """Arm a partition in away mode."""
 
-        extended_arming_options = [
+        extended_arming_options: list[ExtendedArmingOptionItems | None] = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
             ExtendedArmingOptionItems.NO_ENTRY_DELAY if no_entry_delay else None,
+            ExtendedArmingOptionItems.SILENT_ARMING if silent_arming else None,
         ]
 
         await self.set_state(
@@ -148,13 +170,35 @@ class PartitionController(BaseController[Partition]):
 
     @cli_action()
     async def arm_night(
-        self, id: str, force_bypass: bool = False, no_entry_delay: bool = False
+        self,
+        id: Param_Id,
+        force_bypass: Annotated[
+            bool,
+            typer.Option(
+                help="Bypass all open zones before arming.", show_default=False
+            ),
+        ] = False,
+        no_entry_delay: Annotated[
+            bool,
+            typer.Option(
+                help="Bypass entry delay. This will sound the alarm immediately when an entry zone triggers.",
+                show_default=False,
+            ),
+        ] = False,
+        silent_arming: Annotated[
+            bool,
+            typer.Option(
+                help="Arm the system without emitting arming \\ exit delay tones at the panel.",
+                show_default=False,
+            ),
+        ] = False,
     ) -> None:
         """Arm a partition in night mode."""
 
-        extended_arming_options = [
+        extended_arming_options: list[ExtendedArmingOptionItems | None] = [
             ExtendedArmingOptionItems.BYPASS_SENSORS if force_bypass else None,
             ExtendedArmingOptionItems.NO_ENTRY_DELAY if no_entry_delay else None,
+            ExtendedArmingOptionItems.SILENT_ARMING if silent_arming else None,
             ExtendedArmingOptionItems.NIGHT_ARMING,
         ]
 

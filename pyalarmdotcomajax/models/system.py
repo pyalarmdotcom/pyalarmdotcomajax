@@ -1,6 +1,7 @@
 """Alarm.com model for systems."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import IntEnum
 from typing import ClassVar
 
 from pyalarmdotcomajax.models.base import (
@@ -10,18 +11,26 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
+class AccessControlSystemMode(IntEnum):
+    """Enum of access control system modes."""
+
+    DEFAULT = 0
+    LOCKDOWN = 1
+    RESTRICTED_ACCESS = 2
+
+
 @dataclass
 class SystemAttributes(AdcResourceAttributes):
     """Attributes of alarm system."""
 
-    has_snap_shot_cameras: bool
-    supports_secure_arming: bool
-    remaining_image_quota: int
-    system_group_name: str
-    unit_id: str
-    access_control_current_system_mode: int
-    is_in_partial_lockdown: bool
-    icon: str
+    has_snap_shot_cameras: bool = field(default=False)
+    supports_secure_arming: bool = field(default=False)
+    remaining_image_quota: int = field(default=0)
+    system_group_name: str = field(default="")
+    unit_id: str = field(default="0")
+    access_control_current_system_mode: AccessControlSystemMode = field(default=AccessControlSystemMode.DEFAULT)
+    is_in_partial_lockdown: bool = field(default=False)
+    icon: str = field(default="")
 
 
 @dataclass

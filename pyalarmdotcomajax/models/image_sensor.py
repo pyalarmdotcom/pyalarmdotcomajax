@@ -22,12 +22,10 @@ class ImageSensorAttributes(AdcResourceAttributes):
     """
 
     # fmt: off
-    is_image_sensor_deleted: bool = field(metadata={"description": "Indicates whether the device has been deleted."})
-    support_peek_in_now: bool = field(metadata={"description": "Indicates whether the device supports PeekInNow feature."})
-    can_view_images: bool = field(metadata={"description": "Specifies whether the currently logged in user can view images for this sensor."})
-
-    # support_peek_in_next_motion: bool = field(metadata={"description": "Indicates whether the device supports
-    # PeekInNextMotion feature."})
+    is_image_sensor_deleted: bool = field(metadata={"description": "Indicates whether the device has been deleted."}, default=False)
+    support_peek_in_now: bool = field(metadata={"description": "Indicates whether the device supports PeekInNow feature."}, default=False)
+    can_view_images: bool = field(metadata={"description": "Specifies whether the currently logged in user can view images for this sensor."}, default=False)
+    support_peek_in_next_motion: bool = field(metadata={"description": "Indicates whether the device supports PeekInNextMotion feature."}, default=False)
     # fmt: on
 
 
@@ -48,15 +46,11 @@ class ImageSensor(AdcDeviceResource[ImageSensorAttributes]):
 
         # Get the latest image by checking for the most recent time stamp for an image associated with this image sensor.
         # Filter images to only those associated with this image sensor's id
-        filtered_images = [
-            image for image in images if image.image_sensor_id == self.id
-        ]
+        filtered_images = [image for image in images if image.image_sensor_id == self.id]
         if not filtered_images:
             return
 
-        latest_image = max(
-            filtered_images, key=lambda image: image.attributes.timestamp
-        )
+        latest_image = max(filtered_images, key=lambda image: image.attributes.timestamp)
 
         # Check if the latest image is different from the current one
         if self.latest_image and self.latest_image.id == latest_image.id:
@@ -70,12 +64,8 @@ class ImageSensorImageAttributes(AdcResourceAttributes):
     """Image sensor image attributes."""
 
     image: str = field(metadata={"description": "The Base64 encoded image."})
-    image_src: str = field(
-        metadata={"description": "URI for the image sensor image source."}
-    )
-    timestamp: str = field(
-        metadata={"description": "Time stamp of when the image was taken."}
-    )
+    image_src: str = field(metadata={"description": "URI for the image sensor image source."})
+    timestamp: str = field(metadata={"description": "Time stamp of when the image was taken."})
 
 
 @dataclass

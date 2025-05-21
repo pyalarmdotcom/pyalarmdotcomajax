@@ -43,12 +43,16 @@ class ExtendedArmingOptionItems(Enum):
 
 @dataclass
 class ExtendedArmingOptions(AdcResourceAttributes):
-    """Extended arming options."""
+    """
+    Extended arming options.
 
-    disarmed: list[ExtendedArmingOptionItems] | None = field(default=None)
-    armed_stay: list[ExtendedArmingOptionItems] | None = field(default=None)
-    armed_away: list[ExtendedArmingOptionItems] | None = field(default=None)
-    armed_night: list[ExtendedArmingOptionItems] | None = field(default=None)
+    Can be either a list of valid options or a list of valid option combinations.
+    """
+
+    disarmed: list[ExtendedArmingOptionItems] | list[list[ExtendedArmingOptionItems]] | None = field(default=None)
+    armed_stay: list[ExtendedArmingOptionItems] | list[list[ExtendedArmingOptionItems]] | None = field(default=None)
+    armed_away: list[ExtendedArmingOptionItems] | list[list[ExtendedArmingOptionItems]] | None = field(default=None)
+    armed_night: list[ExtendedArmingOptionItems] | list[list[ExtendedArmingOptionItems]] | None = field(default=None)
 
 
 @dataclass
@@ -56,24 +60,23 @@ class PartitionAttributes(BaseManagedDeviceAttributes[PartitionState]):
     """Attributes of partition."""
 
     # fmt: off
-    can_bypass_sensor_when_armed: bool = field(metadata={"description": "Indicates if the panel supports bypass commands when armed."})
     extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The supported extended arming options for each arming mode."})
-    has_open_bypassable_sensors: bool = field(metadata={"description": "Indicates if the partition has any open sensors that can be bypassed."})
-    has_sensor_in_trouble_condition: bool = field(metadata={"description": "Indicates if the partition has any sensors in a trouble condition."})
-    hide_force_bypass: bool = field(metadata={"description": "Indicates if the force bypass checkbox should be hidden. If hidden, force bypass is always enabled."})
     invalid_extended_arming_options: ExtendedArmingOptions = field(metadata={"description": "The combinations of extended arming options that are invalid for each arming mode."})
-    needs_clear_issues_prompt: bool = field(metadata={"description": "Indicates if the user should be prompted about any present issues before allowing arming."})
-    partition_id: str = field(metadata={"description": "The ID of this partition."})
-    has_active_alarm: bool = field(metadata={"description": "Indicates if the partition has an active alarm."})
+    can_bypass_sensor_when_armed: bool = field(metadata={"description": "Indicates if the panel supports bypass commands when armed."}, default=False)
+    has_open_bypassable_sensors: bool = field(metadata={"description": "Indicates if the partition has any open sensors that can be bypassed."}, default=False)
+    has_sensor_in_trouble_condition: bool = field(metadata={"description": "Indicates if the partition has any sensors in a trouble condition."}, default=False)
+    hide_force_bypass: bool = field(metadata={"description": "Indicates if the force bypass checkbox should be hidden. If hidden, force bypass is always enabled."}, default=False)
+    needs_clear_issues_prompt: bool = field(metadata={"description": "Indicates if the user should be prompted about any present issues before allowing arming."}, default=False)
+    partition_id: str = field(metadata={"description": "The ID of this partition."}, default="1")
+    has_active_alarm: bool = field(metadata={"description": "Indicates if the partition has an active alarm."}, default=False)
+    has_only_arming: bool = field(metadata={"description": "Indicates if the partition only has a generic 'arm' options and not arm away and arm stay."}, default=False)
     # fmt: on
 
     @property
     def supports_night_arming(self) -> bool:
         """Return whether night arming is supported."""
 
-        return ExtendedArmingOptionItems.NIGHT_ARMING in (
-            self.extended_arming_options.armed_night or []
-        )
+        return ExtendedArmingOptionItems.NIGHT_ARMING in (self.extended_arming_options.armed_night or [])
 
 
 @dataclass

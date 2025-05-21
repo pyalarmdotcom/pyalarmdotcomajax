@@ -1,6 +1,6 @@
 """Alarm.com model for trouble conditions."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from pyalarmdotcomajax.models.base import (
@@ -104,12 +104,12 @@ class TroubleConditionAttributes(AdcResourceAttributes):
     """Attributes of trouble condition."""
 
     # description: str
-    severity: TroubleConditionSeverity
-    trouble_condition_type: TroubleConditionType
-    trouble_condition_sub_type: TroubleConditionSubtype
-    device_id: int
-    ember_device_id: str
-    can_be_muted_or_reset: bool
+    severity: TroubleConditionSeverity | None = field(default=None)
+    trouble_condition_type: TroubleConditionType | None = field(default=None)
+    trouble_condition_sub_type: TroubleConditionSubtype | None = field(default=None)
+    device_id: int | None = field(default=None)
+    ember_device_id: str | None = field(default=None)
+    can_be_muted_or_reset: bool | None = field(default=None)
 
     # sinceUtc: str
 

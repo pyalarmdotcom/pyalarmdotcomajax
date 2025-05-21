@@ -81,7 +81,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 exclude = ["pyalarmdotcomajax/_version.py"]
-# line-length = 115
+line-length = 120
 respect-gitignore = true
 target-version = "py313"
 

@@ -87,9 +87,7 @@ class AuthenticationController:
     def resources_pretty(self) -> "Group":
         """Return pretty Rich representation of resources in controller."""
 
-        return resources_pretty(
-            "Users", [*self._identities.items, *self._profiles.items]
-        )
+        return resources_pretty("Users", [*self._identities.items, *self._profiles.items])
 
     @property
     def resources_raw(self) -> "Group":
@@ -101,9 +99,7 @@ class AuthenticationController:
     def included_raw_str(self) -> "Group":
         """Return Rich representation of raw JSON for all controller resources."""
 
-        return resources_raw(
-            "Users Children", [*self._identities.items, *self._profiles.items]
-        )
+        return resources_raw("Users Children", [*self._identities.items, *self._profiles.items])
 
     @property
     def has_trouble_conditions_service(self) -> bool:
@@ -128,9 +124,7 @@ class AuthenticationController:
         """Interval at which session should be refreshed in milliseconds."""
 
         return (
-            self._identities.items[
-                0
-            ].attributes.application_session_properties.inactivity_warning_timeout_ms
+            self._identities.items[0].attributes.application_session_properties.inactivity_warning_timeout_ms
             or 5 * 60 * 1000
         )  # Default: 5 minutes
 
@@ -138,9 +132,7 @@ class AuthenticationController:
     def keep_alive_url(self) -> str | None:
         """URL for keep-alive requests, if keep alive is enabled."""
 
-        return self._identities.items[
-            0
-        ].attributes.application_session_properties.keep_alive_url
+        return self._identities.items[0].attributes.application_session_properties.keep_alive_url
 
     @property
     def use_celsius(self) -> bool:
@@ -163,19 +155,12 @@ class AuthenticationController:
         """Whether keep-alive is enabled."""
 
         return (
-            self._identities.items[
-                0
-            ].attributes.application_session_properties.enable_keep_alive
-            if self._identities.items[
-                0
-            ].attributes.application_session_properties.enable_keep_alive
-            is not None
+            self._identities.items[0].attributes.application_session_properties.enable_keep_alive
+            if self._identities.items[0].attributes.application_session_properties.enable_keep_alive is not None
             else True
         )
 
-    def set_credentials(
-        self, username: str, password: str, mfa_cookie: str | None = None
-    ) -> None:
+    def set_credentials(self, username: str, password: str, mfa_cookie: str | None = None) -> None:
         """Set the user's credentials."""
 
         self._username = username
@@ -245,22 +230,12 @@ class AuthenticationController:
 
                     tree = BeautifulSoup(text, "html.parser")
                     return {
-                        VIEWSTATE_FIELD: str(
-                            tree.select(f"#{VIEWSTATE_FIELD}")[0].attrs.get("value")
-                        ),
+                        VIEWSTATE_FIELD: str(tree.select(f"#{VIEWSTATE_FIELD}")[0].attrs.get("value")),
                         VIEWSTATEGENERATOR_FIELD: str(
-                            tree.select(f"#{VIEWSTATEGENERATOR_FIELD}")[0].attrs.get(
-                                "value"
-                            )
+                            tree.select(f"#{VIEWSTATEGENERATOR_FIELD}")[0].attrs.get("value")
                         ),
-                        EVENTVALIDATION_FIELD: str(
-                            tree.select(f"#{EVENTVALIDATION_FIELD}")[0].attrs.get(
-                                "value"
-                            )
-                        ),
-                        PREVIOUSPAGE_FIELD: str(
-                            tree.select(f"#{PREVIOUSPAGE_FIELD}")[0].attrs.get("value")
-                        ),
+                        EVENTVALIDATION_FIELD: str(tree.select(f"#{EVENTVALIDATION_FIELD}")[0].attrs.get("value")),
+                        PREVIOUSPAGE_FIELD: str(tree.select(f"#{PREVIOUSPAGE_FIELD}")[0].attrs.get("value")),
                     }
 
             # Only retry for connection/server errors. No expectation of being logged in here, so we don't need to
@@ -340,9 +315,7 @@ class AuthenticationController:
         else:
             log.error("No dealer ID found.")
 
-        response = await self._bridge.get(
-            path=TWO_FACTOR_PATH, id=self._identities.items[0].id
-        )
+        response = await self._bridge.get(path=TWO_FACTOR_PATH, id=self._identities.items[0].id)
 
         if not isinstance(response.data, Resource):
             raise UnexpectedResponse
@@ -353,10 +326,14 @@ class AuthenticationController:
             raise MustConfigureMfa
 
         enabled_otp_types_bitmask = mfa_details.attributes.enabled_two_factor_types
+
+        if not mfa_details.attributes.is_2fa_enabled:
+            return
+
         enabled_2fa_methods = [
             otp_type
             for otp_type in OtpType
-            if bool(enabled_otp_types_bitmask & otp_type.value)
+            if enabled_otp_types_bitmask and bool((enabled_otp_types_bitmask) & otp_type.value)
         ]
 
         if (
@@ -403,9 +380,7 @@ class AuthenticationController:
             mini_response=True,
         )
 
-    async def submit_otp(
-        self, code: str, method: OtpType, device_name: str | None = None
-    ) -> str | None:
+    async def submit_otp(self, code: str, method: OtpType, device_name: str | None = None) -> str | None:
         """Submit OTP and register device."""
 
         await self._bridge.post(
@@ -424,17 +399,11 @@ class AuthenticationController:
             path=TWO_FACTOR_PATH,
             id=self._identities.items[0].id,
             action="trustTwoFactorDevice",
-            json={
-                "deviceName": device_name
-                if device_name
-                else f"pyalarmdotcomajax on {socket.gethostname()}"
-            },
+            json={"deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"},
             mini_response=True,
         )
 
         if not self.mfa_cookie:
-            raise UnexpectedResponse(
-                "Could not find MFA cookie after submitting OTP and registering device."
-            )
+            raise UnexpectedResponse("Could not find MFA cookie after submitting OTP and registering device.")
 
         return self.mfa_cookie
