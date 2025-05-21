@@ -87,9 +87,7 @@ class AdcResourceSubtype(Enum):
 
 
 AdcResourceAttributesT = TypeVar("AdcResourceAttributesT", bound=AdcResourceAttributes)
-AdcManagedDeviceAttributesT = TypeVar(
-    "AdcManagedDeviceAttributesT", bound="BaseManagedDeviceAttributes"
-)
+AdcManagedDeviceAttributesT = TypeVar("AdcManagedDeviceAttributesT", bound="BaseManagedDeviceAttributes")
 AdcResourceSubtypesT = TypeVar("AdcResourceSubtypesT", bound=AdcResourceSubtype)
 
 
@@ -113,9 +111,7 @@ class AdcResource(Generic[AdcResourceAttributesT]):
         """Initialize the resource."""
 
         self.id = self.api_resource.id
-        self.attributes: AdcResourceAttributesT = self.attributes_type.from_dict(
-            self.api_resource.attributes
-        )
+        self.attributes: AdcResourceAttributesT = self.attributes_type.from_dict(self.api_resource.attributes)
 
 
 @dataclass
@@ -163,18 +159,10 @@ class AdcManagedDeviceResource(AdcDeviceResource[AdcManagedDeviceAttributesT]):
         # Set device model
         self.model = None
         if hasattr(self, "resource_models"):
-            if (
-                hasattr(self.attributes, "device_model")
-                and self.attributes.device_model
-            ):
+            if hasattr(self.attributes, "device_model") and self.attributes.device_model:
                 self.model = str(self.attributes.device_model)
-            elif (
-                hasattr(self.attributes, "device_model_id")
-                and self.attributes.device_model_id
-            ):
-                self.model = self.resource_models.setdefault(
-                    self.attributes.device_model_id, {}
-                ).get("model")
+            elif hasattr(self.attributes, "device_model_id") and self.attributes.device_model_id:
+                self.model = self.resource_models.setdefault(self.attributes.device_model_id, {}).get("model")
 
 
 @dataclass
@@ -193,9 +181,7 @@ class AdcSubtypedResource(
         super().__post_init__()
 
         self.subtype = (
-            self.resource_subtypes(getattr(self.attributes, "device_type", None))
-            if self.resource_subtypes
-            else None
+            self.resource_subtypes(getattr(self.attributes, "device_type", None)) if self.resource_subtypes else None
         )
 
 
@@ -226,31 +212,19 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcResourceAttributes):
         metadata=field_options(alias="battery_level_null")
         # The current battery level of the device as a percentage with null as the default value.
     )
-    battery_level_classification: BatteryLevel = field(
-        metadata={"description": "Indicate battery level status."}
-    )
+    battery_level_classification: BatteryLevel = field(metadata={"description": "Indicate battery level status."})
     can_be_saved: bool = field(
-        metadata={
-            "description": "Whether the logged in context has write permissions for this device."
-        }
+        metadata={"description": "Whether the logged in context has write permissions for this device."}
     )
-    can_confirm_state_change: bool = field(
-        metadata={"description": "Whether the device can confirm its state change."}
-    )
-    can_receive_commands: bool = field(
-        metadata={"description": "Whether device supports receiving commands."}
-    )
+    can_confirm_state_change: bool = field(metadata={"description": "Whether the device can confirm its state change."})
+    can_receive_commands: bool = field(metadata={"description": "Whether device supports receiving commands."})
 
-    desired_state: DeviceState | None = field(
-        metadata={"description": "Desired device state."}, default=None
-    )
+    desired_state: DeviceState | None = field(metadata={"description": "Desired device state."}, default=None)
     has_permission_to_change_state: bool = field(
         metadata={"description": "Whether logged in user can change device state."}
     )
     remote_commands_enabled: bool = field(
-        metadata={
-            "description": "Whether device can be changed remotely via app or web."
-        }
+        metadata={"description": "Whether device can be changed remotely via app or web."}
     )
     state: DeviceState = field(metadata={"description": "Current device state."})
 
@@ -264,10 +238,7 @@ class BaseStatefulDeviceAttributes(Generic[DeviceState], AdcResourceAttributes):
     def interactive(self) -> bool:
         """Whether the device is ready to be interacted with."""
 
-        return (
-            self.can_change_state
-            and self.state != BaseStatefulDeviceState.LOADING_STATE
-        )
+        return self.can_change_state and self.state != BaseStatefulDeviceState.LOADING_STATE
 
     @property
     def refreshing_state(self) -> bool:
@@ -298,22 +269,16 @@ class BaseManagedDeviceAttributes(
 ):
     """Base attributes for an alarm.com managed device."""
 
-    has_state: bool = field(metadata={"description": "Does this device have a state?"})
+    has_state: bool = field(metadata={"description": "Does this device have a state?"}, default=False)
     is_malfunctioning: bool = field(
-        metadata={"description": "Is the device currently set to a malfunction state."}
+        metadata={"description": "Is the device currently set to a malfunction state."}, default=False
     )
-    mac_address: str = field(
-        metadata={"description": "The mac address for the device, if available."}
+    mac_address: str | None = field(
+        metadata={"description": "The mac address for the device, if available."}, default=None
     )
-    manufacturer: str | None = field(
-        metadata={"description": "The manufacturer of the device."}
-    )
-    device_model: str | None = field(
-        metadata={"description": "The device model."}, default=None
-    )
-    device_model_id: int | None = field(
-        metadata={"description": "The device model id."}, default=None
-    )
+    manufacturer: str | None = field(metadata={"description": "The manufacturer of the device."}, default=None)
+    device_model: str | None = field(metadata={"description": "The device model."}, default=None)
+    device_model_id: int | None = field(metadata={"description": "The device model id."}, default=None)
 
     # associatedCameraDeviceIds: dict  # { device_id: device_name } for all associated cameras.
     # canAccessWebSettings: bool  # Can the web settings be accessed?

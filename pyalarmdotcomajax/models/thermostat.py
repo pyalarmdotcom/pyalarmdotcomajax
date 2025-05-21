@@ -12,16 +12,16 @@ from pyalarmdotcomajax.models.base import (
 )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TemperatureDeviceAttributes(BaseManagedDeviceAttributes[DeviceState], ABC):
     """Attributes of temperature device."""
 
     # fmt: off
-    ambient_temp: float = field(metadata={"description": "The current temperature reported by the device."})
-    has_rts_issue: bool = field(metadata={"description": "Does this device have a Rts issue?"})
-    humidity_level: int = field(metadata={"description": "The current humidity level reported by the device."})
-    is_paired: bool = field(metadata={"description": "Is this device paired to another?"})
-    supports_humidity: bool = field(metadata={"description": "Whether the device supports humidity."})
+    ambient_temp: float | None = field(metadata={"description": "The current temperature reported by the device."}, default=None)
+    has_rts_issue: bool = field(metadata={"description": "Does this device have a Rts issue?"}, default=False)
+    is_paired: bool = field(metadata={"description": "Is this device paired to another?"}, default=False)
+    supports_humidity: bool = field(metadata={"description": "Whether the device supports humidity."}, default=False)
+    humidity_level: int | None = field(metadata={"description": "The current humidity level reported by the device."}, default=None)
     # temp_forwarding_active: bool  # Is this device's temperature currently being used to drive itself or another
     # device?
     # fmt: on
@@ -74,7 +74,7 @@ THERMOSTAT_MODELS = {
 }
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ThermostatAttributes(TemperatureDeviceAttributes[ThermostatState]):
     """Attributes of temperature device."""
 
@@ -121,9 +121,7 @@ class ThermostatAttributes(TemperatureDeviceAttributes[ThermostatState]):
     # uses_celsius is stored in the Identity model, not the Thermostat model. This value will be injected into the Thermostat model by the controller's _inject_attributes method.
     uses_celsius: bool = field(
         default=False,
-        metadata={
-            "description": "Whether the thermostat reports in celsius or fahrenheit."
-        },
+        metadata={"description": "Whether the thermostat reports in celsius or fahrenheit."},
     )
 
     @property
@@ -166,8 +164,4 @@ class Thermostat(AdcDeviceResource[ThermostatAttributes]):
     def supported_fan_durations(self) -> list[int]:
         """Fan durations supported by device."""
 
-        return (
-            [*self.attributes.supported_fan_durations, 0]
-            if self.attributes.supported_fan_durations
-            else []
-        )
+        return [*self.attributes.supported_fan_durations, 0] if self.attributes.supported_fan_durations else []

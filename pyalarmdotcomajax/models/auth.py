@@ -28,31 +28,32 @@ class OtpType(Enum):
 class SmsMobileNumber(AdcResourceAttributes):
     """Attributes for a user's SMS mobile number."""
 
-    mobile_number: str
-    country: str
-    cell_provider: str
+    mobile_number: str = ""
+    country: str = ""
+    cell_provider: str = ""
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TwoFactorAuthenticationAttributes(AdcResourceAttributes):
     """Attributes for a user's two factor authentication options."""
 
     sms_mobile_number: SmsMobileNumber | None
-    current_device_name: str
-    selected_type_of_2fa: int = field(
-        metadata=field_options(alias="selected_type_of2_fa")
-    )
-    enabled_two_factor_types: int
+    current_device_name: str | None = field(default=None)
+    selected_type_of_2fa: int | None = field(metadata=field_options(alias="selected_type_of2_fa"), default=None)
+    enabled_two_factor_types: int | None = field(default=None)
     valid2fa_permissions: list[OtpType] = field(
-        metadata=field_options(alias="valid2_fa_permissions")
+        metadata=field_options(alias="valid2_fa_permissions"), default_factory=list
     )
-    show_suggested_setup: bool
-    can_skip_suggested_setup: bool
-    is_current_device_trusted: bool = False
-    can_reset_2fa: bool = field(
-        metadata=field_options(alias="can_reset2_fa"), default=False
-    )
+    show_suggested_setup: bool = field(default=False)
+    can_skip_suggested_setup: bool | None = field(default=None)
+    is_current_device_trusted: bool = field(default=False)
+    can_reset_2fa: bool = field(metadata=field_options(alias="can_reset2_fa"), default=False)
     email: str = ""
+
+    @property
+    def is_2fa_enabled(self) -> bool:
+        """Return whether 2FA is enabled."""
+        return self.enabled_two_factor_types > 0 if self.enabled_two_factor_types is not None else False
 
 
 @dataclass

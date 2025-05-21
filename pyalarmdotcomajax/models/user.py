@@ -18,33 +18,33 @@ from pyalarmdotcomajax.util import get_related_entity_id_by_key
 log = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ApplicationSessionProperties(AdcResourceAttributes):
     """A class representing application session properties."""
 
     # fmt: off
     should_timeout: bool = field(metadata={"description": "Specifies if the session should timeout"})
-    keep_alive_url: str = field(metadata={"description": "URL used for keep-alive requests"})
+    keep_alive_url: str | None= field(metadata={"description": "URL used for keep-alive requests"}, default=None)
     enable_keep_alive: bool = field(metadata={"description": "Indicates whether keep-alive requests are enabled"})
-    logout_timeout_ms: int = field(metadata={"description": "Timeout duration for logout in milliseconds"})
-    inactivity_warning_timeout_ms: int = field(
+    logout_timeout_ms: int = field(metadata={"description": "Timeout duration for logout in milliseconds"}, default=300000) # 5 minutes
+    inactivity_warning_timeout_ms: int | None = field(
         metadata={
             "description": "Timeout duration for inactivity warning in milliseconds"
-        }
+        }, default=None
     )
     # fmt: on
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IdentityAttributes(AdcResourceAttributes):
     """Attributes of a raw identity response."""
 
     # fmt: off
-    timezone: str
-    preferred_timezone: str
+    timezone: str | None = field(default=None)
+    preferred_timezone: str = field(default="UTC")
     application_session_properties: ApplicationSessionProperties
-    localize_temp_units_to_celsius: bool
-    has_trouble_conditions_service: bool
+    localize_temp_units_to_celsius: bool = field(default=False)
+    has_trouble_conditions_service: bool = field(default=True)
     # fmt: on
 
 
