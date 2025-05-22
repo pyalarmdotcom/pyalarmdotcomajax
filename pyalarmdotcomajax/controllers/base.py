@@ -45,9 +45,7 @@ log = logging.getLogger(__name__)
 C = TypeVar("C", bound="BaseController[Any]")
 
 
-def device_controller(
-    resource_type: ResourceType, resource_class: type[AdcResourceT]
-) -> Callable[[type[C]], type[C]]:
+def device_controller(resource_type: ResourceType, resource_class: type[AdcResourceT]) -> Callable[[type[C]], type[C]]:
     """
     Simplify controller definitions by setting common attributes.
 
@@ -84,7 +82,10 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # this is used to initialize the DealersController, which requires `resource_ids` from the
     # IdentitiesController.
     _requires_target_ids: ClassVar[bool] = False
-    # WebSocket events supported by this controller.
+    # WebSocket events supported by this controller. This is used to declare which types of events
+    # and property changes the controller should receive. To receive events, add ResourceEventType values
+    # to the 'events' list. To receive property changes (like temperature changes), add ResourcePropertyChangeType
+    # values to the 'property_changes' list. A controller must have this set to receive any real-time updates.
     _supported_resource_events: ClassVar[SupportedResourceEvents | None] = None
     # Maps websocket events to states.
     _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
@@ -118,9 +119,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         self._api_data_unsubscribe: Callable | None = None
 
         # Dict of callbacks for controllers that depend on the current controller for API updates.
-        self._api_data_receivers: dict[
-            ResourceType, list[Callable[[list[Resource]], Awaitable | None]]
-        ] = {}
+        self._api_data_receivers: dict[ResourceType, list[Callable[[list[Resource]], Awaitable | None]]] = {}
 
         # Restricts this controller to specific devices. Used for controllers that only support single-serve
         # endpoints.
@@ -155,29 +154,25 @@ class BaseController(ABC, Generic[AdcResourceT]):
         if self._initialized:
             return
 
-        # Subscribe to WebSocket events if supported by controller.
+        # Always subscribe to connection events for reconnection handling
+        self._bridge.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, self._base_handle_event)
+
+        # Subscribe to WebSocket resource events if supported by controller
         if self._supported_resource_events:
-            self._bridge.events.subscribe(
-                EventBrokerTopic.RAW_RESOURCE_EVENT, self._base_handle_event
-            )
+            self._bridge.events.subscribe(EventBrokerTopic.RAW_RESOURCE_EVENT, self._base_handle_event)
 
         # Bail now if we depend on another controller for API data.
         if self._api_data_provider:
             self._initialized = True
-            self._api_data_unsubscribe = (
-                await self._api_data_provider.subcontroller_data_subscribe(
-                    [self.resource_type], self._refresh
-                )
+            self._api_data_unsubscribe = await self._api_data_provider.subcontroller_data_subscribe(
+                [self.resource_type], self._refresh
             )
             return
 
         if target_device_ids is not None:
             self._target_device_ids.update(target_device_ids)
             # If this is a device controller and no device IDs are provided, mark as initialized and skip
-            if (
-                getattr(self, "_is_device_controller", False)
-                and not self._target_device_ids
-            ):
+            if getattr(self, "_is_device_controller", False) and not self._target_device_ids:
                 self._initialized = True
                 return
 
@@ -198,9 +193,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
     # DEVICE MANAGEMENT #
     #####################
 
-    def _device_filter(
-        self, response: list[Resource] | Resource
-    ) -> list[Resource] | Resource:
+    def _device_filter(self, response: list[Resource] | Resource) -> list[Resource] | Resource:
         """
         Filter out unsupported devices from API response.
 
@@ -208,9 +201,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """
         return response
 
-    async def _send_command(
-        self, id: str, action: str, msg_body: dict[str, Any] | None = None
-    ) -> None:
+    async def _send_command(self, id: str, action: str, msg_body: dict[str, Any] | None = None) -> None:
         """Send command to API."""
 
         msg_body = msg_body or {}
@@ -225,9 +216,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
             json={"statePollOnly": False, **msg_body},
         )
 
-    async def _refresh(
-        self, pre_fetched: list[Resource] | None = None, resource_id: str | None = None
-    ) -> None:
+    async def _refresh(self, pre_fetched: list[Resource] | None = None, resource_id: str | None = None) -> None:
         """
         Initialize controllers using API response data, either fetched here or by another controller.
 
@@ -259,9 +248,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
         if pre_fetched and resource_id:
             raise NotImplementedError
 
-        if (self._api_data_provider and not pre_fetched) or (
-            self._requires_target_ids and not self._target_device_ids
-        ):
+        if (self._api_data_provider and not pre_fetched) or (self._requires_target_ids and not self._target_device_ids):
             return
 
         if not pre_fetched:
@@ -276,9 +263,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
             else:
                 ids = None
 
-            response = await self._bridge.get(
-                self._resource_url_override or self.resource_type, ids
-            )
+            response = await self._bridge.get(self._resource_url_override or self.resource_type, ids)
 
             response.data = self._device_filter(response.data)
 
@@ -306,17 +291,12 @@ class BaseController(ABC, Generic[AdcResourceT]):
                             callback(included_resources)
 
             # Return normalized response data for current resource type.
-            pre_fetched = [
-                *(response.data if isinstance(response.data, list) else [response.data])
-            ]
+            pre_fetched = [*(response.data if isinstance(response.data, list) else [response.data])]
 
         # Find and instantiate supported devices.
         discovered_resource_ids = set({})
         for resource in pre_fetched:
-            if (
-                resource.type == self.resource_type
-                and await self._register_or_update_resource(resource) is not None
-            ):
+            if resource.type == self.resource_type and await self._register_or_update_resource(resource) is not None:
                 discovered_resource_ids.update({resource.id})
 
         # Unregister devices that failed to be instantiated or (in the case of multi-device endpoints) appeared in
@@ -337,19 +317,14 @@ class BaseController(ABC, Generic[AdcResourceT]):
         """Universal event handling for WebSockets messages."""
 
         # Refresh endpoint on websocket reconnect.
-        if (
-            isinstance(message, ConnectionEvent)
-            and message.current_state == WebSocketState.RECONNECTED
-        ):
+        if isinstance(message, ConnectionEvent) and message.current_state == WebSocketState.RECONNECTED:
             return await self._refresh()
 
         if not isinstance(message, RawResourceEventMessage):
             return None
 
         # Image sensors use device_id instead of full_device_id.
-        adc_resource = self.get(message.ws_message.full_device_id) or self.get(
-            str(message.ws_message.device_id)
-        )
+        adc_resource = self.get(message.ws_message.full_device_id) or self.get(str(message.ws_message.device_id))
         if not adc_resource:
             return None
 
@@ -362,9 +337,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
             adc_resource.api_resource.attributes.update(
                 {
                     ATTR_STATE: self._event_state_map[message.ws_message.subtype].value,
-                    ATTR_DESIRED_STATE: self._event_state_map[
-                        message.ws_message.subtype
-                    ].value,
+                    ATTR_DESIRED_STATE: self._event_state_map[message.ws_message.subtype].value,
                 }
             )
 
@@ -377,9 +350,7 @@ class BaseController(ABC, Generic[AdcResourceT]):
 
         return None
 
-    async def _handle_event(
-        self, adc_resource: AdcResourceT, message: BaseWSMessage
-    ) -> AdcResourceT:
+    async def _handle_event(self, adc_resource: AdcResourceT, message: BaseWSMessage) -> AdcResourceT:
         """
         Individual controller functions for handling WebSockets messages.
 
@@ -552,6 +523,4 @@ class BaseController(ABC, Generic[AdcResourceT]):
     def included_raw_str(self) -> Group:
         """Return Rich representation of raw JSON for all controller resources."""
 
-        return resources_raw(
-            f"{self.resource_type.name} Children", list(self._included_resources)
-        )
+        return resources_raw(f"{self.resource_type.name} Children", list(self._included_resources))
