@@ -1,6 +1,9 @@
 default_language_version:
     python: python3.13
 
+ci:
+    skip: [taplo-lint] # Tries to make outgoing web requests to schema store, breaking pre-commit.ci.
+
 repos:
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.11.10

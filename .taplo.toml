@@ -1,3 +1,5 @@
+#:schema https://json.schemastore.org/taplo.json
+
 [formatting]
 align_entries         = true
 allowed_blank_lines   = 1
@@ -6,6 +8,3 @@ indent_tables         = true
 reorder_arrays        = true
 reorder_inline_tables = true
 reorder_keys          = true
-
-[schema]
-enabled = false
