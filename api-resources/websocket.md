@@ -294,5 +294,3 @@ Property Change (Ambient)
     "QstringForExtraData": "tempC=2206.00"
 }
 ```
-
-
