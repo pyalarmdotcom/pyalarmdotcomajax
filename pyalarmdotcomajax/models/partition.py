@@ -35,7 +35,7 @@ class ExtendedArmingOptionItems(Enum):
     SILENT_ARMING = 2
     NIGHT_ARMING = 3
     SELECTIVELY_BYPASS_SENSORS = 4
-    # FORCE_ARM = 5
+    FORCE_ARM = 5
     # INSTANT_ARM = 6
     # STAY_ARM = 7
     # AWAY_ARM = 8

@@ -23,6 +23,13 @@ from pyalarmdotcomajax.websocket.messages import ResourceEventType
 
 log = logging.getLogger(__name__)
 
+ARMOPT_BYPASS_SENSORS = "forceBypass"
+ARMOPT_NO_ENTRY_DELAY = "noEntryDelay"
+ARMOPT_SILENT_ARMING = "silentArming"
+ARMOPT_NIGHT_ARMING = "nightArming"
+ARMOPT_SELECTIVELY_BYPASS_SENSORS = "selectivelyBypassSensors"
+ARMOPT_FORCE_ARM = "forceArm"
+
 
 class PartitionCommand(StrEnum):
     """Commands for ADC partitions."""
@@ -40,10 +47,21 @@ STATE_COMMAND_MAP = {
 }
 
 ARMING_EXTENSION_BODY_MAP = {
-    ExtendedArmingOptionItems.BYPASS_SENSORS: {"forceBypass": True},
-    ExtendedArmingOptionItems.NO_ENTRY_DELAY: {"noEntryDelay": True},
-    ExtendedArmingOptionItems.SILENT_ARMING: {"silentArming": True},
-    ExtendedArmingOptionItems.NIGHT_ARMING: {"nightArming": True},
+    ExtendedArmingOptionItems.BYPASS_SENSORS: ARMOPT_BYPASS_SENSORS,
+    ExtendedArmingOptionItems.NO_ENTRY_DELAY: ARMOPT_NO_ENTRY_DELAY,
+    ExtendedArmingOptionItems.SILENT_ARMING: ARMOPT_SILENT_ARMING,
+    ExtendedArmingOptionItems.NIGHT_ARMING: ARMOPT_NIGHT_ARMING,
+    ExtendedArmingOptionItems.SELECTIVELY_BYPASS_SENSORS: ARMOPT_SELECTIVELY_BYPASS_SENSORS,
+    ExtendedArmingOptionItems.FORCE_ARM: ARMOPT_FORCE_ARM,
+}
+
+ARMING_OPTIONS_BODY = {
+    ARMOPT_BYPASS_SENSORS: False,
+    ARMOPT_NO_ENTRY_DELAY: False,
+    ARMOPT_SILENT_ARMING: False,
+    ARMOPT_NIGHT_ARMING: False,
+    ARMOPT_SELECTIVELY_BYPASS_SENSORS: False,
+    ARMOPT_FORCE_ARM: False,
 }
 
 
@@ -62,9 +80,7 @@ class PartitionController(BaseController[Partition]):
             ResourceEventType.ArmedNight: PartitionState.ARMED_NIGHT,
         }
     )
-    _supported_resource_events = SupportedResourceEvents(
-        events=[*_event_state_map.keys()]
-    )
+    _supported_resource_events = SupportedResourceEvents(events=[*_event_state_map.keys()])
 
     # Special handling of 422 status.
     # 422 sometimes occurs when forceBypass is True but there's nothing to bypass.
@@ -96,9 +112,7 @@ class PartitionController(BaseController[Partition]):
         id: Param_Id,
         force_bypass: Annotated[
             bool,
-            typer.Option(
-                help="Bypass all open zones before arming.", show_default=False
-            ),
+            typer.Option(help="Bypass all open zones before arming.", show_default=False),
         ] = False,
         no_entry_delay: Annotated[
             bool,
@@ -135,9 +149,7 @@ class PartitionController(BaseController[Partition]):
         id: Param_Id,
         force_bypass: Annotated[
             bool,
-            typer.Option(
-                help="Bypass all open zones before arming.", show_default=False
-            ),
+            typer.Option(help="Bypass all open zones before arming.", show_default=False),
         ] = False,
         no_entry_delay: Annotated[
             bool,
@@ -174,9 +186,7 @@ class PartitionController(BaseController[Partition]):
         id: Param_Id,
         force_bypass: Annotated[
             bool,
-            typer.Option(
-                help="Bypass all open zones before arming.", show_default=False
-            ),
+            typer.Option(help="Bypass all open zones before arming.", show_default=False),
         ] = False,
         no_entry_delay: Annotated[
             bool,
@@ -216,7 +226,7 @@ class PartitionController(BaseController[Partition]):
     ) -> None:
         """Change partition state."""
 
-        msg_body: dict[str, Any] = {}
+        msg_body: dict[str, Any] = ARMING_OPTIONS_BODY.copy()
 
         extended_arming_options = extended_arming_options or []
 
@@ -231,11 +241,9 @@ class PartitionController(BaseController[Partition]):
             if option in getattr(
                 self[id].attributes.extended_arming_options, state.name.lower()
             ) and ARMING_EXTENSION_BODY_MAP.get(option):
-                msg_body.update(ARMING_EXTENSION_BODY_MAP[option])
+                msg_body.update({ARMING_EXTENSION_BODY_MAP[option]: True})
             else:
-                raise UnsupportedOperation(
-                    f"Extended arming option {option} not supported for {state}."
-                )
+                raise UnsupportedOperation(f"Extended arming option {option} not supported for {state}.")
 
         if not (command := STATE_COMMAND_MAP.get(state)):
             raise UnsupportedOperation(f"State {state} not implemented.")
@@ -245,9 +253,15 @@ class PartitionController(BaseController[Partition]):
     @cli_action()
     async def change_sensor_bypass(
         self,
-        partition_id: str,
-        bypass_ids: Optional[list[str]] = None,
-        unbypass_ids: Optional[list[str]] = None,
+        partition_id: Param_Id,
+        bypass_ids: Annotated[
+            Optional[list[str]],
+            typer.Option(help="List of sensors to bypass.", show_default=True),
+        ] = None,
+        unbypass_ids: Annotated[
+            Optional[list[str]],
+            typer.Option(help="List of sensors to unbypass.", show_default=True),
+        ] = None,
     ) -> None:
         """Bypass or unbypass sensors on a partition."""
 
