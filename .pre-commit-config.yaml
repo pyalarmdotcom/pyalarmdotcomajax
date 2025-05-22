@@ -1,51 +1,58 @@
 default_language_version:
-  python: python3.13
+    python: python3.13
 
 repos:
-  - repo: local
-    hooks:
-      - id: ruff
-        name: Ruff
-        description: Run Ruff linter and autofixer
-        entry: ruff check --fix
-        language: python
-        types: [python]
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.11.10
+      hooks:
+          - id: ruff
+            name: Ruff
+            description: Run Ruff linter and autofixer
+            args: [--fix]
 
-  - repo: local
-    hooks:
-      - id: mypy
-        name: MyPy
-        description: Run static type checking
-        entry: mypy
-        language: python
-        types: [python]
-        args: [--config-file, pyproject.toml]
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: v1.15.0
+      hooks:
+          - id: mypy
+            name: MyPy
+            description: Run static type checking
+            args: [--config-file, pyproject.toml]
+            additional_dependencies:
+                - types-requests==2.32.0.20250515
+                - types-PyYAML>=6.0.12.20250402
+                - mypy_extensions
+                - typing_extensions
+                - mashumaro~=3.15
+                - typer>=0.15.2
+                - pyhumps~=3.8.0
+                - aiohttp>=3.11.16
+                - python-dateutil~=2.9.0.post0
+                - phonenumbers>=9.0.4
 
-  - repo: local
-    hooks:
-      - id: codespell
-        name: Codespell
-        description: Spell check source files
-        entry: codespell
-        language: python
-        types: [text]
-        additional_dependencies: [tomli]
+    - repo: https://github.com/codespell-project/codespell
+      rev: v2.4.1
+      hooks:
+          - id: codespell
+            name: Codespell
+            description: Spell check source files
+            args: [--toml, pyproject.toml]
+            additional_dependencies: [tomli]
 
-  - repo: local
-    hooks:
-      - id: yamllint
-        name: YAMLLint
-        description: Lint YAML files using relaxed config
-        entry: yamllint -d relaxed
-        language: python
-        types: [yaml]
-        exclude: (\.vscode|\.devcontainer|\.github)
+    - repo: https://github.com/adrienverge/yamllint
+      rev: v1.37.1
+      hooks:
+          - id: yamllint
+            name: YAMLLint
+            description: Lint YAML files using relaxed config
+            args: ["-d", "relaxed"]
+            types: [yaml]
+            exclude: (\.vscode|\.devcontainer|\.github)
+            additional_dependencies:
+                - pathspec
+                - pyyaml
 
-  - repo: local
-    hooks:
-      - id: toml-sort
-        name: toml-sort
-        description: Sort TOML files in place
-        entry: toml-sort --in-place --all --ignore-case
-        language: python
-        types: [toml]
+    - repo: https://github.com/ComPWA/taplo-pre-commit
+      rev: v0.9.3
+      hooks:
+          - id: taplo-format
+          - id: taplo-lint

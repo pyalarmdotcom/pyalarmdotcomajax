@@ -1,21 +1,23 @@
+#:schema https://json.schemastore.org/pyproject.json
+
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools", "setuptools-scm"]
+requires      = ["setuptools", "setuptools-scm"]
 
 [project]
 authors = [
-    {email = "46082645+uvjustin@users.noreply.github.com", name = "Justin Wong"},
-    {email = "466460+elahd@users.noreply.github.com", name = "Elahd Bar-Shai"}
+  { email = "46082645+uvjustin@users.noreply.github.com", name = "Justin Wong" },
+  { email = "466460+elahd@users.noreply.github.com", name = "Elahd Bar-Shai" },
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Environment :: Web Environment",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Topic :: Home Automation",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Home Automation",
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 description = "Event Driven Python Interface for Alarm.com"
 dynamic = ["dependencies", "optional-dependencies", "version"]
@@ -23,23 +25,23 @@ keywords = ["Alarm.com", "Home Assistant", "Security System"]
 license = "MIT"
 license-files = ["LICENSE"]
 maintainers = [
-    {email = "466460+elahd@users.noreply.github.com", name = "Elahd Bar-Shai"}
+  { email = "466460+elahd@users.noreply.github.com", name = "Elahd Bar-Shai" },
 ]
 name = "pyalarmdotcomajax"
 readme = "README.md"
 requires-python = ">=3.13"
 
-[project.scripts]
-adc = "pyalarmdotcomajax.adc.adc:app"
+  [project.scripts]
+  adc = "pyalarmdotcomajax.adc.adc:app"
 
-[project.urls]
-Repository = "https://github.com/pyalarmdotcom/pyalarmdotcomajax"
+  [project.urls]
+  Repository = "https://github.com/pyalarmdotcom/pyalarmdotcomajax"
 
 [tool.codespell]
-count = ""
+count             = ""
 ignore-words-list = "hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing,windo"
-quiet-level = 2
-skip = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi/*"
+quiet-level       = 2
+skip              = "./.*,*.csv,*.json,*.html,*.aspx,tests/test_device_extensions.py,pyalarmdotcomajax/models/jsonapi/*"
 
 [tool.mypy]
 check_untyped_defs = true
@@ -48,53 +50,53 @@ disallow_subclassing_any = true
 disallow_untyped_calls = false
 disallow_untyped_defs = true
 exclude = [
-    ".mypy_cache/",
-    ".ruff_cache/",
-    "__pycache__",
-    "build/",
-    "old",
-    "pytest_cache/",
-    "references/",
-    "tests/"
+  ".mypy_cache/",
+  ".ruff_cache/",
+  "__pycache__",
+  "build/",
+  "old",
+  "pytest_cache/",
+  "references/",
+  "tests/",
 ]
 explicit_package_bases = true
 ignore_missing_imports = true
 no_implicit_optional = true
 # pretty = true
-python_version = "3.13"
-show_absolute_path = true
-show_error_codes = true
-show_error_context = true
-strict_equality = true
+python_version       = "3.13"
+show_absolute_path   = true
+show_error_codes     = true
+show_error_context   = true
+strict_equality      = true
 warn_incomplete_stub = true
 warn_redundant_casts = true
-warn_return_any = true
-warn_unreachable = true
-warn_unused_configs = true
-warn_unused_ignores = true
+warn_return_any      = true
+warn_unreachable     = true
+warn_unused_configs  = true
+warn_unused_ignores  = true
 
 [tool.pytest.ini_options]
-addopts = "-ra --strict-markers"
+addopts      = "-ra --strict-markers"
 asyncio_mode = "auto"
-minversion = "8.0"
-testpaths = ["tests"]
+minversion   = "8.0"
+testpaths    = ["tests"]
 
 [tool.ruff]
-exclude = ["pyalarmdotcomajax/_version.py"]
-line-length = 120
+exclude           = ["pyalarmdotcomajax/_version.py"]
+line-length       = 120
 respect-gitignore = true
-target-version = "py313"
+target-version    = "py313"
 
-[tool.ruff.format]
-docstring-code-format = true
-indent-style = "space"
-line-ending = "auto"
-quote-style = "double"
-skip-magic-trailing-comma = false
+  [tool.ruff.format]
+  docstring-code-format     = true
+  indent-style              = "space"
+  line-ending               = "auto"
+  quote-style               = "double"
+  skip-magic-trailing-comma = false
 
-[tool.ruff.lint]
-extend-safe-fixes = ["UP006"]
-ignore = [
+  [tool.ruff.lint]
+  extend-safe-fixes = ["UP006"]
+  ignore = [
     "COM812",
     "COM819",
     "D107",
@@ -131,9 +133,9 @@ ignore = [
     "TRY003",
     "TRY301",
     "TRY400",
-    "W191"
-]
-select = [
+    "W191",
+  ]
+  select = [
     "A",
     "ASYNC",
     "B",
@@ -167,25 +169,25 @@ select = [
     "TRY",
     "UP",
     "W",
-    "YTT"
-]
-unfixable = ["F841"]
+    "YTT",
+  ]
+  unfixable = ["F841"]
 
-[tool.ruff.lint.flake8-builtins]
-builtins-ignorelist = ["hex", "id", "print", "type"]
+    [tool.ruff.lint.flake8-builtins]
+    builtins-ignorelist = ["hex", "id", "print", "type"]
 
-[tool.ruff.lint.flake8-type-checking]
-quote-annotations = true
+    [tool.ruff.lint.flake8-type-checking]
+    quote-annotations = true
 
-[tool.ruff.lint.flake8-unused-arguments]
-ignore-variadic-names = true
+    [tool.ruff.lint.flake8-unused-arguments]
+    ignore-variadic-names = true
 
-[tool.ruff.lint.mccabe]
-max-complexity = 25
+    [tool.ruff.lint.mccabe]
+    max-complexity = 25
 
-[tool.ruff.lint.per-file-ignores]
-"scripts/upgrade_dependencies.py" = ["ALL"]
-"tests/*" = ["D", "PLR0913", "S101"]
+    [tool.ruff.lint.per-file-ignores]
+    "scripts/upgrade_dependencies.py" = ["ALL"]
+    "tests/*"                         = ["D", "PLR0913", "S101"]
 
 [tool.setuptools.dynamic.dependencies]
 file = "requirements.txt"
@@ -201,13 +203,7 @@ pyalarmdotcomajax = ["py.typed"]
 
 [tool.setuptools.packages.find]
 include = ["pyalarmdotcomajax*"]
-where = ["."]
+where   = ["."]
 
 [tool.setuptools_scm]
 version_file = "pyalarmdotcomajax/_version.py"
-
-[tool.tomlsort]
-in_place = true
-spaces_before_inline_comment = 4
-spaces_indent_inline_array = 4
-trailing_comma_inline_array = false

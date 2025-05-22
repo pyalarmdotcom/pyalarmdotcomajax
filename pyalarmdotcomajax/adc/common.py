@@ -280,9 +280,7 @@ async def collect_params(
     # INITIALIZE BRIDGE #
     #####################
 
-    bridge.auth_controller.set_credentials(
-        ctx.params["username"], ctx.params["password"], ctx.params.get("cookie")
-    )
+    bridge.auth_controller.set_credentials(ctx.params["username"], ctx.params["password"], ctx.params.get("cookie"))
 
     # Typer calls bridge.close() when context is closed.
     ctx.call_on_close(partial(asyncio.get_event_loop().run_until_complete, bridge.close()))
