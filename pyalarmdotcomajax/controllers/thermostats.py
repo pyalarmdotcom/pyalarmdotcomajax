@@ -49,8 +49,14 @@ class ThermostatController(BaseController[Thermostat]):
         events=[
             ResourceEventType.ThermostatModeChanged,
             ResourceEventType.ThermostatFanModeChanged,
+            ResourceEventType.ThermostatSetPointChanged,
             ResourceEventType.ThermostatOffset,
-        ]
+        ],
+        property_changes=[
+            ResourcePropertyChangeType.AmbientTemperature,
+            ResourcePropertyChangeType.HeatSetPoint,
+            ResourcePropertyChangeType.CoolSetPoint,
+        ],
     )
 
     def __init__(
@@ -73,9 +79,7 @@ class ThermostatController(BaseController[Thermostat]):
     @cli_action()
     async def set_state(
         self,
-        id: Annotated[
-            str, typer.Option(help="The ID of the thermostat.", show_default=False)
-        ],
+        id: Annotated[str, typer.Option(help="The ID of the thermostat.", show_default=False)],
         state: Annotated[
             Optional[ThermostatState],
             typer.Option(
@@ -145,13 +149,9 @@ class ThermostatController(BaseController[Thermostat]):
             msg_body[ATTR_DESIRED_STATE] = state.value
         elif fan_mode and fan_mode_duration:
             if fan_mode_duration not in self._resources[id].supported_fan_durations:
-                raise ValueError(
-                    "Requested fan duration is not supported by the device."
-                )
+                raise ValueError("Requested fan duration is not supported by the device.")
             msg_body["desiredFanMode"] = fan_mode.value
-            msg_body["desiredFanDuration"] = (
-                0 if fan_mode == ThermostatFanMode.AUTO else fan_mode_duration
-            )
+            msg_body["desiredFanDuration"] = 0 if fan_mode == ThermostatFanMode.AUTO else fan_mode_duration
         elif cool_setpoint:
             msg_body[ATTR_DESIRED_COOL_SETPOINT] = cool_setpoint
         elif heat_setpoint:
@@ -161,9 +161,7 @@ class ThermostatController(BaseController[Thermostat]):
 
         await self._send_command(id, "setState", msg_body)
 
-    async def _handle_event(
-        self, adc_resource: "AdcResourceT", message: BaseWSMessage
-    ) -> "AdcResourceT":
+    async def _handle_event(self, adc_resource: "AdcResourceT", message: BaseWSMessage) -> "AdcResourceT":
         """Handle light-specific WebSocket events."""
 
         updated_data: dict[str, Any] = {}

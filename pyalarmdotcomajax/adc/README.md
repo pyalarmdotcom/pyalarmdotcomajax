@@ -531,19 +531,20 @@ Arm a partition in away mode.
 **Usage**:
 
 ```console
-$ adc action partition arm_away [OPTIONS] ID
+$ adc action partition arm_away [OPTIONS] DEVICE_ID
 ```
 
 **Arguments**:
 
-* `ID`: [required]
+* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
 
 **Options**:
 
 * `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
 * `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
-* `--force-bypass / --no-force-bypass`: [default: no-force-bypass]
-* `--no-entry-delay / --no-no-entry-delay`: [default: no-no-entry-delay]
+* `--force-bypass / --no-force-bypass`: Bypass all open zones before arming.
+* `--no-entry-delay / --no-no-entry-delay`: Bypass entry delay. This will sound the alarm immediately when an entry zone triggers.
+* `--silent-arming / --no-silent-arming`: Arm the system without emitting arming \ exit delay tones at the panel.
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside &quot;cookie&quot; argument. Defaults to <span style="color: #808000; text-decoration-color: #808000">app</span> if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -559,19 +560,20 @@ Arm a partition in night mode.
 **Usage**:
 
 ```console
-$ adc action partition arm_night [OPTIONS] ID
+$ adc action partition arm_night [OPTIONS] DEVICE_ID
 ```
 
 **Arguments**:
 
-* `ID`: [required]
+* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
 
 **Options**:
 
 * `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
 * `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
-* `--force-bypass / --no-force-bypass`: [default: no-force-bypass]
-* `--no-entry-delay / --no-no-entry-delay`: [default: no-no-entry-delay]
+* `--force-bypass / --no-force-bypass`: Bypass all open zones before arming.
+* `--no-entry-delay / --no-no-entry-delay`: Bypass entry delay. This will sound the alarm immediately when an entry zone triggers.
+* `--silent-arming / --no-silent-arming`: Arm the system without emitting arming \ exit delay tones at the panel.
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside &quot;cookie&quot; argument. Defaults to <span style="color: #808000; text-decoration-color: #808000">app</span> if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
@@ -616,19 +618,19 @@ Bypass or unbypass sensors on a partition.
 **Usage**:
 
 ```console
-$ adc action partition change_sensor_bypass [OPTIONS] PARTITION_ID
+$ adc action partition change_sensor_bypass [OPTIONS] DEVICE_ID
 ```
 
 **Arguments**:
 
-* `PARTITION_ID`: [required]
+* `DEVICE_ID`: A device&#x27;s ID. To view a list of device IDs, use &#x27;<span style="color: #00ffff; text-decoration-color: #00ffff">adc get</span>&#x27;.  [required]
 
 **Options**:
 
 * `-u, --username TEXT`: Alarm.com username  [env var: ADC_USERNAME; required]
 * `-p, --password TEXT`: Alarm.com password  [env var: ADC_PASSWORD; required]
-* `--bypass-ids TEXT`
-* `--unbypass-ids TEXT`
+* `--bypass-ids TEXT`: List of sensors to bypass.
+* `--unbypass-ids TEXT`: List of sensors to unbypass.
 * `-c, --cookie TEXT`: Two-factor authentication cookie. (Cannot be used with --otp!)  [env var: ADC_COOKIE]
 * `-m, --otp-method [app|sms|email]`: OTP delivery method to use. Cannot be used alongside &quot;cookie&quot; argument. Defaults to <span style="color: #808000; text-decoration-color: #808000">app</span> if --otp is provided, otherwise prompts you for otp.
 * `-o, --otp TEXT`: Provide app-based OTP for accounts that have two-factor authentication enabled. If not provided here, adc will prompt you for OTP. Cannot be used with --cookie or --otp-method!
