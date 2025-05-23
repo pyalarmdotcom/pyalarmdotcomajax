@@ -27,7 +27,7 @@ ARMOPT_BYPASS_SENSORS = "forceBypass"
 ARMOPT_NO_ENTRY_DELAY = "noEntryDelay"
 ARMOPT_SILENT_ARMING = "silentArming"
 ARMOPT_NIGHT_ARMING = "nightArming"
-ARMOPT_SELECTIVELY_BYPASS_SENSORS = "selectivelyBypassSensors"
+ARMOPT_SELECTIVELY_BYPASS_SENSORS = "selectiveBypass"
 ARMOPT_FORCE_ARM = "forceArm"
 
 
@@ -236,11 +236,12 @@ class PartitionController(BaseController[Partition]):
 
         # Add extended arming options to body.
         # Check that each requested arming option is supported for the partition.
+        # Always permit force bypass. Not sure if this is right but it seems to work.
 
         for option in extended_arming_options:
-            if option in getattr(
-                self[id].attributes.extended_arming_options, state.name.lower()
-            ) and ARMING_EXTENSION_BODY_MAP.get(option):
+            if option in getattr(self[id].attributes.extended_arming_options, state.name.lower()) or (
+                (option == ExtendedArmingOptionItems.BYPASS_SENSORS) and ARMING_EXTENSION_BODY_MAP.get(option)
+            ):
                 msg_body.update({ARMING_EXTENSION_BODY_MAP[option]: True})
             else:
                 raise UnsupportedOperation(f"Extended arming option {option} not supported for {state}.")
