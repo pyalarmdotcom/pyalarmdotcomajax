@@ -1,20 +1,20 @@
 pre-commit>=4.2.0
 pytest>=8.3.5
-pytest-asyncio>=0.26.0
+pytest-asyncio >= 1.0.0
 tomli>=2.2.1
 tomli_w>=1.2.0
 types-requests==2.32.0.20250515 # Required to prevent dependency conflict with Home Assistant over urllib3
-types-PyYAML>=6.0.12.20250402
+types-PyYAML >= 6.0.12.20250516
 setuptools-scm>=8.3.1
-pathspec>=0.11.1
-gitpython>=3.1.40
+pathspec >= 0.12.1
+gitpython >= 3.1.44
 mypy>=1.15.0
-ruff>=0.11.8
+ruff >= 0.11.11
 codespell>=2.4.1
-yamllint>=1.37.0
+yamllint >= 1.37.1
 # Sphinx and its dependencies
-sphinx>=7.2
-myst-parser>=2.0
-sphinx-autodoc-typehints>=1.24
+sphinx >= 8.2.3
+myst-parser >= 4.0.1
+sphinx-autodoc-typehints >= 3.2.0
 sphinx-copybutton
 furo

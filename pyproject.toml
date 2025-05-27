@@ -1,5 +1,3 @@
-#:schema https://json.schemastore.org/pyproject.json
-
 [build-system]
 build-backend = "setuptools.build_meta"
 requires      = ["setuptools", "setuptools-scm"]
@@ -20,7 +18,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 description = "Event Driven Python Interface for Alarm.com"
-dynamic = ["dependencies", "optional-dependencies", "version"]
+dynamic = ["version"]
 keywords = ["Alarm.com", "Home Assistant", "Security System"]
 license = "MIT"
 license-files = ["LICENSE"]
@@ -57,23 +55,23 @@ exclude = [
   "old",
   "pytest_cache/",
   "references/",
+  "scripts/upgrade_dependencies.py",
   "tests/",
 ]
 explicit_package_bases = true
 ignore_missing_imports = true
 no_implicit_optional = true
-# pretty = true
-python_version       = "3.13"
-show_absolute_path   = true
-show_error_codes     = true
-show_error_context   = true
-strict_equality      = true
+python_version = "3.13"
+show_absolute_path = true
+show_error_codes = true
+show_error_context = true
+strict_equality = true
 warn_incomplete_stub = true
 warn_redundant_casts = true
-warn_return_any      = true
-warn_unreachable     = true
-warn_unused_configs  = true
-warn_unused_ignores  = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 addopts      = "-ra --strict-markers"

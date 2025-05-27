@@ -1,7 +1,7 @@
-aiohttp >= 3.11.16
+aiohttp >= 3.12.2
 beautifulsoup4 >= 4.13.4
 mashumaro~=3.16
-phonenumbers >= 9.0.4
-typer >= 0.15.2
+phonenumbers >= 9.0.5
+typer >= 0.16.0
 python-dateutil~=2.9.0.post0
 pyhumps~=3.8.0
