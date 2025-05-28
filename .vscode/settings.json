@@ -32,9 +32,6 @@
     "python.analysis.completeFunctionParens": true,
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.generateWithTypeAnnotation": true,
-    "python.analysis.ignore": [
-        "/usr/local/python"
-    ],
     "python.analysis.indexing": true,
     "python.analysis.inlayHints.callArgumentNames": "off",
     "python.analysis.inlayHints.functionReturnTypes": false,
@@ -46,5 +43,32 @@
             "name": "pyalarmdotcomajax"
         }
     ],
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.analysis.exclude": [
+        "**/build/**",
+        "**/dist/**",
+        "**/*.egg-info/**",
+        "**/__pycache__/**",
+        "**/.pytest_cache/**",
+        "**/.mypy_cache/**",
+        "**/.ruff_cache/**"
+    ],
+    "files.exclude": {
+        "build": true,
+        "dist": true,
+        "*.egg-info": true,
+        "**/__pycache__": true,
+        ".pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true
+    },
+    "search.exclude": {
+        "**/build/**": true,
+        "**/dist/**": true,
+        "**/*.egg-info/**": true,
+        "**/__pycache__/**": true,
+        "**/.pytest_cache/**": true,
+        "**/.mypy_cache/**": true,
+        "**/.ruff_cache/**": true
+    }
 }
