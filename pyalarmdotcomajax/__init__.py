@@ -42,6 +42,7 @@ from pyalarmdotcomajax.controllers.image_sensors import (
 from pyalarmdotcomajax.controllers.lights import LightController
 from pyalarmdotcomajax.controllers.locks import LockController
 from pyalarmdotcomajax.controllers.partitions import PartitionController
+from pyalarmdotcomajax.controllers.registry import CONTROLLER_REGISTRY
 from pyalarmdotcomajax.controllers.sensors import SensorController
 from pyalarmdotcomajax.controllers.systems import SystemController
 from pyalarmdotcomajax.controllers.thermostats import ThermostatController
@@ -105,6 +106,7 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
+from pyalarmdotcomajax.orchestrators.image_sensors import ImageSensorOrchestrator
 from pyalarmdotcomajax.websocket.client import (
     ConnectionEvent,
     WebSocketClient,
@@ -216,6 +218,10 @@ class AlarmBridge:
 
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
+
+        self._dynamic_controllers: dict[ResourceType, BaseController] = {}
+
+        self._image_sensor_orchestrator = ImageSensorOrchestrator(self)
 
     async def initialize(self) -> None:
         """Initialize bridge connection, or finish initialization after OTP has been submitted."""
@@ -399,6 +405,11 @@ class AlarmBridge:
         return self._image_sensor_images
 
     @property
+    def image_sensor_orchestrator(self) -> ImageSensorOrchestrator:
+        """Get the image sensor orchestrator."""
+        return self._image_sensor_orchestrator
+
+    @property
     def locks(self) -> LockController:
         """Get the locks controller."""
         return self._locks
@@ -461,9 +472,26 @@ class AlarmBridge:
         # BaseController
         return [
             controller
-            for controller in self.__dict__.values()
+            for controller in list(self.__dict__.values())
             if isinstance(controller, BaseController)
-        ]
+        ] + list(self._dynamic_controllers.values())
+
+    def get_or_create_controller(
+        self, resource_type: ResourceType, data_provider: BaseController | None = None
+    ) -> BaseController:
+        """Return existing or instantiate new controller for a resource type."""
+
+        for controller in self.resource_controllers:
+            if controller.resource_type == resource_type:
+                return controller
+
+        controller_class = CONTROLLER_REGISTRY.get(resource_type)
+        if not controller_class:
+            raise UnsupportedOperation(f"No controller registered for {resource_type}")
+
+        controller = controller_class(self, data_provider)
+        self._dynamic_controllers[resource_type] = controller
+        return controller
 
     def get_controller(self, resource_id: str) -> BaseController:
         """Get the resource controller for a given resource."""
