@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 import aiohttp
 import humps
@@ -49,6 +49,9 @@ from pyalarmdotcomajax.controllers.thermostats import ThermostatController
 from pyalarmdotcomajax.controllers.trouble_conditions import TroubleConditionController
 from pyalarmdotcomajax.controllers.users import (
     AvailableSystemsController,
+    DealersController,
+    IdentitiesController,
+    ProfilesController,
 )
 from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
 from pyalarmdotcomajax.controllers.water_valve import WaterValveController
@@ -463,6 +466,37 @@ class AlarmBridge:
     def device_catalogs(self) -> DeviceCatalogController:
         """Get the device catalogs controller."""
         return self._device_catalogs
+
+    @property
+    def identities(self) -> IdentitiesController:
+        """Get the identities controller."""
+
+        return cast(
+            "IdentitiesController",
+            self.get_or_create_controller(ResourceType.IDENTITY),
+        )
+
+    @property
+    def profiles(self) -> ProfilesController:
+        """Get the profiles controller."""
+
+        identities = cast(
+            "IdentitiesController",
+            self.get_or_create_controller(ResourceType.IDENTITY),
+        )
+        return cast(
+            "ProfilesController",
+            self.get_or_create_controller(ResourceType.PROFILE, identities),
+        )
+
+    @property
+    def dealers(self) -> DealersController:
+        """Get the dealers controller."""
+
+        return cast(
+            "DealersController",
+            self.get_or_create_controller(ResourceType.DEALER),
+        )
 
     @property
     def resource_controllers(self) -> list[BaseController]:
