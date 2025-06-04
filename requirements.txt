@@ -4,4 +4,5 @@ mashumaro~=3.16
 phonenumbers >= 9.0.5
 typer >= 0.16.0
 python-dateutil~=2.9.0.post0
-pyhumps>=3.8.0
+pyhumps~=3.8.0
+rich>=14.0.0

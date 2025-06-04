@@ -61,7 +61,7 @@
         {
             "label": "Install pyalarmdotcomajax (editable)",
             "type": "shell",
-            "command": "pip install --editable ../pyalarmdotcomajax --config-settings editable_mode=strict",
+            "command": "pip install --editable ../pyalarmdotcomajax",
             "group": "build"
         }
     ]
