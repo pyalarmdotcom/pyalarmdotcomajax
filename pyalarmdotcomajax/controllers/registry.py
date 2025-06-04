@@ -11,4 +11,3 @@ if TYPE_CHECKING:
 
 # Map ResourceType to controller class
 CONTROLLER_REGISTRY: dict[ResourceType, type[BaseController]] = {}
-
