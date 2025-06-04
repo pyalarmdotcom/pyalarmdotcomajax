@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pyalarmdotcomajax.controllers.base import BaseController
+from pyalarmdotcomajax.controllers.registry import CONTROLLER_REGISTRY
 from pyalarmdotcomajax.models.base import ResourceType
 from pyalarmdotcomajax.models.user import AvailableSystem, Dealer, Identity, Profile
 
@@ -55,3 +56,10 @@ class AvailableSystemsController(BaseController[AvailableSystem]):
                 return system.id
 
         return None
+
+
+# Register user controllers in the global controller registry.
+CONTROLLER_REGISTRY[ResourceType.IDENTITY] = IdentitiesController
+CONTROLLER_REGISTRY[ResourceType.PROFILE] = ProfilesController
+CONTROLLER_REGISTRY[ResourceType.DEALER] = DealersController
+CONTROLLER_REGISTRY[ResourceType.AVAILABLE_SYSTEM] = AvailableSystemsController
