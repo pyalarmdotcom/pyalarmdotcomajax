@@ -35,6 +35,8 @@ from pyalarmdotcomajax.websocket.messages import (
     ResourceEventType,
 )
 
+from .registry import CONTROLLER_REGISTRY
+
 if TYPE_CHECKING:
     from pyalarmdotcomajax import AlarmBridge
     from pyalarmdotcomajax.models.base import AdcResource, ResourceType
@@ -62,6 +64,7 @@ def device_controller(resource_type: ResourceType, resource_class: type[AdcResou
         cls.resource_type = resource_type
         cls._resource_class = resource_class
         cls._is_device_controller = True
+        CONTROLLER_REGISTRY[resource_type] = cls
         return cls
 
     return decorator
@@ -91,6 +94,8 @@ class BaseController(ABC, Generic[AdcResourceT]):
     _event_state_map: ClassVar[MappingProxyType[ResourceEventType, Enum] | None] = None
     # Indicates whether this controller is a device controller.
     _is_device_controller: ClassVar[bool] = False
+    # Resource types included within this controller's responses.
+    related_types: ClassVar[list[ResourceType]] = []
 
     def __init__(
         self,
@@ -289,6 +294,17 @@ class BaseController(ABC, Generic[AdcResourceT]):
                             task.add_done_callback(self._background_tasks.discard)
                         else:
                             callback(included_resources)
+
+            # Initialize related controllers with included resources.
+            for r_type in self.related_types:
+                related = [
+                    included_resource
+                    for included_resource in self._included_resources
+                    if included_resource.type == r_type
+                ]
+                if related:
+                    controller = self._bridge.get_or_create_controller(r_type, self)
+                    await controller._refresh(pre_fetched=related)  # noqa: SLF001
 
             # Return normalized response data for current resource type.
             pre_fetched = [*(response.data if isinstance(response.data, list) else [response.data])]
