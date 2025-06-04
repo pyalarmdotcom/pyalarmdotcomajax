@@ -53,6 +53,9 @@
         "**/.mypy_cache/**",
         "**/.ruff_cache/**"
     ],
+    "python.analysis.extraPaths": [
+        "/usr/local/python/3.13.3/lib/python3.13/site-packages"
+    ],
     "files.exclude": {
         "build": true,
         "dist": true,
