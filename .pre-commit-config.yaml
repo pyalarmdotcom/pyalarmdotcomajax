@@ -5,7 +5,7 @@ ci:
   - taplo-lint
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.11.11
+  rev: v0.11.12
   hooks:
   - id: ruff
     name: Ruff
@@ -13,7 +13,7 @@ repos:
     args:
     - --fix
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.15.0
+  rev: v1.16.0
   hooks:
   - id: mypy
     name: MyPy
