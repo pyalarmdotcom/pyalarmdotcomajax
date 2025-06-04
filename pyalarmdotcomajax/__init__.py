@@ -165,7 +165,8 @@ __all__: tuple[str, ...] = (  # noqa: RUF022
     "AdcControllerT",
     "ResourceEventMessage",
 )
-T = TypeVar("T", bound=JsonApiBaseElement)
+JsonApiBaseElementT = TypeVar("JsonApiBaseElementT", bound=JsonApiBaseElement)
+BaseControllerT = TypeVar("BaseControllerT", bound=BaseController)
 
 log = logging.getLogger(__name__)
 
@@ -196,9 +197,7 @@ class AlarmBridge:
         self.ajax_key: str | None = None
 
         # Session Controllers
-        self._auth_controller = AuthenticationController(
-            self, username, password, mfa_token
-        )
+        self._auth_controller = AuthenticationController(self, username, password, mfa_token)
         self._ws_controller = WebSocketClient(self)
 
         # Meta Resource Controllers
@@ -277,9 +276,7 @@ class AlarmBridge:
 
                 return False
 
-            raise UnexpectedResponse(
-                f"Failed to send keep alive signal. Response: {text_rsp}"
-            ) from err
+            raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
 
         return True
 
@@ -296,9 +293,7 @@ class AlarmBridge:
         if not self._available_device_catalogs.active_system_id:
             raise AuthenticationFailed("No active system found.")
         await self._systems.initialize()
-        await self._device_catalogs.initialize(
-            [self._available_device_catalogs.active_system_id]
-        )
+        await self._device_catalogs.initialize([self._available_device_catalogs.active_system_id])
         await self._partitions.initialize()
         if self._auth_controller.has_trouble_conditions_service:
             await self._trouble_conditions.initialize()
@@ -310,15 +305,11 @@ class AlarmBridge:
                 resource_type = controller.resource_type
                 # Use the system controller's items for device discovery
                 # Within each relationship entry in relationships, we're looking at type in each ResourceIdentifier in data.
-                if resource_type and (
-                    relationships := self._systems.items[0].api_resource.relationships
-                ):
+                if resource_type and (relationships := self._systems.items[0].api_resource.relationships):
                     for relationship in relationships.values():
                         for resource_identifier in relationship.data_list:
                             if resource_identifier.type == resource_type:
-                                device_ids_by_type.setdefault(
-                                    type(controller), []
-                                ).append(resource_identifier.id)
+                                device_ids_by_type.setdefault(type(controller), []).append(resource_identifier.id)
 
         log.debug("Discovered device IDs by type: %s", device_ids_by_type)
 
@@ -335,17 +326,13 @@ class AlarmBridge:
         if init_tasks:
             await asyncio.gather(*init_tasks)
 
-    async def start_event_monitoring(
-        self, ws_status_callback: EventBrokerCallbackT | None = None
-    ) -> None | Callable:
+    async def start_event_monitoring(self, ws_status_callback: EventBrokerCallbackT | None = None) -> None | Callable:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
 
         if ws_status_callback:
-            return self.events.subscribe(
-                EventBrokerTopic.CONNECTION_EVENT, ws_status_callback
-            )
+            return self.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, ws_status_callback)
 
         return None
 
@@ -471,23 +458,14 @@ class AlarmBridge:
     def identities(self) -> IdentitiesController:
         """Get the identities controller."""
 
-        return cast(
-            "IdentitiesController",
-            self.get_or_create_controller(ResourceType.IDENTITY),
-        )
+        return self.get_or_create_controller(ResourceType.IDENTITY, controller_type=IdentitiesController)
 
     @property
     def profiles(self) -> ProfilesController:
         """Get the profiles controller."""
 
-        identities = cast(
-            "IdentitiesController",
-            self.get_or_create_controller(ResourceType.IDENTITY),
-        )
-        return cast(
-            "ProfilesController",
-            self.get_or_create_controller(ResourceType.PROFILE, identities),
-        )
+        identities = self.get_or_create_controller(ResourceType.IDENTITY, controller_type=IdentitiesController)
+        return self.get_or_create_controller(ResourceType.PROFILE, identities, controller_type=ProfilesController)
 
     @property
     def dealers(self) -> DealersController:
@@ -505,14 +483,34 @@ class AlarmBridge:
         # Build and return list of resource controllers by searching self for all attributes that inherit from
         # BaseController
         return [
-            controller
-            for controller in list(self.__dict__.values())
-            if isinstance(controller, BaseController)
+            controller for controller in list(self.__dict__.values()) if isinstance(controller, BaseController)
         ] + list(self._dynamic_controllers.values())
 
+    @overload
     def get_or_create_controller(
-        self, resource_type: ResourceType, data_provider: BaseController | None = None
-    ) -> BaseController:
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: type[BaseControllerT],
+    ) -> BaseControllerT: ...
+
+    @overload
+    def get_or_create_controller(
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: None = None,
+    ) -> BaseController: ...
+
+    def get_or_create_controller(
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: type[BaseControllerT] | None = None,
+    ) -> BaseController | type[BaseControllerT]:
         """Return existing or instantiate new controller for a resource type."""
 
         for controller in self.resource_controllers:
@@ -576,8 +574,7 @@ class AlarmBridge:
             resource.id: resource
             for controller in self.resource_controllers
             for resource in controller.items
-            if isinstance(resource, AdcDeviceResource)
-            and isinstance(resource.attributes, BaseManagedDeviceAttributes)
+            if isinstance(resource, AdcDeviceResource) and isinstance(resource.attributes, BaseManagedDeviceAttributes)
         }
 
     ##########################################
@@ -668,13 +665,9 @@ class AlarmBridge:
             self._websession = aiohttp.ClientSession()
 
         if self._auth_controller.mfa_cookie:
-            kwargs.setdefault("cookies", {}).update(
-                {MFA_COOKIE_KEY: self._auth_controller.mfa_cookie}
-            )
+            kwargs.setdefault("cookies", {}).update({MFA_COOKIE_KEY: self._auth_controller.mfa_cookie})
 
-        kwargs = self.build_request_headers(
-            accept_types=accept_types, use_ajax_key=use_ajax_key, **kwargs
-        )
+        kwargs = self.build_request_headers(accept_types=accept_types, use_ajax_key=use_ajax_key, **kwargs)
 
         async with self._websession.request(method, url, **kwargs) as resp:
             # Update anti-forgery cookie.
@@ -701,9 +694,7 @@ class AlarmBridge:
             # If DEBUG logging is enabled, log the request and response.
             if log.level < logging.DEBUG:
                 try:
-                    resp_dump = (
-                        json.dumps(await resp.json()) if resp.content_length else ""
-                    )
+                    resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
                 except (json.JSONDecodeError, aiohttp.ContentTypeError):
                     if resp.content_type == "text/html":
                         resp_dump = "***OMITTING HTML OUTPUT***"
@@ -725,8 +716,7 @@ class AlarmBridge:
                     json.dumps(dict(resp.request_info.headers)),
                     kwargs.get("data") or kwargs.get("json"),
                     json.dumps(dict(resp.headers)),
-                    resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN]
-                    + "..." * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN),
+                    resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN] + "..." * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN),
                     url,
                 )
 
@@ -744,9 +734,7 @@ class AlarmBridge:
         Returns a generator with aiohttp ClientWebSocketResponse.
         """
         if self._websession is None:
-            raise NotInitialized(
-                "Cannot initiate WebSocket connection without an existing session."
-            )
+            raise NotInitialized("Cannot initiate WebSocket connection without an existing session.")
 
         # Don't generate/use GET/POST request headers. WebSocket connection uses token in place of cookies, etc.
 
@@ -759,9 +747,9 @@ class AlarmBridge:
         method: str,
         url: str,
         accept_types: ResponseTypes,
-        success_response_class: type[T],
+        success_response_class: type[JsonApiBaseElementT],
         **kwargs: Any,
-    ) -> T: ...
+    ) -> JsonApiBaseElementT: ...
 
     @overload
     async def request(
@@ -778,11 +766,11 @@ class AlarmBridge:
         method: str,
         url: str,
         accept_types: ResponseTypes = ResponseTypes.JSONAPI,
-        success_response_class: type[T] | type[SuccessDocument] = SuccessDocument,
+        success_response_class: type[JsonApiBaseElementT] | type[SuccessDocument] = SuccessDocument,
         *,
         allow_login_repair: bool = True,
         **kwargs: Any,
-    ) -> T | SuccessDocument:
+    ) -> JsonApiBaseElementT | SuccessDocument:
         """Make request to the api and return response data."""
 
         # Alarm.com's implementation violates the JSON:API spec by sometimes returning a modified error response
@@ -799,14 +787,10 @@ class AlarmBridge:
         )
 
         try:
-            async with self.create_request(
-                method, url, accept_types, use_ajax_key=True, **kwargs
-            ) as raw_resp:
+            async with self.create_request(method, url, accept_types, use_ajax_key=True, **kwargs) as raw_resp:
                 # Load the response as JSON:API object.
 
-                response: FailureDocument | JsonApiBaseElement | MetaDocument | None = (
-                    None
-                )
+                response: FailureDocument | JsonApiBaseElement | MetaDocument | None = None
 
                 try:
                     response = success_response_class.from_json(await raw_resp.text())
@@ -825,24 +809,16 @@ class AlarmBridge:
                     response = FailureDocument.from_json(await raw_resp.text())
                 except (ValueError, MissingField) as err:
                     log.exception("Failed to parse response as FailureDocument.")
-                    raise UnexpectedResponse(
-                        "Response did not match requested schema definition."
-                    ) from err
+                    raise UnexpectedResponse("Response did not match requested schema definition.") from err
 
                 # "Successful" FailureDocument requests always return a 200 response code. Non-200 responses
                 # indicate server failure.
                 # "Successful" AdcMiniResponses requests return non-200 responses for "successful" failures like an
                 # incorrect OTP code.
 
-                if hasattr(response, "errors") and isinstance(
-                    response, FailureDocument
-                ):
+                if hasattr(response, "errors") and isinstance(response, FailureDocument):
                     # Retrieve errors from errors dict object.
-                    error_codes = [
-                        int(error.code)
-                        for error in response.errors
-                        if error.code is not None
-                    ]
+                    error_codes = [int(error.code) for error in response.errors if error.code is not None]
 
                     # 406: Not Authorized For Ember, 423: Processing Error
                     if any(x in error_codes for x in [406, 423]):
@@ -879,8 +855,7 @@ class AlarmBridge:
                         )
 
                     raise UnexpectedResponse(
-                        f"Method: {method}\nURL: {url}\nStatus Codes: "
-                        f"{error_codes}\nRequest Body: {kwargs.get('data')}"
+                        f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}"
                     )
 
                 raw_resp.raise_for_status()
@@ -905,9 +880,7 @@ class AlarmBridge:
 
             raise
 
-    def _generate_request_url(
-        self, path: ResourceType | str, id: str | set[str] | None
-    ) -> str:
+    def _generate_request_url(self, path: ResourceType | str, id: str | set[str] | None) -> str:
         """
         Generate endpoint URL for request.
 
@@ -1004,16 +977,10 @@ class AlarmBridge:
                 return await self.request(
                     method="get",
                     url=path,
-                    accept_types=ResponseTypes.JSON
-                    if mini_response
-                    else ResponseTypes.JSONAPI,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
                     success_response_class=AdcMiniSuccessResponse
                     if mini_response
-                    else (
-                        AdcSuccessDocumentSingle
-                        if isinstance(id, str)
-                        else AdcSuccessDocumentMulti
-                    ),
+                    else (AdcSuccessDocumentSingle if isinstance(id, str) else AdcSuccessDocumentMulti),
                     **kwargs,
                 )
 
@@ -1046,12 +1013,8 @@ class AlarmBridge:
                 return await self.request(
                     method="post",
                     url=path,
-                    accept_types=ResponseTypes.JSON
-                    if mini_response
-                    else ResponseTypes.JSONAPI,
-                    success_response_class=AdcMiniSuccessResponse
-                    if mini_response
-                    else AdcSuccessDocumentSingle,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
+                    success_response_class=AdcMiniSuccessResponse if mini_response else AdcSuccessDocumentSingle,
                     **kwargs,
                 )
 
@@ -1070,23 +1033,11 @@ class AlarmBridge:
         """Return pretty representation of resources in AlarmBridge."""
 
         return Group(
-            *[
-                x.resources_pretty
-                for x in sorted(
-                    self.resource_controllers, key=lambda x: x.__class__.__name__
-                )
-            ]
+            *[x.resources_pretty for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
         )
 
     @property
     def resources_raw(self) -> Group:
         """Return raw JSON for all bridge resources."""
 
-        return Group(
-            *[
-                x.resources_raw
-                for x in sorted(
-                    self.resource_controllers, key=lambda x: x.__class__.__name__
-                )
-            ]
-        )
+        return Group(*[x.resources_raw for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)])
