@@ -31,30 +31,30 @@ from pyalarmdotcomajax.controllers import (
 )
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import BaseController
-from pyalarmdotcomajax.controllers.cameras import CameraController
-from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController
-from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController
-from pyalarmdotcomajax.controllers.gates import GateController
-from pyalarmdotcomajax.controllers.image_sensors import (
+from pyalarmdotcomajax.controllers.cameras import CameraController  # noqa: TC001
+from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController  # noqa: TC001
+from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.gates import GateController  # noqa: TC001
+from pyalarmdotcomajax.controllers.image_sensors import (  # noqa: TC001
     ImageSensorController,
     ImageSensorImageController,
 )
-from pyalarmdotcomajax.controllers.lights import LightController
-from pyalarmdotcomajax.controllers.locks import LockController
-from pyalarmdotcomajax.controllers.partitions import PartitionController
+from pyalarmdotcomajax.controllers.lights import LightController  # noqa: TC001
+from pyalarmdotcomajax.controllers.locks import LockController  # noqa: TC001
+from pyalarmdotcomajax.controllers.partitions import PartitionController  # noqa: TC001
 from pyalarmdotcomajax.controllers.registry import CONTROLLER_REGISTRY
-from pyalarmdotcomajax.controllers.sensors import SensorController
-from pyalarmdotcomajax.controllers.systems import SystemController
-from pyalarmdotcomajax.controllers.thermostats import ThermostatController
-from pyalarmdotcomajax.controllers.trouble_conditions import TroubleConditionController
-from pyalarmdotcomajax.controllers.users import (
+from pyalarmdotcomajax.controllers.sensors import SensorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.systems import SystemController  # noqa: TC001
+from pyalarmdotcomajax.controllers.thermostats import ThermostatController  # noqa: TC001
+from pyalarmdotcomajax.controllers.trouble_conditions import TroubleConditionController  # noqa: TC001
+from pyalarmdotcomajax.controllers.users import (  # noqa: TC001
     AvailableSystemsController,
     DealersController,
     IdentitiesController,
     ProfilesController,
 )
-from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
-from pyalarmdotcomajax.controllers.water_valve import WaterValveController
+from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.water_valve import WaterValveController  # noqa: TC001
 from pyalarmdotcomajax.events import (
     EventBroker,
     EventBrokerCallbackT,
@@ -176,26 +176,7 @@ MFA_COOKIE_KEY = "twoFactorAuthenticationId"
 class AlarmBridge:
     """Alarm.com bridge."""
 
-    def __init__(
-        self,
-        username: str | None = None,
-        password: str | None = None,
-        mfa_token: str | None = None,
-    ) -> None:
-        """Initialize alarm bridge."""
-
-        # We allow username and password to be set after initialization so that we can use an instantiated
-        # (but not initialized) AlarmBridge to populate the adc cli command list.
-
-        self._initialized = False
-
-        # Event Broker
-        self.events = EventBroker()
-
-        # Session
-        self._websession: aiohttp.ClientSession | None = None
-        self.ajax_key: str | None = None
-
+        # Controllers are created lazily via get_or_create_controller()
         # Session Controllers
         self._auth_controller = AuthenticationController(self, username, password, mfa_token)
         self._ws_controller = WebSocketClient(self)
@@ -276,19 +257,35 @@ class AlarmBridge:
 
                 return False
 
-            raise UnexpectedResponse(f"Failed to send keep alive signal. Response: {text_rsp}") from err
+        available_systems = cast(
+            "AvailableSystemsController",
+            self.get_or_create_controller(ResourceType.AVAILABLE_SYSTEM),
+        )
+        await available_systems.initialize()
+        if not available_systems.active_system_id:
+        systems = cast(
+            "SystemController", self.get_or_create_controller(ResourceType.SYSTEM)
+        )
+        device_catalogs = cast(
+            "DeviceCatalogController",
+            self.get_or_create_controller(ResourceType.DEVICE_CATALOG),
+        )
+        partitions = cast(
+            "PartitionController",
+            self.get_or_create_controller(ResourceType.PARTITION, device_catalogs),
+        trouble_conditions = cast(
+            "TroubleConditionController",
+            self.get_or_create_controller(ResourceType.TROUBLE_CONDITION),
+        )
 
-        return True
-
-    async def login(self) -> None:
-        """Login to alarm.com."""
-
-        return await self._auth_controller.login()
-
-    async def fetch_full_state(self) -> None:
-        """Fetch full state from alarm.com."""
-
-        # 1. Initialize system and device catalog controllers first
+        await systems.initialize()
+        await device_catalogs.initialize([available_systems.active_system_id])
+        await partitions.initialize()
+            await trouble_conditions.initialize()
+                    relationships := systems.items[0].api_resource.relationships
+                                device_ids_by_type.setdefault(type(controller), []).append(
+                                    resource_identifier.id
+                                )
         await self._available_device_catalogs.initialize()
         if not self._available_device_catalogs.active_system_id:
             raise AuthenticationFailed("No active system found.")
@@ -366,33 +363,50 @@ class AlarmBridge:
     @property
     def lights(self) -> LightController:
         """Get the lights controller."""
-
-        return self._lights
+        return cast(
+            "LightController",
+            self.get_or_create_controller(ResourceType.LIGHT, self.device_catalogs),
+        )
 
     @property
     def cameras(self) -> CameraController:
         """Get the cameras controller."""
-        return self._cameras
+        return cast(
+            "CameraController",
+            self.get_or_create_controller(ResourceType.CAMERA, self.device_catalogs),
+        )
 
     @property
     def garage_doors(self) -> GarageDoorController:
         """Get the garage doors controller."""
-        return self._garage_doors
+        return cast(
+            "GarageDoorController",
+            self.get_or_create_controller(ResourceType.GARAGE_DOOR, self.device_catalogs),
+        )
 
     @property
     def gates(self) -> GateController:
         """Get the gates controller."""
-        return self._gates
+        return cast(
+            "GateController",
+            self.get_or_create_controller(ResourceType.GATE, self.device_catalogs),
+        )
 
     @property
     def image_sensors(self) -> ImageSensorController:
         """Get the image sensors controller."""
-        return self._image_sensors
+        return cast(
+            "ImageSensorController",
+            self.get_or_create_controller(ResourceType.IMAGE_SENSOR),
+        )
 
     @property
     def image_sensor_images(self) -> ImageSensorImageController:
         """Get the image sensor images controller."""
-        return self._image_sensor_images
+        return cast(
+            "ImageSensorImageController",
+            self.get_or_create_controller(ResourceType.IMAGE_SENSOR_IMAGE),
+        )
 
     @property
     def image_sensor_orchestrator(self) -> ImageSensorOrchestrator:
@@ -402,42 +416,66 @@ class AlarmBridge:
     @property
     def locks(self) -> LockController:
         """Get the locks controller."""
-        return self._locks
+        return cast(
+            "LockController",
+            self.get_or_create_controller(ResourceType.LOCK, self.device_catalogs),
+        )
 
     @property
     def partitions(self) -> PartitionController:
         """Get the partitions controller."""
-        return self._partitions
+        return cast(
+            "PartitionController",
+            self.get_or_create_controller(ResourceType.PARTITION, self.device_catalogs),
+        )
 
     @property
     def sensors(self) -> SensorController:
         """Get the sensors controller."""
-        return self._sensors
+        return cast(
+            "SensorController",
+            self.get_or_create_controller(ResourceType.SENSOR, self.device_catalogs),
+        )
 
     @property
     def systems(self) -> SystemController:
         """Get the system controller."""
-        return self._systems
+        return cast(
+            "SystemController",
+            self.get_or_create_controller(ResourceType.SYSTEM),
+        )
 
     @property
     def thermostats(self) -> ThermostatController:
         """Get the thermostats controller."""
-        return self._thermostats
+        return cast(
+            "ThermostatController",
+            self.get_or_create_controller(ResourceType.THERMOSTAT, self.device_catalogs),
+        )
 
     @property
     def trouble_conditions(self) -> TroubleConditionController:
         """Get the trouble conditions controller."""
-        return self._trouble_conditions
+        return cast(
+            "TroubleConditionController",
+            self.get_or_create_controller(ResourceType.TROUBLE_CONDITION),
+        )
 
     @property
     def water_sensors(self) -> WaterSensorController:
         """Get the water sensors controller."""
-        return self._water_sensors
+        return cast(
+            "WaterSensorController",
+            self.get_or_create_controller(ResourceType.WATER_SENSOR, self.device_catalogs),
+        )
 
     @property
     def water_valves(self) -> WaterValveController:
         """Get the water valves controller."""
-        return self._water_valves
+        return cast(
+            "WaterValveController",
+            self.get_or_create_controller(ResourceType.WATER_VALVE, self.device_catalogs),
+        )
 
     @property
     def auth_controller(self) -> AuthenticationController:
@@ -452,7 +490,10 @@ class AlarmBridge:
     @property
     def device_catalogs(self) -> DeviceCatalogController:
         """Get the device catalogs controller."""
-        return self._device_catalogs
+        return cast(
+            "DeviceCatalogController",
+            self.get_or_create_controller(ResourceType.DEVICE_CATALOG),
+        )
 
     @property
     def identities(self) -> IdentitiesController:
@@ -547,11 +588,17 @@ class AlarmBridge:
     @property
     def active_system(self) -> System:
         """Get the active system."""
-
-        if not self._available_device_catalogs.active_system_id:
+        available_systems = cast(
+            "AvailableSystemsController",
+            self.get_or_create_controller(ResourceType.AVAILABLE_SYSTEM),
+        )
+        if not available_systems.active_system_id:
             raise AuthenticationFailed("No active system found.")
 
-        return self._systems[self._available_device_catalogs.active_system_id]
+        systems = cast(
+            "SystemController", self.get_or_create_controller(ResourceType.SYSTEM)
+        )
+        return systems[available_systems.active_system_id]
 
     @property
     def resources(self) -> dict[str, AdcResource]:
