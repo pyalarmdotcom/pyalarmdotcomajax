@@ -3,7 +3,7 @@ pytest>=8.3.5
 pytest-asyncio >= 1.0.0
 tomli>=2.2.1
 tomli_w>=1.2.0
-types-requests==2.31.0.6 # Freeze at 2.31.0.6 to prevent dependency conflict with Home Assistant over urllib3
+types-requests==2.32.0.20250602 # Freeze at 2.31.0.6 to prevent dependency conflict with Home Assistant over urllib3
 types-PyYAML >= 6.0.12.20250516
 setuptools-scm>=8.3.1
 pathspec >= 0.12.1
