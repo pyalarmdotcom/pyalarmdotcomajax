@@ -1,6 +1,6 @@
 aiohttp == 3.11.18
 beautifulsoup4 >= 4.13.4
-mashumaro~=3.16
+mashumaro~=3.18
 phonenumbers >= 9.0.5
 typer >= 0.16.0
 python-dateutil~=2.9.0.post0
