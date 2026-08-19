@@ -1,5 +1,5 @@
 <h4>Heads up: Maintenance is paused. I've moved and no longer have access to an Alarm.com system. I plan to install one, but on an indefinite timeline.</h4>
-===
+<hr>
 <p align="center"><img src="https://user-images.githubusercontent.com/466460/175575400-44ab6ed5-acb4-4a8c-b2ab-8b757675e900.png" height="200px"></p>
 <h1 align="center" border="1px solid black">pyalarmdotcomajax</h1>
 <h3 align="center">Asynchronous, Event-Driven Python Library for Accessing Alarm.com Services</h3>
