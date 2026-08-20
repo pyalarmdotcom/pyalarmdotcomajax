@@ -629,8 +629,14 @@ class AlarmBridge:
             # Update MFA cookie.
             # We need to store the MFA cookie locally in order to reauthenticate after a session timeout without
             # having to reprompt for an OTP.
+            #
+            # Alarm.com sometimes sets this cookie on an intermediate redirect hop rather than on the final
+            # response, so resp.cookies (which only reflects the final response) can miss it even though the
+            # session's cookie jar already has it and is sending it on every subsequent request. Read from the
+            # jar instead, since it's the authoritative accumulated state across all hops.
 
-            if (mfa_cookie := resp.cookies.get(MFA_COOKIE_KEY)) and (
+            jar_cookies = self._websession.cookie_jar.filter_cookies(resp.url)
+            if (mfa_cookie := jar_cookies.get(MFA_COOKIE_KEY)) and (
                 mfa_cookie.value != self._auth_controller.mfa_cookie
             ):
                 log.debug("Got new token from MFA cookie.")
