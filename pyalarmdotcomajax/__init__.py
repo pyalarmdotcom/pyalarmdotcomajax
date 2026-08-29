@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 import aiohttp
 import humps
@@ -31,26 +31,30 @@ from pyalarmdotcomajax.controllers import (
 )
 from pyalarmdotcomajax.controllers.auth import AuthenticationController
 from pyalarmdotcomajax.controllers.base import BaseController
-from pyalarmdotcomajax.controllers.cameras import CameraController
-from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController
-from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController
-from pyalarmdotcomajax.controllers.gates import GateController
-from pyalarmdotcomajax.controllers.image_sensors import (
+from pyalarmdotcomajax.controllers.cameras import CameraController  # noqa: TC001
+from pyalarmdotcomajax.controllers.device_catalogs import DeviceCatalogController  # noqa: TC001
+from pyalarmdotcomajax.controllers.garage_doors import GarageDoorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.gates import GateController  # noqa: TC001
+from pyalarmdotcomajax.controllers.image_sensors import (  # noqa: TC001
     ImageSensorController,
     ImageSensorImageController,
 )
-from pyalarmdotcomajax.controllers.lights import LightController
-from pyalarmdotcomajax.controllers.locks import LockController
-from pyalarmdotcomajax.controllers.partitions import PartitionController
-from pyalarmdotcomajax.controllers.sensors import SensorController
-from pyalarmdotcomajax.controllers.systems import SystemController
-from pyalarmdotcomajax.controllers.thermostats import ThermostatController
-from pyalarmdotcomajax.controllers.trouble_conditions import TroubleConditionController
-from pyalarmdotcomajax.controllers.users import (
+from pyalarmdotcomajax.controllers.lights import LightController  # noqa: TC001
+from pyalarmdotcomajax.controllers.locks import LockController  # noqa: TC001
+from pyalarmdotcomajax.controllers.partitions import PartitionController  # noqa: TC001
+from pyalarmdotcomajax.controllers.registry import CONTROLLER_REGISTRY
+from pyalarmdotcomajax.controllers.sensors import SensorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.systems import SystemController  # noqa: TC001
+from pyalarmdotcomajax.controllers.thermostats import ThermostatController  # noqa: TC001
+from pyalarmdotcomajax.controllers.trouble_conditions import TroubleConditionController  # noqa: TC001
+from pyalarmdotcomajax.controllers.users import (  # noqa: TC001
     AvailableSystemsController,
+    DealersController,
+    IdentitiesController,
+    ProfilesController,
 )
-from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController
-from pyalarmdotcomajax.controllers.water_valve import WaterValveController
+from pyalarmdotcomajax.controllers.water_sensors import WaterSensorController  # noqa: TC001
+from pyalarmdotcomajax.controllers.water_valve import WaterValveController  # noqa: TC001
 from pyalarmdotcomajax.events import (
     EventBroker,
     EventBrokerCallbackT,
@@ -105,6 +109,7 @@ from pyalarmdotcomajax.models.jsonapi import (
     MetaDocument,
     SuccessDocument,
 )
+from pyalarmdotcomajax.orchestrators.image_sensors import ImageSensorOrchestrator
 from pyalarmdotcomajax.websocket.client import (
     ConnectionEvent,
     WebSocketClient,
@@ -160,7 +165,8 @@ __all__: tuple[str, ...] = (  # noqa: RUF022
     "AdcControllerT",
     "ResourceEventMessage",
 )
-T = TypeVar("T", bound=JsonApiBaseElement)
+JsonApiBaseElementT = TypeVar("JsonApiBaseElementT", bound=JsonApiBaseElement)
+BaseControllerT = TypeVar("BaseControllerT", bound=BaseController)
 
 log = logging.getLogger(__name__)
 
@@ -170,30 +176,9 @@ MFA_COOKIE_KEY = "twoFactorAuthenticationId"
 class AlarmBridge:
     """Alarm.com bridge."""
 
-    def __init__(
-        self,
-        username: str | None = None,
-        password: str | None = None,
-        mfa_token: str | None = None,
-    ) -> None:
-        """Initialize alarm bridge."""
-
-        # We allow username and password to be set after initialization so that we can use an instantiated
-        # (but not initialized) AlarmBridge to populate the adc cli command list.
-
-        self._initialized = False
-
-        # Event Broker
-        self.events = EventBroker()
-
-        # Session
-        self._websession: aiohttp.ClientSession | None = None
-        self.ajax_key: str | None = None
-
+        # Controllers are created lazily via get_or_create_controller()
         # Session Controllers
-        self._auth_controller = AuthenticationController(
-            self, username, password, mfa_token
-        )
+        self._auth_controller = AuthenticationController(self, username, password, mfa_token)
         self._ws_controller = WebSocketClient(self)
 
         # Meta Resource Controllers
@@ -216,6 +201,10 @@ class AlarmBridge:
 
         self._image_sensors = ImageSensorController(self)
         self._image_sensor_images = ImageSensorImageController(self)
+
+        self._dynamic_controllers: dict[ResourceType, BaseController] = {}
+
+        self._image_sensor_orchestrator = ImageSensorOrchestrator(self)
 
     async def initialize(self) -> None:
         """Initialize bridge connection, or finish initialization after OTP has been submitted."""
@@ -268,28 +257,40 @@ class AlarmBridge:
 
                 return False
 
-            raise UnexpectedResponse(
-                f"Failed to send keep alive signal. Response: {text_rsp}"
-            ) from err
+        available_systems = cast(
+            "AvailableSystemsController",
+            self.get_or_create_controller(ResourceType.AVAILABLE_SYSTEM),
+        )
+        await available_systems.initialize()
+        if not available_systems.active_system_id:
+        systems = cast(
+            "SystemController", self.get_or_create_controller(ResourceType.SYSTEM)
+        )
+        device_catalogs = cast(
+            "DeviceCatalogController",
+            self.get_or_create_controller(ResourceType.DEVICE_CATALOG),
+        )
+        partitions = cast(
+            "PartitionController",
+            self.get_or_create_controller(ResourceType.PARTITION, device_catalogs),
+        trouble_conditions = cast(
+            "TroubleConditionController",
+            self.get_or_create_controller(ResourceType.TROUBLE_CONDITION),
+        )
 
-        return True
-
-    async def login(self) -> None:
-        """Login to alarm.com."""
-
-        return await self._auth_controller.login()
-
-    async def fetch_full_state(self) -> None:
-        """Fetch full state from alarm.com."""
-
-        # 1. Initialize system and device catalog controllers first
+        await systems.initialize()
+        await device_catalogs.initialize([available_systems.active_system_id])
+        await partitions.initialize()
+            await trouble_conditions.initialize()
+                    relationships := systems.items[0].api_resource.relationships
+                                device_ids_by_type.setdefault(type(controller), []).append(
+                                    resource_identifier.id
+                                )
         await self._available_device_catalogs.initialize()
         if not self._available_device_catalogs.active_system_id:
             raise AuthenticationFailed("No active system found.")
         await self._systems.initialize()
-        await self._device_catalogs.initialize(
-            [self._available_device_catalogs.active_system_id]
-        )
+        await self._device_catalogs.initialize([self._available_device_catalogs.active_system_id])
         await self._partitions.initialize()
         if self._auth_controller.has_trouble_conditions_service:
             await self._trouble_conditions.initialize()
@@ -301,15 +302,11 @@ class AlarmBridge:
                 resource_type = controller.resource_type
                 # Use the system controller's items for device discovery
                 # Within each relationship entry in relationships, we're looking at type in each ResourceIdentifier in data.
-                if resource_type and (
-                    relationships := self._systems.items[0].api_resource.relationships
-                ):
+                if resource_type and (relationships := self._systems.items[0].api_resource.relationships):
                     for relationship in relationships.values():
                         for resource_identifier in relationship.data_list:
                             if resource_identifier.type == resource_type:
-                                device_ids_by_type.setdefault(
-                                    type(controller), []
-                                ).append(resource_identifier.id)
+                                device_ids_by_type.setdefault(type(controller), []).append(resource_identifier.id)
 
         log.debug("Discovered device IDs by type: %s", device_ids_by_type)
 
@@ -326,17 +323,13 @@ class AlarmBridge:
         if init_tasks:
             await asyncio.gather(*init_tasks)
 
-    async def start_event_monitoring(
-        self, ws_status_callback: EventBrokerCallbackT | None = None
-    ) -> None | Callable:
+    async def start_event_monitoring(self, ws_status_callback: EventBrokerCallbackT | None = None) -> None | Callable:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
 
         if ws_status_callback:
-            return self.events.subscribe(
-                EventBrokerTopic.CONNECTION_EVENT, ws_status_callback
-            )
+            return self.events.subscribe(EventBrokerTopic.CONNECTION_EVENT, ws_status_callback)
 
         return None
 
@@ -370,73 +363,119 @@ class AlarmBridge:
     @property
     def lights(self) -> LightController:
         """Get the lights controller."""
-
-        return self._lights
+        return cast(
+            "LightController",
+            self.get_or_create_controller(ResourceType.LIGHT, self.device_catalogs),
+        )
 
     @property
     def cameras(self) -> CameraController:
         """Get the cameras controller."""
-        return self._cameras
+        return cast(
+            "CameraController",
+            self.get_or_create_controller(ResourceType.CAMERA, self.device_catalogs),
+        )
 
     @property
     def garage_doors(self) -> GarageDoorController:
         """Get the garage doors controller."""
-        return self._garage_doors
+        return cast(
+            "GarageDoorController",
+            self.get_or_create_controller(ResourceType.GARAGE_DOOR, self.device_catalogs),
+        )
 
     @property
     def gates(self) -> GateController:
         """Get the gates controller."""
-        return self._gates
+        return cast(
+            "GateController",
+            self.get_or_create_controller(ResourceType.GATE, self.device_catalogs),
+        )
 
     @property
     def image_sensors(self) -> ImageSensorController:
         """Get the image sensors controller."""
-        return self._image_sensors
+        return cast(
+            "ImageSensorController",
+            self.get_or_create_controller(ResourceType.IMAGE_SENSOR),
+        )
 
     @property
     def image_sensor_images(self) -> ImageSensorImageController:
         """Get the image sensor images controller."""
-        return self._image_sensor_images
+        return cast(
+            "ImageSensorImageController",
+            self.get_or_create_controller(ResourceType.IMAGE_SENSOR_IMAGE),
+        )
+
+    @property
+    def image_sensor_orchestrator(self) -> ImageSensorOrchestrator:
+        """Get the image sensor orchestrator."""
+        return self._image_sensor_orchestrator
 
     @property
     def locks(self) -> LockController:
         """Get the locks controller."""
-        return self._locks
+        return cast(
+            "LockController",
+            self.get_or_create_controller(ResourceType.LOCK, self.device_catalogs),
+        )
 
     @property
     def partitions(self) -> PartitionController:
         """Get the partitions controller."""
-        return self._partitions
+        return cast(
+            "PartitionController",
+            self.get_or_create_controller(ResourceType.PARTITION, self.device_catalogs),
+        )
 
     @property
     def sensors(self) -> SensorController:
         """Get the sensors controller."""
-        return self._sensors
+        return cast(
+            "SensorController",
+            self.get_or_create_controller(ResourceType.SENSOR, self.device_catalogs),
+        )
 
     @property
     def systems(self) -> SystemController:
         """Get the system controller."""
-        return self._systems
+        return cast(
+            "SystemController",
+            self.get_or_create_controller(ResourceType.SYSTEM),
+        )
 
     @property
     def thermostats(self) -> ThermostatController:
         """Get the thermostats controller."""
-        return self._thermostats
+        return cast(
+            "ThermostatController",
+            self.get_or_create_controller(ResourceType.THERMOSTAT, self.device_catalogs),
+        )
 
     @property
     def trouble_conditions(self) -> TroubleConditionController:
         """Get the trouble conditions controller."""
-        return self._trouble_conditions
+        return cast(
+            "TroubleConditionController",
+            self.get_or_create_controller(ResourceType.TROUBLE_CONDITION),
+        )
 
     @property
     def water_sensors(self) -> WaterSensorController:
         """Get the water sensors controller."""
-        return self._water_sensors
+        return cast(
+            "WaterSensorController",
+            self.get_or_create_controller(ResourceType.WATER_SENSOR, self.device_catalogs),
+        )
 
     @property
     def water_valves(self) -> WaterValveController:
         """Get the water valves controller."""
-        return self._water_valves
+        return cast(
+            "WaterValveController",
+            self.get_or_create_controller(ResourceType.WATER_VALVE, self.device_catalogs),
+        )
 
     @property
     def auth_controller(self) -> AuthenticationController:
@@ -451,7 +490,32 @@ class AlarmBridge:
     @property
     def device_catalogs(self) -> DeviceCatalogController:
         """Get the device catalogs controller."""
-        return self._device_catalogs
+        return cast(
+            "DeviceCatalogController",
+            self.get_or_create_controller(ResourceType.DEVICE_CATALOG),
+        )
+
+    @property
+    def identities(self) -> IdentitiesController:
+        """Get the identities controller."""
+
+        return self.get_or_create_controller(ResourceType.IDENTITY, controller_type=IdentitiesController)
+
+    @property
+    def profiles(self) -> ProfilesController:
+        """Get the profiles controller."""
+
+        identities = self.get_or_create_controller(ResourceType.IDENTITY, controller_type=IdentitiesController)
+        return self.get_or_create_controller(ResourceType.PROFILE, identities, controller_type=ProfilesController)
+
+    @property
+    def dealers(self) -> DealersController:
+        """Get the dealers controller."""
+
+        return cast(
+            "DealersController",
+            self.get_or_create_controller(ResourceType.DEALER),
+        )
 
     @property
     def resource_controllers(self) -> list[BaseController]:
@@ -460,10 +524,47 @@ class AlarmBridge:
         # Build and return list of resource controllers by searching self for all attributes that inherit from
         # BaseController
         return [
-            controller
-            for controller in self.__dict__.values()
-            if isinstance(controller, BaseController)
-        ]
+            controller for controller in list(self.__dict__.values()) if isinstance(controller, BaseController)
+        ] + list(self._dynamic_controllers.values())
+
+    @overload
+    def get_or_create_controller(
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: type[BaseControllerT],
+    ) -> BaseControllerT: ...
+
+    @overload
+    def get_or_create_controller(
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: None = None,
+    ) -> BaseController: ...
+
+    def get_or_create_controller(
+        self,
+        resource_type: ResourceType,
+        data_provider: BaseController | None = None,
+        *,
+        controller_type: type[BaseControllerT] | None = None,
+    ) -> BaseController | type[BaseControllerT]:
+        """Return existing or instantiate new controller for a resource type."""
+
+        for controller in self.resource_controllers:
+            if controller.resource_type == resource_type:
+                return controller
+
+        controller_class = CONTROLLER_REGISTRY.get(resource_type)
+        if not controller_class:
+            raise UnsupportedOperation(f"No controller registered for {resource_type}")
+
+        controller = controller_class(self, data_provider)
+        self._dynamic_controllers[resource_type] = controller
+        return controller
 
     def get_controller(self, resource_id: str) -> BaseController:
         """Get the resource controller for a given resource."""
@@ -487,11 +588,17 @@ class AlarmBridge:
     @property
     def active_system(self) -> System:
         """Get the active system."""
-
-        if not self._available_device_catalogs.active_system_id:
+        available_systems = cast(
+            "AvailableSystemsController",
+            self.get_or_create_controller(ResourceType.AVAILABLE_SYSTEM),
+        )
+        if not available_systems.active_system_id:
             raise AuthenticationFailed("No active system found.")
 
-        return self._systems[self._available_device_catalogs.active_system_id]
+        systems = cast(
+            "SystemController", self.get_or_create_controller(ResourceType.SYSTEM)
+        )
+        return systems[available_systems.active_system_id]
 
     @property
     def resources(self) -> dict[str, AdcResource]:
@@ -514,8 +621,7 @@ class AlarmBridge:
             resource.id: resource
             for controller in self.resource_controllers
             for resource in controller.items
-            if isinstance(resource, AdcDeviceResource)
-            and isinstance(resource.attributes, BaseManagedDeviceAttributes)
+            if isinstance(resource, AdcDeviceResource) and isinstance(resource.attributes, BaseManagedDeviceAttributes)
         }
 
     ##########################################
@@ -606,13 +712,9 @@ class AlarmBridge:
             self._websession = aiohttp.ClientSession()
 
         if self._auth_controller.mfa_cookie:
-            kwargs.setdefault("cookies", {}).update(
-                {MFA_COOKIE_KEY: self._auth_controller.mfa_cookie}
-            )
+            kwargs.setdefault("cookies", {}).update({MFA_COOKIE_KEY: self._auth_controller.mfa_cookie})
 
-        kwargs = self.build_request_headers(
-            accept_types=accept_types, use_ajax_key=use_ajax_key, **kwargs
-        )
+        kwargs = self.build_request_headers(accept_types=accept_types, use_ajax_key=use_ajax_key, **kwargs)
 
         async with self._websession.request(method, url, **kwargs) as resp:
             # Update anti-forgery cookie.
@@ -639,9 +741,7 @@ class AlarmBridge:
             # If DEBUG logging is enabled, log the request and response.
             if log.level < logging.DEBUG:
                 try:
-                    resp_dump = (
-                        json.dumps(await resp.json()) if resp.content_length else ""
-                    )
+                    resp_dump = json.dumps(await resp.json()) if resp.content_length else ""
                 except (json.JSONDecodeError, aiohttp.ContentTypeError):
                     if resp.content_type == "text/html":
                         resp_dump = "***OMITTING HTML OUTPUT***"
@@ -663,8 +763,7 @@ class AlarmBridge:
                     json.dumps(dict(resp.request_info.headers)),
                     kwargs.get("data") or kwargs.get("json"),
                     json.dumps(dict(resp.headers)),
-                    resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN]
-                    + "..." * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN),
+                    resp_dump[:DEBUG_REQUEST_DUMP_MAX_LEN] + "..." * (len(resp_dump) > DEBUG_REQUEST_DUMP_MAX_LEN),
                     url,
                 )
 
@@ -682,9 +781,7 @@ class AlarmBridge:
         Returns a generator with aiohttp ClientWebSocketResponse.
         """
         if self._websession is None:
-            raise NotInitialized(
-                "Cannot initiate WebSocket connection without an existing session."
-            )
+            raise NotInitialized("Cannot initiate WebSocket connection without an existing session.")
 
         # Don't generate/use GET/POST request headers. WebSocket connection uses token in place of cookies, etc.
 
@@ -697,9 +794,9 @@ class AlarmBridge:
         method: str,
         url: str,
         accept_types: ResponseTypes,
-        success_response_class: type[T],
+        success_response_class: type[JsonApiBaseElementT],
         **kwargs: Any,
-    ) -> T: ...
+    ) -> JsonApiBaseElementT: ...
 
     @overload
     async def request(
@@ -716,11 +813,11 @@ class AlarmBridge:
         method: str,
         url: str,
         accept_types: ResponseTypes = ResponseTypes.JSONAPI,
-        success_response_class: type[T] | type[SuccessDocument] = SuccessDocument,
+        success_response_class: type[JsonApiBaseElementT] | type[SuccessDocument] = SuccessDocument,
         *,
         allow_login_repair: bool = True,
         **kwargs: Any,
-    ) -> T | SuccessDocument:
+    ) -> JsonApiBaseElementT | SuccessDocument:
         """Make request to the api and return response data."""
 
         # Alarm.com's implementation violates the JSON:API spec by sometimes returning a modified error response
@@ -737,14 +834,10 @@ class AlarmBridge:
         )
 
         try:
-            async with self.create_request(
-                method, url, accept_types, use_ajax_key=True, **kwargs
-            ) as raw_resp:
+            async with self.create_request(method, url, accept_types, use_ajax_key=True, **kwargs) as raw_resp:
                 # Load the response as JSON:API object.
 
-                response: FailureDocument | JsonApiBaseElement | MetaDocument | None = (
-                    None
-                )
+                response: FailureDocument | JsonApiBaseElement | MetaDocument | None = None
 
                 try:
                     response = success_response_class.from_json(await raw_resp.text())
@@ -763,24 +856,16 @@ class AlarmBridge:
                     response = FailureDocument.from_json(await raw_resp.text())
                 except (ValueError, MissingField) as err:
                     log.exception("Failed to parse response as FailureDocument.")
-                    raise UnexpectedResponse(
-                        "Response did not match requested schema definition."
-                    ) from err
+                    raise UnexpectedResponse("Response did not match requested schema definition.") from err
 
                 # "Successful" FailureDocument requests always return a 200 response code. Non-200 responses
                 # indicate server failure.
                 # "Successful" AdcMiniResponses requests return non-200 responses for "successful" failures like an
                 # incorrect OTP code.
 
-                if hasattr(response, "errors") and isinstance(
-                    response, FailureDocument
-                ):
+                if hasattr(response, "errors") and isinstance(response, FailureDocument):
                     # Retrieve errors from errors dict object.
-                    error_codes = [
-                        int(error.code)
-                        for error in response.errors
-                        if error.code is not None
-                    ]
+                    error_codes = [int(error.code) for error in response.errors if error.code is not None]
 
                     # 406: Not Authorized For Ember, 423: Processing Error
                     if any(x in error_codes for x in [406, 423]):
@@ -817,8 +902,7 @@ class AlarmBridge:
                         )
 
                     raise UnexpectedResponse(
-                        f"Method: {method}\nURL: {url}\nStatus Codes: "
-                        f"{error_codes}\nRequest Body: {kwargs.get('data')}"
+                        f"Method: {method}\nURL: {url}\nStatus Codes: {error_codes}\nRequest Body: {kwargs.get('data')}"
                     )
 
                 raw_resp.raise_for_status()
@@ -843,9 +927,7 @@ class AlarmBridge:
 
             raise
 
-    def _generate_request_url(
-        self, path: ResourceType | str, id: str | set[str] | None
-    ) -> str:
+    def _generate_request_url(self, path: ResourceType | str, id: str | set[str] | None) -> str:
         """
         Generate endpoint URL for request.
 
@@ -942,16 +1024,10 @@ class AlarmBridge:
                 return await self.request(
                     method="get",
                     url=path,
-                    accept_types=ResponseTypes.JSON
-                    if mini_response
-                    else ResponseTypes.JSONAPI,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
                     success_response_class=AdcMiniSuccessResponse
                     if mini_response
-                    else (
-                        AdcSuccessDocumentSingle
-                        if isinstance(id, str)
-                        else AdcSuccessDocumentMulti
-                    ),
+                    else (AdcSuccessDocumentSingle if isinstance(id, str) else AdcSuccessDocumentMulti),
                     **kwargs,
                 )
 
@@ -984,12 +1060,8 @@ class AlarmBridge:
                 return await self.request(
                     method="post",
                     url=path,
-                    accept_types=ResponseTypes.JSON
-                    if mini_response
-                    else ResponseTypes.JSONAPI,
-                    success_response_class=AdcMiniSuccessResponse
-                    if mini_response
-                    else AdcSuccessDocumentSingle,
+                    accept_types=ResponseTypes.JSON if mini_response else ResponseTypes.JSONAPI,
+                    success_response_class=AdcMiniSuccessResponse if mini_response else AdcSuccessDocumentSingle,
                     **kwargs,
                 )
 
@@ -1008,23 +1080,11 @@ class AlarmBridge:
         """Return pretty representation of resources in AlarmBridge."""
 
         return Group(
-            *[
-                x.resources_pretty
-                for x in sorted(
-                    self.resource_controllers, key=lambda x: x.__class__.__name__
-                )
-            ]
+            *[x.resources_pretty for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)]
         )
 
     @property
     def resources_raw(self) -> Group:
         """Return raw JSON for all bridge resources."""
 
-        return Group(
-            *[
-                x.resources_raw
-                for x in sorted(
-                    self.resource_controllers, key=lambda x: x.__class__.__name__
-                )
-            ]
-        )
+        return Group(*[x.resources_raw for x in sorted(self.resource_controllers, key=lambda x: x.__class__.__name__)])

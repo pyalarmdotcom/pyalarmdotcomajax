@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from pyalarmdotcomajax.adc.util import Param_Id, cli_action
 from pyalarmdotcomajax.controllers.base import BaseController, device_controller
@@ -36,6 +36,7 @@ class ImageSensorController(BaseController[ImageSensor]):
     _supported_resource_events = SupportedResourceEvents(
         events=[ResourceEventType.ImageSensorUpload]
     )
+    related_types: ClassVar[list[ResourceType]] = [ResourceType.IMAGE_SENSOR_IMAGE]
 
     @cli_action()
     async def peek_in(self, id: Param_Id) -> None:
@@ -72,9 +73,8 @@ class ImageSensorController(BaseController[ImageSensor]):
         return adc_resource
 
 
+@device_controller(ResourceType.IMAGE_SENSOR_IMAGE, ImageSensorImage)
 class ImageSensorImageController(BaseController[ImageSensorImage]):
     """Controller for image sensor images."""
 
-    resource_type = ResourceType.IMAGE_SENSOR_IMAGE
-    _resource_class = ImageSensorImage
     _resource_url_override = "imageSensor/imageSensorImages/getRecentImages"

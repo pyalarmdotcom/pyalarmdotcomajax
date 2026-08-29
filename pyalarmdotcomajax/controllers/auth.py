@@ -11,11 +11,8 @@ from bs4 import BeautifulSoup
 from rich.console import Group
 
 from pyalarmdotcomajax import const
-from pyalarmdotcomajax.controllers.users import (
-    DealersController,
-    IdentitiesController,
-    ProfilesController,
-)
+
+# Imported for type checking and controller lookup
 from pyalarmdotcomajax.exceptions import (
     AuthenticationFailed,
     MustConfigureMfa,
@@ -78,53 +75,59 @@ class AuthenticationController:
         self._password: str = password or ""
         self.mfa_cookie: str = mfa_cookie or ""
 
-        # Device Controllers
-        self._identities = IdentitiesController(self._bridge)
-        self._profiles = ProfilesController(self._bridge, self._identities)
-        self._dealers = DealersController(self._bridge)
+        # User controllers are retrieved lazily from the bridge
 
     @property
     def resources_pretty(self) -> "Group":
         """Return pretty Rich representation of resources in controller."""
 
-        return resources_pretty("Users", [*self._identities.items, *self._profiles.items])
+        return resources_pretty(
+            "Users",
+            [*self._bridge.identities.items, *self._bridge.profiles.items],
+        )
 
     @property
     def resources_raw(self) -> "Group":
         """Return Rich representation raw JSON for all controller resources."""
 
-        return resources_raw("Users", [*self._identities.items, *self._profiles.items])
+        return resources_raw(
+            "Users",
+            [*self._bridge.identities.items, *self._bridge.profiles.items],
+        )
 
     @property
     def included_raw_str(self) -> "Group":
         """Return Rich representation of raw JSON for all controller resources."""
 
-        return resources_raw("Users Children", [*self._identities.items, *self._profiles.items])
+        return resources_raw(
+            "Users Children",
+            [*self._bridge.identities.items, *self._bridge.profiles.items],
+        )
 
     @property
     def has_trouble_conditions_service(self) -> bool:
         """Whether the user has access to the trouble conditions service."""
 
-        return self._identities.items[0].attributes.has_trouble_conditions_service
+        return self._bridge.identities.items[0].attributes.has_trouble_conditions_service
 
     @property
     def dealer(self) -> str | None:
         """The name of the Alarm.com provider."""
 
-        return self._dealers.items[0].attributes.name or "Alarm.com"
+        return self._bridge.dealers.items[0].attributes.name or "Alarm.com"
 
     @property
     def user_email(self) -> str | None:
         """The user's email address."""
 
-        return self._profiles.items[0].attributes.email
+        return self._bridge.profiles.items[0].attributes.email
 
     @property
     def session_refresh_interval_ms(self) -> int:
         """Interval at which session should be refreshed in milliseconds."""
 
         return (
-            self._identities.items[0].attributes.application_session_properties.inactivity_warning_timeout_ms
+            self._bridge.identities.items[0].attributes.application_session_properties.inactivity_warning_timeout_ms
             or 5 * 60 * 1000
         )  # Default: 5 minutes
 
@@ -132,14 +135,14 @@ class AuthenticationController:
     def keep_alive_url(self) -> str | None:
         """URL for keep-alive requests, if keep alive is enabled."""
 
-        return self._identities.items[0].attributes.application_session_properties.keep_alive_url
+        return self._bridge.identities.items[0].attributes.application_session_properties.keep_alive_url
 
     @property
     def use_celsius(self) -> bool:
         """Whether the user uses celsius or fahrenheit."""
 
         try:
-            return self._identities.items[0].attributes.localize_temp_units_to_celsius
+            return self._bridge.identities.items[0].attributes.localize_temp_units_to_celsius
         except (AttributeError, IndexError):
             log.error("Could not find temperature unit preference.")
             return False
@@ -148,15 +151,16 @@ class AuthenticationController:
     def profile_id(self) -> str:
         """The user's profile ID."""
 
-        return self._profiles.items[0].id
+        return self._bridge.profiles.items[0].id
 
     @property
     def enable_keep_alive(self) -> bool:
         """Whether keep-alive is enabled."""
 
         return (
-            self._identities.items[0].attributes.application_session_properties.enable_keep_alive
-            if self._identities.items[0].attributes.application_session_properties.enable_keep_alive is not None
+            self._bridge.identities.items[0].attributes.application_session_properties.enable_keep_alive
+            if self._bridge.identities.items[0].attributes.application_session_properties.enable_keep_alive
+            is not None
             else True
         )
 
@@ -302,20 +306,23 @@ class AuthenticationController:
 
         # User ID required to check OTP status
         await asyncio.gather(
-            self._identities.initialize(),
-            self._profiles.initialize(),
-            self._dealers.initialize(),
+            self._bridge.identities.initialize(),
+            self._bridge.profiles.initialize(),
+            self._bridge.dealers.initialize(),
         )
 
-        if not self._identities.items:
+        if not self._bridge.identities.items:
             raise UnexpectedResponse("No identities found.")
 
-        if dealer_id := self._identities.items[0].dealer_id:
-            log.debug(await self._dealers.add_target(dealer_id))
+        if dealer_id := self._bridge.identities.items[0].dealer_id:
+            log.debug(await self._bridge.dealers.add_target(dealer_id))
         else:
             log.error("No dealer ID found.")
 
-        response = await self._bridge.get(path=TWO_FACTOR_PATH, id=self._identities.items[0].id)
+        response = await self._bridge.get(
+            path=TWO_FACTOR_PATH,
+            id=self._bridge.identities.items[0].id,
+        )
 
         if not isinstance(response.data, Resource):
             raise UnexpectedResponse
@@ -373,7 +380,7 @@ class AuthenticationController:
 
         await self._bridge.post(
             path=TWO_FACTOR_PATH,
-            id=self._identities.items[0].id,
+            id=self._bridge.identities.items[0].id,
             action="sendTwoFactorAuthenticationCodeViaSms"
             if method == OtpType.sms
             else "sendTwoFactorAuthenticationCodeViaEmail",
@@ -385,7 +392,7 @@ class AuthenticationController:
 
         await self._bridge.post(
             path=TWO_FACTOR_PATH,
-            id=self._identities.items[0].id,
+            id=self._bridge.identities.items[0].id,
             action="verifyTwoFactorCode",
             json={"code": code, "typeOf2FA": method.value},
             mini_response=True,
@@ -397,7 +404,7 @@ class AuthenticationController:
 
         await self._bridge.post(
             path=TWO_FACTOR_PATH,
-            id=self._identities.items[0].id,
+            id=self._bridge.identities.items[0].id,
             action="trustTwoFactorDevice",
             json={"deviceName": device_name if device_name else f"pyalarmdotcomajax on {socket.gethostname()}"},
             mini_response=True,

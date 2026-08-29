@@ -12,7 +12,9 @@
                 "charliermarsh.ruff",
                 "esbenp.prettier-vscode",
                 "EditorConfig.EditorConfig",
-                "ms-python.python"
+                "ms-python.python",
+                "ms-python.mypy-type-checker",
+                "github.vscode-github-actions"
             ]
         }
     },
