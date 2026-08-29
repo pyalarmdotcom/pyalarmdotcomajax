@@ -135,7 +135,6 @@ class ThermostatController(BaseController[Thermostat]):
             attrib_list := [
                 state,
                 fan_mode,
-                fan_mode_duration,
                 cool_setpoint,
                 heat_setpoint,
                 schedule_mode,
