@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 ###########################
 
 
-def page_number_from_link(link: Link | None | str) -> int | None:
+def page_number_from_link(link: Link | str | None) -> int | None:
     """
     Extract page number from links in a JSON:API response object.
 
