@@ -158,7 +158,6 @@ __all__: tuple[str, ...] = (  # noqa: RUF022
     "water_valve",
     # controllers
     "AdcControllerT",
-    "ResourceEventMessage",
 )
 T = TypeVar("T", bound=JsonApiBaseElement)
 
@@ -328,7 +327,7 @@ class AlarmBridge:
 
     async def start_event_monitoring(
         self, ws_status_callback: EventBrokerCallbackT | None = None
-    ) -> None | Callable:
+    ) -> Callable | None:
         """Start real-time event monitoring."""
 
         await self._ws_controller.initialize()
