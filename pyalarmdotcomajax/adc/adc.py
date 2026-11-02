@@ -1,19 +1,19 @@
 """adc core CLI functions."""
 
-# ruff: noqa: T201 C901 UP007 FBT002 FBT001
+# ruff: noqa: FBT002, FBT001
 import asyncio
 import logging
 import sys
 from functools import partial
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import TYPE_CHECKING, Annotated
 
 import typer
+from pyalarmdotcomajax._version import __version__
 from rich import print
 from rich.console import Group
 from rich.logging import RichHandler
 from rich.panel import Panel
 
-from pyalarmdotcomajax._version import __version__
 from pyalarmdotcomajax.adc.common import bridge, collect_params
 from pyalarmdotcomajax.adc.util import (
     AsyncTyper,
@@ -55,7 +55,7 @@ def version_callback(value: bool) -> None:
 @app.callback()
 def adc_callback(
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--version",
             help="Get installed pyalarmdotcom version.",
@@ -116,7 +116,7 @@ async def stream(
 async def get(
     ctx: typer.Context,
     include_unsupported: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--include-unsupported",
             "-x",
