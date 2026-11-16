@@ -1,11 +1,11 @@
 """Common commands for the adc CLI."""
 
-# ruff: noqa: T201 C901 UP007 FBT002 FBT001
+# ruff: noqa: FBT002, FBT001
 
 import asyncio
 import logging
 from functools import partial
-from typing import Annotated, Optional
+from typing import Annotated
 
 import aiohttp
 import typer
@@ -179,7 +179,7 @@ async def collect_params(
         ),
     ],
     cookie: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--cookie",
             "-c",
@@ -193,7 +193,7 @@ async def collect_params(
     # MFA OPTIONS
     #
     otp_method: Annotated[
-        Optional[OtpType],
+        OtpType | None,
         typer.Option(
             "--otp-method",
             "-m",
@@ -206,7 +206,7 @@ async def collect_params(
         ),
     ] = None,
     otp: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--otp",
             "-o",
@@ -216,7 +216,7 @@ async def collect_params(
         ),
     ] = None,
     device_name: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--device-name",
             "-n",
